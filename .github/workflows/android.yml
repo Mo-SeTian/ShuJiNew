@@ -1,0 +1,138 @@
+name: Android CI/CD
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    name: 构建 Debug APK
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: 设置 Android SDK
+        uses: android-actions/setup-android@v2
+
+      - name: 授权执行 Gradle
+        run: chmod +x gradlew
+
+      - name: 缓存 Gradle 依赖
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: 构建 Debug APK
+        run: ./gradlew assembleDebug
+
+      - name: 生成版本信息
+        run: |
+          echo "APK 版本: ${{ github.ref_name }}"
+          echo "构建时间: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "提交SHA: ${{ github.sha }}"
+
+      - name: 上传 APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: readtrack-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30
+
+      - name: 上传构建日志
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: app/build/outputs/logs/
+          retention-days: 7
+
+  release:
+    name: 发布 Release APK
+    runs-on: ubuntu-latest
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: 设置 Android SDK
+        uses: android-actions/setup-android@v2
+
+      - name: 授权执行 Gradle
+        run: chmod +x gradlew
+
+      - name: 构建 Release APK
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > app/release.keystore
+            ./gradlew assembleRelease
+          else
+            echo "未配置签名密钥，跳过 Release 构建"
+          fi
+
+      - name: 发布 APK
+        uses: softprops/action-gh-release@v1
+        if: always()
+        with:
+          files: app/build/outputs/apk/release/*.apk
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  comment:
+    name: 评论构建状态
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - name: 下载 APK
+        uses: actions/download-artifact@v4
+        with:
+          name: readtrack-debug-apk
+
+      - name: 获取 APK 信息
+        id: apk_info
+        run: |
+          APK_SIZE=$(du -h app-debug.apk | cut -f1)
+          echo "size=$APK_SIZE" >> $GITHUB_OUTPUT
+
+      - name: 评论 PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '## 📱 APK 构建成功！\n\n**APK 大小:** ${{ steps.apk_info.outputs.size }}\n**分支:** `${{ github.ref_name }}`\n**提交:** `${{ github.sha }}`\n\n✅ 构建完成，点击下方 Artifacts 下载 APK 进行测试。'
+            })
