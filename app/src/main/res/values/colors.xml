@@ -1,5 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Primary Colors -->
+    <color name="PrimaryBlue">#1E88E5</color>
+    <color name="PrimaryBlueDark">#1565C0</color>
+    <color name="SecondaryTeal">#26A69A</color>
+    
+    <!-- Material Theme Colors -->
+    <color name="md_theme_light_primary">#1E88E5</color>
+    <color name="md_theme_light_onPrimary">#FFFFFF</color>
+    <color name="md_theme_light_primaryContainer">#BBDEFB</color>
+    <color name="md_theme_light_onPrimaryContainer">#0D47A1</color>
+    <color name="md_theme_light_secondary">#26A69A</color>
+    <color name="md_theme_light_onSecondary">#FFFFFF</color>
+    <color name="md_theme_light_background">#FAFAFA</color>
+    <color name="md_theme_light_onBackground">#1C1B1F</color>
+    <color name="md_theme_light_surface">#FAFAFA</color>
+    <color name="md_theme_light_onSurface">#1C1B1F</color>
+    
+    <!-- Book Status Colors -->
+    <color name="WantToReadGreen">#4CAF50</color>
+    <color name="ReadingOrange">#FF9800</color>
+    <color name="FinishedBlue">#2196F3</color>
+    <color name="OnHoldGray">#9E9E9E</color>
+    <color name="AbandonedRed">#F44336</color>
+    
+    <!-- App Colors -->
+    <color name="ic_launcher_background">#1E88E5</color>
+    
+    <!-- Default Colors -->
     <color name="purple_200">#FFBB86FC</color>
     <color name="purple_500">#FF6200EE</color>
     <color name="purple_700">#FF3700B3</color>
