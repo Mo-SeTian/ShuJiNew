@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ReadTrack</string>
+    <string name="nav_home">首页</string>
+    <string name="nav_books">我的书籍</string>
+    <string name="nav_stats">统计</string>
+    <string name="nav_settings">设置</string>
+    <string name="status_want_to_read">想读</string>
+    <string name="status_reading">阅读中</string>
+    <string name="status_finished">已读</string>
+    <string name="status_on_hold">闲置</string>
+    <string name="status_abandoned">放弃</string>
+    <string name="status_all">全部</string>
+    <string name="add_book">添加书籍</string>
+    <string name="edit_book">编辑书籍</string>
+    <string name="delete_book">删除书籍</string>
+    <string name="book_title">书名</string>
+    <string name="book_author">作者</string>
+    <string name="book_pages">总页数</string>
+    <string name="select_cover">选择封面</string>
+    <string name="add_reading_record">添加阅读记录</string>
+    <string name="today_pages">今日阅读</string>
+    <string name="streak_days">连续阅读</string>
+    <string name="empty_books">你的书架是空的，添加一本书吧</string>
+    <string name="save">保存</string>
+    <string name="cancel">取消</string>
+    <string name="delete">删除</string>
+    <string name="confirm">确认</string>
+</resources>
