@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ main ]
 
+env:
+  JAVA_VERSION: '17'
+  GRADLE_VERSION: '8.6'
+
 jobs:
   build:
     name: 构建 Debug APK
@@ -15,101 +19,117 @@ jobs:
       - name: 检出代码
         uses: actions/checkout@v4
 
-      - name: 设置 JDK 17
+      - name: 设置 JDK
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: ${{ env.JAVA_VERSION }}
           distribution: 'temurin'
-          cache: gradle
+          cache: 'gradle'
 
-      - name: 设置 Android SDK
-        uses: android-actions/setup-android@v2
-
-      - name: 授权执行 Gradle
-        run: chmod +x gradlew
-
-      - name: 缓存 Gradle 依赖
+      - name: 缓存 Gradle
         uses: actions/cache@v4
         with:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/gradle/wrapper/gradle-wrapper.properties') }}
           restore-keys: |
             ${{ runner.os }}-gradle-
 
-      - name: 构建 Debug APK
-        run: ./gradlew assembleDebug
-
-      - name: 生成版本信息
+      - name: 授权 Gradle
         run: |
-          echo "APK 版本: ${{ github.ref_name }}"
-          echo "构建时间: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-          echo "提交SHA: ${{ github.sha }}"
+          chmod +x gradlew
+          chmod +x gradle/wrapper/gradle-wrapper.jar
+
+      - name: 检查 Java
+        run: java -version
+
+      - name: 设置 Android SDK
+        run: |
+          if [ ! -d "$ANDROID_HOME/cmdline-tools" ]; then
+            mkdir -p $ANDROID_HOME/cmdline-tools
+            cd $ANDROID_HOME/cmdline-tools
+            curl -sL https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -o cmdline-tools.zip
+            unzip -q cmdline-tools.zip
+            mv cmdline-tools latest
+            rm cmdline-tools.zip
+          fi
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses 2>/dev/null || true
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0" 2>/dev/null
+
+      - name: 验证环境
+        run: |
+          echo "ANDROID_HOME: $ANDROID_HOME"
+          ls -la $ANDROID_HOME 2>/dev/null || echo "SDK not found at ANDROID_HOME"
+
+      - name: 下载依赖
+        run: ./gradlew dependencies --no-daemon 2>&1 | tail -20
+
+      - name: 构建 Debug APK
+        run: ./gradlew assembleDebug --no-daemon --stacktrace 2>&1
+
+      - name: 检查 APK
+        run: |
+          if [ -f app/build/outputs/apk/debug/app-debug.apk ]; then
+            echo "✅ APK 构建成功！"
+            ls -lh app/build/outputs/apk/debug/app-debug.apk
+          else
+            echo "❌ APK 未生成"
+            ls -la app/build/outputs/apk/debug/ 2>/dev/null || echo "目录不存在"
+            exit 1
+          fi
 
       - name: 上传 APK
         uses: actions/upload-artifact@v4
         with:
-          name: readtrack-debug-apk
+          name: readtrack-debug-apk-${{ github.run_number }}
           path: app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
 
-      - name: 上传构建日志
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-logs
-          path: app/build/outputs/logs/
-          retention-days: 7
-
-  release:
-    name: 发布 Release APK
+  build-with-matrix:
+    name: 多版本构建
     runs-on: ubuntu-latest
     needs: build
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    strategy:
+      matrix:
+        dimension: [debug, release]
     
     steps:
-      - name: 检出代码
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: 设置 JDK 17
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: gradle
 
-      - name: 设置 Android SDK
-        uses: android-actions/setup-android@v2
+      - run: chmod +x gradlew
 
-      - name: 授权执行 Gradle
-        run: chmod +x gradlew
-
-      - name: 构建 Release APK
-        env:
-          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+      - name: Android SDK
         run: |
-          if [ -n "$KEYSTORE_BASE64" ]; then
-            echo "$KEYSTORE_BASE64" | base64 -d > app/release.keystore
-            ./gradlew assembleRelease
-          else
-            echo "未配置签名密钥，跳过 Release 构建"
-          fi
+          mkdir -p $ANDROID_HOME/cmdline-tools
+          cd $ANDROID_HOME/cmdline-tools
+          curl -sL https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -o cmdline-tools.zip
+          unzip -q cmdline-tools.zip
+          mv cmdline-tools latest
+          rm cmdline-tools.zip
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses 2>/dev/null || true
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-34" 2>/dev/null
 
-      - name: 发布 APK
-        uses: softprops/action-gh-release@v1
-        if: always()
+      - name: 构建 ${{ matrix.dimension }}
+        run: ./gradlew assemble${{ matrix.dimension }} --no-daemon 2>&1 | tail -10
+
+      - name: 上传 ${{ matrix.dimension }} APK
+        if: matrix.dimension == 'debug'
+        uses: actions/upload-artifact@v4
         with:
-          files: app/build/outputs/apk/release/*.apk
-          generate_release_notes: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: readtrack-${{ matrix.dimension }}
+          path: app/build/outputs/apk/${{ matrix.dimension }}/app-${{ matrix.dimension }}.apk
+          retention-days: 30
 
-  comment:
-    name: 评论构建状态
+  comment-pr:
+    name: 评论 PR
     runs-on: ubuntu-latest
     needs: build
     if: github.event_name == 'pull_request'
@@ -118,15 +138,13 @@ jobs:
       - name: 下载 APK
         uses: actions/download-artifact@v4
         with:
-          name: readtrack-debug-apk
+          name: readtrack-debug-apk-${{ github.run_number }}
 
-      - name: 获取 APK 信息
-        id: apk_info
+      - name: 获取信息
         run: |
-          APK_SIZE=$(du -h app-debug.apk | cut -f1)
-          echo "size=$APK_SIZE" >> $GITHUB_OUTPUT
+          echo "size=$(du -h app-debug.apk | cut -f1)" >> $GITHUB_OUTPUT
 
-      - name: 评论 PR
+      - name: 评论
         uses: actions/github-script@v7
         with:
           script: |
@@ -134,5 +152,5 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: '## 📱 APK 构建成功！\n\n**APK 大小:** ${{ steps.apk_info.outputs.size }}\n**分支:** `${{ github.ref_name }}`\n**提交:** `${{ github.sha }}`\n\n✅ 构建完成，点击下方 Artifacts 下载 APK 进行测试。'
+              body: '## 📱 APK 构建成功！\n\n**APK 大小:** ' + '${{ steps.info.outputs.size }}' + '\n**分支:** `' + '${{ github.ref_name }}' + '`\n**提交:** `' + '${{ github.sha }}' + '`\n\n✅ 构建完成，点击 Artifacts 下载 APK 进行测试。'
             })
