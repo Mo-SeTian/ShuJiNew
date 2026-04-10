@@ -21,56 +21,35 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: 检查 Java
-        run: java -version
-
-      - name: 安装 Android SDK
-        run: |
-          echo "ANDROID_HOME: $ANDROID_HOME"
-          echo "ANDROID_SDK_ROOT: $ANDROID_SDK_ROOT"
-          ls -la $ANDROID_HOME 2>/dev/null || echo "Checking default locations..."
-          ls -la /Users/runner/Library/Android/sdk 2>/dev/null || echo "Not found in default"
-
-      - name: 安装 SDK 组件
-        run: |
-          if [ -d "$ANDROID_HOME/cmdline-tools" ]; then
-            $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install "platforms;android-34" "build-tools;34.0.0"
-          else
-            echo "Android SDK cmdline-tools not found"
-            # List available SDK components
-            if [ -d "$ANDROID_HOME/platforms" ]; then
-              ls $ANDROID_HOME/platforms
-            fi
-          fi
-
       - name: 授权 Gradle
         run: |
           chmod +x gradlew
-          ls -la gradlew
+          ls -la gradlew gradle/wrapper/
 
       - name: 构建 Debug APK
-        id: build
         run: |
-          echo "Starting build..."
+          echo "开始构建 Debug APK..."
           ./gradlew assembleDebug --no-daemon --stacktrace 2>&1 | tee build.log
-          echo "---BUILD LOG END---"
 
-      - name: 查看构建日志
-        if: failure()
+      - name: 检查 APK 文件
         run: |
-          echo "=== Last 100 lines of build.log ==="
-          tail -100 build.log 2>/dev/null || echo "No build.log found"
-
-      - name: 查找 APK
-        run: |
-          echo "=== Looking for APK ==="
-          find . -name "*.apk" 2>/dev/null
-          ls -la app/build/outputs/apk/debug/ 2>/dev/null || echo "APK dir not found"
+          echo "=== 检查 APK ==="
+          APK_PATH="app/build/outputs/apk/debug/app-debug.apk"
+          if [ -f "$APK_PATH" ]; then
+            echo "✅ APK 文件存在!"
+            ls -lh "$APK_PATH"
+          else
+            echo "❌ APK 文件不存在"
+            echo "=== 搜索任何 APK 文件 ==="
+            find . -name "*.apk" -type f 2>/dev/null
+            echo "=== app/build 目录内容 ==="
+            ls -laR app/build/ 2>/dev/null | head -50
+            exit 1
+          fi
 
       - name: 上传 APK
-        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: readtrack-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
-          retention-days: 7
+          retention-days: 30
