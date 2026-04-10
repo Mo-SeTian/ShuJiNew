@@ -2,21 +2,26 @@ package com.readtrack.presentation.ui.settings
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.readtrack.data.local.ThemeMode
+import com.readtrack.presentation.viewmodel.SettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen() {
-    var darkModeOption by remember { mutableStateOf(0) } // 0: System, 1: Light, 2: Dark
-    var showClearDataDialog by remember { mutableStateOf(false) }
+fun SettingsScreen(
+    viewModel: SettingsViewModel = hiltViewModel()
+) {
+    val uiState by viewModel.uiState.collectAsState()
+    var showThemeDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -29,143 +34,146 @@ fun SettingsScreen() {
             )
         }
     ) { padding ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
+                .padding(padding),
+            contentPadding = PaddingValues(vertical = 8.dp)
         ) {
-            // Theme Section
-            Text(
-                text = "外观",
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(16.dp)
-            )
-            
-            SettingsItem(
-                icon = Icons.Default.DarkMode,
-                title = "深色模式",
-                subtitle = when (darkModeOption) {
-                    0 -> "跟随系统"
-                    1 -> "浅色模式"
-                    else -> "深色模式"
-                },
-                onClick = {
-                    darkModeOption = (darkModeOption + 1) % 3
-                }
-            )
+            item {
+                SettingsSection(title = "外观")
+            }
 
-            HorizontalDivider()
+            item {
+                SettingsItem(
+                    icon = Icons.Default.DarkMode,
+                    title = "主题",
+                    subtitle = when (uiState.themeMode) {
+                        ThemeMode.SYSTEM -> "跟随系统"
+                        ThemeMode.LIGHT -> "浅色模式"
+                        ThemeMode.DARK -> "深色模式"
+                    },
+                    onClick = { showThemeDialog = true }
+                )
+            }
 
-            // Data Section
-            Text(
-                text = "数据",
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(16.dp)
-            )
+            item {
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                SettingsSection(title = "关于")
+            }
 
-            SettingsItem(
-                icon = Icons.Default.Upload,
-                title = "导出数据",
-                subtitle = "导出为 JSON 格式",
-                onClick = { /* Export */ }
-            )
+            item {
+                SettingsItem(
+                    icon = Icons.Default.Info,
+                    title = "版本",
+                    subtitle = uiState.appVersion,
+                    onClick = { }
+                )
+            }
 
-            SettingsItem(
-                icon = Icons.Default.Download,
-                title = "导入数据",
-                subtitle = "从 JSON 文件导入",
-                onClick = { /* Import */ }
-            )
+            item {
+                SettingsItem(
+                    icon = Icons.Default.Code,
+                    title = "开源许可",
+                    subtitle = "感谢开源社区",
+                    onClick = { }
+                )
+            }
 
-            SettingsItem(
-                icon = Icons.Default.DeleteForever,
-                title = "清除所有数据",
-                subtitle = "删除所有书籍和阅读记录",
-                onClick = { showClearDataDialog = true }
-            )
-
-            HorizontalDivider()
-
-            // About Section
-            Text(
-                text = "关于",
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(16.dp)
-            )
-
-            SettingsItem(
-                icon = Icons.Default.Info,
-                title = "版本",
-                subtitle = "1.0.0",
-                onClick = { }
-            )
+            item {
+                SettingsItem(
+                    icon = Icons.Default.GitHub,
+                    title = "GitHub",
+                    subtitle = "查看项目源码",
+                    onClick = { }
+                )
+            }
         }
     }
 
-    // Clear Data Dialog
-    if (showClearDataDialog) {
-        AlertDialog(
-            onDismissRequest = { showClearDataDialog = false },
-            icon = { Icon(Icons.Default.Warning, null) },
-            title = { Text("清除所有数据") },
-            text = { Text("确定要清除所有数据吗？此操作不可恢复。") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        // Clear all data
-                        showClearDataDialog = false
-                    }
-                ) {
-                    Text("清除", color = MaterialTheme.colorScheme.error)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showClearDataDialog = false }) {
-                    Text("取消")
-                }
+    if (showThemeDialog) {
+        ThemeModeDialog(
+            currentMode = uiState.themeMode,
+            onDismiss = { showThemeDialog = false },
+            onSelect = { mode ->
+                viewModel.setThemeMode(mode)
+                showThemeDialog = false
             }
         )
     }
 }
 
 @Composable
+fun SettingsSection(title: String) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.primary,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+    )
+}
+
+@Composable
 fun SettingsItem(
-    icon: ImageVector,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
     title: String,
     subtitle: String,
     onClick: () -> Unit
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Spacer(modifier = Modifier.width(16.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodyLarge
+    ListItem(
+        headlineContent = { Text(title) },
+        supportingContent = { Text(subtitle) },
+        leadingContent = {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary
             )
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+        },
+        modifier = Modifier.clickable(onClick = onClick)
+    )
+}
+
+@Composable
+fun ThemeModeDialog(
+    currentMode: ThemeMode,
+    onDismiss: () -> Unit,
+    onSelect: (ThemeMode) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("选择主题") },
+        text = {
+            Column {
+                ThemeMode.entries.forEach { mode ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onSelect(mode) }
+                            .padding(vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = mode == currentMode,
+                            onClick = { onSelect(mode) }
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = when (mode) {
+                                ThemeMode.SYSTEM -> "跟随系统"
+                                ThemeMode.LIGHT -> "浅色模式"
+                                ThemeMode.DARK -> "深色模式"
+                            }
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("取消")
+            }
         }
-        Icon(
-            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
+    )
 }
