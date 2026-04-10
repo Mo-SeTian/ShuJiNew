@@ -82,7 +82,7 @@ fun SettingsScreen(
 
             item {
                 SettingsItem(
-                    icon = Icons.Default.GitHub,
+                    icon = Icons.Default.Link,
                     title = "GitHub",
                     subtitle = "查看项目源码",
                     onClick = { }
