@@ -19,9 +19,6 @@ interface BookDao {
     @Query("SELECT * FROM books WHERE title LIKE '%' || :query || '%' OR author LIKE '%' || :query || '%' ORDER BY updatedAt DESC")
     fun searchBooks(query: String): Flow<List<BookEntity>>
 
-    @Query("SELECT * FROM books WHERE status = :status ORDER BY updatedAt DESC")
-    fun getBooksByStatusSorted(status: BookStatus, @Query("sortBy") sortBy: String): Flow<List<BookEntity>>
-
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertBook(book: BookEntity): Long
 
