@@ -1,5 +1,6 @@
 package com.readtrack.presentation.ui
 
+import android.net.Uri
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.padding
@@ -191,7 +192,7 @@ fun MainNavigation() {
                 
                 CoverSearchScreen(
                     onImageSelected = { imageUrl ->
-                        parentViewModel.updateCoverUri(imageUrl)
+                        parentViewModel.updateCoverUri(Uri.parse(imageUrl))
                         navController.popBackStack()
                     },
                     onNavigateBack = { navController.popBackStack() }
