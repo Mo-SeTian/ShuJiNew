@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.readtrack.data.local.entity.BookEntity
+import com.readtrack.data.local.entity.ReadingRecordEntity
 import com.readtrack.domain.model.BookStatus
 import com.readtrack.presentation.ui.components.getStatusColor
 import com.readtrack.presentation.ui.components.getStatusLabel
@@ -306,9 +307,9 @@ private fun ProgressInfoCard(book: BookEntity) {
     val isChapterBased = book.progressType == ProgressType.CHAPTER
     val statusColor = getStatusColor(book.status)
     
-    val total = if (isChapterBased) (book.totalChapters ?: 0).toFloat() else book.totalPages
-    val current = if (isChapterBased) book.currentChapter.toFloat() else book.currentPage
-    val progress = if (total > 0) (current / total).coerceIn(0f, 1f) else 0f
+    val total = if (isChapterBased) (book.totalChapters ?: 0).toDouble() else book.totalPages
+    val current = if (isChapterBased) book.currentChapter.toDouble() else book.currentPage
+    val progress = if (total > 0) (current / total).coerceIn(0.0, 1.0).toFloat() else 0f
     val progressPercent = (progress * 100).toInt()
     
     Card(
@@ -418,7 +419,7 @@ private fun StatusCard(book: BookEntity, onStatusChange: (BookStatus) -> Unit) {
 }
 
 @Composable
-private fun ReadingRecordRow(record: com.readtrack.data.local.entity.ReadingRecordEntity) {
+private fun ReadingRecordRow(record: ReadingRecordEntity) {
     val dateFormat = remember { SimpleDateFormat("MM-dd HH:mm", Locale.getDefault()) }
     
     Card(
@@ -433,12 +434,12 @@ private fun ReadingRecordRow(record: com.readtrack.data.local.entity.ReadingReco
         ) {
             Column {
                 Text(
-                    dateFormat.format(Date(record.timestamp)),
+                    dateFormat.format(Date(record.date)),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium
                 )
                 Text(
-                    record.note?.takeIf { it.isNotBlank() } ?: "无备注",
+                    record.note?.takeIf { it.isNotBlank() } ?: "阅读了 ${record.pagesRead.toInt()} 页",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -448,7 +449,7 @@ private fun ReadingRecordRow(record: com.readtrack.data.local.entity.ReadingReco
                 color = MaterialTheme.colorScheme.primaryContainer
             ) {
                 Text(
-                    "+${record.pagesRead} ${if (record.chapterRead > 0) "章" else "页"}",
+                    "+${record.pagesRead.toInt()} 页",
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
