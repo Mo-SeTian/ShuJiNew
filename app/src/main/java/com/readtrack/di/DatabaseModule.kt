@@ -2,8 +2,6 @@ package com.readtrack.di
 
 import android.content.Context
 import androidx.room.Room
-import androidx.room.migration.ExperimentalRoomMigrationApi
-import androidx.room.migration.LegacyMigrationManager
 import com.readtrack.data.local.dao.BookDao
 import com.readtrack.data.local.dao.ReadingRecordDao
 import com.readtrack.data.local.database.ReadTrackDatabase
@@ -22,7 +20,6 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
 
-    @OptIn(ExperimentalRoomMigrationApi::class)
     @Provides
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): ReadTrackDatabase {
@@ -31,10 +28,7 @@ object DatabaseModule {
             ReadTrackDatabase::class.java,
             "readtrack_database"
         )
-            .fallbackToDestructiveMigration(
-                fromVersion = 1,
-                toVersion = 2
-            )
+            .fallbackToDestructiveMigration()
             .build()
     }
 
