@@ -1,7 +1,6 @@
 package com.readtrack.presentation.ui.books
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -16,7 +15,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -395,32 +393,14 @@ fun BookDetailScreen(
 
 @Composable
 private fun BookHeader(book: BookEntity) {
-    val statusColor = getStatusColor(book.status)
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        shape = RoundedCornerShape(16.dp)
     ) {
-        Box {
-            // 渐变背景
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(180.dp)
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                statusColor.copy(alpha = 0.3f),
-                                statusColor.copy(alpha = 0.1f),
-                                MaterialTheme.colorScheme.surface
-                            )
-                        )
-                    )
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                verticalAlignment = Alignment.Top
-            ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            verticalAlignment = Alignment.Top
+        ) {
             AsyncImage(
                 model = book.coverPath ?: "https://via.placeholder.com/120x180",
                 contentDescription = book.title,
@@ -432,12 +412,10 @@ private fun BookHeader(book: BookEntity) {
             )
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     book.title,
                     style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 2
+                    fontWeight = FontWeight.Bold
                 )
                 if (!book.author.isNullOrBlank()) {
                     Spacer(modifier = Modifier.height(4.dp))
@@ -452,20 +430,20 @@ private fun BookHeader(book: BookEntity) {
                     Text(
                         book.publisher,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 Spacer(modifier = Modifier.height(12.dp))
                 Surface(
-                    shape = RoundedCornerShape(20.dp),
-                    color = statusColor.copy(alpha = 0.15f)
+                    shape = RoundedCornerShape(8.dp),
+                    color = getStatusColor(book.status).copy(alpha = 0.15f)
                 ) {
                     Text(
                         getStatusLabel(book.status),
                         style = MaterialTheme.typography.labelMedium,
-                        color = statusColor,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
+                        color = getStatusColor(book.status),
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                     )
                 }
             }
@@ -476,7 +454,6 @@ private fun BookHeader(book: BookEntity) {
 @Composable
 private fun ProgressCard(book: BookEntity) {
     val isChapterBased = book.progressType == ProgressType.CHAPTER
-    val statusColor = getStatusColor(book.status)
     
     val progress = if (isChapterBased) {
         val total = book.totalChapters ?: 0
@@ -489,12 +466,12 @@ private fun ProgressCard(book: BookEntity) {
     
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = statusColor.copy(alpha = 0.08f)
+            containerColor = getStatusColor(book.status).copy(alpha = 0.1f)
         )
     ) {
-        Column(modifier = Modifier.padding(20.dp)) {
+        Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -506,46 +483,47 @@ private fun ProgressCard(book: BookEntity) {
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
-                    Text(
-                        if (isChapterBased) "按章节统计" else "按页数统计",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    if (isChapterBased) {
+                        Text(
+                            "按章节",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    } else {
+                        Text(
+                            "按页数",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
                 Text(
                     "$progress%",
-                    style = MaterialTheme.typography.headlineMedium,
+                    style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
-                    color = statusColor
+                    color = getStatusColor(book.status)
                 )
             }
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             LinearProgressIndicator(
                 progress = { (progress / 100f).coerceIn(0f, 1f) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(12.dp)
-                    .clip(RoundedCornerShape(6.dp)),
-                color = statusColor,
-                trackColor = statusColor.copy(alpha = 0.2f)
+                    .height(10.dp)
+                    .clip(RoundedCornerShape(5.dp)),
+                color = getStatusColor(book.status),
+                trackColor = getStatusColor(book.status).copy(alpha = 0.2f)
             )
-            Spacer(modifier = Modifier.height(12.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    if (isChapterBased) "第 ${book.currentChapter} 章" else "第 ${book.currentPage.toInt()} 页",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    if (isChapterBased) "共 ${book.totalChapters ?: 0} 章" else "共 ${book.totalPages.toInt()} 页",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                if (isChapterBased) {
+                    "第 ${book.currentChapter}/${book.totalChapters ?: 0} 章"
+                } else {
+                    "${book.currentPage.toInt()}/${book.totalPages} 页"
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
