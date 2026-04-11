@@ -154,8 +154,9 @@ fun BookDetailScreen(
                             }
                         }
                     } else {
+                        val isChapterBased = book.progressType == ProgressType.CHAPTER
                         items(uiState.readingRecords) { record ->
-                            ReadingRecordRow(record = record)
+                            ReadingRecordRow(record = record, isChapterBased = isChapterBased)
                         }
                     }
                     
@@ -417,7 +418,7 @@ private fun StatusCard(book: BookEntity, onStatusChange: (BookStatus) -> Unit) {
 }
 
 @Composable
-private fun ReadingRecordRow(record: ReadingRecordEntity) {
+private fun ReadingRecordRow(record: ReadingRecordEntity, isChapterBased: Boolean) {
     val dateFormat = remember { SimpleDateFormat("MM-dd HH:mm", Locale.getDefault()) }
     
     Card(

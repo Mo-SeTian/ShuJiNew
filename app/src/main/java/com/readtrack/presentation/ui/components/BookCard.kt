@@ -92,7 +92,7 @@ fun BookCard(
                 // Progress Bar - Handle chapter-based books
                 val isChapterBased = book.totalChapters != null && book.totalChapters > 0
                 val progress = if (isChapterBased) 
-                    (book.currentChapter.toFloat() / book.totalChapters * 100).toInt()
+                    (book.currentChapter.toFloat() / (book.totalChapters ?: 1) * 100).toInt()
                 else if (book.totalPages > 0) 
                     (book.currentPage.toFloat() / book.totalPages * 100).toInt() 
                 else 0
