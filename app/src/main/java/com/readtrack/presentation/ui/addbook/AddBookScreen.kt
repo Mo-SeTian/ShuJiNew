@@ -1,6 +1,5 @@
 package com.readtrack.presentation.ui.addbook
 
-import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -46,8 +45,8 @@ fun AddBookScreen(
 
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
-    ) { uri: Uri? ->
-        viewModel.updateCoverUri(uri)
+    ) { uri ->
+        viewModel.updateCoverUri(uri?.toString())
     }
 
     // Load book data if editing
@@ -139,7 +138,7 @@ fun AddBookScreen(
                 ) {
                     if (uiState.coverUri != null) {
                         BookCover(
-                            coverPath = uiState.coverUri.toString(),
+                            coverPath = uiState.coverUri,
                             contentDescription = "书籍封面",
                             modifier = Modifier
                                 .fillMaxSize()

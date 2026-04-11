@@ -181,6 +181,9 @@ fun ImageSearchBrowserScreen(
                         }
                     }
                 } else {
+                    // 使用coroutine scope来确保回调在正确的上下文执行
+                    val coroutineScope = rememberCoroutineScope()
+                    
                     // WebView
                     AndroidView(
                         factory = { context ->
@@ -195,6 +198,16 @@ fun ImageSearchBrowserScreen(
                                     userAgentString = "Mozilla/5.0 (Linux; Android 11; SM-G991B) AppleWebKit/537.36 Chrome/91.0.4472.120"
                                 }
                                 
+                                // 添加JavaScript接口
+                                addJavascriptInterface(
+                                    WebAppInterface { imageUrl ->
+                                        coroutineScope.launch {
+                                            onImageSelected(imageUrl)
+                                        }
+                                    },
+                                    "AndroidPicker"
+                                )
+                                
                                 webViewClient = object : WebViewClient() {
                                     override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                                         isLoading = true
@@ -207,7 +220,7 @@ fun ImageSearchBrowserScreen(
                                         view?.evaluateJavascript("""
                                             (function() {
                                                 function selectImage(img) {
-                                                    if(img && img.src && window.AndroidPicker) {
+                                                    if(img && img.src) {
                                                         window.AndroidPicker.onImageSelected(img.src);
                                                     }
                                                 }
@@ -215,13 +228,9 @@ fun ImageSearchBrowserScreen(
                                                     if(e.target.tagName === 'IMG') {
                                                         e.preventDefault();
                                                         selectImage(e.target);
+                                                        return false;
                                                     }
                                                 });
-                                                window.AndroidPicker = {
-                                                    onImageSelected: function(src) {
-                                                        window.prompt('SELECT_IMAGE:' + src);
-                                                    }
-                                                };
                                             })();
                                         """.trimIndent(), null)
                                     }
@@ -238,13 +247,14 @@ fun ImageSearchBrowserScreen(
                                 }
                                 
                                 setDownloadListener { url, _, _, _, _ ->
-                                    // 直接下载的图片也触发选择
-                                    onImageSelected(url)
+                                    coroutineScope.launch {
+                                        onImageSelected(url)
+                                    }
                                 }
                             }
                         },
                         update = { webView ->
-                            if (currentUrl.isNotEmpty()) {
+                            if (currentUrl.isNotEmpty() && webView.url != currentUrl) {
                                 webView.loadUrl(currentUrl)
                             }
                         },

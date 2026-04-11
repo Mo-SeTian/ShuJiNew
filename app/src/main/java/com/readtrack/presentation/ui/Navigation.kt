@@ -1,6 +1,5 @@
 package com.readtrack.presentation.ui
 
-import android.net.Uri
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.padding
@@ -204,7 +203,7 @@ fun MainNavigation() {
                 
                 ImageSearchBrowserScreen(
                     onImageSelected = { imageUrl ->
-                        parentViewModel.updateCoverUri(Uri.parse(imageUrl))
+                        parentViewModel.updateCoverUri(imageUrl)
                         navController.popBackStack()
                     },
                     onNavigateBack = { navController.popBackStack() }
@@ -223,9 +222,9 @@ fun MainNavigation() {
                     androidx.hilt.navigation.compose.hiltViewModel(parentEntry)
                 
                 CoverPickerScreen(
-                    initialCoverPath = parentViewModel.uiState.value.coverUri?.toString(),
+                    initialCoverPath = parentViewModel.uiState.value.coverUri,
                     onCoverSelected = { coverUri ->
-                        parentViewModel.updateCoverUri(coverUri?.let { Uri.parse(it) })
+                        parentViewModel.updateCoverUri(coverUri)
                         navController.popBackStack()
                     },
                     onNavigateBack = { navController.popBackStack() },

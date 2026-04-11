@@ -1,6 +1,5 @@
 package com.readtrack.presentation.viewmodel
 
-import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.readtrack.data.local.entity.BookEntity
@@ -29,7 +28,7 @@ data class AddBookUiState(
     val totalChapters: String = "",
     val currentChapter: String = "",
     val description: String = "",
-    val coverUri: Uri? = null,
+    val coverUri: String? = null,
     val status: BookStatus = BookStatus.WANT_TO_READ,
     val isSaving: Boolean = false,
     val isSaved: Boolean = false,
@@ -66,7 +65,7 @@ class AddBookViewModel @Inject constructor(
                                 totalChapters = (it.totalChapters ?: 0).toString(),
                                 currentChapter = it.currentChapter.toString(),
                                 description = it.description ?: "",
-                                coverUri = it.coverPath?.let { path -> Uri.parse(path) },
+                                coverUri = it.coverPath,
                                 status = it.status,
                                 isEditing = true,
                                 editingBookId = bookId
@@ -116,8 +115,8 @@ class AddBookViewModel @Inject constructor(
         _uiState.update { it.copy(description = description) }
     }
 
-    fun updateCoverUri(uri: Uri?) {
-        _uiState.update { it.copy(coverUri = uri) }
+    fun updateCoverUri(coverPath: String?) {
+        _uiState.update { it.copy(coverUri = coverPath) }
     }
 
     fun updateStatus(status: BookStatus) {
@@ -158,7 +157,7 @@ class AddBookViewModel @Inject constructor(
                             currentPage = currentPage.coerceIn(0.0, pages),
                             totalChapters = null,
                             currentChapter = 0,
-                            coverPath = state.coverUri?.toString(),
+                            coverPath = state.coverUri,
                             description = state.description.trim().takeIf { it.isNotBlank() },
                             status = state.status,
                             updatedAt = currentTime
@@ -174,7 +173,7 @@ class AddBookViewModel @Inject constructor(
                             currentPage = currentPage.coerceIn(0.0, pages),
                             totalChapters = null,
                             currentChapter = 0,
-                            coverPath = state.coverUri?.toString(),
+                            coverPath = state.coverUri,
                             description = state.description.trim().takeIf { it.isNotBlank() },
                             status = state.status,
                             createdAt = currentTime,
@@ -202,7 +201,7 @@ class AddBookViewModel @Inject constructor(
                             currentPage = 0.0,
                             totalChapters = chapters,
                             currentChapter = currentChapter.coerceIn(0, chapters),
-                            coverPath = state.coverUri?.toString(),
+                            coverPath = state.coverUri,
                             description = state.description.trim().takeIf { it.isNotBlank() },
                             status = state.status,
                             updatedAt = currentTime
@@ -218,7 +217,7 @@ class AddBookViewModel @Inject constructor(
                             currentPage = 0.0,
                             totalChapters = chapters,
                             currentChapter = currentChapter.coerceIn(0, chapters),
-                            coverPath = state.coverUri?.toString(),
+                            coverPath = state.coverUri,
                             description = state.description.trim().takeIf { it.isNotBlank() },
                             status = state.status,
                             createdAt = currentTime,
