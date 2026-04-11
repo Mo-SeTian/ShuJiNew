@@ -26,7 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import coil.compose.AsyncImage
+import com.readtrack.presentation.ui.components.BookCover
 import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.data.local.entity.ReadingRecordEntity
 import com.readtrack.domain.model.BookStatus
@@ -239,14 +239,12 @@ private fun BookInfoCard(book: BookEntity) {
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // 封面
-            AsyncImage(
-                model = book.coverPath ?: "https://via.placeholder.com/100x150?text=📖",
+            BookCover(
+                coverPath = book.coverPath,
                 contentDescription = book.title,
                 modifier = Modifier
                     .width(100.dp)
                     .height(150.dp)
-                    .clip(RoundedCornerShape(12.dp)),
-                contentScale = ContentScale.Crop
             )
             
             // 信息

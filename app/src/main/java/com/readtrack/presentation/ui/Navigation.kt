@@ -23,7 +23,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.readtrack.presentation.ui.addbook.AddBookScreen
-import com.readtrack.presentation.ui.addbook.CoverSearchScreen
+import com.readtrack.presentation.ui.addbook.ImageSearchBrowserScreen
 import com.readtrack.presentation.ui.addbook.CoverPickerScreen
 import com.readtrack.presentation.ui.books.BookDetailScreen
 import com.readtrack.presentation.ui.books.BooksScreen
@@ -198,7 +198,7 @@ fun MainNavigation() {
                 val parentViewModel: com.readtrack.presentation.viewmodel.AddBookViewModel = 
                     androidx.hilt.navigation.compose.hiltViewModel(parentEntry)
                 
-                CoverSearchScreen(
+                ImageSearchBrowserScreen(
                     onImageSelected = { imageUrl ->
                         parentViewModel.updateCoverUri(Uri.parse(imageUrl))
                         navController.popBackStack()
