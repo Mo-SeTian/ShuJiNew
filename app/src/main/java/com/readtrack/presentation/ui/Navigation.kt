@@ -105,8 +105,10 @@ fun MainNavigation() {
             composable(
                 route = Screen.BookDetail.route,
                 arguments = listOf(navArgument("bookId") { type = NavType.LongType })
-            ) {
+            ) { backStackEntry ->
+                val bookId = backStackEntry.arguments?.getLong("bookId") ?: 0L
                 BookDetailScreen(
+                    bookId = bookId,
                     onNavigateBack = { navController.popBackStack() }
                 )
             }

@@ -30,6 +30,7 @@ import java.util.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BookDetailScreen(
+    bookId: Long,
     onNavigateBack: () -> Unit,
     viewModel: BookDetailViewModel = hiltViewModel()
 ) {

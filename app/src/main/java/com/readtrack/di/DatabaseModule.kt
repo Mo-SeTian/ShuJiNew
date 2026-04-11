@@ -27,7 +27,9 @@ object DatabaseModule {
             context,
             ReadTrackDatabase::class.java,
             "readtrack_database"
-        ).build()
+        )
+            .fallbackToDestructiveMigration()
+            .build()
     }
 
     @Provides
