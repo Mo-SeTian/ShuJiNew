@@ -268,9 +268,6 @@ fun BookDetailScreen(
                                     Spacer(modifier = Modifier.width(12.dp))
                                     Text(
                                         getStatusLabel(status), 
-                                        fontWeight = if (isSelected) FontWeight
-                                    Text(
-                                        getStatusLabel(status), 
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                                     )
                                 }
