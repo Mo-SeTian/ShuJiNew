@@ -160,7 +160,9 @@ fun MainNavigation() {
                 )
             }
             
-            composable(Screen.AddBook.route) {
+            composable(Screen.AddBook.route) { backStackEntry ->
+                val parentViewModel: com.readtrack.presentation.viewmodel.AddBookViewModel = 
+                    androidx.hilt.navigation.compose.hiltViewModel(backStackEntry)
                 AddBookScreen(
                     onNavigateBack = { navController.popBackStack() },
                     bookId = null,
@@ -169,7 +171,8 @@ fun MainNavigation() {
                     },
                     onPickCover = {
                         navController.navigate(Screen.CoverPicker.route)
-                    }
+                    },
+                    viewModel = parentViewModel
                 )
             }
             
@@ -178,6 +181,8 @@ fun MainNavigation() {
                 arguments = listOf(navArgument("bookId") { type = NavType.LongType })
             ) { backStackEntry ->
                 val bookId = backStackEntry.arguments?.getLong("bookId") ?: return@composable
+                val parentViewModel: com.readtrack.presentation.viewmodel.AddBookViewModel = 
+                    androidx.hilt.navigation.compose.hiltViewModel(backStackEntry)
                 AddBookScreen(
                     onNavigateBack = { navController.popBackStack() },
                     bookId = bookId,
@@ -186,7 +191,8 @@ fun MainNavigation() {
                     },
                     onPickCover = {
                         navController.navigate(Screen.CoverPicker.route)
-                    }
+                    },
+                    viewModel = parentViewModel
                 )
             }
             
