@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -54,7 +55,7 @@ fun CoverSearchScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("搜索封面图片", fontWeight = FontWeight.Bold) },
+                title = { Text("搜索书籍封面", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回")
@@ -77,13 +78,9 @@ fun CoverSearchScreen(
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
-                label = { Text("搜索书名或关键词") },
-                placeholder = { Text("输入书名搜索封面") },
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                leadingIcon = {
-                    Icon(Icons.Default.Search, contentDescription = null)
-                },
+                placeholder = { Text("输入书名或作者搜索封面") },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                 trailingIcon = {
                     if (searchQuery.isNotEmpty()) {
                         IconButton(onClick = { searchQuery = "" }) {
@@ -91,10 +88,23 @@ fun CoverSearchScreen(
                         }
                     }
                 },
+                singleLine = true,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 keyboardActions = KeyboardActions(
                     onSearch = {
                         keyboardController?.hide()
+                        if (searchQuery.isNotBlank()) {
+                            isLoading = true
+                            errorMessage = null
+                            scope.launch {
+                                val results = withContext(Dispatchers.IO) {
+                                    doBookSearch(searchQuery)
+                                }
+                                imageResults = results.first
+                                errorMessage = results.second
+                                isLoading = false
+                            }
+                        }
                     }
                 ),
                 shape = RoundedCornerShape(12.dp)
@@ -109,7 +119,7 @@ fun CoverSearchScreen(
                         errorMessage = null
                         scope.launch {
                             val results = withContext(Dispatchers.IO) {
-                                doSearch(searchQuery)
+                                doBookSearch(searchQuery)
                             }
                             imageResults = results.first
                             errorMessage = results.second
@@ -161,7 +171,7 @@ fun CoverSearchScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         CircularProgressIndicator()
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("正在搜索图片...")
+                        Text("正在搜索书籍封面...")
                     }
                 }
             }
@@ -178,62 +188,86 @@ fun CoverSearchScreen(
                     columns = GridCells.Fixed(3),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.weight(1f)
                 ) {
-                    items(imageResults) { image ->
+                    items(imageResults) { result ->
                         Card(
                             modifier = Modifier
+                                .fillMaxWidth()
                                 .aspectRatio(0.7f)
                                 .clickable {
-                                    selectedImageUrl = image.url
+                                    selectedImageUrl = result.url
                                     showConfirmDialog = true
                                 },
                             shape = RoundedCornerShape(8.dp),
-                            elevation = CardDefaults.cardElevation(
-                                defaultElevation = if (selectedImageUrl == image.url) 8.dp else 2.dp
-                            )
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                         ) {
-                            Box {
+                            Box(modifier = Modifier.fillMaxSize()) {
                                 AsyncImage(
-                                    model = image.url,
-                                    contentDescription = image.title,
+                                    model = result.url,
+                                    contentDescription = result.title,
                                     modifier = Modifier.fillMaxSize(),
-                                    contentScale = ContentScale.Crop,
-                                    onError = {}
+                                    contentScale = ContentScale.Crop
                                 )
-                                if (selectedImageUrl == image.url) {
-                                    Surface(
-                                        modifier = Modifier
-                                            .align(Alignment.TopEnd)
-                                            .padding(4.dp),
-                                        shape = RoundedCornerShape(12.dp),
-                                        color = MaterialTheme.colorScheme.primary
-                                    ) {
-                                        Text(
-                                            "✓",
-                                            modifier = Modifier.padding(4.dp),
-                                            color = MaterialTheme.colorScheme.onPrimary
-                                        )
-                                    }
-                                }
                             }
                         }
                     }
                 }
-            } else if (!isLoading && imageResults.isEmpty() && errorMessage == null) {
+            }
+
+            // Empty state
+            if (!isLoading && imageResults.isEmpty() && errorMessage == null && searchQuery.isNotBlank()) {
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
+                    modifier = Modifier.fillMaxWidth().weight(1f),
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("🔍", style = MaterialTheme.typography.displayLarge)
+                        Icon(
+                            Icons.Default.Image,
+                            contentDescription = null,
+                            modifier = Modifier.size(64.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                        )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            "输入书名搜索封面图片",
+                            "没有找到封面图片",
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            "可以尝试输入更完整的书名",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        )
+                    }
+                }
+            }
+
+            // Initial state
+            if (searchQuery.isBlank() && imageResults.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxWidth().weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            Icons.Default.Search,
+                            contentDescription = null,
+                            modifier = Modifier.size(64.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            "搜索书籍封面",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            "输入书名获取相关封面",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                         )
                     }
                 }
@@ -241,12 +275,12 @@ fun CoverSearchScreen(
         }
     }
 
-    // Confirm Dialog
+    // Confirmation dialog
     if (showConfirmDialog && selectedImageUrl != null) {
         AlertDialog(
             onDismissRequest = { showConfirmDialog = false },
-            title = { Text("确认选择") },
-            text = { 
+            title = { Text("确认封面", fontWeight = FontWeight.Bold) },
+            text = {
                 Column {
                     Text("确定使用此图片作为书籍封面？")
                     Spacer(modifier = Modifier.height(8.dp))
@@ -278,15 +312,19 @@ fun CoverSearchScreen(
     }
 }
 
-private fun doSearch(query: String): Pair<List<ImageResult>, String?> {
+/**
+ * 使用 Open Library API 搜索书籍封面
+ */
+private fun doBookSearch(query: String): Pair<List<ImageResult>, String?> {
     return try {
-        val encodedQuery = URLEncoder.encode(query + " 书籍封面", "UTF-8")
-        val searchUrl = "https://www.bing.com/images/search?q=$encodedQuery&first=0&count=30"
+        val encodedQuery = URLEncoder.encode(query, "UTF-8")
+        val searchUrl = "https://openlibrary.org/search.json?q=$encodedQuery&limit=20&fields=cover_i,title,author_name"
+        
         val url = URL(searchUrl)
         val connection = url.openConnection() as HttpURLConnection
         connection.requestMethod = "GET"
-        connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
-        connection.setRequestProperty("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*,zh;q=0.9,en;q=0.8")
+        connection.setRequestProperty("User-Agent", "ReadTrack/1.0")
+        connection.setRequestProperty("Accept", "application/json")
         connection.connectTimeout = 15000
         connection.readTimeout = 15000
         
@@ -296,39 +334,103 @@ private fun doSearch(query: String): Pair<List<ImageResult>, String?> {
         
         val imageResults = mutableListOf<ImageResult>()
         
-        val murlPattern = Regex("\"murl\"\\s*:\\s*\"([^\"]+)\"")
-        val thumbnailPattern = Regex("\"turl\"\\s*:\\s*\"([^\"]+)\"")
+        // 解析Open Library JSON响应
+        val coverIds = mutableSetOf<Int>()
+        val coverIdPattern = Regex("\"cover_i\"\\s*:\\s*(\\d+)")
+        val titlePattern = Regex("\"title\"\\s*:\\s*\"([^\"]+)\"")
         
-        val seenUrls = mutableSetOf<String>()
+        val allMatches = coverIdPattern.findAll(response).toList()
+        val titleMatches = titlePattern.findAll(response).toList()
         
-        murlPattern.findAll(response).forEach { match ->
-            var imgUrl = match.groupValues[1]
-            imgUrl = imgUrl.replace(Regex("\\/"), "/")
-            if (!seenUrls.contains(imgUrl) && isValidImageUrl(imgUrl)) {
-                seenUrls.add(imgUrl)
-                imageResults.add(ImageResult(url = imgUrl, title = query))
+        for (i in allMatches.indices) {
+            val coverId = allMatches[i].groupValues[1].toIntOrNull() ?: continue
+            if (coverIds.contains(coverId)) continue
+            coverIds.add(coverId)
+            
+            // Open Library 封面URL: https://covers.openlibrary.org/b/id/{cover_id}-{size}.jpg
+            val coverUrl = "https://covers.openlibrary.org/b/id/$coverId-M.jpg"
+            val title = titleMatches.getOrNull(i)?.groupValues?.get(1) ?: query
+            
+            if (isValidImageUrl(coverUrl)) {
+                imageResults.add(ImageResult(url = coverUrl, title = title))
             }
         }
         
-        if (imageResults.size < 10) {
-            thumbnailPattern.findAll(response).forEach { match ->
-                var imgUrl = match.groupValues[1]
-                imgUrl = imgUrl.replace(Regex("\\/"), "/")
-                if (!seenUrls.contains(imgUrl) && isValidImageUrl(imgUrl)) {
-                    seenUrls.add(imgUrl)
-                    imageResults.add(ImageResult(url = imgUrl, title = query))
-                }
-            }
+        // 如果Open Library没有结果，尝试使用Google Books API
+        if (imageResults.isEmpty()) {
+            return doGoogleBooksSearch(query)
         }
         
         Pair(imageResults.take(30), null)
+        
     } catch (e: Exception) {
-        Pair(emptyList(), "搜索失败: " + e.message)
+        e.printStackTrace()
+        Pair(emptyList(), "搜索失败: ${e.message}")
     }
 }
 
+/**
+ * 使用 Google Books API 作为备选方案
+ */
+private fun doGoogleBooksSearch(query: String): Pair<List<ImageResult>, String?> {
+    return try {
+        val encodedQuery = URLEncoder.encode(query, "UTF-8")
+        val searchUrl = "https://www.googleapis.com/books/v1/volumes?q=$encodedQuery&maxResults=20"
+        
+        val url = URL(searchUrl)
+        val connection = url.openConnection() as HttpURLConnection
+        connection.requestMethod = "GET"
+        connection.connectTimeout = 15000
+        connection.readTimeout = 15000
+        
+        val reader = BufferedReader(InputStreamReader(connection.inputStream, "UTF-8"))
+        val response = reader.readText()
+        reader.close()
+        
+        val imageResults = mutableListOf<ImageResult>()
+        
+        // 解析 Google Books JSON
+        val imagePattern = Regex("\"imageLinks\"\\s*:\\s*\\{[^}]*\"thumbnail\"\\s*:\\s*\"([^\"]+)\"")
+        val titlePattern = Regex("\"title\"\\s*:\\s*\"([^\"]+)\"")
+        
+        val imageMatches = imagePattern.findAll(response)
+        val titleMatches = titlePattern.findAll(response).toList()
+        
+        var index = 0
+        imageMatches.forEach { match ->
+            var imgUrl = match.groupValues[1]
+            // 替换http为https，并获取更高质量的图片
+            imgUrl = imgUrl.replace("http://", "https://").replace("&zoom=1", "&zoom=2")
+            
+            val title = titleMatches.getOrNull(index)?.groupValues?.get(1) ?: query
+            
+            if (isValidImageUrl(imgUrl)) {
+                imageResults.add(ImageResult(url = imgUrl, title = title))
+            }
+            index++
+        }
+        
+        if (imageResults.isEmpty()) {
+            Pair(emptyList(), "未找到相关书籍封面")
+        } else {
+            Pair(imageResults, null)
+        }
+        
+    } catch (e: Exception) {
+        e.printStackTrace()
+        Pair(emptyList(), "搜索失败: ${e.message}")
+    }
+}
+
+/**
+ * 验证图片URL是否有效
+ */
 private fun isValidImageUrl(url: String): Boolean {
-    if (!url.startsWith("http")) return false
-    val imageExtensions = listOf(".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp")
-    return imageExtensions.any { url.lowercase().contains(it) }
+    if (url.isBlank() || !url.startsWith("http")) return false
+    if (url.contains("pixel") || url.contains("1x1") || url.contains("blank")) return false
+    
+    val invalidExtensions = listOf(".gif", ".svg", ".ico")
+    if (invalidExtensions.any { url.lowercase().contains(it) }) return false
+    
+    return true
 }
