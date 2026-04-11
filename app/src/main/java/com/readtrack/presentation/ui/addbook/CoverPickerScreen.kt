@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
@@ -246,8 +247,8 @@ private fun CoverOptionCard(
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = backgroundColor),
         border = if (borderColor != Color.Transparent) 
-            CardDefaults.outlinedCardBorder().copy(width = 3.dp, brush = androidx.compose.ui.graphics.SolidColor(borderColor))
-        else null,
+            androidx.compose.foundation.BorderStroke(3.dp, borderColor)
+        else androidx.compose.foundation.BorderStroke(0.dp, Color.Transparent),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Box(
