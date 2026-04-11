@@ -193,7 +193,11 @@ fun MainNavigation() {
             
             composable(Screen.CoverSearch.route) { backStackEntry ->
                 val parentEntry = remember(backStackEntry) {
-                    navController.getBackStackEntry(Screen.AddBook.route)
+                    try {
+                        navController.getBackStackEntry(Screen.EditBook.route)
+                    } catch (e: Exception) {
+                        navController.getBackStackEntry(Screen.AddBook.route)
+                    }
                 }
                 val parentViewModel: com.readtrack.presentation.viewmodel.AddBookViewModel = 
                     androidx.hilt.navigation.compose.hiltViewModel(parentEntry)
@@ -209,7 +213,11 @@ fun MainNavigation() {
             
             composable(Screen.CoverPicker.route) { backStackEntry ->
                 val parentEntry = remember(backStackEntry) {
-                    navController.getBackStackEntry(Screen.AddBook.route)
+                    try {
+                        navController.getBackStackEntry(Screen.EditBook.route)
+                    } catch (e: Exception) {
+                        navController.getBackStackEntry(Screen.AddBook.route)
+                    }
                 }
                 val parentViewModel: com.readtrack.presentation.viewmodel.AddBookViewModel = 
                     androidx.hilt.navigation.compose.hiltViewModel(parentEntry)

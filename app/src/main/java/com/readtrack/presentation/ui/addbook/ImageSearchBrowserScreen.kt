@@ -20,196 +20,274 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import kotlinx.coroutines.launch
+
+// JavaScript接口类
+class WebAppInterface(
+    private val onImageSelected: (String) -> Unit
+) {
+    @android.webkit.JavascriptInterface
+    fun onImageSelected(src: String) {
+        onImageSelected(src)
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
-@SuppressLint("SetJavaScriptEnabled")
+@SuppressLint("SetJavaScriptEnabled", "AddJavascriptInterface")
 @Composable
 fun ImageSearchBrowserScreen(
     onImageSelected: (String) -> Unit,
     onNavigateBack: () -> Unit
 ) {
     var searchQuery by remember { mutableStateOf("") }
+    var selectedEngine by remember { mutableIntStateOf(0) }
+    var currentUrl by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var webViewError by remember { mutableStateOf<String?>(null) }
-    var currentUrl by remember { mutableStateOf("") }
+    var showEngineDialog by remember { mutableStateOf(false) }
+    
+    val searchEngines = listOf(
+        "百度图片" to "https://image.baidu.com/search/index?tn=baiduimage&word=",
+        "必应图片" to "https://cn.bing.com/images/search?q="
+    )
     
     val focusManager = LocalFocusManager.current
-    val webViewRef = remember { mutableStateOf<WebView?>(null) }
-    
-    val searchEngines = remember {
-        mapOf(
-            "百度" to "https://image.baidu.com/search/index?tn=baiduimage&word=",
-            "必应" to "https://cn.bing.com/images/search?q=",
-        )
-    }
-    var selectedEngine by remember { mutableStateOf("百度") }
-    var showEngineMenu by remember { mutableStateOf(false) }
     
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("图片搜索", maxLines = 1) },
+                title = { Text("搜索封面图片") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
                     }
                 },
                 actions = {
-                    IconButton(onClick = { webViewRef.value?.reload() }) {
-                        Icon(Icons.Default.Refresh, "刷新")
-                    }
-                    Box {
-                        IconButton(onClick = { showEngineMenu = true }) {
-                            Icon(Icons.Default.Language, "搜索引擎")
-                        }
-                        DropdownMenu(expanded = showEngineMenu, onDismissRequest = { showEngineMenu = false }) {
-                            searchEngines.keys.forEach { engine ->
-                                DropdownMenuItem(
-                                    text = { Text(engine) },
-                                    onClick = { selectedEngine = engine; showEngineMenu = false },
-                                    leadingIcon = { if (selectedEngine == engine) Icon(Icons.Default.Check, null) }
-                                )
-                            }
-                        }
+                    IconButton(onClick = { showEngineDialog = true }) {
+                        Icon(Icons.Default.Search, contentDescription = "切换搜索引擎")
                     }
                 }
             )
         }
     ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            Surface(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                shape = RoundedCornerShape(12.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant
-            ) {
-                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    TextButton(onClick = { showEngineMenu = true }) {
-                        Text(selectedEngine, fontWeight = FontWeight.Medium)
-                    }
-                    TextField(
-                        value = searchQuery,
-                        onValueChange = { searchQuery = it },
-                        modifier = Modifier.weight(1f),
-                        placeholder = { Text("搜索图片...") },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                        keyboardActions = KeyboardActions(
-                            onSearch = {
-                                if (searchQuery.isNotBlank()) {
-                                    focusManager.clearFocus()
-                                    currentUrl = "${searchEngines[selectedEngine]}${java.net.URLEncoder.encode(searchQuery, "UTF-8")}"
-                                    isLoading = true
-                                }
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
+            // 搜索栏
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                placeholder = { Text("搜索图片...") },
+                leadingIcon = {
+                    Text(searchEngines[selectedEngine].first, style = MaterialTheme.typography.labelMedium)
+                },
+                trailingIcon = {
+                    IconButton(
+                        onClick = {
+                            if (searchQuery.isNotBlank()) {
+                                focusManager.clearFocus()
+                                val encoded = java.net.URLEncoder.encode(searchQuery, "UTF-8")
+                                currentUrl = searchEngines[selectedEngine].second + encoded
+                                isLoading = true
                             }
-                        ),
-                        colors = TextFieldDefaults.colors(
-                            unfocusedContainerColor = Color.Transparent,
-                            focusedContainerColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent,
-                            focusedIndicatorColor = Color.Transparent
-                        )
-                    )
-                    IconButton(onClick = {
+                        }
+                    ) {
+                        Icon(Icons.Default.Search, contentDescription = "搜索")
+                    }
+                },
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                keyboardActions = KeyboardActions(
+                    onSearch = {
                         if (searchQuery.isNotBlank()) {
                             focusManager.clearFocus()
-                            currentUrl = "${searchEngines[selectedEngine]}${java.net.URLEncoder.encode(searchQuery, "UTF-8")}"
+                            val encoded = java.net.URLEncoder.encode(searchQuery, "UTF-8")
+                            currentUrl = searchEngines[selectedEngine].second + encoded
                             isLoading = true
                         }
-                    }) {
-                        Icon(Icons.Default.Search, "搜索")
                     }
+                ),
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp)
+            )
+            
+            // 快捷搜索
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                listOf("三体", "活着", "红楼梦", "西游记").forEach { suggestion ->
+                    SuggestionChip(
+                        onClick = {
+                            searchQuery = suggestion
+                            focusManager.clearFocus()
+                            currentUrl = searchEngines[selectedEngine].second + 
+                                java.net.URLEncoder.encode(suggestion, "UTF-8")
+                            isLoading = true
+                        },
+                        label = { Text(suggestion, style = MaterialTheme.typography.labelSmall) }
+                    )
                 }
             }
             
-            if (currentUrl.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Icon(Icons.Default.ImageSearch, null, modifier = Modifier.size(64.dp),
-                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
-                        Text("输入书名搜索封面", style = MaterialTheme.typography.bodyLarge)
-                        Text("长按图片选择", style = MaterialTheme.typography.bodyMedium)
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            // 提示文字
+            Text(
+                "长按图片即可设为封面",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            // WebView区域
+            Box(modifier = Modifier.weight(1f)) {
+                if (currentUrl.isEmpty()) {
+                    // 空状态
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            Icons.Default.Image, null,
+                            modifier = Modifier.size(64.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                         Spacer(modifier = Modifier.height(16.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            listOf("三体", "活着", "红楼梦").forEach { s ->
-                                SuggestionChip(onClick = {
-                                    searchQuery = s
-                                    focusManager.clearFocus()
-                                    currentUrl = "${searchEngines[selectedEngine]}${java.net.URLEncoder.encode(s, "UTF-8")}"
-                                    isLoading = true
-                                }, label = { Text(s) })
-                            }
+                        Text("输入书名搜索封面", style = MaterialTheme.typography.bodyLarge)
+                    }
+                } else if (webViewError != null) {
+                    // 错误状态
+                    Column(
+                        modifier = Modifier.fillMaxSize().padding(32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(Icons.Default.CloudOff, null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.error)
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text("加载失败: $webViewError", style = MaterialTheme.typography.bodyMedium)
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(onClick = { isLoading = true; webViewError = null }) {
+                            Text("重试")
                         }
                     }
-                }
-            } else {
-                Box(modifier = Modifier.fillMaxSize()) {
-                    if (webViewError != null) {
-                        Column(modifier = Modifier.fillMaxSize().padding(32.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                            Icon(Icons.Default.CloudOff, null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.error)
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text("加载失败: ${webViewError}", style = MaterialTheme.typography.titleMedium)
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Button(onClick = { webViewError = null; webViewRef.value?.reload() }) { Text("重试") }
-                        }
-                    } else {
-                        AndroidView(
-                            factory = { ctx ->
-                                WebView(ctx).apply {
-                                    settings.apply {
-                                        javaScriptEnabled = true
-                                        domStorageEnabled = true
-                                        loadWithOverviewMode = true
-                                        useWideViewPort = true
-                                        builtInZoomControls = true
-                                        displayZoomControls = false
-                                        setSupportZoom(true)
-                                        userAgentString = "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/120.0.0.0"
+                } else {
+                    // WebView
+                    AndroidView(
+                        factory = { context ->
+                            WebView(context).apply {
+                                settings.apply {
+                                    javaScriptEnabled = true
+                                    domStorageEnabled = true
+                                    loadWithOverviewMode = true
+                                    useWideViewPort = true
+                                    builtInZoomControls = true
+                                    displayZoomControls = false
+                                    userAgentString = "Mozilla/5.0 (Linux; Android 11; SM-G991B) AppleWebKit/537.36 Chrome/91.0.4472.120"
+                                }
+                                
+                                webViewClient = object : WebViewClient() {
+                                    override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
+                                        isLoading = true
+                                        webViewError = null
                                     }
-                                    webViewClient = object : WebViewClient() {
-                                        override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
-                                            isLoading = true
-                                            url?.let { currentUrl = it }
-                                        }
-                                        override fun onPageFinished(view: WebView?, url: String?) {
-                                            isLoading = false
-                                            view?.setOnLongClickListener { v ->
-                                                val result = (v as WebView).hitTestResult
-                                                result?.extra?.let { url ->
-                                                    if (url.startsWith("http")) {
-                                                        onImageSelected(url)
-                                                        true
-                                                    } else false
-                                                } ?: false
-                                            }
-                                        }
-                                        override fun onReceivedError(view: WebView?, request: WebResourceRequest?, error: WebResourceError?) {
-                                            if (request?.isForMainFrame == true) {
-                                                webViewError = error?.description?.toString() ?: "网络错误"
-                                            }
-                                        }
+                                    
+                                    override fun onPageFinished(view: WebView?, url: String?) {
+                                        isLoading = false
+                                        // 注入JS处理长按
+                                        view?.evaluateJavascript("""
+                                            (function() {
+                                                function selectImage(img) {
+                                                    if(img && img.src && window.AndroidPicker) {
+                                                        window.AndroidPicker.onImageSelected(img.src);
+                                                    }
+                                                }
+                                                document.addEventListener('contextmenu', function(e) {
+                                                    if(e.target.tagName === 'IMG') {
+                                                        e.preventDefault();
+                                                        selectImage(e.target);
+                                                    }
+                                                });
+                                                window.AndroidPicker = {
+                                                    onImageSelected: function(src) {
+                                                        window.prompt('SELECT_IMAGE:' + src);
+                                                    }
+                                                };
+                                            })();
+                                        """.trimIndent(), null)
                                     }
-                                    webChromeClient = object : WebChromeClient() {
-                                        override fun onProgressChanged(view: WebView?, newProgress: Int) {
-                                            isLoading = newProgress < 100
+                                    
+                                    override fun onReceivedError(
+                                        view: WebView?,
+                                        request: WebResourceRequest?,
+                                        error: WebResourceError?
+                                    ) {
+                                        if (request?.isForMainFrame == true) {
+                                            webViewError = error?.description?.toString() ?: "加载失败"
                                         }
                                     }
                                 }
-                            },
-                            modifier = Modifier.fillMaxSize(),
-                            update = { webView ->
-                                webViewRef.value = webView
-                                if (webView.url != currentUrl && currentUrl.isNotEmpty()) {
-                                    webView.loadUrl(currentUrl)
+                                
+                                setDownloadListener { url, _, _, _, _ ->
+                                    // 直接下载的图片也触发选择
+                                    onImageSelected(url)
                                 }
                             }
+                        },
+                        update = { webView ->
+                            if (currentUrl.isNotEmpty()) {
+                                webView.loadUrl(currentUrl)
+                            }
+                        },
+                        modifier = Modifier.fillMaxSize()
+                    )
+                    
+                    // Loading indicator
+                    if (isLoading) {
+                        LinearProgressIndicator(
+                            modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter)
                         )
-                        if (isLoading) {
-                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-                        }
                     }
                 }
             }
         }
+    }
+    
+    // 搜索引擎选择对话框
+    if (showEngineDialog) {
+        AlertDialog(
+            onDismissRequest = { showEngineDialog = false },
+            title = { Text("选择搜索引擎") },
+            text = {
+                Column {
+                    searchEngines.forEachIndexed { index, (name, _) ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = selectedEngine == index,
+                                onClick = { selectedEngine = index; showEngineDialog = false }
+                            )
+                            Text(name, modifier = Modifier.padding(start = 8.dp))
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showEngineDialog = false }) {
+                    Text("关闭")
+                }
+            }
+        )
     }
 }
