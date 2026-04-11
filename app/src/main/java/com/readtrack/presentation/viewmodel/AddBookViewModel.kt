@@ -14,12 +14,20 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+enum class ProgressType {
+    PAGE,
+    CHAPTER
+}
+
 data class AddBookUiState(
     val title: String = "",
     val author: String = "",
     val publisher: String = "",
+    val progressType: ProgressType = ProgressType.PAGE,
     val totalPages: String = "",
     val currentPage: String = "",
+    val totalChapters: String = "",
+    val currentChapter: String = "",
     val description: String = "",
     val coverUri: Uri? = null,
     val status: BookStatus = BookStatus.WANT_TO_READ,
@@ -52,8 +60,11 @@ class AddBookViewModel @Inject constructor(
                                 title = it.title,
                                 author = it.author ?: "",
                                 publisher = it.publisher ?: "",
-                                totalPages = it.totalPages.toInt().toString(),
-                                currentPage = it.currentPage.toInt().toString(),
+                                progressType = if ((it.totalChapters ?: 0) > 0) ProgressType.CHAPTER else ProgressType.PAGE,
+                                totalPages = if ((it.totalChapters ?: 0) == 0) it.totalPages.toInt().toString() else "",
+                                currentPage = if ((it.totalChapters ?: 0) == 0) it.currentPage.toInt().toString() else "",
+                                totalChapters = (it.totalChapters ?: 0).toString(),
+                                currentChapter = it.currentChapter.toString(),
                                 description = it.description ?: "",
                                 coverUri = it.coverPath?.let { path -> Uri.parse(path) },
                                 status = it.status,
@@ -81,12 +92,24 @@ class AddBookViewModel @Inject constructor(
         _uiState.update { it.copy(publisher = publisher) }
     }
 
+    fun updateProgressType(type: ProgressType) {
+        _uiState.update { it.copy(progressType = type) }
+    }
+
     fun updateTotalPages(pages: String) {
         _uiState.update { it.copy(totalPages = pages, errorMessage = null) }
     }
 
     fun updateCurrentPage(page: String) {
         _uiState.update { it.copy(currentPage = page) }
+    }
+
+    fun updateTotalChapters(chapters: String) {
+        _uiState.update { it.copy(totalChapters = chapters.filter { c -> c.isDigit() }) }
+    }
+
+    fun updateCurrentChapter(chapter: String) {
+        _uiState.update { it.copy(currentChapter = chapter.filter { c -> c.isDigit() }) }
     }
 
     fun updateDescription(description: String) {
@@ -110,51 +133,100 @@ class AddBookViewModel @Inject constructor(
             return
         }
 
-        val pages = state.totalPages.toDoubleOrNull()
-        if (pages == null || pages <= 0) {
-            _uiState.update { it.copy(errorMessage = "请输入有效的页数（大于0）") }
-            return
-        }
-
-        val currentPage = state.currentPage.toDoubleOrNull() ?: 0.0
-
         _uiState.update { it.copy(isSaving = true, errorMessage = null) }
 
         viewModelScope.launch {
             try {
                 val currentTime = System.currentTimeMillis()
                 
-                if (state.isEditing && loadedBook != null) {
-                    // Update existing book
-                    val existingBook = loadedBook!!
-                    val updatedBook = existingBook.copy(
-                        title = state.title.trim(),
-                        author = state.author.trim().takeIf { it.isNotBlank() },
-                        publisher = state.publisher.trim().takeIf { it.isNotBlank() },
-                        totalPages = pages,
-                        currentPage = currentPage.coerceIn(0.0, pages),
-                        coverPath = state.coverUri?.toString(),
-                        description = state.description.trim().takeIf { it.isNotBlank() },
-                        status = state.status,
-                        updatedAt = currentTime
-                    )
-                    bookRepository.updateBook(updatedBook)
+                if (state.progressType == ProgressType.PAGE) {
+                    val pages = state.totalPages.toDoubleOrNull()
+                    if (pages == null || pages <= 0) {
+                        _uiState.update { it.copy(isSaving = false, errorMessage = "请输入有效的页数（大于0）") }
+                        return@launch
+                    }
+                    val currentPage = state.currentPage.toDoubleOrNull() ?: 0.0
+                    
+                    if (state.isEditing && loadedBook != null) {
+                        val existingBook = loadedBook!!
+                        val updatedBook = existingBook.copy(
+                            title = state.title.trim(),
+                            author = state.author.trim().takeIf { it.isNotBlank() },
+                            publisher = state.publisher.trim().takeIf { it.isNotBlank() },
+                            progressType = ProgressType.PAGE,
+                            totalPages = pages,
+                            currentPage = currentPage.coerceIn(0.0, pages),
+                            totalChapters = null,
+                            currentChapter = 0,
+                            coverPath = state.coverUri?.toString(),
+                            description = state.description.trim().takeIf { it.isNotBlank() },
+                            status = state.status,
+                            updatedAt = currentTime
+                        )
+                        bookRepository.updateBook(updatedBook)
+                    } else {
+                        val book = BookEntity(
+                            title = state.title.trim(),
+                            author = state.author.trim().takeIf { it.isNotBlank() },
+                            publisher = state.publisher.trim().takeIf { it.isNotBlank() },
+                            progressType = ProgressType.PAGE,
+                            totalPages = pages,
+                            currentPage = currentPage.coerceIn(0.0, pages),
+                            totalChapters = null,
+                            currentChapter = 0,
+                            coverPath = state.coverUri?.toString(),
+                            description = state.description.trim().takeIf { it.isNotBlank() },
+                            status = state.status,
+                            createdAt = currentTime,
+                            updatedAt = currentTime,
+                            lastReadAt = null
+                        )
+                        bookRepository.insertBook(book)
+                    }
                 } else {
-                    // Create new book
-                    val book = BookEntity(
-                        title = state.title.trim(),
-                        author = state.author.trim().takeIf { it.isNotBlank() },
-                        publisher = state.publisher.trim().takeIf { it.isNotBlank() },
-                        totalPages = pages,
-                        currentPage = currentPage.coerceIn(0.0, pages),
-                        coverPath = state.coverUri?.toString(),
-                        description = state.description.trim().takeIf { it.isNotBlank() },
-                        status = state.status,
-                        createdAt = currentTime,
-                        updatedAt = currentTime,
-                        lastReadAt = null
-                    )
-                    bookRepository.insertBook(book)
+                    val chapters = state.totalChapters.toIntOrNull()
+                    if (chapters == null || chapters <= 0) {
+                        _uiState.update { it.copy(isSaving = false, errorMessage = "请输入有效的章节数（大于0）") }
+                        return@launch
+                    }
+                    val currentChapter = state.currentChapter.toIntOrNull() ?: 0
+                    
+                    if (state.isEditing && loadedBook != null) {
+                        val existingBook = loadedBook!!
+                        val updatedBook = existingBook.copy(
+                            title = state.title.trim(),
+                            author = state.author.trim().takeIf { it.isNotBlank() },
+                            publisher = state.publisher.trim().takeIf { it.isNotBlank() },
+                            progressType = ProgressType.CHAPTER,
+                            totalPages = 0.0,
+                            currentPage = 0.0,
+                            totalChapters = chapters,
+                            currentChapter = currentChapter.coerceIn(0, chapters),
+                            coverPath = state.coverUri?.toString(),
+                            description = state.description.trim().takeIf { it.isNotBlank() },
+                            status = state.status,
+                            updatedAt = currentTime
+                        )
+                        bookRepository.updateBook(updatedBook)
+                    } else {
+                        val book = BookEntity(
+                            title = state.title.trim(),
+                            author = state.author.trim().takeIf { it.isNotBlank() },
+                            publisher = state.publisher.trim().takeIf { it.isNotBlank() },
+                            progressType = ProgressType.CHAPTER,
+                            totalPages = 0.0,
+                            currentPage = 0.0,
+                            totalChapters = chapters,
+                            currentChapter = currentChapter.coerceIn(0, chapters),
+                            coverPath = state.coverUri?.toString(),
+                            description = state.description.trim().takeIf { it.isNotBlank() },
+                            status = state.status,
+                            createdAt = currentTime,
+                            updatedAt = currentTime,
+                            lastReadAt = null
+                        )
+                        bookRepository.insertBook(book)
+                    }
                 }
                 
                 _uiState.update { it.copy(isSaving = false, isSaved = true) }

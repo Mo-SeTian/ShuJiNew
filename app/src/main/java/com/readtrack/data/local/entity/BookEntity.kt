@@ -3,6 +3,7 @@ package com.readtrack.data.local.entity
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.readtrack.domain.model.BookStatus
+import com.readtrack.presentation.viewmodel.ProgressType
 
 @Entity(tableName = "books")
 data class BookEntity(
@@ -12,8 +13,11 @@ data class BookEntity(
     val author: String? = null,
     val publisher: String? = null,
     val description: String? = null,
-    val totalPages: Double,
+    val progressType: ProgressType = ProgressType.PAGE,
+    val totalPages: Double = 0.0,
     val currentPage: Double = 0.0,
+    val totalChapters: Int? = null,
+    val currentChapter: Int = 0,
     val coverPath: String? = null,
     val status: BookStatus = BookStatus.WANT_TO_READ,
     val createdAt: Long = System.currentTimeMillis(),
