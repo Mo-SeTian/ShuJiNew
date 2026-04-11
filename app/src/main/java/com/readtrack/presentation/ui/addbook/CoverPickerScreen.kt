@@ -50,10 +50,14 @@ fun CoverPickerScreen(
                 },
                 actions = {
                     TextButton(
-                        onClick = { selectedCover?.let { onCoverSelected(it) } },
+                        onClick = {
+                            if (selectedCover != null) {
+                                onCoverSelected(selectedCover)
+                            }
+                        },
                         enabled = selectedCover != null
                     ) {
-                        Text("完成", fontWeight = FontWeight.Bold)
+                        Text("完成 ✓", fontWeight = FontWeight.Bold)
                     }
                 }
             )
