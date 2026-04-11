@@ -11,6 +11,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,13 +23,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
+import kotlinx.coroutines.*
 
 data class ImageResult(
     val url: String,
@@ -49,6 +49,7 @@ fun CoverSearchScreen(
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var showConfirmDialog by remember { mutableStateOf(false) }
     val keyboardController = LocalSoftwareKeyboardController.current
+    val scope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
@@ -83,18 +84,17 @@ fun CoverSearchScreen(
                 leadingIcon = {
                     Icon(Icons.Default.Search, contentDescription = null)
                 },
+                trailingIcon = {
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { searchQuery = "" }) {
+                            Icon(Icons.Default.Close, contentDescription = "清除")
+                        }
+                    }
+                },
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 keyboardActions = KeyboardActions(
                     onSearch = {
                         keyboardController?.hide()
-                        if (searchQuery.isNotBlank()) {
-                            isLoading = true
-                            performSearch(searchQuery) { results, error ->
-                                imageResults = results
-                                errorMessage = error
-                                isLoading = false
-                            }
-                        }
                     }
                 ),
                 shape = RoundedCornerShape(12.dp)
@@ -106,9 +106,13 @@ fun CoverSearchScreen(
                     keyboardController?.hide()
                     if (searchQuery.isNotBlank()) {
                         isLoading = true
-                        performSearch(searchQuery) { results, error ->
-                            imageResults = results
-                            errorMessage = error
+                        errorMessage = null
+                        scope.launch {
+                            val results = withContext(Dispatchers.IO) {
+                                doSearch(searchQuery)
+                            }
+                            imageResults = results.first
+                            errorMessage = results.second
                             isLoading = false
                         }
                     }
@@ -130,22 +134,6 @@ fun CoverSearchScreen(
                 }
             }
 
-            // Loading indicator
-            if (isLoading && imageResults.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        CircularProgressIndicator()
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text("正在搜索图片...")
-                    }
-                }
-            }
-
             // Error message
             errorMessage?.let { error ->
                 Card(
@@ -159,6 +147,22 @@ fun CoverSearchScreen(
                         modifier = Modifier.padding(16.dp),
                         color = MaterialTheme.colorScheme.onErrorContainer
                     )
+                }
+            }
+
+            // Loading indicator
+            if (isLoading && imageResults.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        CircularProgressIndicator()
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text("正在搜索图片...")
+                    }
                 }
             }
 
@@ -224,10 +228,7 @@ fun CoverSearchScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            "🔍",
-                            style = MaterialTheme.typography.displayLarge
-                        )
+                        Text("🔍", style = MaterialTheme.typography.displayLarge)
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
                             "输入书名搜索封面图片",
@@ -261,12 +262,10 @@ fun CoverSearchScreen(
                 }
             },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        onImageSelected(selectedImageUrl!!)
-                        showConfirmDialog = false
-                    }
-                ) {
+                TextButton(onClick = {
+                    onImageSelected(selectedImageUrl!!)
+                    showConfirmDialog = false
+                }) {
                     Text("确认")
                 }
             },
@@ -279,59 +278,53 @@ fun CoverSearchScreen(
     }
 }
 
-private fun performSearch(query: String, callback: (List<ImageResult>, String?) -> Unit) {
-    Thread {
-        try {
-            val encodedQuery = URLEncoder.encode(query + " 书籍封面", "UTF-8")
-            
-            // 使用必应图片搜索
-            val searchUrl = "https://www.bing.com/images/search?q=$encodedQuery&first=0&count=30"
-            val url = URL(searchUrl)
-            val connection = url.openConnection() as HttpURLConnection
-            connection.requestMethod = "GET"
-            connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
-            connection.setRequestProperty("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
-            connection.setRequestProperty("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8")
-            connection.connectTimeout = 15000
-            connection.readTimeout = 15000
-            
-            val reader = BufferedReader(InputStreamReader(connection.inputStream, "UTF-8"))
-            val response = reader.readText()
-            reader.close()
-            
-            val imageResults = mutableListOf<ImageResult>()
-            
-            // Parse image URLs from bing response
-            val murlPattern = Regex("\"murl\"\\s*:\\s*\"([^\"]+)\"")
-            val thumbnailPattern = Regex("\"turl\"\\s*:\\s*\"([^\"]+)\"")
-            
-            val seenUrls = mutableSetOf<String>()
-            
-            murlPattern.findAll(response).forEach { match ->
+private fun doSearch(query: String): Pair<List<ImageResult>, String?> {
+    return try {
+        val encodedQuery = URLEncoder.encode(query + " 书籍封面", "UTF-8")
+        val searchUrl = "https://www.bing.com/images/search?q=$encodedQuery&first=0&count=30"
+        val url = URL(searchUrl)
+        val connection = url.openConnection() as HttpURLConnection
+        connection.requestMethod = "GET"
+        connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+        connection.setRequestProperty("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*,zh;q=0.9,en;q=0.8")
+        connection.connectTimeout = 15000
+        connection.readTimeout = 15000
+        
+        val reader = BufferedReader(InputStreamReader(connection.inputStream, "UTF-8"))
+        val response = reader.readText()
+        reader.close()
+        
+        val imageResults = mutableListOf<ImageResult>()
+        
+        val murlPattern = Regex("\"murl\"\s*:\s*\"([^\"]+)\"")
+        val thumbnailPattern = Regex("\"turl\"\s*:\s*\"([^\"]+)\"")
+        
+        val seenUrls = mutableSetOf<String>()
+        
+        murlPattern.findAll(response).forEach { match ->
+            var imgUrl = match.groupValues[1]
+            imgUrl = imgUrl.replace(Regex("\\/"), "/")
+            if (!seenUrls.contains(imgUrl) && isValidImageUrl(imgUrl)) {
+                seenUrls.add(imgUrl)
+                imageResults.add(ImageResult(url = imgUrl, title = query))
+            }
+        }
+        
+        if (imageResults.size < 10) {
+            thumbnailPattern.findAll(response).forEach { match ->
                 var imgUrl = match.groupValues[1]
-                imgUrl = imgUrl.replace(Regex("\\\\/"), "/")
+                imgUrl = imgUrl.replace(Regex("\\/"), "/")
                 if (!seenUrls.contains(imgUrl) && isValidImageUrl(imgUrl)) {
                     seenUrls.add(imgUrl)
                     imageResults.add(ImageResult(url = imgUrl, title = query))
                 }
             }
-            
-            if (imageResults.size < 10) {
-                thumbnailPattern.findAll(response).forEach { match ->
-                    var imgUrl = match.groupValues[1]
-                    imgUrl = imgUrl.replace(Regex("\\\\/"), "/")
-                    if (!seenUrls.contains(imgUrl) && isValidImageUrl(imgUrl)) {
-                        seenUrls.add(imgUrl)
-                        imageResults.add(ImageResult(url = imgUrl, title = query))
-                    }
-                }
-            }
-            
-            callback(imageResults.take(30), null)
-        } catch (e: Exception) {
-            callback(emptyList(), "搜索失败: ${e.message}")
         }
-    }.start()
+        
+        Pair(imageResults.take(30), null)
+    } catch (e: Exception) {
+        Pair(emptyList(), "搜索失败: " + e.message)
+    }
 }
 
 private fun isValidImageUrl(url: String): Boolean {
