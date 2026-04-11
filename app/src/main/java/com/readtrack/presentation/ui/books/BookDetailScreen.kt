@@ -24,6 +24,7 @@ import coil.compose.AsyncImage
 import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.domain.model.BookStatus
 import com.readtrack.presentation.ui.components.getStatusColor
+import com.readtrack.presentation.ui.components.getStatusLabel
 import com.readtrack.presentation.viewmodel.BookDetailViewModel
 import java.text.SimpleDateFormat
 import java.util.*

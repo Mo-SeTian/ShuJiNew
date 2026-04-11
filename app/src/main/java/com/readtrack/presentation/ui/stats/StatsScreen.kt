@@ -21,6 +21,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.readtrack.domain.model.BookStatus
+import com.readtrack.presentation.ui.components.getStatusColor
+import com.readtrack.presentation.ui.components.getStatusLabel
 import com.readtrack.presentation.ui.theme.*
 import com.readtrack.presentation.viewmodel.DailyReading
 import com.readtrack.presentation.viewmodel.StatsViewModel

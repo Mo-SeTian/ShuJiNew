@@ -280,8 +280,7 @@ fun AddBookScreen(
                     .height(120.dp),
                 maxLines = 5,
                 shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextField
-Defaults.colors(
+                colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
                     focusedLabelColor = MaterialTheme.colorScheme.primary
                 )
