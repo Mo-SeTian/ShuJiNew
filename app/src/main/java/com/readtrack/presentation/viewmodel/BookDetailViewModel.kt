@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.data.local.entity.ReadingRecordEntity
+import com.readtrack.domain.model.BookStatus
 import com.readtrack.domain.repository.BookRepository
 import com.readtrack.domain.repository.ReadingRecordRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -41,7 +42,7 @@ class BookDetailViewModel @Inject constructor(
         loadBookDetail()
     }
 
-    fun loadBookDetail() {
+    private fun loadBookDetail() {
         viewModelScope.launch {
             try {
                 combine(
@@ -62,7 +63,7 @@ class BookDetailViewModel @Inject constructor(
         }
     }
 
-    fun updateBookStatus(status: com.readtrack.domain.model.BookStatus) {
+    fun updateStatus(status: BookStatus) {
         val currentBook = _uiState.value.book ?: return
         viewModelScope.launch {
             try {
@@ -111,7 +112,7 @@ class BookDetailViewModel @Inject constructor(
         val currentBook = _uiState.value.book ?: return
         viewModelScope.launch {
             try {
-                bookRepository.deleteBook(currentBook)
+                bookRepository.deleteBook(currentBook.id)
                 _deleteSuccess.emit(true)
             } catch (e: Exception) {
                 _uiState.update { it.copy(errorMessage = "删除失败: ${e.message}") }
