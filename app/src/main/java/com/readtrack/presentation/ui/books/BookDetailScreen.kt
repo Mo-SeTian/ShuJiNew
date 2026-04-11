@@ -215,7 +215,7 @@ fun BookDetailScreen(
                         if (chapters > 0) { viewModel.addChapterProgress(chapters); showAddRecordDialog = false }
                     } else {
                         val pages = inputText.toDoubleOrNull() ?: 0.0
-                        if (pages > 0) { viewModel.addReadingRecord(pages.toInt()); showAddRecordDialog = false }
+                        if (pages > 0) { viewModel.addReadingRecord(pages); showAddRecordDialog = false }
                     }
                 }) { Text("确认") }
             },
