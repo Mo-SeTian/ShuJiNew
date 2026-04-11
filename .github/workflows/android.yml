@@ -30,20 +30,30 @@ jobs:
         run: |
           echo "开始构建 Debug APK..."
           ./gradlew assembleDebug --no-daemon --stacktrace 2>&1 | tee build.log
+          echo "=== 构建完成 ==="
+
+      - name: 上传构建日志
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build.log
+          retention-days: 7
 
       - name: 检查 APK 文件
         run: |
           echo "=== 检查 APK ==="
+          echo "当前目录: $(pwd)"
           APK_PATH="app/build/outputs/apk/debug/app-debug.apk"
           if [ -f "$APK_PATH" ]; then
             echo "✅ APK 文件存在!"
             ls -lh "$APK_PATH"
           else
             echo "❌ APK 文件不存在"
-            echo "=== 搜索任何 APK 文件 ==="
-            find . -name "*.apk" -type f 2>/dev/null
-            echo "=== app/build 目录内容 ==="
-            ls -laR app/build/ 2>/dev/null | head -50
+            echo "=== app/build 目录结构 ==="
+            ls -laR app/build/ 2>/dev/null | head -100
+            echo "=== build.log 最后 100 行 ==="
+            tail -100 build.log 2>/dev/null || echo "build.log 不存在"
             exit 1
           fi
 
