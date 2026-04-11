@@ -62,28 +62,48 @@ class AddBookViewModel @Inject constructor(
             return
         }
 
-        val pages = state.totalPages.toDoubleOrNull()
-        if (pages == null || pages <= 0) {
-            _uiState.update { it.copy(errorMessage = "请输入有效的页数") }
+        if (state.title.isBlank()) {
+            _uiState.update { it.copy(errorMessage = "书名不能为空") }
             return
         }
 
-        _uiState.update { it.copy(isSaving = true) }
+        val pages = state.totalPages.toDoubleOrNull()
+        if (pages == null || pages <= 0) {
+            _uiState.update { it.copy(errorMessage = "请输入有效的页数（大于0）") }
+            return
+        }
+
+        _uiState.update { it.copy(isSaving = true, errorMessage = null) }
 
         viewModelScope.launch {
             try {
+                val currentTime = System.currentTimeMillis()
                 val book = BookEntity(
                     title = state.title.trim(),
                     author = state.author.trim().takeIf { it.isNotBlank() },
                     totalPages = pages,
+                    currentPage = 0.0,
                     coverPath = state.coverUri?.toString(),
-                    status = state.status
+                    status = state.status,
+                    createdAt = currentTime,
+                    updatedAt = currentTime,
+                    lastReadAt = null
                 )
+                
                 bookRepository.insertBook(book)
                 _uiState.update { it.copy(isSaving = false, isSaved = true) }
             } catch (e: Exception) {
-                _uiState.update { it.copy(isSaving = false, errorMessage = "保存失败: ${e.message}") }
+                _uiState.update { 
+                    it.copy(
+                        isSaving = false, 
+                        errorMessage = "保存失败: ${e.message ?: "未知错误"}"
+                    ) 
+                }
             }
         }
+    }
+    
+    fun clearError() {
+        _uiState.update { it.copy(errorMessage = null) }
     }
 }

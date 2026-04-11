@@ -15,7 +15,8 @@ data class BooksUiState(
     val filteredBooks: List<BookEntity> = emptyList(),
     val selectedStatus: BookStatus? = null,
     val searchQuery: String = "",
-    val isLoading: Boolean = true
+    val isLoading: Boolean = true,
+    val errorMessage: String? = null
 )
 
 @HiltViewModel
@@ -32,14 +33,23 @@ class BooksViewModel @Inject constructor(
 
     private fun loadBooks() {
         viewModelScope.launch {
-            bookRepository.getAllBooks().collect { books ->
-                _uiState.update { state ->
-                    state.copy(
-                        books = books,
-                        filteredBooks = filterBooks(books, state.selectedStatus, state.searchQuery),
-                        isLoading = false
-                    )
-                }
+            try {
+                bookRepository.getAllBooks()
+                    .catch { e ->
+                        _uiState.update { it.copy(isLoading = false, errorMessage = e.message) }
+                    }
+                    .collect { books ->
+                        _uiState.update { state ->
+                            state.copy(
+                                books = books,
+                                filteredBooks = filterBooks(books, state.selectedStatus, state.searchQuery),
+                                isLoading = false,
+                                errorMessage = null
+                            )
+                        }
+                    }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isLoading = false, errorMessage = e.message) }
             }
         }
     }
@@ -78,7 +88,11 @@ class BooksViewModel @Inject constructor(
 
     fun deleteBook(bookId: Long) {
         viewModelScope.launch {
-            bookRepository.deleteBook(bookId)
+            try {
+                bookRepository.deleteBook(bookId)
+            } catch (e: Exception) {
+                _uiState.update { it.copy(errorMessage = "删除失败: ${e.message}") }
+            }
         }
     }
 }

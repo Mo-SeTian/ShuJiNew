@@ -17,7 +17,8 @@ data class HomeUiState(
     val streakDays: Int = 0,
     val readingBooks: List<BookEntity> = emptyList(),
     val statusCounts: Map<BookStatus, Int> = emptyMap(),
-    val isLoading: Boolean = true
+    val isLoading: Boolean = true,
+    val errorMessage: String? = null
 )
 
 @HiltViewModel
@@ -35,39 +36,91 @@ class HomeViewModel @Inject constructor(
 
     private fun loadData() {
         viewModelScope.launch {
-            // Get today's reading pages
-            val calendar = Calendar.getInstance()
-            calendar.set(Calendar.HOUR_OF_DAY, 0)
-            calendar.set(Calendar.MINUTE, 0)
-            calendar.set(Calendar.SECOND, 0)
-            calendar.set(Calendar.MILLISECOND, 0)
-            val startOfDay = calendar.timeInMillis
-            calendar.add(Calendar.DAY_OF_MONTH, 1)
-            val endOfDay = calendar.timeInMillis
+            try {
+                // Get today's reading pages
+                val calendar = Calendar.getInstance()
+                calendar.set(Calendar.HOUR_OF_DAY, 0)
+                calendar.set(Calendar.MINUTE, 0)
+                calendar.set(Calendar.SECOND, 0)
+                calendar.set(Calendar.MILLISECOND, 0)
+                val startOfDay = calendar.timeInMillis
+                calendar.add(Calendar.DAY_OF_MONTH, 1)
+                val endOfDay = calendar.timeInMillis
 
-            combine(
-                recordRepository.getTotalPagesReadOnDate(startOfDay, endOfDay),
-                bookRepository.getBooksByStatus(BookStatus.READING),
-                bookRepository.getAllBooks()
-            ) { todayPages, readingBooks, allBooks ->
-                val statusCounts = BookStatus.entries.associateWith { status ->
-                    allBooks.count { it.status == status }
+                combine(
+                    recordRepository.getTotalPagesReadOnDate(startOfDay, endOfDay),
+                    bookRepository.getBooksByStatus(BookStatus.READING),
+                    bookRepository.getAllBooks(),
+                    recordRepository.getAllRecords()
+                ) { todayPages, readingBooks, allBooks, allRecords ->
+                    val statusCounts = BookStatus.entries.associateWith { status ->
+                        allBooks.count { it.status == status }
+                    }
+                    
+                    // Calculate streak from all records
+                    val streak = calculateReadingStreak(allRecords.map { it.date })
+                    
+                    HomeUiState(
+                        todayPages = todayPages ?: 0.0,
+                        streakDays = streak,
+                        readingBooks = readingBooks,
+                        statusCounts = statusCounts,
+                        isLoading = false
+                    )
+                }.catch { e ->
+                    // Handle errors gracefully
+                    emit(HomeUiState(isLoading = false, errorMessage = e.message))
+                }.collect { state ->
+                    _uiState.value = state
                 }
-                HomeUiState(
-                    todayPages = todayPages ?: 0.0,
-                    streakDays = calculateStreak(),
-                    readingBooks = readingBooks,
-                    statusCounts = statusCounts,
-                    isLoading = false
-                )
-            }.collect { state ->
-                _uiState.value = state
+            } catch (e: Exception) {
+                _uiState.value = HomeUiState(isLoading = false, errorMessage = e.message)
             }
         }
     }
 
-    private fun calculateStreak(): Int {
-        // Simplified streak calculation - counts consecutive days with reading
-        return 1 // Placeholder
+    private fun calculateReadingStreak(recordDates: List<Long>): Int {
+        if (recordDates.isEmpty()) return 0
+        
+        val calendar = Calendar.getInstance()
+        val today = calendar.apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+        
+        // Get unique days with records
+        val daysWithRecords = recordDates.map { date ->
+            calendar.timeInMillis = date
+            calendar.set(Calendar.HOUR_OF_DAY, 0)
+            calendar.set(Calendar.MINUTE, 0)
+            calendar.set(Calendar.SECOND, 0)
+            calendar.set(Calendar.MILLISECOND, 0)
+            calendar.timeInMillis
+        }.distinct().sortedDescending()
+        
+        if (daysWithRecords.isEmpty()) return 0
+        
+        // Check if today or yesterday has a record (streak should continue)
+        val yesterday = today - 24 * 60 * 60 * 1000
+        val mostRecentDay = daysWithRecords.first()
+        
+        // If most recent is not today or yesterday, streak is broken
+        if (mostRecentDay < yesterday) return 0
+        
+        var streak = 0
+        var currentDay = if (mostRecentDay == today) today else yesterday
+        
+        for (day in daysWithRecords) {
+            if (day == currentDay) {
+                streak++
+                currentDay -= 24 * 60 * 60 * 1000
+            } else if (day < currentDay) {
+                break
+            }
+        }
+        
+        return streak
     }
 }
