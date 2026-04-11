@@ -337,10 +337,10 @@ private fun searchBookCovers(query: String): Pair<List<ImageResult>, String?> {
         
         // 解析 Google Books JSON
         // 匹配 volumeInfo.imageLinks
-        val volumeInfoPattern = Regex("\"volumeInfo\"\s*:\s*\{([^}]+(?:\{[^}]*\})*[^}]*)\}")
-        val imageLinksPattern = Regex("\"imageLinks\"\s*:\s*\{([^}]+)\}")
-        val thumbnailPattern = Regex("\"thumbnail\"\s*:\s*\"([^\"]+)\"")
-        val titlePattern = Regex("\"title\"\s*:\s*\"([^\"]+)\"")
+        val volumeInfoPattern = Regex("\"volumeInfo\"\\s*:\\s*\\{([^}]+(?:\\{[^}]*\\})*[^}]*)\\}")
+        val imageLinksPattern = Regex("\"imageLinks\"\\s*:\\s*\\{([^}]+)\\}")
+        val thumbnailPattern = Regex("\"thumbnail\"\\s*:\\s*\"([^\"]+)\"")
+        val titlePattern = Regex("\"title\"\\s*:\\s*\"([^\"]+)\"")
         
         // 提取每个volume的imageLinks和title
         val seenUrls = mutableSetOf<String>()
