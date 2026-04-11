@@ -1,66 +1,129 @@
 package com.readtrack.presentation.ui.addbook
 
 /**
- * 内置默认封面库 - 预设精美的书籍封面，无需网络
+ * 内置默认封面库 - 使用纯色背景+emoji图标，无需网络
+ * 覆盖各种书籍类型，美观可靠
  */
 object DefaultCovers {
     
+    /**
+     * 预设封面列表
+     * 每个封面使用 颜色+emoji+文字 的组合
+     */
     val covers = listOf(
-        // 文学小说类
-        CoverItem("https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=300&h=450&fit=crop", "文学", "book_literature_1"),
-        CoverItem("https://images.unsplash.com/photo-1512820790803-83ca734da794?w=300&h=450&fit=crop", "小说", "book_novel_1"),
-        CoverItem("https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=300&h=450&fit=crop", "阅读", "book_reading_1"),
-        CoverItem("https://images.unsplash.com/photo-1495446815901-a7297e633e8d?w=300&h=450&fit=crop", "书架", "book_shelf_1"),
-        CoverItem("https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=300&h=450&fit=crop", "经典", "book_classic_1"),
+        // ========== 文学小说类 ==========
+        CoverItem(colorHex = "FF6B6B", emoji = "📖", title = "文学"),
+        CoverItem(colorHex = "EE5A5A", emoji = "📚", title = "小说"),
+        CoverItem(colorHex = "D63031", emoji = "📕", title = "经典"),
+        CoverItem(colorHex = "E84393", emoji = "💝", title = "言情"),
+        CoverItem(colorHex = "FD79A8", emoji = "🌸", title = "浪漫"),
         
-        // 科技类
-        CoverItem("https://images.unsplash.com/photo-1518770660439-4636190af475?w=300&h=450&fit=crop", "科技", "book_tech_1"),
-        CoverItem("https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=300&h=450&fit=crop", "编程", "book_code_1"),
-        CoverItem("https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=300&h=450&fit=crop", "电脑", "book_computer_1"),
+        // ========== 科幻玄幻类 ==========
+        CoverItem(colorHex = "0984E3", emoji = "🚀", title = "科幻"),
+        CoverItem(colorHex = "74B9FF", emoji = "🌌", title = "星际"),
+        CoverItem(colorHex = "00CEC9", emoji = "⚡", title = "玄幻"),
+        CoverItem(colorHex = "6C5CE7", emoji = "🔮", title = "奇幻"),
+        CoverItem(colorHex = "A29BFE", emoji = "🧙", title = "魔幻"),
         
-        // 历史类
-        CoverItem("https://images.unsplash.com/photo-1461360370896-922624d12a74?w=300&h=450&fit=crop", "历史", "book_history_1"),
-        CoverItem("https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=300&h=450&fit=crop", "古籍", "book_ancient_1"),
+        // ========== 悬疑推理类 ==========
+        CoverItem(colorHex = "2D3436", emoji = "🔍", title = "推理"),
+        CoverItem(colorHex = "636E72", emoji = "❓", title = "悬疑"),
+        CoverItem(colorHex = "B2BEC3", emoji = "🕵️", title = "侦探"),
+        CoverItem(colorHex = "DFE6E9", emoji = "🎭", title = "惊悚"),
+        CoverItem(colorHex = "FDCB6E", emoji = "🔎", title = "破案"),
         
-        // 艺术类
-        CoverItem("https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=300&h=450&fit=crop", "艺术", "book_art_1"),
-        CoverItem("https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=300&h=450&fit=crop", "绘画", "book_painting_1"),
+        // ========== 历史社科类 ==========
+        CoverItem(colorHex = "D4A574", emoji = "🏛️", title = "历史"),
+        CoverItem(colorHex = "B8860B", emoji = "📜", title = "古籍"),
+        CoverItem(colorHex = "8B4513", emoji = "⚔️", title = "战争"),
+        CoverItem(colorHex = "CD853F", emoji = "🌍", title = "社科"),
+        CoverItem(colorHex = "DEB887", emoji = "🏺", title = "考古"),
         
-        // 商业类
-        CoverItem("https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=450&fit=crop", "商业", "book_business_1"),
-        CoverItem("https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=300&h=450&fit=crop", "办公", "book_office_1"),
+        // ========== 商业经济类 ==========
+        CoverItem(colorHex = "00B894", emoji = "💼", title = "商业"),
+        CoverItem(colorHex = "00CEC9", emoji = "📈", title = "经济"),
+        CoverItem(colorHex = "55A3FF", emoji = "💰", title = "理财"),
+        CoverItem(colorHex = "0984E3", emoji = "📊", title = "管理"),
+        CoverItem(colorHex = "74B9FF", emoji = "🎯", title = "营销"),
         
-        // 生活类
-        CoverItem("https://images.unsplash.com/photo-1490818387583-1baba5e638af?w=300&h=450&fit=crop", "生活", "book_life_1"),
-        CoverItem("https://images.unsplash.com/photo-1553636224-3b7ee2e4befa?w=300&h=450&fit=crop", "美食", "book_food_1"),
-        CoverItem("https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=300&h=450&fit=crop", "旅行", "book_travel_1"),
+        // ========== 科技编程类 ==========
+        CoverItem(colorHex = "00D2D3", emoji = "💻", title = "编程"),
+        CoverItem(colorHex = "01A3A4", emoji = "🖥️", title = "电脑"),
+        CoverItem(colorHex = "0ABDE3", emoji = "📱", title = "移动"),
+        CoverItem(colorHex = "5F27CD", emoji = "🤖", title = "AI"),
+        CoverItem(colorHex = "48DBFB", emoji = "🔧", title = "技术"),
         
-        // 儿童类
-        CoverItem("https://images.unsplash.com/photo-1532012197267-da84d127e765?w=300&h=450&fit=crop", "儿童", "book_kids_1"),
-        CoverItem("https://images.unsplash.com/photo-1544717305-2782549b5136?w=300&h=450&fit=crop", "绘本", "book_picture_1"),
+        // ========== 生活休闲类 ==========
+        CoverItem(colorHex = "FF9FF3", emoji = "🍳", title = "美食"),
+        CoverItem(colorHex = "FECA57", emoji = "✈️", title = "旅行"),
+        CoverItem(colorHex = "FF6B6B", emoji = "🏠", title = "家居"),
+        CoverItem(colorHex = "54A0FF", emoji = "🎨", title = "手工"),
+        CoverItem(colorHex = "5F27CD", emoji = "🎮", title = "游戏"),
         
-        // 学术类
-        CoverItem("https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=300&h=450&fit=crop", "学习", "book_study_1"),
-        CoverItem("https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=300&h=450&fit=crop", "教育", "book_edu_1"),
+        // ========== 儿童教育类 ==========
+        CoverItem(colorHex = "FF9F43", emoji = "🎈", title = "儿童"),
+        CoverItem(colorHex = "FECA57", emoji = "🧸", title = "绘本"),
+        CoverItem(colorHex = "1DD1A1", emoji = "🎓", title = "教育"),
+        CoverItem(colorHex = "00D2D3", emoji = "📝", title = "教辅"),
+        CoverItem(colorHex = "54A0FF", emoji = "🔢", title = "科普"),
         
-        // 悬疑类
-        CoverItem("https://images.unsplash.com/photo-1476275466078-4007374efbbe?w=300&h=450&fit=crop", "悬疑", "book_mystery_1"),
-        CoverItem("https://images.unsplash.com/photo-1509266272358-7701da638078?w=300&h=450&fit=crop", "推理", "book_detective_1"),
+        // ========== 艺术设计类 ==========
+        CoverItem(colorHex = "FD79A8", emoji = "🎨", title = "绘画"),
+        CoverItem(colorHex = "E84393", emoji = "📷", title = "摄影"),
+        CoverItem(colorHex = "FF6B6B", emoji = "🎵", title = "音乐"),
+        CoverItem(colorHex = "A29BFE", emoji = "✏️", title = "设计"),
+        CoverItem(colorHex = "DFE6E9", emoji = "🏛️", title = "艺术"),
         
-        // 杂志类
-        CoverItem("https://images.unsplash.com/photo-1517180102446-f3ece451e9d8?w=300&h=450&fit=crop", "杂志", "book_magazine_1"),
+        // ========== 心理哲学类 ==========
+        CoverItem(colorHex = "636E72", emoji = "🧠", title = "心理"),
+        CoverItem(colorHex = "B2BEC3", emoji = "📖", title = "哲学"),
+        CoverItem(colorHex = "2D3436", emoji = "💭", title = "思想"),
+        CoverItem(colorHex = "D63031", emoji = "❤️", title = "情感"),
+        CoverItem(colorHex = "E17055", emoji = "🤝", title = "社交"),
+    )
+    
+    /**
+     * 纯色选项 - 多种颜色供选择
+     */
+    val solidColors = listOf(
+        // 暖色系
+        "FF6B6B", // 珊瑚红
+        "FF9F43", // 橙色
+        "FECA57", // 黄色
+        "FFEEAD", // 浅黄
         
-        // 默认封面 - 纯色
-        CoverItem("default://orange", "橙色", "color_orange"),
-        CoverItem("default://blue", "蓝色", "color_blue"),
-        CoverItem("default://green", "绿色", "color_green"),
-        CoverItem("default://purple", "紫色", "color_purple"),
-        CoverItem("default://red", "红色", "color_red"),
+        // 绿色系
+        "1DD1A1", // 薄荷绿
+        "00B894", // 青绿
+        "55EFC4", // 浅绿
+        "006266", // 深绿
+        
+        // 蓝色系
+        "54A0FF", // 天蓝
+        "0984E3", // 蓝色
+        "00D2D3", // 青色
+        "0C2461", // 深蓝
+        
+        // 紫色系
+        "A29BFE", // 淡紫
+        "6C5CE7", // 紫色
+        "FD79A8", // 粉红
+        "E84393", // 品红
+        
+        // 中性色
+        "DFE6E9", // 浅灰
+        "B2BEC3", // 灰色
+        "636E72", // 深灰
+        "2D3436", // 炭灰
     )
 }
 
 data class CoverItem(
-    val url: String,
-    val category: String,
-    val id: String
-)
+    val colorHex: String,
+    val emoji: String,
+    val title: String
+) {
+    val id: String get() = "emoji_$colorHex"
+    
+    val url: String get() = "emoji://$colorHex|$emoji|$title"
+}
