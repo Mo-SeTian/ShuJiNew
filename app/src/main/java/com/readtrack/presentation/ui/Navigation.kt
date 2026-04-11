@@ -1,6 +1,5 @@
 package com.readtrack.presentation.ui
 
-import android.net.Uri
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.padding
@@ -160,7 +159,6 @@ fun MainNavigation() {
             }
             
             composable(Screen.AddBook.route) {
-                var pendingCoverUri by remember { mutableStateOf<Uri?>(null) }
                 AddBookScreen(
                     onNavigateBack = { navController.popBackStack() },
                     bookId = null,
@@ -185,9 +183,15 @@ fun MainNavigation() {
             }
             
             composable(Screen.CoverSearch.route) {
+                val parentEntry = remember(navBackStackEntry) {
+                    navController.getBackStackEntry(Screen.AddBook.route)
+                }
+                val parentViewModel: com.readtrack.presentation.viewmodel.AddBookViewModel = 
+                    hiltViewModel(parentEntry)
+                
                 CoverSearchScreen(
                     onImageSelected = { imageUrl ->
-                        // TODO: Pass back the selected image URL
+                        parentViewModel.updateCoverUri(imageUrl)
                         navController.popBackStack()
                     },
                     onNavigateBack = { navController.popBackStack() }

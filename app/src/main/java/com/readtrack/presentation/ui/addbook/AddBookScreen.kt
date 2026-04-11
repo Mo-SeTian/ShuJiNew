@@ -249,7 +249,14 @@ fun AddBookScreen(
                 FilterChip(
                     selected = uiState.progressType == ProgressType.PAGE,
                     onClick = { viewModel.updateProgressType(ProgressType.PAGE) },
-                    label = { Text("按页数统计") },
+                    label = { 
+                        Box(
+                            modifier = Modifier.fillMaxWidth(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("按页数统计")
+                        }
+                    },
                     modifier = Modifier.weight(1f),
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = MaterialTheme.colorScheme.primary,
@@ -260,7 +267,14 @@ fun AddBookScreen(
                 FilterChip(
                     selected = uiState.progressType == ProgressType.CHAPTER,
                     onClick = { viewModel.updateProgressType(ProgressType.CHAPTER) },
-                    label = { Text("按章节统计") },
+                    label = { 
+                        Box(
+                            modifier = Modifier.fillMaxWidth(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("按章节统计")
+                        }
+                    },
                     modifier = Modifier.weight(1f),
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = MaterialTheme.colorScheme.primary,
@@ -351,10 +365,15 @@ fun AddBookScreen(
                         selected = uiState.status == status,
                         onClick = { viewModel.updateStatus(status) },
                         label = { 
-                            Text(
-                                status.displayName, 
-                                style = MaterialTheme.typography.labelMedium
-                            ) 
+                            Box(
+                                modifier = Modifier.fillMaxWidth(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    status.displayName, 
+                                    style = MaterialTheme.typography.labelMedium
+                                )
+                            }
                         },
                         modifier = Modifier.weight(1f),
                         colors = FilterChipDefaults.filterChipColors(

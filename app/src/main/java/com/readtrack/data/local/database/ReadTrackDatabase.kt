@@ -10,7 +10,7 @@ import com.readtrack.data.local.entity.ReadingRecordEntity
 
 @Database(
     entities = [BookEntity::class, ReadingRecordEntity::class],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
