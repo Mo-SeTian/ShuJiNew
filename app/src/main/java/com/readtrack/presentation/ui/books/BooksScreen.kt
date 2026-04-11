@@ -80,7 +80,7 @@ fun BooksScreen(
                 onValueChange = { viewModel.setSearchQuery(it) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
                 placeholder = { Text("搜索书名、作者...") },
                 leadingIcon = { 
                     Icon(
@@ -161,7 +161,7 @@ fun BooksScreen(
                 }
             } else {
                 LazyColumn(
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp, bottom = 80.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(

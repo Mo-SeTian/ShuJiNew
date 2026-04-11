@@ -25,6 +25,8 @@ data class AddBookUiState(
     val status: BookStatus = BookStatus.WANT_TO_READ,
     val isSaving: Boolean = false,
     val isSaved: Boolean = false,
+    val isEditing: Boolean = false,
+    val editingBookId: Long? = null,
     val errorMessage: String? = null
 )
 
@@ -35,6 +37,33 @@ class AddBookViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(AddBookUiState())
     val uiState: StateFlow<AddBookUiState> = _uiState.asStateFlow()
+
+    fun loadBook(bookId: Long) {
+        viewModelScope.launch {
+            try {
+                bookRepository.getBookById(bookId).collect { book ->
+                    book?.let {
+                        _uiState.update { state ->
+                            state.copy(
+                                title = it.title,
+                                author = it.author ?: "",
+                                publisher = it.publisher ?: "",
+                                totalPages = it.totalPages.toInt().toString(),
+                                currentPage = it.currentPage.toInt().toString(),
+                                description = it.description ?: "",
+                                coverUri = it.coverPath?.let { path -> Uri.parse(path) },
+                                status = it.status,
+                                isEditing = true,
+                                editingBookId = bookId
+                            )
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(errorMessage = "加载书籍失败: ${e.message}") }
+            }
+        }
+    }
 
     fun updateTitle(title: String) {
         _uiState.update { it.copy(title = title, errorMessage = null) }
@@ -90,21 +119,42 @@ class AddBookViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val currentTime = System.currentTimeMillis()
-                val book = BookEntity(
-                    title = state.title.trim(),
-                    author = state.author.trim().takeIf { it.isNotBlank() },
-                    publisher = state.publisher.trim().takeIf { it.isNotBlank() },
-                    totalPages = pages,
-                    currentPage = currentPage.coerceIn(0.0, pages),
-                    coverPath = state.coverUri?.toString(),
-                    description = state.description.trim().takeIf { it.isNotBlank() },
-                    status = state.status,
-                    createdAt = currentTime,
-                    updatedAt = currentTime,
-                    lastReadAt = null
-                )
                 
-                bookRepository.insertBook(book)
+                if (state.isEditing && state.editingBookId != null) {
+                    // Update existing book
+                    val existingBook = bookRepository.getBookByIdSync(state.editingBookId)
+                    existingBook?.let { existing ->
+                        val updatedBook = existing.copy(
+                            title = state.title.trim(),
+                            author = state.author.trim().takeIf { it.isNotBlank() },
+                            publisher = state.publisher.trim().takeIf { it.isNotBlank() },
+                            totalPages = pages,
+                            currentPage = currentPage.coerceIn(0.0, pages),
+                            coverPath = state.coverUri?.toString(),
+                            description = state.description.trim().takeIf { it.isNotBlank() },
+                            status = state.status,
+                            updatedAt = currentTime
+                        )
+                        bookRepository.updateBook(updatedBook)
+                    }
+                } else {
+                    // Create new book
+                    val book = BookEntity(
+                        title = state.title.trim(),
+                        author = state.author.trim().takeIf { it.isNotBlank() },
+                        publisher = state.publisher.trim().takeIf { it.isNotBlank() },
+                        totalPages = pages,
+                        currentPage = currentPage.coerceIn(0.0, pages),
+                        coverPath = state.coverUri?.toString(),
+                        description = state.description.trim().takeIf { it.isNotBlank() },
+                        status = state.status,
+                        createdAt = currentTime,
+                        updatedAt = currentTime,
+                        lastReadAt = null
+                    )
+                    bookRepository.insertBook(book)
+                }
+                
                 _uiState.update { it.copy(isSaving = false, isSaved = true) }
             } catch (e: Exception) {
                 _uiState.update { 
@@ -119,5 +169,9 @@ class AddBookViewModel @Inject constructor(
     
     fun clearError() {
         _uiState.update { it.copy(errorMessage = null) }
+    }
+    
+    fun resetState() {
+        _uiState.value = AddBookUiState()
     }
 }

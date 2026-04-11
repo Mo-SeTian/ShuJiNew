@@ -34,12 +34,17 @@ import java.util.*
 fun BookDetailScreen(
     bookId: Long,
     onNavigateBack: () -> Unit,
+    onEditBook: () -> Unit,
     viewModel: BookDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showStatusDialog by remember { mutableStateOf(false) }
     var showAddRecordDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(bookId) {
+        viewModel.loadBook(bookId)
+    }
 
     Scaffold(
         topBar = {
@@ -51,6 +56,9 @@ fun BookDetailScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = onEditBook) {
+                        Icon(Icons.Default.Edit, contentDescription = "编辑")
+                    }
                     IconButton(onClick = { showDeleteDialog = true }) {
                         Icon(
                             Icons.Default.Delete, 
@@ -75,400 +83,214 @@ fun BookDetailScreen(
         } else {
             uiState.book?.let { book ->
                 LazyColumn(
-                    modifier = Modifier.fillMaxSize().padding(padding),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding),
+                    contentPadding = PaddingValues(start = 0.dp, end = 0.dp, top = 0.dp, bottom = 16.dp)
                 ) {
-                    item { BookHeader(book) }
-                    item { ProgressCard(book) }
+                    // Book Cover and Basic Info
                     item {
-                        Card(
-                            onClick = { showStatusDialog = true }, 
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(16.dp)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(16.dp), 
-                                horizontalArrangement = Arrangement.SpaceBetween, 
-                                verticalAlignment = Alignment.CenterVertically
+                            // Cover
+                            Card(
+                                modifier = Modifier
+                                    .width(120.dp)
+                                    .height(180.dp),
+                                shape = RoundedCornerShape(12.dp),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                             ) {
-                                Column {
-                                    Text("更改状态", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(
-                                        "当前：${getStatusLabel(book.status)}",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = getStatusColor(book.status)
+                                if (book.coverPath != null) {
+                                    AsyncImage(
+                                        model = book.coverPath,
+                                        contentDescription = book.title,
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentScale = ContentScale.Crop
                                     )
-                                }
-                                Icon(
-                                    Icons.Default.Edit,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        }
-                    }
-                    item {
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(16.dp)
-                        ) {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                Text(
-                                    "快速切换状态", 
-                                    style = MaterialTheme.typography.titleMedium, 
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Spacer(Modifier.height(12.dp))
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(), 
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    BookStatus.entries.forEach { status ->
-                                        FilterChip(
-                                            selected = book.status == status,
-                                            onClick = { viewModel.updateStatus(status) },
-                                            label = { 
-                                                Text(
-                                                    getStatusLabel(status), 
-                                                    style = MaterialTheme.typography.labelSmall
-                                                ) 
-                                            },
-                                            modifier = Modifier.weight(1f),
-                                            colors = FilterChipDefaults.filterChipColors(
-                                                selectedContainerColor = getStatusColor(status),
-                                                selectedLabelColor = MaterialTheme.colorScheme.surface
-                                            ),
-                                            shape = RoundedCornerShape(12.dp)
-                                        )
+                                } else {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .padding(16.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text("📖", style = MaterialTheme.typography.displayMedium)
                                     }
                                 }
                             }
-                        }
-                    }
-                    item {
-                        Button(
-                            onClick = { showAddRecordDialog = true }, 
-                            modifier = Modifier.fillMaxWidth().height(50.dp),
-                            enabled = book.status == BookStatus.READING,
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Icon(Icons.Default.Edit, contentDescription = null)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("添加阅读记录")
-                        }
-                        if (book.status != BookStatus.READING) {
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                "提示：将状态改为阅读中后可添加阅读记录", 
-                                style = MaterialTheme.typography.bodySmall, 
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                    item { 
-                        Text(
-                            "阅读记录", 
-                            style = MaterialTheme.typography.titleMedium, 
-                            fontWeight = FontWeight.Bold
-                        ) 
-                    }
-                    if (uiState.readingRecords.isEmpty()) {
-                        item { 
-                            Card(
-                                modifier = Modifier.fillMaxWidth(), 
-                                colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                                ),
-                                shape = RoundedCornerShape(12.dp)
-                            ) { 
+                            
+                            // Info
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
                                 Text(
-                                    "暂无阅读记录", 
-                                    modifier = Modifier.padding(16.dp), 
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    style = MaterialTheme.typography.bodyMedium
-                                ) 
-                            } 
+                                    text = book.title,
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                book.author?.let {
+                                    Text(
+                                        text = "作者: $it",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                book.publisher?.let {
+                                    Text(
+                                        text = "出版社: $it",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                
+                                Spacer(modifier = Modifier.height(4.dp))
+                                
+                                // Status Chip
+                                Surface(
+                                    onClick = { showStatusDialog = true },
+                                    shape = RoundedCornerShape(16.dp),
+                                    color = getStatusColor(book.status).copy(alpha = 0.15f)
+                                ) {
+                                    Text(
+                                        text = getStatusLabel(book.status),
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                        color = getStatusColor(book.status),
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
+                            }
                         }
-                    } else {
-                        items(uiState.readingRecords) { record ->
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp)
+                    }
+                    
+                    // Progress Section
+                    item {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                            )
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp)
                             ) {
                                 Row(
-                                    modifier = Modifier.fillMaxWidth().padding(14.dp), 
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        "阅读进度",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                    TextButton(onClick = { showAddRecordDialog = true }) {
+                                        Text("+ 添加记录")
+                                    }
+                                }
+                                
+                                Spacer(modifier = Modifier.height(12.dp))
+                                
+                                LinearProgressIndicator(
+                                    progress = { ((book.currentPage / book.totalPages) * 100).toInt() / 100f },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(8.dp)
+                                        .clip(RoundedCornerShape(4.dp)),
+                                    color = MaterialTheme.colorScheme.primary,
+                                    trackColor = MaterialTheme.colorScheme.surfaceVariant
+                                )
+                                
+                                Spacer(modifier = Modifier.height(8.dp))
+                                
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(
+                                        text = "第 ${book.currentPage.toInt()} / ${book.totalPages.toInt()} 页",
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                    Text(
+                                        text = "${((book.currentPage / book.totalPages) * 100).toInt()}%",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Description
+                    book.description?.let { desc ->
+                        if (desc.isNotBlank()) {
+                            item {
+                                Column(
+                                    modifier = Modifier.padding(16.dp)
+                                ) {
+                                    Text(
+                                        text = "简介",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = desc,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Reading Records
+                    if (uiState.recentRecords.isNotEmpty()) {
+                        item {
+                            Text(
+                                text = "最近阅读",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.padding(16.dp)
+                            )
+                        }
+                        
+                        items(uiState.recentRecords.take(5)) { record ->
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                )
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(12.dp),
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Column {
                                         Text(
-                                            SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date(record.date)), 
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            fontWeight = FontWeight.Medium
+                                            text = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date(record.date)),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                         Text(
-                                            "第 ${record.fromPage.toInt()} - ${record.toPage.toInt()} 页", 
-                                            style = MaterialTheme.typography.bodySmall, 
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            text = "P${record.fromPage.toInt()} → P${record.toPage.toInt()}",
+                                            style = MaterialTheme.typography.bodyMedium
                                         )
                                     }
                                     Surface(
                                         shape = RoundedCornerShape(8.dp),
-                                        color = MaterialTheme.colorScheme.primaryContainer
-                                    ) {
-                                        Text(
-                                            "+${record.pagesRead.toInt()} 页", 
-                                            fontWeight = FontWeight.Bold, 
-                                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    // Bottom spacing
-                    item { Spacer(modifier = Modifier.height(16.dp)) }
-                }
-            }
-        }
-    }
-
-    if (showStatusDialog && uiState.book != null) {
-        val currentStatus = uiState.book!!.status
-        AlertDialog(
-            onDismissRequest = { showStatusDialog = false },
-            title = { Text("更改书籍状态", fontWeight = FontWeight.Bold) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    BookStatus.entries.forEach { status ->
-                        val isSelected = status == currentStatus
-                        Card(
-                            onClick = { viewModel.updateStatus(status); showStatusDialog = false },
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(
-                                containerColor = if (isSelected) getStatusColor(status).copy(alpha = 0.15f) else MaterialTheme.colorScheme.surface
-                            ),
-                            border = if (isSelected) BorderStroke(2.dp, getStatusColor(status)) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(14.dp), 
-                                horizontalArrangement = Arrangement.SpaceBetween, 
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Surface(
-                                        shape = RoundedCornerShape(6.dp),
-                                        color = getStatusColor(status),
-                                        modifier = Modifier.size(12.dp)
-                                    ) {}
-                                    Spacer(modifier = Modifier.width(12.dp))
-                                    Text(
-                                        getStatusLabel(status), 
-                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                                    )
-                                }
-                                if (isSelected) {
-                                    Surface(
-                                        shape = RoundedCornerShape(4.dp),
-                                        color = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(8.dp)
-                                    ) {}
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showStatusDialog = false }) {
-                    Text("关闭")
-                }
-            }
-        )
-    }
-
-    if (showDeleteDialog) {
-        AlertDialog(
-            onDismissRequest = { showDeleteDialog = false },
-            title = { Text("删除书籍", fontWeight = FontWeight.Bold) },
-            text = { Text("确定要删除这本书吗？此操作不可撤销。") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        viewModel.deleteBook()
-                        showDeleteDialog = false
-                        onNavigateBack()
-                    }
-                ) {
-                    Text("删除", color = MaterialTheme.colorScheme.error)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("取消")
-                }
-            }
-        )
-    }
-
-    if (showAddRecordDialog && uiState.book != null) {
-        var pagesReadText by remember { mutableStateOf("") }
-        AlertDialog(
-            onDismissRequest = { showAddRecordDialog = false },
-            title = { Text("添加阅读记录", fontWeight = FontWeight.Bold) },
-            text = {
-                Column {
-                    OutlinedTextField(
-                        value = pagesReadText,
-                        onValueChange = { pagesReadText = it.filter { c -> c.isDigit() } },
-                        label = { Text("阅读页数") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp)
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        "当前进度：${uiState.book!!.currentPage}/${uiState.book!!.totalPages} 页",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        val pages = pagesReadText.toDoubleOrNull() ?: 0.0
-                        if (pages > 0) {
-                            viewModel.addReadingRecord(pages)
-                            showAddRecordDialog = false
-                        }
-                    },
-                    enabled = pagesReadText.isNotEmpty()
-                ) {
-                    Text("添加")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showAddRecordDialog = false }) {
-                    Text("取消")
-                }
-            },
-            shape = RoundedCornerShape(16.dp)
-        )
-    }
-}
-
-@Composable
-private fun BookHeader(book: BookEntity) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            verticalAlignment = Alignment.Top
-        ) {
-            AsyncImage(
-                model = book.coverPath ?: "https://via.placeholder.com/120x180",
-                contentDescription = book.title,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .width(100.dp)
-                    .height(150.dp)
-                    .clip(RoundedCornerShape(12.dp))
-            )
-            Spacer(modifier = Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    book.title,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
-                )
-                if (!book.author.isNullOrBlank()) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        book.author,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                if (!book.publisher.isNullOrBlank()) {
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        book.publisher,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                Spacer(modifier = Modifier.height(12.dp))
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = getStatusColor(book.status).copy(alpha = 0.15f)
-                ) {
-                    Text(
-                        getStatusLabel(book.status),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = getStatusColor(book.status),
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ProgressCard(book: BookEntity) {
-    val progress = if (book.totalPages > 0) 
-        (book.currentPage.toFloat() / book.totalPages * 100).toInt() 
-    else 0
-    
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = getStatusColor(book.status).copy(alpha = 0.1f)
-        )
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    "阅读进度",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    "$progress%",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = getStatusColor(book.status)
-                )
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-            LinearProgressIndicator(
-                progress = { (progress / 100f).coerceIn(0f, 1f) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(10.dp)
-                    .clip(RoundedCornerShape(5.dp)),
-                color = getStatusColor(book.status),
-                trackColor = getStatusColor(book.status).copy(alpha = 0.2f)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                "${book.currentPage.toInt()}/${book.totalPages} 页",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}

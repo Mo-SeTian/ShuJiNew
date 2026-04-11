@@ -34,6 +34,7 @@ import com.readtrack.presentation.viewmodel.AddBookViewModel
 @Composable
 fun AddBookScreen(
     onNavigateBack: () -> Unit,
+    bookId: Long?,
     viewModel: AddBookViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -45,6 +46,15 @@ fun AddBookScreen(
         viewModel.updateCoverUri(uri)
     }
 
+    // Load book data if editing
+    LaunchedEffect(bookId) {
+        if (bookId != null) {
+            viewModel.loadBook(bookId)
+        } else {
+            viewModel.resetState()
+        }
+    }
+
     LaunchedEffect(uiState.isSaved) {
         if (uiState.isSaved) {
             onNavigateBack()
@@ -54,6 +64,7 @@ fun AddBookScreen(
     LaunchedEffect(uiState.errorMessage) {
         uiState.errorMessage?.let { error ->
             snackbarHostState.showSnackbar(error)
+            viewModel.clearError()
         }
     }
 
@@ -62,7 +73,7 @@ fun AddBookScreen(
             TopAppBar(
                 title = { 
                     Text(
-                        "添加书籍", 
+                        if (uiState.isEditing) "编辑书籍" else "添加书籍", 
                         fontWeight = FontWeight.Bold
                     ) 
                 },
@@ -273,20 +284,3 @@ fun AddBookScreen(
             OutlinedTextField(
                 value = uiState.description,
                 onValueChange = { viewModel.updateDescription(it) },
-                label = { Text("简介") },
-                placeholder = { Text("请输入书籍简介（可选）") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(120.dp),
-                maxLines = 5,
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    focusedLabelColor = MaterialTheme.colorScheme.primary
-                )
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-        }
-    }
-}

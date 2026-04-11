@@ -1,8 +1,7 @@
 package com.readtrack.presentation.ui
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -11,6 +10,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
@@ -40,7 +40,12 @@ sealed class Screen(
         fun createRoute(bookId: Long) = "book/$bookId"
     }
     data object AddBook : Screen("add_book", "添加书籍", Icons.Filled.Add, Icons.Outlined.Add)
+    data object EditBook : Screen("edit_book/{bookId}", "编辑书籍", Icons.Filled.Edit, Icons.Outlined.Edit) {
+        fun createRoute(bookId: Long) = "edit_book/$bookId"
+    }
 }
+
+private val animationSpec = tween<Float>(durationMillis = 150)
 
 @Composable
 fun MainNavigation() {
@@ -52,23 +57,21 @@ fun MainNavigation() {
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentDestination = navBackStackEntry?.destination
             
-            // Hide bottom bar for detail screens
             val showBottomBar = currentDestination?.route?.let { route ->
                 route in bottomNavItems.map { it.route }
             } ?: true
 
             AnimatedVisibility(
                 visible = showBottomBar,
-                enter = slideInVertically(initialOffsetY = { it }),
-                exit = slideOutVertically(targetOffsetY = { it })
+                enter = slideInVertically(animationSpec = tween(150)) { it },
+                exit = slideOutVertically(animationSpec = tween(150)) { it }
             ) {
                 NavigationBar(
                     containerColor = MaterialTheme.colorScheme.surface,
-                    tonalElevation = NavigationBarDefaults.Elevation
+                    tonalElevation = 0.dp
                 ) {
                     bottomNavItems.forEach { screen ->
                         val selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true
-                        
                         NavigationBarItem(
                             icon = {
                                 Icon(
@@ -86,14 +89,7 @@ fun MainNavigation() {
                                     launchSingleTop = true
                                     restoreState = true
                                 }
-                            },
-                            colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = MaterialTheme.colorScheme.primary,
-                                selectedTextColor = MaterialTheme.colorScheme.primary,
-                                indicatorColor = MaterialTheme.colorScheme.primaryContainer,
-                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            }
                         )
                     }
                 }
@@ -103,7 +99,19 @@ fun MainNavigation() {
         NavHost(
             navController = navController,
             startDestination = Screen.Home.route,
-            modifier = Modifier.padding(padding)
+            modifier = Modifier.padding(padding),
+            enterTransition = {
+                fadeIn(animationSpec = tween(150)) + slideInHorizontally(animationSpec = tween(150)) { it / 4 }
+            },
+            exitTransition = {
+                fadeOut(animationSpec = tween(150)) + slideOutHorizontally(animationSpec = tween(150)) { -it / 4 }
+            },
+            popEnterTransition = {
+                fadeIn(animationSpec = tween(150)) + slideInHorizontally(animationSpec = tween(150)) { -it / 4 }
+            },
+            popExitTransition = {
+                fadeOut(animationSpec = tween(150)) + slideOutHorizontally(animationSpec = tween(150)) { it / 4 }
+            }
         ) {
             composable(Screen.Home.route) {
                 HomeScreen(
@@ -118,7 +126,7 @@ fun MainNavigation() {
                     onBookClick = { bookId ->
                         navController.navigate(Screen.BookDetail.createRoute(bookId))
                     },
-                    onAddBookClick = {
+                    onAddBook = {
                         navController.navigate(Screen.AddBook.route)
                     }
                 )
@@ -136,16 +144,31 @@ fun MainNavigation() {
                 route = Screen.BookDetail.route,
                 arguments = listOf(navArgument("bookId") { type = NavType.LongType })
             ) { backStackEntry ->
-                val bookId = backStackEntry.arguments?.getLong("bookId") ?: 0L
+                val bookId = backStackEntry.arguments?.getLong("bookId") ?: return@composable
                 BookDetailScreen(
                     bookId = bookId,
-                    onNavigateBack = { navController.popBackStack() }
+                    onNavigateBack = { navController.popBackStack() },
+                    onEditBook = { 
+                        navController.navigate(Screen.EditBook.createRoute(bookId))
+                    }
                 )
             }
             
             composable(Screen.AddBook.route) {
                 AddBookScreen(
-                    onNavigateBack = { navController.popBackStack() }
+                    onNavigateBack = { navController.popBackStack() },
+                    bookId = null
+                )
+            }
+            
+            composable(
+                route = Screen.EditBook.route,
+                arguments = listOf(navArgument("bookId") { type = NavType.LongType })
+            ) { backStackEntry ->
+                val bookId = backStackEntry.arguments?.getLong("bookId") ?: return@composable
+                AddBookScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    bookId = bookId
                 )
             }
         }
