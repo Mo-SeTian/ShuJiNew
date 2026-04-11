@@ -18,6 +18,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.readtrack.domain.model.BookStatus
@@ -418,7 +419,12 @@ fun EmptyRecordsCard() {
 }
 
 @Composable
-fun ReadingRecordItem(record: com.readtrack.data.local.entity.ReadingRecordEntity) {
+@Composable
+fun ReadingRecordItem(recordWithBook: RecordWithBook) {
+    val record = recordWithBook.record
+    val book = recordWithBook.book
+    val isChapterBased = book?.totalChapters != null && book.totalChapters > 0
+    
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp)
@@ -430,14 +436,28 @@ fun ReadingRecordItem(record: com.readtrack.data.local.entity.ReadingRecordEntit
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
+                // Book title
+                if (book != null) {
+                    Text(
+                        text = book.title,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                }
+                // Date
                 Text(
                     text = SimpleDateFormat("MM月dd日 E", Locale.getDefault()).format(Date(record.date)),
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                Spacer(modifier = Modifier.height(4.dp))
+                // Note
                 Text(
-                    text = "阅读了 ${record.pagesRead.toInt()} 页",
+                    text = record.note?.takeIf { it.isNotBlank() } ?: "阅读了 ${record.pagesRead.toInt()} ${if (isChapterBased) "章" else "页"}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -447,7 +467,7 @@ fun ReadingRecordItem(record: com.readtrack.data.local.entity.ReadingRecordEntit
                 color = MaterialTheme.colorScheme.primaryContainer
             ) {
                 Text(
-                    text = "+${record.pagesRead.toInt()} 页",
+                    text = "+${record.pagesRead.toInt()} ${if (isChapterBased) "章" else "页"}",
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
