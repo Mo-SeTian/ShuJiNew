@@ -26,6 +26,7 @@ import com.readtrack.presentation.ui.components.getStatusLabel
 import com.readtrack.presentation.ui.theme.*
 import com.readtrack.presentation.viewmodel.DailyReading
 import com.readtrack.presentation.viewmodel.StatsViewModel
+import com.readtrack.presentation.viewmodel.RecordWithBook
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -148,13 +149,13 @@ fun StatsScreen(
                     )
                 }
 
-                if (uiState.recentRecords.isEmpty()) {
+                if (uiState.recentRecordsWithBooks.isEmpty()) {
                     item {
                         EmptyRecordsCard()
                     }
                 } else {
-                    items(uiState.recentRecords) { record ->
-                        ReadingRecordItem(record = record)
+                    items(uiState.recentRecordsWithBooks) { recordWithBook ->
+                        ReadingRecordItem(recordWithBook = recordWithBook)
                     }
                 }
                 

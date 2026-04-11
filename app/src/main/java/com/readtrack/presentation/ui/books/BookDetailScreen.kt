@@ -437,7 +437,7 @@ private fun ReadingRecordRow(record: ReadingRecordEntity) {
                     fontWeight = FontWeight.Medium
                 )
                 Text(
-                    record.note?.takeIf { it.isNotBlank() } ?: "阅读了 ${record.pagesRead.toInt()} 页",
+                    record.note?.takeIf { it.isNotBlank() } ?: "阅读了 ${record.pagesRead.toInt()} ${if (isChapterBased) "章" else "页"}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -447,7 +447,7 @@ private fun ReadingRecordRow(record: ReadingRecordEntity) {
                 color = MaterialTheme.colorScheme.primaryContainer
             ) {
                 Text(
-                    "+${record.pagesRead.toInt()} 页",
+                    "+${record.pagesRead.toInt()} ${if (isChapterBased) "章" else "页"}",
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,

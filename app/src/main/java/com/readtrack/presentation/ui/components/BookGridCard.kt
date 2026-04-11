@@ -73,8 +73,11 @@ fun BookGridCard(
                 
                 Spacer(modifier = Modifier.height(4.dp))
                 
-                // Progress
-                val progress = if (book.totalPages > 0) 
+                // Progress - Handle chapter-based books
+                val isChapterBased = book.totalChapters != null && book.totalChapters > 0
+                val progress = if (isChapterBased)
+                    (book.currentChapter / book.totalChapters * 100).toInt()
+                else if (book.totalPages > 0) 
                     (book.currentPage / book.totalPages * 100).toInt() 
                 else 0
                 
@@ -89,7 +92,7 @@ fun BookGridCard(
                 )
                 
                 Text(
-                    text = "${book.currentPage.toInt()}/${book.totalPages.toInt()}页",
+                    text = if (isChapterBased) "${book.currentChapter.toInt()}/${book.totalChapters?.toInt()}章" else "${book.currentPage.toInt()}/${book.totalPages.toInt()}页",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

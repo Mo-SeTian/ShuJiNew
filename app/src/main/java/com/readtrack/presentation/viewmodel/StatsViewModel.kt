@@ -23,6 +23,7 @@ data class StatsUiState(
     val averagePagesPerDay: Double = 0.0,
     val weeklyReadingData: List<DailyReading> = emptyList(),
     val recentRecords: List<ReadingRecordEntity> = emptyList(),
+    val recentRecordsWithBooks: List<RecordWithBook> = emptyList(),
     val isLoading: Boolean = true
 )
 
@@ -30,6 +31,12 @@ data class DailyReading(
     val date: Long,
     val pages: Double,
     val dayOfWeek: String
+)
+
+// 阅读记录+书籍信息
+data class RecordWithBook(
+    val record: ReadingRecordEntity,
+    val book: BookEntity?
 )
 
 @HiltViewModel
@@ -80,6 +87,17 @@ class StatsViewModel @Inject constructor(
                     books.count { it.status == status }
                 }
                 
+                // Create book lookup map
+                val booksMap = books.associateBy { it.id }
+                
+                // Combine records with book info
+                val recordsWithBooks = records.take(10).map { record ->
+                    RecordWithBook(
+                        record = record,
+                        book = booksMap[record.bookId]
+                    )
+                }
+                
                 val weeklyData = generateWeeklyData(records, sevenDaysAgo)
                 val avgPerDay = if (records.isNotEmpty()) {
                     val oldestRecord = records.minByOrNull { it.date }?.date ?: System.currentTimeMillis()
@@ -96,6 +114,7 @@ class StatsViewModel @Inject constructor(
                     averagePagesPerDay = avgPerDay,
                     weeklyReadingData = weeklyData,
                     recentRecords = records.take(10),
+                    recentRecordsWithBooks = recordsWithBooks,
                     isLoading = false
                 )
             }.collect { state ->

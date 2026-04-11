@@ -89,8 +89,11 @@ fun BookCard(
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                // Progress Bar
-                val progress = if (book.totalPages > 0) 
+                // Progress Bar - Handle chapter-based books
+                val isChapterBased = book.totalChapters != null && book.totalChapters > 0
+                val progress = if (isChapterBased) 
+                    (book.currentChapter.toFloat() / book.totalChapters * 100).toInt()
+                else if (book.totalPages > 0) 
                     (book.currentPage.toFloat() / book.totalPages * 100).toInt() 
                 else 0
 
@@ -124,7 +127,7 @@ fun BookCard(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "${book.currentPage}/${book.totalPages} 页",
+                        text = if (isChapterBased) "${book.currentChapter}/${book.totalChapters} 章" else "${book.currentPage}/${book.totalPages} 页",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
