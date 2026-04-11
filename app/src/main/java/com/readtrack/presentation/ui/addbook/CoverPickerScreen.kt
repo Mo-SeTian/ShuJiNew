@@ -239,21 +239,23 @@ private fun CoverOptionCard(
     borderColor: Color = Color.Transparent,
     content: @Composable () -> Unit
 ) {
-    Box(
+    Card(
         modifier = Modifier
             .aspectRatio(0.75f)
-            .clip(RoundedCornerShape(12.dp))
-            .background(backgroundColor)
-            .border(
-                width = if (borderColor != Color.Transparent) 3.dp else 0.dp,
-                color = borderColor,
-                shape = RoundedCornerShape(12.dp)
-            )
-            .clickable(onClick = onClick)
-            .padding(8.dp),
-        contentAlignment = Alignment.Center
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = backgroundColor),
+        border = if (borderColor != Color.Transparent) 
+            CardDefaults.outlinedCardBorder().copy(width = 3.dp, brush = androidx.compose.ui.graphics.SolidColor(borderColor))
+        else null,
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        content()
+        Box(
+            modifier = Modifier.fillMaxSize().padding(8.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            content()
+        }
     }
 }
 
