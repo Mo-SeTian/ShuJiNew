@@ -31,55 +31,65 @@ class HomeViewModel @Inject constructor(
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
     init {
-        loadData()
+        loadBooks()
+        loadReadingBooks()
+        loadReadingRecords()
     }
 
-    private fun loadData() {
+    private fun loadBooks() {
         viewModelScope.launch {
-            try {
-                val calendar = Calendar.getInstance()
-                calendar.set(Calendar.HOUR_OF_DAY, 0)
-                calendar.set(Calendar.MINUTE, 0)
-                calendar.set(Calendar.SECOND, 0)
-                calendar.set(Calendar.MILLISECOND, 0)
-                val startOfDay = calendar.timeInMillis
-                calendar.add(Calendar.DAY_OF_MONTH, 1)
-                val endOfDay = calendar.timeInMillis
-
-                combine(
-                    recordRepository.getTotalPagesReadOnDate(startOfDay, endOfDay)
-                        .catch { emit(0.0) },
-                    bookRepository.getBooksByStatus(BookStatus.READING)
-                        .catch { emit(emptyList()) },
-                    bookRepository.getAllBooks()
-                        .catch { emit(emptyList()) },
-                    recordRepository.getAllRecords()
-                        .catch { emit(emptyList()) }
-                ) { todayPages, readingBooks, allBooks, allRecords ->
+            bookRepository.getAllBooks()
+                .catch { emit(emptyList()) }
+                .collect { books ->
                     val statusCounts = BookStatus.entries.associateWith { status ->
-                        allBooks.count { it.status == status }
+                        books.count { it.status == status }
                     }
-                    
-                    val streak = calculateReadingStreak(allRecords.map { it.date })
-                    
-                    HomeUiState(
-                        todayPages = todayPages ?: 0.0,
-                        streakDays = streak,
-                        readingBooks = readingBooks,
-                        statusCounts = statusCounts,
-                        isLoading = false
-                    )
-                }.collect { state ->
-                    _uiState.value = state
+                    _uiState.update { it.copy(statusCounts = statusCounts, isLoading = false) }
                 }
-            } catch (e: Exception) {
-                _uiState.value = HomeUiState(isLoading = false, errorMessage = e.message)
-            }
         }
     }
 
-    private fun calculateReadingStreak(recordDates: List<Long>): Int {
-        if (recordDates.isEmpty()) return 0
+    private fun loadReadingBooks() {
+        viewModelScope.launch {
+            bookRepository.getBooksByStatus(BookStatus.READING)
+                .catch { emit(emptyList()) }
+                .collect { books ->
+                    _uiState.update { it.copy(readingBooks = books) }
+                }
+        }
+    }
+
+    private fun loadReadingRecords() {
+        viewModelScope.launch {
+            // Calculate today's pages
+            val calendar = Calendar.getInstance()
+            calendar.set(Calendar.HOUR_OF_DAY, 0)
+            calendar.set(Calendar.MINUTE, 0)
+            calendar.set(Calendar.SECOND, 0)
+            calendar.set(Calendar.MILLISECOND, 0)
+            val startOfDay = calendar.timeInMillis
+            calendar.add(Calendar.DAY_OF_MONTH, 1)
+            val endOfDay = calendar.timeInMillis
+
+            recordRepository.getTotalPagesReadOnDate(startOfDay, endOfDay)
+                .catch { emit(0.0) }
+                .collect { pages ->
+                    _uiState.update { it.copy(todayPages = pages ?: 0.0) }
+                }
+        }
+
+        viewModelScope.launch {
+            recordRepository.getAllRecords()
+                .catch { emit(emptyList()) }
+                .collect { records ->
+                    val streak = calculateStreak(records.map { it.date })
+                    _uiState.update { it.copy(streakDays = streak) }
+                }
+        }
+    }
+
+    private fun calculateStreak(dates: List<Long>): Int {
+        if (dates.isEmpty()) return 0
         
         val calendar = Calendar.getInstance()
         calendar.set(Calendar.HOUR_OF_DAY, 0)
@@ -87,9 +97,9 @@ class HomeViewModel @Inject constructor(
         calendar.set(Calendar.SECOND, 0)
         calendar.set(Calendar.MILLISECOND, 0)
         val today = calendar.timeInMillis
-        val yesterday = today - 24 * 60 * 60 * 1000
-        
-        val daysWithRecords = recordDates.map { date ->
+        val yesterday = today - 86400000
+
+        val uniqueDays = dates.map { date ->
             calendar.timeInMillis = date
             calendar.set(Calendar.HOUR_OF_DAY, 0)
             calendar.set(Calendar.MINUTE, 0)
@@ -97,24 +107,19 @@ class HomeViewModel @Inject constructor(
             calendar.set(Calendar.MILLISECOND, 0)
             calendar.timeInMillis
         }.distinct().sortedDescending()
-        
-        if (daysWithRecords.isEmpty()) return 0
-        
-        val mostRecentDay = daysWithRecords.first()
-        if (mostRecentDay < yesterday) return 0
-        
+
+        if (uniqueDays.isEmpty()) return 0
+        if (uniqueDays.first() < yesterday) return 0
+
         var streak = 0
-        var currentDay = if (mostRecentDay == today) today else yesterday
-        
-        for (day in daysWithRecords) {
-            if (day == currentDay) {
+        var expected = if (uniqueDays.first() == today) today else yesterday
+
+        for (day in uniqueDays) {
+            if (day == expected) {
                 streak++
-                currentDay -= 24 * 60 * 60 * 1000
-            } else if (day < currentDay) {
-                break
-            }
+                expected -= 86400000
+            } else if (day < expected) break
         }
-        
         return streak
     }
 }

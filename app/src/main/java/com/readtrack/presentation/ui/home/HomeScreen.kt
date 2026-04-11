@@ -15,9 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.readtrack.domain.model.BookStatus
 import com.readtrack.presentation.ui.components.BookCard
-import com.readtrack.presentation.ui.theme.*
 import com.readtrack.presentation.viewmodel.HomeViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -39,73 +37,106 @@ fun HomeScreen(
             )
         }
     ) { padding ->
-        if (uiState.isLoading) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Stats Cards Row
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    StatCard(
+                        title = "今日阅读",
+                        value = "${uiState.todayPages.toInt()}",
+                        unit = "页",
+                        modifier = Modifier.weight(1f)
+                    )
+                    StatCard(
+                        title = "连续阅读",
+                        value = "${uiState.streakDays}",
+                        unit = "天",
+                        icon = { Icon(Icons.Default.LocalFireDepartment, null) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
             }
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                // Stats Cards Row
-                item {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        StatCard(
-                            title = "今日阅读",
-                            value = "${uiState.todayPages.toInt()}",
-                            unit = "页",
-                            modifier = Modifier.weight(1f)
+
+            // Status Summary
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = "书籍状态",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
                         )
-                        StatCard(
-                            title = "连续阅读",
-                            value = "${uiState.streakDays}",
-                            unit = "天",
-                            icon = { Icon(Icons.Default.LocalFireDepartment, null) },
-                            modifier = Modifier.weight(1f)
-                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            StatusChip("想读", uiState.statusCounts[com.readtrack.domain.model.BookStatus.WANT_TO_READ] ?: 0)
+                            StatusChip("阅读中", uiState.statusCounts[com.readtrack.domain.model.BookStatus.READING] ?: 0)
+                            StatusChip("已读", uiState.statusCounts[com.readtrack.domain.model.BookStatus.FINISHED] ?: 0)
+                        }
                     }
                 }
+            }
 
-                // Status Distribution
-                item {
-                    StatusDistributionCard(statusCounts = uiState.statusCounts)
-                }
-
-                // Reading Now Section
-                item {
+            // Reading Books Section
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Text(
                         text = "正在阅读",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
+                    Icon(
+                        Icons.Default.MenuBook,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
                 }
+            }
 
-                if (uiState.readingBooks.isEmpty()) {
-                    item {
-                        EmptyStateCard(
-                            message = "还没有正在阅读的书籍",
-                            icon = { Icon(Icons.Default.MenuBook, null) }
+            if (uiState.readingBooks.isEmpty()) {
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
                         )
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(32.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "暂无正在阅读的书籍",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
-                } else {
-                    items(uiState.readingBooks) { book ->
-                        BookCard(
-                            book = book,
-                            onClick = { onBookClick(book.id) }
-                        )
-                    }
+                }
+            } else {
+                items(uiState.readingBooks.take(5)) { book ->
+                    BookCard(
+                        book = book,
+                        onClick = { onBookClick(book.id) }
+                    )
                 }
             }
         }
@@ -113,7 +144,7 @@ fun HomeScreen(
 }
 
 @Composable
-fun StatCard(
+private fun StatCard(
     title: String,
     value: String,
     unit: String,
@@ -132,18 +163,21 @@ fun StatCard(
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            icon?.invoke()
+            if (icon != null) {
+                icon()
+            }
             Text(
                 text = title,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onPrimaryContainer
             )
+            Spacer(modifier = Modifier.height(4.dp))
             Row(
                 verticalAlignment = Alignment.Bottom
             ) {
                 Text(
                     text = value,
-                    style = MaterialTheme.typography.headlineLarge,
+                    style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
@@ -159,81 +193,18 @@ fun StatCard(
 }
 
 @Composable
-fun StatusDistributionCard(statusCounts: Map<BookStatus, Int>) {
-    Card(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Text(
-                text = "书籍状态分布",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                StatusCount(BookStatus.WANT_TO_READ, statusCounts[BookStatus.WANT_TO_READ] ?: 0, WantToReadGreen)
-                StatusCount(BookStatus.READING, statusCounts[BookStatus.READING] ?: 0, ReadingOrange)
-                StatusCount(BookStatus.FINISHED, statusCounts[BookStatus.FINISHED] ?: 0, FinishedBlue)
-                StatusCount(BookStatus.ON_HOLD, statusCounts[BookStatus.ON_HOLD] ?: 0, OnHoldGray)
-                StatusCount(BookStatus.ABANDONED, statusCounts[BookStatus.ABANDONED] ?: 0, AbandonedRed)
-            }
-        }
-    }
-}
-
-@Composable
-fun StatusCount(status: BookStatus, count: Int, color: androidx.compose.ui.graphics.Color) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
+private fun StatusChip(label: String, count: Int) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             text = "$count",
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
-            color = color
+            color = MaterialTheme.colorScheme.primary
         )
         Text(
-            text = when (status) {
-                BookStatus.WANT_TO_READ -> "想读"
-                BookStatus.READING -> "阅读中"
-                BookStatus.FINISHED -> "已读"
-                BookStatus.ON_HOLD -> "闲置"
-                BookStatus.ABANDONED -> "放弃"
-            },
-            style = MaterialTheme.typography.labelSmall
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-    }
-}
-
-@Composable
-fun EmptyStateCard(
-    message: String,
-    icon: @Composable () -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            icon()
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = message,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
     }
 }

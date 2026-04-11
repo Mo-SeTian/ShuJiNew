@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
+import androidx.core.view.WindowCompat
 import com.readtrack.presentation.ui.MainNavigation
 import com.readtrack.presentation.ui.theme.ReadTrackTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -16,7 +17,10 @@ import dagger.hilt.android.AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        
+        // Enable edge-to-edge for Android 16
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        
         setContent {
             ReadTrackTheme {
                 Surface(
