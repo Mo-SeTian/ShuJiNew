@@ -38,11 +38,15 @@ class AddBookViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(AddBookUiState())
     val uiState: StateFlow<AddBookUiState> = _uiState.asStateFlow()
 
+    // Store loaded book for update
+    private var loadedBook: BookEntity? = null
+
     fun loadBook(bookId: Long) {
         viewModelScope.launch {
             try {
                 bookRepository.getBookById(bookId).collect { book ->
                     book?.let {
+                        loadedBook = it
                         _uiState.update { state ->
                             state.copy(
                                 title = it.title,
@@ -120,23 +124,21 @@ class AddBookViewModel @Inject constructor(
             try {
                 val currentTime = System.currentTimeMillis()
                 
-                if (state.isEditing && state.editingBookId != null) {
+                if (state.isEditing && loadedBook != null) {
                     // Update existing book
-                    val existingBook = bookRepository.getBookByIdSync(state.editingBookId)
-                    existingBook?.let { existing ->
-                        val updatedBook = existing.copy(
-                            title = state.title.trim(),
-                            author = state.author.trim().takeIf { it.isNotBlank() },
-                            publisher = state.publisher.trim().takeIf { it.isNotBlank() },
-                            totalPages = pages,
-                            currentPage = currentPage.coerceIn(0.0, pages),
-                            coverPath = state.coverUri?.toString(),
-                            description = state.description.trim().takeIf { it.isNotBlank() },
-                            status = state.status,
-                            updatedAt = currentTime
-                        )
-                        bookRepository.updateBook(updatedBook)
-                    }
+                    val existingBook = loadedBook!!
+                    val updatedBook = existingBook.copy(
+                        title = state.title.trim(),
+                        author = state.author.trim().takeIf { it.isNotBlank() },
+                        publisher = state.publisher.trim().takeIf { it.isNotBlank() },
+                        totalPages = pages,
+                        currentPage = currentPage.coerceIn(0.0, pages),
+                        coverPath = state.coverUri?.toString(),
+                        description = state.description.trim().takeIf { it.isNotBlank() },
+                        status = state.status,
+                        updatedAt = currentTime
+                    )
+                    bookRepository.updateBook(updatedBook)
                 } else {
                     // Create new book
                     val book = BookEntity(
@@ -172,6 +174,7 @@ class AddBookViewModel @Inject constructor(
     }
     
     fun resetState() {
+        loadedBook = null
         _uiState.value = AddBookUiState()
     }
 }

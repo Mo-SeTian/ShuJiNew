@@ -43,7 +43,7 @@ fun BookDetailScreen(
     var showAddRecordDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(bookId) {
-        viewModel.loadBook(bookId)
+        viewModel.loadBookDetail()
     }
 
     Scaffold(
