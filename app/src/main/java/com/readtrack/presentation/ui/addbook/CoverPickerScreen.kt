@@ -59,6 +59,15 @@ fun CoverPickerScreen(
             )
         }
     ) { padding ->
+        // 相册选择器
+        val imagePickerLauncher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.GetContent()
+        ) { uri: Uri? ->
+            uri?.let {
+                selectedCover = it.toString()
+            }
+        }
+        
         LazyVerticalGrid(
             columns = GridCells.Fixed(3),
             modifier = Modifier
@@ -71,16 +80,7 @@ fun CoverPickerScreen(
             // 从相册选择
             item {
                 CoverOptionCard(
-                    onClick = {
-                        val launcher = rememberLauncherForActivityResult(
-                            contract = ActivityResultContracts.GetContent()
-                        ) { uri: Uri? ->
-                            uri?.let {
-                                selectedCover = it.toString()
-                            }
-                        }
-                        launcher.launch("image/*")
-                    },
+                    onClick = { imagePickerLauncher.launch("image/*") },
                     backgroundColor = MaterialTheme.colorScheme.surfaceVariant,
                     content = {
                         Column(
