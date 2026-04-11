@@ -309,7 +309,7 @@ private fun performSearch(query: String, callback: (List<ImageResult>, String?) 
             
             murlPattern.findAll(response).forEach { match ->
                 var imgUrl = match.groupValues[1]
-                imgUrl = imgUrl.replace("\/", "/")
+                imgUrl = imgUrl.replace(Regex("\\\\/"), "/")
                 if (!seenUrls.contains(imgUrl) && isValidImageUrl(imgUrl)) {
                     seenUrls.add(imgUrl)
                     imageResults.add(ImageResult(url = imgUrl, title = query))
@@ -319,7 +319,7 @@ private fun performSearch(query: String, callback: (List<ImageResult>, String?) 
             if (imageResults.size < 10) {
                 thumbnailPattern.findAll(response).forEach { match ->
                     var imgUrl = match.groupValues[1]
-                    imgUrl = imgUrl.replace("\/", "/")
+                    imgUrl = imgUrl.replace(Regex("\\\\/"), "/")
                     if (!seenUrls.contains(imgUrl) && isValidImageUrl(imgUrl)) {
                         seenUrls.add(imgUrl)
                         imageResults.add(ImageResult(url = imgUrl, title = query))
