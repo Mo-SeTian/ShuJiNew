@@ -117,7 +117,7 @@ fun StatsScreen(
                         )
                         StatsCardModern(
                             title = "累计阅读",
-                            value = "${uiState.totalPages.toInt()}",
+                            value = "${uiState.totalPagesRead.toInt()}",
                             subtitle = "页",
                             icon = Icons.Default.MenuBook,
                             color = WantToReadGreen,
