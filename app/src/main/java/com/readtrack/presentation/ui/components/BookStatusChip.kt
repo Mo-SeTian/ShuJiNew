@@ -51,3 +51,13 @@ fun getStatusColor(status: BookStatus): Color {
         BookStatus.ABANDONED -> AbandonedRed
     }
 }
+
+fun getStatusLabel(status: BookStatus): String {
+    return when (status) {
+        BookStatus.WANT_TO_READ -> "想读"
+        BookStatus.READING -> "阅读中"
+        BookStatus.FINISHED -> "已读"
+        BookStatus.ON_HOLD -> "闲置"
+        BookStatus.ABANDONED -> "放弃"
+    }
+}

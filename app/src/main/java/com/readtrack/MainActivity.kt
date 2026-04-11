@@ -18,7 +18,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        // Enable edge-to-edge for Android 16
+        // Enable edge-to-edge for immersive experience
+        enableEdgeToEdge()
         WindowCompat.setDecorFitsSystemWindows(window, false)
         
         setContent {

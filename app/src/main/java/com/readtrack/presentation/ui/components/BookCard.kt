@@ -8,7 +8,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
@@ -24,8 +26,11 @@ fun BookCard(
         modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        shape = RoundedCornerShape(12.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
     ) {
         Row(
             modifier = Modifier
@@ -35,28 +40,32 @@ fun BookCard(
         ) {
             // Book Cover
             AsyncImage(
-                model = book.coverPath ?: "https://via.placeholder.com/80x120",
+                model = book.coverPath ?: "https://via.placeholder.com/80x120?text=Book",
                 contentDescription = book.title,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
-                    .width(60.dp)
-                    .height(90.dp)
-                    .clip(RoundedCornerShape(8.dp))
+                    .width(70.dp)
+                    .height(105.dp)
+                    .clip(RoundedCornerShape(12.dp))
             )
 
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(14.dp))
 
             // Book Info
             Column(
                 modifier = Modifier.weight(1f)
             ) {
+                // Title
                 Text(
                     text = book.title,
                     style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
                     maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
+                // Author
                 if (!book.author.isNullOrBlank()) {
                     Text(
                         text = book.author,
@@ -67,27 +76,60 @@ fun BookCard(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
-                // Progress
+                // Status Chip
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = getStatusColor(book.status).copy(alpha = 0.15f)
+                ) {
+                    Text(
+                        text = book.status.displayName,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = getStatusColor(book.status),
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // Progress Bar
                 val progress = if (book.totalPages > 0) 
-                    (book.currentPage / book.totalPages * 100).toInt() 
+                    (book.currentPage.toFloat() / book.totalPages * 100).toInt() 
                 else 0
 
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "进度",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "$progress%",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Medium,
+                            color = getStatusColor(book.status)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
                     LinearProgressIndicator(
                         progress = { (progress / 100f).coerceIn(0f, 1f) },
                         modifier = Modifier
-                            .weight(1f)
+                            .fillMaxWidth()
                             .height(6.dp)
                             .clip(RoundedCornerShape(3.dp)),
-                        color = getStatusColor(book.status)
+                        color = getStatusColor(book.status),
+                        trackColor = getStatusColor(book.status).copy(alpha = 0.2f)
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "$progress%",
+                        text = "${book.currentPage}/${book.totalPages} 页",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

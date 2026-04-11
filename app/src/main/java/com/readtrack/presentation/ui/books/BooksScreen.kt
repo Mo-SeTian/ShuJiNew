@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Search
@@ -14,6 +15,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.readtrack.domain.model.BookStatus
@@ -32,20 +34,38 @@ fun BooksScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("我的书籍") },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary
+            LargeTopAppBar(
+                title = {
+                    Column {
+                        Text(
+                            "我的书籍",
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        if (uiState.books.isNotEmpty()) {
+                            Text(
+                                "共 ${uiState.books.size} 本",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                },
+                colors = TopAppBarDefaults.largeTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    scrolledContainerColor = MaterialTheme.colorScheme.surface
                 )
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
+            ExtendedFloatingActionButton(
                 onClick = onAddBookClick,
-                containerColor = MaterialTheme.colorScheme.primary
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
             ) {
-                Icon(Icons.Default.Add, contentDescription = "添加书籍")
+                Icon(Icons.Default.Add, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("添加书籍")
             }
         }
     ) { padding ->
@@ -54,87 +74,108 @@ fun BooksScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // Search Bar
+            // Search Bar - Modern Style
             OutlinedTextField(
                 value = uiState.searchQuery,
                 onValueChange = { viewModel.setSearchQuery(it) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
                 placeholder = { Text("搜索书名、作者...") },
-                leadingIcon = { Icon(Icons.Default.Search, null) },
-                singleLine = true
+                leadingIcon = { 
+                    Icon(
+                        Icons.Default.Search, 
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    ) 
+                },
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+                )
             )
 
-            // Status Filter Chips
+            // Status Filter Chips - Modern Style
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .horizontalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp),
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 FilterChip(
                     selected = uiState.selectedStatus == null,
                     onClick = { viewModel.setStatusFilter(null) },
-                    label = { Text("全部") }
+                    label = { Text("全部") },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                    ),
+                    shape = RoundedCornerShape(20.dp)
                 )
                 BookStatus.entries.forEach { status ->
                     FilterChip(
                         selected = uiState.selectedStatus == status,
                         onClick = { viewModel.setStatusFilter(status) },
-                        label = {
-                            Text(
-                                when (status) {
-                                    BookStatus.WANT_TO_READ -> "想读"
-                                    BookStatus.READING -> "阅读中"
-                                    BookStatus.FINISHED -> "已读"
-                                    BookStatus.ON_HOLD -> "闲置"
-                                    BookStatus.ABANDONED -> "放弃"
-                                }
-                            )
-                        },
+                        label = { Text(status.displayName) },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = getStatusColor(status)
-                        )
+                            selectedContainerColor = getStatusColor(status),
+                            selectedLabelColor = MaterialTheme.colorScheme.surface
+                        ),
+                        shape = RoundedCornerShape(20.dp)
                     )
                 }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Books List
-            if (uiState.isLoading) {
+            // Book List
+            if (uiState.filteredBooks.isEmpty()) {
                 Box(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(32.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator()
-                }
-            } else if (uiState.filteredBooks.isEmpty()) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = if (uiState.searchQuery.isNotBlank()) 
-                            "没有找到相关书籍" 
-                        else 
-                            "你的书架是空的，添加一本书吧",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = if (uiState.searchQuery.isNotEmpty() || uiState.selectedStatus != null) 
+                                "没有找到匹配的书籍" 
+                            else "还没有添加任何书籍",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        if (uiState.searchQuery.isEmpty() && uiState.selectedStatus == null) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "点击右下角「添加书籍」开始",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                            )
+                        }
+                    }
                 }
             } else {
                 LazyColumn(
-                    contentPadding = PaddingValues(16.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(uiState.filteredBooks) { book ->
+                    items(
+                        items = uiState.filteredBooks,
+                        key = { it.id }
+                    ) { book ->
                         BookCard(
                             book = book,
                             onClick = { onBookClick(book.id) }
                         )
+                    }
+                    // Bottom spacing for FAB
+                    item {
+                        Spacer(modifier = Modifier.height(72.dp))
                     }
                 }
             }
