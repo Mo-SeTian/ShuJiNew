@@ -182,12 +182,12 @@ fun MainNavigation() {
                 )
             }
             
-            composable(Screen.CoverSearch.route) {
-                val parentEntry = remember(navBackStackEntry) {
+            composable(Screen.CoverSearch.route) { backStackEntry ->
+                val parentEntry = remember(backStackEntry) {
                     navController.getBackStackEntry(Screen.AddBook.route)
                 }
                 val parentViewModel: com.readtrack.presentation.viewmodel.AddBookViewModel = 
-                    hiltViewModel(parentEntry)
+                    androidx.hilt.navigation.compose.hiltViewModel(parentEntry)
                 
                 CoverSearchScreen(
                     onImageSelected = { imageUrl ->
