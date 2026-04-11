@@ -1,11 +1,14 @@
 package com.readtrack.presentation.ui
 
+import android.net.Uri
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.ImageSearch
 import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.filled.ImageSearch
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -20,6 +23,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.readtrack.presentation.ui.addbook.AddBookScreen
+import com.readtrack.presentation.ui.addbook.CoverSearchScreen
 import com.readtrack.presentation.ui.books.BookDetailScreen
 import com.readtrack.presentation.ui.books.BooksScreen
 import com.readtrack.presentation.ui.home.HomeScreen
@@ -43,6 +47,7 @@ sealed class Screen(
     data object EditBook : Screen("edit_book/{bookId}", "编辑书籍", Icons.Filled.Edit, Icons.Outlined.Edit) {
         fun createRoute(bookId: Long) = "edit_book/$bookId"
     }
+    data object CoverSearch : Screen("cover_search", "搜索封面", Icons.Filled.ImageSearch, Icons.Outlined.ImageSearch)
 }
 
 private val animationSpec = tween<Float>(durationMillis = 150)
@@ -155,9 +160,13 @@ fun MainNavigation() {
             }
             
             composable(Screen.AddBook.route) {
+                var pendingCoverUri by remember { mutableStateOf<Uri?>(null) }
                 AddBookScreen(
                     onNavigateBack = { navController.popBackStack() },
-                    bookId = null
+                    bookId = null,
+                    onSearchCover = { query ->
+                        navController.navigate(Screen.CoverSearch.route)
+                    }
                 )
             }
             
@@ -168,7 +177,20 @@ fun MainNavigation() {
                 val bookId = backStackEntry.arguments?.getLong("bookId") ?: return@composable
                 AddBookScreen(
                     onNavigateBack = { navController.popBackStack() },
-                    bookId = bookId
+                    bookId = bookId,
+                    onSearchCover = { query ->
+                        navController.navigate(Screen.CoverSearch.route)
+                    }
+                )
+            }
+            
+            composable(Screen.CoverSearch.route) {
+                CoverSearchScreen(
+                    onImageSelected = { imageUrl ->
+                        // TODO: Pass back the selected image URL
+                        navController.popBackStack()
+                    },
+                    onNavigateBack = { navController.popBackStack() }
                 )
             }
         }
