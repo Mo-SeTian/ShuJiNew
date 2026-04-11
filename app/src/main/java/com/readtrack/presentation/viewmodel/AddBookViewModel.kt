@@ -17,7 +17,10 @@ import javax.inject.Inject
 data class AddBookUiState(
     val title: String = "",
     val author: String = "",
+    val publisher: String = "",
     val totalPages: String = "",
+    val currentPage: String = "",
+    val description: String = "",
     val coverUri: Uri? = null,
     val status: BookStatus = BookStatus.WANT_TO_READ,
     val isSaving: Boolean = false,
@@ -41,8 +44,20 @@ class AddBookViewModel @Inject constructor(
         _uiState.update { it.copy(author = author) }
     }
 
+    fun updatePublisher(publisher: String) {
+        _uiState.update { it.copy(publisher = publisher) }
+    }
+
     fun updateTotalPages(pages: String) {
         _uiState.update { it.copy(totalPages = pages, errorMessage = null) }
+    }
+
+    fun updateCurrentPage(page: String) {
+        _uiState.update { it.copy(currentPage = page) }
+    }
+
+    fun updateDescription(description: String) {
+        _uiState.update { it.copy(description = description) }
     }
 
     fun updateCoverUri(uri: Uri?) {
@@ -68,6 +83,8 @@ class AddBookViewModel @Inject constructor(
             return
         }
 
+        val currentPage = state.currentPage.toDoubleOrNull() ?: 0.0
+
         _uiState.update { it.copy(isSaving = true, errorMessage = null) }
 
         viewModelScope.launch {
@@ -76,9 +93,11 @@ class AddBookViewModel @Inject constructor(
                 val book = BookEntity(
                     title = state.title.trim(),
                     author = state.author.trim().takeIf { it.isNotBlank() },
+                    publisher = state.publisher.trim().takeIf { it.isNotBlank() },
                     totalPages = pages,
-                    currentPage = 0.0,
+                    currentPage = currentPage.coerceIn(0.0, pages),
                     coverPath = state.coverUri?.toString(),
+                    description = state.description.trim().takeIf { it.isNotBlank() },
                     status = state.status,
                     createdAt = currentTime,
                     updatedAt = currentTime,

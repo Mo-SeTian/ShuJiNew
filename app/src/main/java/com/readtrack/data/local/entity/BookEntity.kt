@@ -10,6 +10,8 @@ data class BookEntity(
     val id: Long = 0,
     val title: String,
     val author: String? = null,
+    val publisher: String? = null,
+    val description: String? = null,
     val totalPages: Double,
     val currentPage: Double = 0.0,
     val coverPath: String? = null,

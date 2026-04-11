@@ -15,7 +15,11 @@ import javax.inject.Inject
 data class HomeUiState(
     val todayPages: Double = 0.0,
     val streakDays: Int = 0,
-    val readingBooks: List<BookEntity> = emptyList(),
+    val totalReadingTime: Double = 0.0,
+    val totalBooks: Int = 0,
+    val readingBooks: Int = 0,
+    val finishedBooks: Int = 0,
+    val recentBooks: List<BookEntity> = emptyList(),
     val statusCounts: Map<BookStatus, Int> = emptyMap(),
     val isLoading: Boolean = true,
     val errorMessage: String? = null
@@ -44,7 +48,15 @@ class HomeViewModel @Inject constructor(
                     val statusCounts = BookStatus.entries.associateWith { status ->
                         books.count { it.status == status }
                     }
-                    _uiState.update { it.copy(statusCounts = statusCounts, isLoading = false) }
+                    _uiState.update { 
+                        it.copy(
+                            statusCounts = statusCounts,
+                            totalBooks = books.size,
+                            readingBooks = books.count { it.status == BookStatus.READING },
+                            finishedBooks = books.count { it.status == BookStatus.FINISHED },
+                            isLoading = false
+                        ) 
+                    }
                 }
         }
     }
@@ -54,7 +66,7 @@ class HomeViewModel @Inject constructor(
             bookRepository.getBooksByStatus(BookStatus.READING)
                 .catch { emit(emptyList()) }
                 .collect { books ->
-                    _uiState.update { it.copy(readingBooks = books) }
+                    _uiState.update { it.copy(recentBooks = books) }
                 }
         }
     }
@@ -83,7 +95,13 @@ class HomeViewModel @Inject constructor(
                 .catch { emit(emptyList()) }
                 .collect { records ->
                     val streak = calculateStreak(records.map { it.date })
-                    _uiState.update { it.copy(streakDays = streak) }
+                    val totalTime = records.sumOf { it.pagesRead }
+                    _uiState.update { 
+                        it.copy(
+                            streakDays = streak,
+                            totalReadingTime = totalTime
+                        ) 
+                    }
                 }
         }
     }
@@ -96,10 +114,8 @@ class HomeViewModel @Inject constructor(
         calendar.set(Calendar.MINUTE, 0)
         calendar.set(Calendar.SECOND, 0)
         calendar.set(Calendar.MILLISECOND, 0)
-        val today = calendar.timeInMillis
-        val yesterday = today - 86400000
-
-        val uniqueDays = dates.map { date ->
+        
+        val sortedDates = dates.map { date ->
             calendar.timeInMillis = date
             calendar.set(Calendar.HOUR_OF_DAY, 0)
             calendar.set(Calendar.MINUTE, 0)
@@ -107,19 +123,38 @@ class HomeViewModel @Inject constructor(
             calendar.set(Calendar.MILLISECOND, 0)
             calendar.timeInMillis
         }.distinct().sortedDescending()
-
-        if (uniqueDays.isEmpty()) return 0
-        if (uniqueDays.first() < yesterday) return 0
-
-        var streak = 0
-        var expected = if (uniqueDays.first() == today) today else yesterday
-
-        for (day in uniqueDays) {
-            if (day == expected) {
+        
+        if (sortedDates.isEmpty()) return 0
+        
+        calendar.timeInMillis = System.currentTimeMillis()
+        calendar.set(Calendar.HOUR_OF_DAY, 0)
+        calendar.set(Calendar.MINUTE, 0)
+        calendar.set(Calendar.SECOND, 0)
+        calendar.set(Calendar.MILLISECOND, 0)
+        val today = calendar.timeInMillis
+        
+        calendar.add(Calendar.DAY_OF_MONTH, -1)
+        val yesterday = calendar.timeInMillis
+        
+        // Check if the most recent read is today or yesterday
+        if (sortedDates[0] != today && sortedDates[0] != yesterday) return 0
+        
+        var streak = 1
+        var currentDate = sortedDates[0]
+        
+        for (i in 1 until sortedDates.size) {
+            calendar.timeInMillis = currentDate
+            calendar.add(Calendar.DAY_OF_MONTH, -1)
+            val expectedPrevDate = calendar.timeInMillis
+            
+            if (sortedDates[i] == expectedPrevDate) {
                 streak++
-                expected -= 86400000
-            } else if (day < expected) break
+                currentDate = expectedPrevDate
+            } else {
+                break
+            }
         }
+        
         return streak
     }
 }
