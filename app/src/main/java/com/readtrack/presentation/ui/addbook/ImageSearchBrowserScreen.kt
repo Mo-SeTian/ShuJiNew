@@ -1,6 +1,8 @@
 package com.readtrack.presentation.ui.addbook
 
 import android.annotation.SuppressLint
+import android.os.Handler
+import android.os.Looper
 import android.graphics.Bitmap
 import android.webkit.*
 import androidx.compose.foundation.layout.*
@@ -22,13 +24,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import kotlinx.coroutines.launch
 
-// JavaScript接口类
+// JavaScript接口类 - 确保回调在主线程执行
 class WebAppInterface(
     private val onImageSelected: (String) -> Unit
 ) {
+    private val mainHandler = Handler(Looper.getMainLooper())
+    
     @android.webkit.JavascriptInterface
     fun onImageSelected(src: String) {
-        onImageSelected(src)
+        mainHandler.post {
+            onImageSelected(src)
+        }
     }
 }
 
