@@ -419,7 +419,6 @@ fun EmptyRecordsCard() {
 }
 
 @Composable
-@Composable
 fun ReadingRecordItem(recordWithBook: RecordWithBook) {
     val record = recordWithBook.record
     val book = recordWithBook.book
