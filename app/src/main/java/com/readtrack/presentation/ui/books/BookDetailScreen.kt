@@ -453,9 +453,16 @@ private fun BookHeader(book: BookEntity) {
 
 @Composable
 private fun ProgressCard(book: BookEntity) {
-    val progress = if (book.totalPages > 0) 
-        (book.currentPage.toFloat() / book.totalPages * 100).toInt() 
-    else 0
+    val isChapterBased = book.progressType == ProgressType.CHAPTER
+    
+    val progress = if (isChapterBased) {
+        val total = book.totalChapters ?: 0
+        if (total > 0) (book.currentChapter.toFloat() / total * 100).toInt() else 0
+    } else {
+        if (book.totalPages > 0) 
+            (book.currentPage.toFloat() / book.totalPages * 100).toInt() 
+        else 0
+    }
     
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -470,11 +477,26 @@ private fun ProgressCard(book: BookEntity) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    "阅读进度",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
+                Column {
+                    Text(
+                        "阅读进度",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    if (isChapterBased) {
+                        Text(
+                            "按章节",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    } else {
+                        Text(
+                            "按页数",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
                 Text(
                     "$progress%",
                     style = MaterialTheme.typography.headlineSmall,
@@ -494,7 +516,11 @@ private fun ProgressCard(book: BookEntity) {
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                "${book.currentPage.toInt()}/${book.totalPages} 页",
+                if (isChapterBased) {
+                    "第 ${book.currentChapter}/${book.totalChapters ?: 0} 章"
+                } else {
+                    "${book.currentPage.toInt()}/${book.totalPages} 页"
+                },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
