@@ -16,7 +16,8 @@ import javax.inject.Inject
 data class BookDetailUiState(
     val book: BookEntity? = null,
     val readingRecords: List<ReadingRecordEntity> = emptyList(),
-    val isLoading: Boolean = true
+    val isLoading: Boolean = true,
+    val errorMessage: String? = null
 )
 
 @HiltViewModel
@@ -31,70 +32,89 @@ class BookDetailViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(BookDetailUiState())
     val uiState: StateFlow<BookDetailUiState> = _uiState.asStateFlow()
 
+    private val _deleteSuccess = MutableSharedFlow<Boolean>()
+    val deleteSuccess: SharedFlow<Boolean> = _deleteSuccess.asSharedFlow()
+
     init {
         loadBookDetail()
     }
 
     private fun loadBookDetail() {
         viewModelScope.launch {
-            combine(
-                bookRepository.getBookById(bookId),
-                recordRepository.getRecordsByBookId(bookId)
-            ) { book, records ->
-                BookDetailUiState(
-                    book = book,
-                    readingRecords = records,
-                    isLoading = false
-                )
-            }.collect { state ->
-                _uiState.value = state
+            try {
+                combine(
+                    bookRepository.getBookById(bookId).catch { emit(null) },
+                    recordRepository.getRecordsByBookId(bookId).catch { emit(emptyList()) }
+                ) { book, records ->
+                    BookDetailUiState(
+                        book = book,
+                        readingRecords = records,
+                        isLoading = false
+                    )
+                }.collect { state ->
+                    _uiState.value = state
+                }
+            } catch (e: Exception) {
+                _uiState.value = BookDetailUiState(isLoading = false, errorMessage = e.message)
             }
         }
     }
 
     fun updateStatus(newStatus: BookStatus) {
         viewModelScope.launch {
-            _uiState.value.book?.let { book ->
-                val updatedBook = book.copy(
-                    status = newStatus,
-                    currentPage = if (newStatus == BookStatus.FINISHED) book.totalPages else book.currentPage,
-                    updatedAt = System.currentTimeMillis()
-                )
-                bookRepository.updateBook(updatedBook)
+            try {
+                _uiState.value.book?.let { book ->
+                    val updatedBook = book.copy(
+                        status = newStatus,
+                        currentPage = if (newStatus == BookStatus.FINISHED) book.totalPages else book.currentPage,
+                        updatedAt = System.currentTimeMillis()
+                    )
+                    bookRepository.updateBook(updatedBook)
+                }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(errorMessage = "更新状态失败: ${e.message}") }
             }
         }
     }
 
     fun addReadingRecord(pagesRead: Double) {
         viewModelScope.launch {
-            _uiState.value.book?.let { book ->
-                val fromPage = book.currentPage
-                val toPage = (book.currentPage + pagesRead).coerceAtMost(book.totalPages)
-                val actualPagesRead = toPage - fromPage
+            try {
+                _uiState.value.book?.let { book ->
+                    val fromPage = book.currentPage
+                    val toPage = (book.currentPage + pagesRead).coerceAtMost(book.totalPages)
+                    val actualPagesRead = toPage - fromPage
 
-                val record = ReadingRecordEntity(
-                    bookId = book.id,
-                    pagesRead = actualPagesRead,
-                    fromPage = fromPage,
-                    toPage = toPage,
-                    date = System.currentTimeMillis()
-                )
-                recordRepository.insertRecord(record)
+                    val record = ReadingRecordEntity(
+                        bookId = book.id,
+                        pagesRead = actualPagesRead,
+                        fromPage = fromPage,
+                        toPage = toPage,
+                        date = System.currentTimeMillis()
+                    )
+                    recordRepository.insertRecord(record)
 
-                // Update book's current page
-                val updatedBook = book.copy(
-                    currentPage = toPage,
-                    lastReadAt = System.currentTimeMillis(),
-                    updatedAt = System.currentTimeMillis()
-                )
-                bookRepository.updateBook(updatedBook)
+                    val updatedBook = book.copy(
+                        currentPage = toPage,
+                        lastReadAt = System.currentTimeMillis(),
+                        updatedAt = System.currentTimeMillis()
+                    )
+                    bookRepository.updateBook(updatedBook)
+                }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(errorMessage = "添加记录失败: ${e.message}") }
             }
         }
     }
 
     fun deleteBook() {
         viewModelScope.launch {
-            bookRepository.deleteBook(bookId)
+            try {
+                bookRepository.deleteBook(bookId)
+                _deleteSuccess.emit(true)
+            } catch (e: Exception) {
+                _uiState.update { it.copy(errorMessage = "删除失败: ${e.message}") }
+            }
         }
     }
 }

@@ -6,7 +6,11 @@ import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.domain.model.BookStatus
 import com.readtrack.domain.repository.BookRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -33,24 +37,20 @@ class BooksViewModel @Inject constructor(
 
     private fun loadBooks() {
         viewModelScope.launch {
-            try {
-                bookRepository.getAllBooks()
-                    .catch { e ->
-                        _uiState.update { it.copy(isLoading = false, errorMessage = e.message) }
+            bookRepository.getAllBooks()
+                .catch { e ->
+                    _uiState.update { it.copy(isLoading = false, errorMessage = "加载失败: ${e.message}") }
+                }
+                .collect { books ->
+                    _uiState.update { state ->
+                        state.copy(
+                            books = books,
+                            filteredBooks = filterBooks(books, state.selectedStatus, state.searchQuery),
+                            isLoading = false,
+                            errorMessage = null
+                        )
                     }
-                    .collect { books ->
-                        _uiState.update { state ->
-                            state.copy(
-                                books = books,
-                                filteredBooks = filterBooks(books, state.selectedStatus, state.searchQuery),
-                                isLoading = false,
-                                errorMessage = null
-                            )
-                        }
-                    }
-            } catch (e: Exception) {
-                _uiState.update { it.copy(isLoading = false, errorMessage = e.message) }
-            }
+                }
         }
     }
 
@@ -81,7 +81,7 @@ class BooksViewModel @Inject constructor(
             val matchesStatus = status == null || book.status == status
             val matchesQuery = query.isBlank() ||
                     book.title.contains(query, ignoreCase = true) ||
-                    book.author?.contains(query, ignoreCase = true) == true
+                    (book.author?.contains(query, ignoreCase = true) == true)
             matchesStatus && matchesQuery
         }
     }

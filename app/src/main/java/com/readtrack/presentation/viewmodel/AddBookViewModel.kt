@@ -62,11 +62,6 @@ class AddBookViewModel @Inject constructor(
             return
         }
 
-        if (state.title.isBlank()) {
-            _uiState.update { it.copy(errorMessage = "书名不能为空") }
-            return
-        }
-
         val pages = state.totalPages.toDoubleOrNull()
         if (pages == null || pages <= 0) {
             _uiState.update { it.copy(errorMessage = "请输入有效的页数（大于0）") }
@@ -96,7 +91,7 @@ class AddBookViewModel @Inject constructor(
                 _uiState.update { 
                     it.copy(
                         isSaving = false, 
-                        errorMessage = "保存失败: ${e.message ?: "未知错误"}"
+                        errorMessage = "保存失败: ${e.message}"
                     ) 
                 }
             }

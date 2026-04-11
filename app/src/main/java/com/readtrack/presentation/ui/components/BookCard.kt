@@ -83,7 +83,7 @@ fun BookCard(
                             .weight(1f)
                             .height(6.dp)
                             .clip(RoundedCornerShape(3.dp)),
-                        color = getStatusColor(book.status),
+                        color = getStatusColor(book.status)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
@@ -92,20 +92,7 @@ fun BookCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Text(
-                    text = "${book.currentPage.toInt()}/${book.totalPages.toInt()}页",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            // Status Chip
-            BookStatusChip(status = book.status)
         }
     }
 }

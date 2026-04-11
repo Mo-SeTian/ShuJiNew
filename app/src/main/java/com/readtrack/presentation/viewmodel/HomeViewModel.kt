@@ -37,7 +37,6 @@ class HomeViewModel @Inject constructor(
     private fun loadData() {
         viewModelScope.launch {
             try {
-                // Get today's reading pages
                 val calendar = Calendar.getInstance()
                 calendar.set(Calendar.HOUR_OF_DAY, 0)
                 calendar.set(Calendar.MINUTE, 0)
@@ -48,16 +47,19 @@ class HomeViewModel @Inject constructor(
                 val endOfDay = calendar.timeInMillis
 
                 combine(
-                    recordRepository.getTotalPagesReadOnDate(startOfDay, endOfDay),
-                    bookRepository.getBooksByStatus(BookStatus.READING),
-                    bookRepository.getAllBooks(),
+                    recordRepository.getTotalPagesReadOnDate(startOfDay, endOfDay)
+                        .catch { emit(0.0) },
+                    bookRepository.getBooksByStatus(BookStatus.READING)
+                        .catch { emit(emptyList()) },
+                    bookRepository.getAllBooks()
+                        .catch { emit(emptyList()) },
                     recordRepository.getAllRecords()
+                        .catch { emit(emptyList()) }
                 ) { todayPages, readingBooks, allBooks, allRecords ->
                     val statusCounts = BookStatus.entries.associateWith { status ->
                         allBooks.count { it.status == status }
                     }
                     
-                    // Calculate streak from all records
                     val streak = calculateReadingStreak(allRecords.map { it.date })
                     
                     HomeUiState(
@@ -67,9 +69,6 @@ class HomeViewModel @Inject constructor(
                         statusCounts = statusCounts,
                         isLoading = false
                     )
-                }.catch { e ->
-                    // Handle errors gracefully
-                    emit(HomeUiState(isLoading = false, errorMessage = e.message))
                 }.collect { state ->
                     _uiState.value = state
                 }
@@ -83,14 +82,13 @@ class HomeViewModel @Inject constructor(
         if (recordDates.isEmpty()) return 0
         
         val calendar = Calendar.getInstance()
-        val today = calendar.apply {
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }.timeInMillis
+        calendar.set(Calendar.HOUR_OF_DAY, 0)
+        calendar.set(Calendar.MINUTE, 0)
+        calendar.set(Calendar.SECOND, 0)
+        calendar.set(Calendar.MILLISECOND, 0)
+        val today = calendar.timeInMillis
+        val yesterday = today - 24 * 60 * 60 * 1000
         
-        // Get unique days with records
         val daysWithRecords = recordDates.map { date ->
             calendar.timeInMillis = date
             calendar.set(Calendar.HOUR_OF_DAY, 0)
@@ -102,11 +100,7 @@ class HomeViewModel @Inject constructor(
         
         if (daysWithRecords.isEmpty()) return 0
         
-        // Check if today or yesterday has a record (streak should continue)
-        val yesterday = today - 24 * 60 * 60 * 1000
         val mostRecentDay = daysWithRecords.first()
-        
-        // If most recent is not today or yesterday, streak is broken
         if (mostRecentDay < yesterday) return 0
         
         var streak = 0
