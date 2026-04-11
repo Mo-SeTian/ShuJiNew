@@ -108,6 +108,38 @@ class BookDetailViewModel @Inject constructor(
         }
     }
 
+    fun addChapterProgress(chaptersRead: Int) {
+        val currentBook = _uiState.value.book ?: return
+        if (currentBook.progressType != ProgressType.CHAPTER) return
+        
+        viewModelScope.launch {
+            try {
+                val currentTime = System.currentTimeMillis()
+                val fromChapter = currentBook.currentChapter
+                val toChapter = (fromChapter + chaptersRead).coerceAtMost(currentBook.totalChapters ?: 0)
+                
+                val record = ReadingRecordEntity(
+                    bookId = currentBook.id,
+                    pagesRead = chaptersRead.toDouble(),
+                    fromPage = fromChapter.toDouble(),
+                    toPage = toChapter.toDouble(),
+                    date = currentTime
+                )
+                recordRepository.insertRecord(record)
+                
+                // Update book's current chapter and last read time
+                val updatedBook = currentBook.copy(
+                    currentChapter = toChapter,
+                    lastReadAt = currentTime,
+                    updatedAt = currentTime
+                )
+                bookRepository.updateBook(updatedBook)
+            } catch (e: Exception) {
+                _uiState.update { it.copy(errorMessage = "添加记录失败: ${e.message}") }
+            }
+        }
+    }
+
     fun deleteBook() {
         val currentBook = _uiState.value.book ?: return
         viewModelScope.launch {

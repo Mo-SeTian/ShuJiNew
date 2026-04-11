@@ -26,6 +26,7 @@ import com.readtrack.domain.model.BookStatus
 import com.readtrack.presentation.ui.components.getStatusColor
 import com.readtrack.presentation.ui.components.getStatusLabel
 import com.readtrack.presentation.viewmodel.BookDetailViewModel
+import com.readtrack.presentation.viewmodel.ProgressType
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -320,23 +321,39 @@ fun BookDetailScreen(
     }
 
     if (showAddRecordDialog && uiState.book != null) {
-        var pagesReadText by remember { mutableStateOf("") }
+        val book = uiState.book!!
+        var inputText by remember { mutableStateOf("") }
+        val isChapterBased = book.progressType == ProgressType.CHAPTER
+        
         AlertDialog(
             onDismissRequest = { showAddRecordDialog = false },
-            title = { Text("添加阅读记录", fontWeight = FontWeight.Bold) },
+            title = { Text("更新阅读进度", fontWeight = FontWeight.Bold) },
             text = {
                 Column {
                     OutlinedTextField(
-                        value = pagesReadText,
-                        onValueChange = { pagesReadText = it.filter { c -> c.isDigit() } },
-                        label = { Text("阅读页数") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        value = inputText,
+                        onValueChange = { 
+                            inputText = if (isChapterBased) {
+                                it.filter { c -> c.isDigit() }
+                            } else {
+                                it.filter { c -> c.isDigit() || c == '.' }
+                            }
+                        },
+                        label = { Text(if (isChapterBased) "阅读章节数" else "阅读页数") },
+                        placeholder = { Text(if (isChapterBased) "输入本次阅读的章节数" else "输入本次阅读的页数") },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = if (isChapterBased) KeyboardType.Number else KeyboardType.Decimal
+                        ),
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp)
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        "当前进度：${uiState.book!!.currentPage}/${uiState.book!!.totalPages} 页",
+                        if (isChapterBased) {
+                            "当前进度：第 ${book.currentChapter}/${book.totalChapters ?: 0} 章"
+                        } else {
+                            "当前进度：第 ${book.currentPage.toInt()} / ${book.totalPages.toInt()} 页"
+                        },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -345,13 +362,21 @@ fun BookDetailScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        val pages = pagesReadText.toDoubleOrNull() ?: 0.0
-                        if (pages > 0) {
-                            viewModel.addReadingRecord(pages)
-                            showAddRecordDialog = false
+                        if (isChapterBased) {
+                            val chapters = inputText.toIntOrNull() ?: 0
+                            if (chapters > 0) {
+                                viewModel.addChapterProgress(chapters)
+                                showAddRecordDialog = false
+                            }
+                        } else {
+                            val pages = inputText.toDoubleOrNull() ?: 0.0
+                            if (pages > 0) {
+                                viewModel.addReadingRecord(pages)
+                                showAddRecordDialog = false
+                            }
                         }
                     },
-                    enabled = pagesReadText.isNotEmpty()
+                    enabled = inputText.isNotEmpty()
                 ) {
                     Text("添加")
                 }
