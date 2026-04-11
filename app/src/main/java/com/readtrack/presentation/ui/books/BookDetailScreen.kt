@@ -42,10 +42,6 @@ fun BookDetailScreen(
     var showStatusDialog by remember { mutableStateOf(false) }
     var showAddRecordDialog by remember { mutableStateOf(false) }
 
-    LaunchedEffect(bookId) {
-        viewModel.loadBookDetail()
-    }
-
     Scaffold(
         topBar = {
             TopAppBar(
