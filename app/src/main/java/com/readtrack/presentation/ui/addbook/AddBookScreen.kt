@@ -38,6 +38,7 @@ fun AddBookScreen(
     onNavigateBack: () -> Unit,
     bookId: Long?,
     onSearchCover: (String) -> Unit = {},
+    onPickCover: () -> Unit = {},
     viewModel: AddBookViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -171,12 +172,12 @@ fun AddBookScreen(
                                     Text("本地图片")
                                 }
                                 OutlinedButton(
-                                    onClick = { onSearchCover(uiState.title) },
+                                    onClick = { onPickCover() },
                                     shape = RoundedCornerShape(12.dp)
                                 ) {
-                                    Icon(Icons.Default.Search, contentDescription = null)
+                                    Icon(Icons.Default.Image, contentDescription = null)
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    Text("搜索封面")
+                                    Text("选择封面")
                                 }
                             }
                             Spacer(modifier = Modifier.height(8.dp))

@@ -24,6 +24,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.readtrack.presentation.ui.addbook.AddBookScreen
 import com.readtrack.presentation.ui.addbook.CoverSearchScreen
+import com.readtrack.presentation.ui.addbook.CoverPickerScreen
 import com.readtrack.presentation.ui.books.BookDetailScreen
 import com.readtrack.presentation.ui.books.BooksScreen
 import com.readtrack.presentation.ui.home.HomeScreen
@@ -48,6 +49,7 @@ sealed class Screen(
         fun createRoute(bookId: Long) = "edit_book/$bookId"
     }
     data object CoverSearch : Screen("cover_search", "搜索封面", Icons.Filled.ImageSearch, Icons.Outlined.ImageSearch)
+    data object CoverPicker : Screen("cover_picker", "选择封面", Icons.Filled.ImageSearch, Icons.Outlined.ImageSearch)
 }
 
 private val animationSpec = tween<Float>(durationMillis = 150)
@@ -165,6 +167,9 @@ fun MainNavigation() {
                     bookId = null,
                     onSearchCover = { query ->
                         navController.navigate(Screen.CoverSearch.route)
+                    },
+                    onPickCover = {
+                        navController.navigate(Screen.CoverPicker.route)
                     }
                 )
             }
@@ -179,6 +184,9 @@ fun MainNavigation() {
                     bookId = bookId,
                     onSearchCover = { query ->
                         navController.navigate(Screen.CoverSearch.route)
+                    },
+                    onPickCover = {
+                        navController.navigate(Screen.CoverPicker.route)
                     }
                 )
             }
@@ -196,6 +204,26 @@ fun MainNavigation() {
                         navController.popBackStack()
                     },
                     onNavigateBack = { navController.popBackStack() }
+                )
+            }
+            
+            composable(Screen.CoverPicker.route) { backStackEntry ->
+                val parentEntry = remember(backStackEntry) {
+                    navController.getBackStackEntry(Screen.AddBook.route)
+                }
+                val parentViewModel: com.readtrack.presentation.viewmodel.AddBookViewModel = 
+                    androidx.hilt.navigation.compose.hiltViewModel(parentEntry)
+                
+                CoverPickerScreen(
+                    initialCoverPath = parentViewModel.uiState.value.coverUri?.toString(),
+                    onCoverSelected = { coverUri ->
+                        parentViewModel.updateCoverUri(coverUri?.let { Uri.parse(it) })
+                        navController.popBackStack()
+                    },
+                    onNavigateBack = { navController.popBackStack() },
+                    onSearchOnline = {
+                        navController.navigate(Screen.CoverSearch.route)
+                    }
                 )
             }
         }
