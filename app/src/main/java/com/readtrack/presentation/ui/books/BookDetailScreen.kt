@@ -341,7 +341,7 @@ fun BookDetailScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        val pages = pagesReadText.toIntOrNull() ?: 0
+                        val pages = pagesReadText.toDoubleOrNull() ?: 0.0
                         if (pages > 0) {
                             viewModel.addReadingRecord(pages)
                             showAddRecordDialog = false

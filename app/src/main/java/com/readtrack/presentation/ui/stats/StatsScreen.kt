@@ -417,7 +417,7 @@ fun EmptyRecordsCard() {
 }
 
 @Composable
-fun ReadingRecordItem(record: DailyReading) {
+fun ReadingRecordItem(record: com.readtrack.data.local.entity.ReadingRecordEntity) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp)
@@ -436,7 +436,7 @@ fun ReadingRecordItem(record: DailyReading) {
                     fontWeight = FontWeight.Medium
                 )
                 Text(
-                    text = "阅读了 ${record.pages.toInt()} 页",
+                    text = "阅读了 ${record.pagesRead.toInt()} 页",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -446,7 +446,7 @@ fun ReadingRecordItem(record: DailyReading) {
                 color = MaterialTheme.colorScheme.primaryContainer
             ) {
                 Text(
-                    text = "+${record.pages.toInt()} 页",
+                    text = "+${record.pagesRead.toInt()} 页",
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
