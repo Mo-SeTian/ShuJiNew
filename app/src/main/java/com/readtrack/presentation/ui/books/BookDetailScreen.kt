@@ -34,13 +34,9 @@ fun BookDetailScreen(
     viewModel: BookDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showStatusDialog by remember { mutableStateOf(false) }
     var showAddRecordDialog by remember { mutableStateOf(false) }
-    
-    // Add record dialog state
-    var newRecordPages by remember { mutableStateOf("") }
 
     Scaffold(
         topBar = {
@@ -60,54 +56,30 @@ fun BookDetailScreen(
         }
     ) { padding ->
         if (uiState.isLoading) {
-            Box(
-                modifier = Modifier.fillMaxSize().padding(padding),
-                contentAlignment = Alignment.Center
-            ) {
+            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
         } else {
             uiState.book?.let { book ->
                 LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding),
+                    modifier = Modifier.fillMaxSize().padding(padding),
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // Book Header
-                    item { BookHeader(book = book) }
-                    
-                    // Progress Card
-                    item { ProgressCard(book = book) }
-                    
-                    // Status Change Button
+                    item { BookHeader(book) }
+                    item { ProgressCard(book) }
                     item {
-                        Card(
-                            onClick = { showStatusDialog = true },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
+                        Card(onClick = { showStatusDialog = true }, modifier = Modifier.fillMaxWidth()) {
+                            Row(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                 Text("更改状态", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                                Text("→", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+                                Text("→", color = MaterialTheme.colorScheme.primary)
                             }
                         }
                     }
-                    
-                    // Quick Status Chips
                     item {
                         Text("快速切换状态", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
+                        Spacer(Modifier.height(8.dp))
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             BookStatus.entries.forEach { status ->
                                 FilterChip(
                                     selected = book.status == status,
@@ -118,30 +90,17 @@ fun BookDetailScreen(
                             }
                         }
                     }
-                    
-                    // Add Record Button
                     item {
-                        Button(
-                            onClick = { showAddRecordDialog = true },
-                            modifier = Modifier.fillMaxWidth(),
-                            enabled = book.status == BookStatus.READING
-                        ) {
+                        Button(onClick = { showAddRecordDialog = true }, modifier = Modifier.fillMaxWidth(), enabled = book.status == BookStatus.READING) {
                             Text("添加阅读记录")
                         }
                         if (book.status != BookStatus.READING) {
                             Text("提示：将状态改为阅读中后可添加阅读记录", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
-                    
-                    // Reading Records
                     item { Text("阅读记录", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) }
-                    
                     if (uiState.readingRecords.isEmpty()) {
-                        item {
-                            Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
-                                Text("暂无阅读记录", modifier = Modifier.padding(16.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                        }
+                        item { Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) { Text("暂无阅读记录", modifier = Modifier.padding(16.dp), color = MaterialTheme.colorScheme.onSurfaceVariant) } }
                     } else {
                         items(uiState.readingRecords) { record ->
                             Card(modifier = Modifier.fillMaxWidth()) {
@@ -150,7 +109,7 @@ fun BookDetailScreen(
                                         Text(SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date(record.date)), style = MaterialTheme.typography.bodyMedium)
                                         Text("第 ${record.fromPage.toInt()} - ${record.toPage.toInt()} 页", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
-                                    Text("+${record.pagesRead.toInt()} 页", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                    Text("+${record.pagesRead.toInt()} 页", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                                 }
                             }
                         }
@@ -160,20 +119,17 @@ fun BookDetailScreen(
         }
     }
 
-    // Status Dialog
     if (showStatusDialog && uiState.book != null) {
+        val currentStatus = uiState.book!!.status
         AlertDialog(
             onDismissRequest = { showStatusDialog = false },
             title = { Text("更改书籍状态") },
             text = {
                 Column {
                     BookStatus.entries.forEach { status ->
-                        val isSelected = uiState.book!!.status == status
+                        val isSelected = status == currentStatus
                         Card(
-                            onClick = {
-                                viewModel.updateStatus(status)
-                                showStatusDialog = false
-                            },
+                            onClick = { viewModel.updateStatus(status); showStatusDialog = false },
                             modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                             colors = CardDefaults.cardColors(containerColor = if (isSelected) getStatusColor(status).copy(alpha = 0.2f) else MaterialTheme.colorScheme.surface),
                             border = if (isSelected) BorderStroke(2.dp, getStatusColor(status)) else null
@@ -190,12 +146,10 @@ fun BookDetailScreen(
         )
     }
 
-    // Add Record Dialog
     if (showAddRecordDialog && uiState.book != null) {
         val book = uiState.book!!
         var pagesText by remember { mutableStateOf("") }
         val remaining = book.totalPages - book.currentPage
-
         AlertDialog(
             onDismissRequest = { showAddRecordDialog = false },
             title = { Text("添加阅读记录") },
@@ -203,26 +157,13 @@ fun BookDetailScreen(
                 Column {
                     Text("当前进度：第 ${book.currentPage.toInt()} 页")
                     Text("剩余页数：${remaining.toInt()} 页")
-                    Spacer(modifier = Modifier.height(16.dp))
-                    OutlinedTextField(
-                        value = pagesText,
-                        onValueChange = { pagesText = it.filter { c -> c.isDigit() || c == '.' } },
-                        label = { Text("本次阅读页数") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    Spacer(Modifier.height(16.dp))
+                    OutlinedTextField(value = pagesText, onValueChange = { pagesText = it.filter { c -> c.isDigit() || c == '.' } }, label = { Text("本次阅读页数") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.fillMaxWidth())
                 }
             },
             confirmButton = {
                 TextButton(
-                    onClick = {
-                        pagesText.toDoubleOrNull()?.let { pages ->
-                            if (pages > 0 && pages <= remaining) {
-                                viewModel.addReadingRecord(pages)
-                                showAddRecordDialog = false
-                            }
-                        }
-                    },
+                    onClick = { pagesText.toDoubleOrNull()?.let { p -> if (p > 0 && p <= remaining) { viewModel.addReadingRecord(p); showAddRecordDialog = false } } },
                     enabled = pagesText.toDoubleOrNull()?.let { it > 0 && it <= remaining } == true
                 ) { Text("确认") }
             },
@@ -230,41 +171,31 @@ fun BookDetailScreen(
         )
     }
 
-    // Delete Dialog
     if (showDeleteDialog && uiState.book != null) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
             title = { Text("确认删除") },
             text = { Text("确定要删除「${uiState.book!!.title}」吗？此操作不可撤销。") },
             confirmButton = {
-                TextButton(onClick = {
-                    viewModel.deleteBook()
-                    showDeleteDialog = false
-                    onNavigateBack()
-               
+                TextButton(onClick = { viewModel.deleteBook(); showDeleteDialog = false; onNavigateBack() }, colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)) { Text("删除") }
+            },
+            dismissButton = { TextButton(onClick = { showDeleteDialog = false }) { Text("取消") } }
+        )
+    }
 }
 
 @Composable
 private fun BookHeader(book: BookEntity) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-        AsyncImage(
-            model = book.coverPath ?: "https://via.placeholder.com/150x225",
-            contentDescription = book.title,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.width(120.dp).height(180.dp).clip(RoundedCornerShape(12.dp))
-        )
+        AsyncImage(model = book.coverPath ?: "https://via.placeholder.com/150x225", contentDescription = book.title, contentScale = ContentScale.Crop, modifier = Modifier.width(120.dp).height(180.dp).clip(RoundedCornerShape(12.dp)))
         Column(modifier = Modifier.weight(1f)) {
             Text(book.title, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             if (!book.author.isNullOrBlank()) {
                 Text(book.author, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            Spacer(modifier = Modifier.height(8.dp))
-            AssistChip(
-                onClick = { },
-                label = { Text(getStatusLabel(book.status), fontWeight = FontWeight.Bold) },
-                colors = AssistChipDefaults.assistChipColors(containerColor = getStatusColor(book.status).copy(alpha = 0.2f))
-            )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(Modifier.height(8.dp))
+            AssistChip(onClick = { }, label = { Text(getStatusLabel(book.status), fontWeight = FontWeight.Bold) }, colors = AssistChipDefaults.assistChipColors(containerColor = getStatusColor(book.status).copy(alpha = 0.2f)))
+            Spacer(Modifier.height(8.dp))
             Text("共 ${book.totalPages.toInt()} 页", style = MaterialTheme.typography.bodyMedium)
         }
     }
@@ -275,19 +206,11 @@ private fun ProgressCard(book: BookEntity) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text("阅读进度", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(Modifier.height(12.dp))
             val progress = if (book.totalPages > 0) (book.currentPage / book.totalPages).toFloat() else 0f
-            LinearProgressIndicator(
-                progress = { progress },
-                modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)),
-                color = getStatusColor(book.status)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                "${book.currentPage.toInt()} / ${book.totalPages.toInt()} 页 (${(progress * 100).toInt()}%)",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)), color = getStatusColor(book.status))
+            Spacer(Modifier.height(8.dp))
+            Text("${book.currentPage.toInt()} / ${book.totalPages.toInt()} 页 (${(progress * 100).toInt()}%)", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
