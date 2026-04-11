@@ -90,11 +90,6 @@ dependencies {
     // Coil for images
     implementation("io.coil-kt:coil-compose:2.6.0")
     
-    // Vico Charts
-    implementation("com.patrykandpatrick.vico:compose:1.13.1")
-    implementation("com.patrykandpatrick.vico:compose-m3:1.13.1")
-    implementation("com.patrykandpatrick.vico:core:1.13.1")
-    
     // Kotlin Serialization
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
     
