@@ -24,7 +24,7 @@ fun BookStatusChip(
 ) {
     val (color, text) = when (status) {
         BookStatus.WANT_TO_READ -> WantToReadGreen to "想读"
-        BookStatus.READING -> ReadingOrange to "阅读中"
+        BookStatus.READING -> ReadingOrange to "在读"
         BookStatus.FINISHED -> FinishedBlue to "已读"
         BookStatus.ON_HOLD -> OnHoldGray to "闲置"
         BookStatus.ABANDONED -> AbandonedRed to "放弃"
@@ -55,7 +55,7 @@ fun getStatusColor(status: BookStatus): Color {
 fun getStatusLabel(status: BookStatus): String {
     return when (status) {
         BookStatus.WANT_TO_READ -> "想读"
-        BookStatus.READING -> "阅读中"
+        BookStatus.READING -> "在读"
         BookStatus.FINISHED -> "已读"
         BookStatus.ON_HOLD -> "闲置"
         BookStatus.ABANDONED -> "放弃"

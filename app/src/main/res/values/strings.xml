@@ -6,7 +6,7 @@
     <string name="nav_stats">统计</string>
     <string name="nav_settings">设置</string>
     <string name="status_want_to_read">想读</string>
-    <string name="status_reading">阅读中</string>
+    <string name="status_reading">在读</string>
     <string name="status_finished">已读</string>
     <string name="status_on_hold">闲置</string>
     <string name="status_abandoned">放弃</string>

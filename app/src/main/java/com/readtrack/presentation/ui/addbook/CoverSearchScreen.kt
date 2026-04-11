@@ -1,5 +1,6 @@
 package com.readtrack.presentation.ui.addbook
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -18,6 +19,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
@@ -79,7 +81,7 @@ fun CoverSearchScreen(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("输入书名或作者搜索封面") },
+                placeholder = { Text("输入书名搜索封面") },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                 trailingIcon = {
                     if (searchQuery.isNotEmpty()) {
@@ -98,7 +100,7 @@ fun CoverSearchScreen(
                             errorMessage = null
                             scope.launch {
                                 val results = withContext(Dispatchers.IO) {
-                                    doBookSearch(searchQuery)
+                                    searchBookCovers(searchQuery)
                                 }
                                 imageResults = results.first
                                 errorMessage = results.second
@@ -119,7 +121,7 @@ fun CoverSearchScreen(
                         errorMessage = null
                         scope.launch {
                             val results = withContext(Dispatchers.IO) {
-                                doBookSearch(searchQuery)
+                                searchBookCovers(searchQuery)
                             }
                             imageResults = results.first
                             errorMessage = results.second
@@ -194,7 +196,7 @@ fun CoverSearchScreen(
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .aspectRatio(0.7f)
+                                .aspectRatio(0.67f)
                                 .clickable {
                                     selectedImageUrl = result.url
                                     showConfirmDialog = true
@@ -207,7 +209,7 @@ fun CoverSearchScreen(
                                     model = result.url,
                                     contentDescription = result.title,
                                     modifier = Modifier.fillMaxSize(),
-                                    contentScale = ContentScale.Crop
+                                    contentScale = ContentScale.Fit
                                 )
                             }
                         }
@@ -313,73 +315,17 @@ fun CoverSearchScreen(
 }
 
 /**
- * 使用 Open Library API 搜索书籍封面
+ * 搜索书籍封面 - 使用Google Books API
  */
-private fun doBookSearch(query: String): Pair<List<ImageResult>, String?> {
-    return try {
-        val encodedQuery = URLEncoder.encode(query, "UTF-8")
-        val searchUrl = "https://openlibrary.org/search.json?q=$encodedQuery&limit=20&fields=cover_i,title,author_name"
-        
-        val url = URL(searchUrl)
-        val connection = url.openConnection() as HttpURLConnection
-        connection.requestMethod = "GET"
-        connection.setRequestProperty("User-Agent", "ReadTrack/1.0")
-        connection.setRequestProperty("Accept", "application/json")
-        connection.connectTimeout = 15000
-        connection.readTimeout = 15000
-        
-        val reader = BufferedReader(InputStreamReader(connection.inputStream, "UTF-8"))
-        val response = reader.readText()
-        reader.close()
-        
-        val imageResults = mutableListOf<ImageResult>()
-        
-        // 解析Open Library JSON响应
-        val coverIds = mutableSetOf<Int>()
-        val coverIdPattern = Regex("\"cover_i\"\\s*:\\s*(\\d+)")
-        val titlePattern = Regex("\"title\"\\s*:\\s*\"([^\"]+)\"")
-        
-        val allMatches = coverIdPattern.findAll(response).toList()
-        val titleMatches = titlePattern.findAll(response).toList()
-        
-        for (i in allMatches.indices) {
-            val coverId = allMatches[i].groupValues[1].toIntOrNull() ?: continue
-            if (coverIds.contains(coverId)) continue
-            coverIds.add(coverId)
-            
-            // Open Library 封面URL: https://covers.openlibrary.org/b/id/{cover_id}-{size}.jpg
-            val coverUrl = "https://covers.openlibrary.org/b/id/$coverId-M.jpg"
-            val title = titleMatches.getOrNull(i)?.groupValues?.get(1) ?: query
-            
-            if (isValidImageUrl(coverUrl)) {
-                imageResults.add(ImageResult(url = coverUrl, title = title))
-            }
-        }
-        
-        // 如果Open Library没有结果，尝试使用Google Books API
-        if (imageResults.isEmpty()) {
-            return doGoogleBooksSearch(query)
-        }
-        
-        Pair(imageResults.take(30), null)
-        
-    } catch (e: Exception) {
-        e.printStackTrace()
-        Pair(emptyList(), "搜索失败: ${e.message}")
-    }
-}
-
-/**
- * 使用 Google Books API 作为备选方案
- */
-private fun doGoogleBooksSearch(query: String): Pair<List<ImageResult>, String?> {
+private fun searchBookCovers(query: String): Pair<List<ImageResult>, String?> {
     return try {
         val encodedQuery = URLEncoder.encode(query, "UTF-8")
         val searchUrl = "https://www.googleapis.com/books/v1/volumes?q=$encodedQuery&maxResults=20"
         
         val url = URL(searchUrl)
         val connection = url.openConnection() as HttpURLConnection
-        connection.requestMethod = "GET"
+        connection.requestMethod = "GET")
+        connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
         connection.connectTimeout = 15000
         connection.readTimeout = 15000
         
@@ -390,28 +336,40 @@ private fun doGoogleBooksSearch(query: String): Pair<List<ImageResult>, String?>
         val imageResults = mutableListOf<ImageResult>()
         
         // 解析 Google Books JSON
-        val imagePattern = Regex("\"imageLinks\"\\s*:\\s*\\{[^}]*\"thumbnail\"\\s*:\\s*\"([^\"]+)\"")
-        val titlePattern = Regex("\"title\"\\s*:\\s*\"([^\"]+)\"")
+        // 匹配 volumeInfo.imageLinks
+        val volumeInfoPattern = Regex("\"volumeInfo\"\s*:\s*\{([^}]+(?:\{[^}]*\})*[^}]*)\}")
+        val imageLinksPattern = Regex("\"imageLinks\"\s*:\s*\{([^}]+)\}")
+        val thumbnailPattern = Regex("\"thumbnail\"\s*:\s*\"([^\"]+)\"")
+        val titlePattern = Regex("\"title\"\s*:\s*\"([^\"]+)\"")
         
-        val imageMatches = imagePattern.findAll(response)
-        val titleMatches = titlePattern.findAll(response).toList()
+        // 提取每个volume的imageLinks和title
+        val seenUrls = mutableSetOf<String>()
         
-        var index = 0
-        imageMatches.forEach { match ->
-            var imgUrl = match.groupValues[1]
-            // 替换http为https，并获取更高质量的图片
-            imgUrl = imgUrl.replace("http://", "https://").replace("&zoom=1", "&zoom=2")
+        volumeInfoPattern.findAll(response).forEach { volumeMatch ->
+            val volumeInfo = volumeMatch.groupValues[1]
+            val titleMatch = titlePattern.find(volumeInfo)
+            val title = titleMatch?.groupValues?.get(1) ?: query
             
-            val title = titleMatches.getOrNull(index)?.groupValues?.get(1) ?: query
-            
-            if (isValidImageUrl(imgUrl)) {
-                imageResults.add(ImageResult(url = imgUrl, title = title))
+            val imageLinksMatch = imageLinksPattern.find(volumeInfo)
+            imageLinksMatch?.let { linksMatch ->
+                val imageLinks = linksMatch.groupValues[1]
+                thumbnailPattern.find(imageLinks)?.let { thumbMatch ->
+                    var imgUrl = thumbMatch.groupValues[1]
+                    // 替换http为https
+                    imgUrl = imgUrl.replace("http://", "https://")
+                    // 去掉zoom参数获取更大图片
+                    imgUrl = imgUrl.replace("&zoom=1", "").replace("&zoom=0.5", "")
+                    
+                    if (!seenUrls.contains(imgUrl) && imgUrl.isNotBlank()) {
+                        seenUrls.add(imgUrl)
+                        imageResults.add(ImageResult(url = imgUrl, title = title))
+                    }
+                }
             }
-            index++
         }
         
         if (imageResults.isEmpty()) {
-            Pair(emptyList(), "未找到相关书籍封面")
+            Pair(emptyList(), "未找到相关书籍封面，请尝试其他关键词")
         } else {
             Pair(imageResults, null)
         }
@@ -420,17 +378,4 @@ private fun doGoogleBooksSearch(query: String): Pair<List<ImageResult>, String?>
         e.printStackTrace()
         Pair(emptyList(), "搜索失败: ${e.message}")
     }
-}
-
-/**
- * 验证图片URL是否有效
- */
-private fun isValidImageUrl(url: String): Boolean {
-    if (url.isBlank() || !url.startsWith("http")) return false
-    if (url.contains("pixel") || url.contains("1x1") || url.contains("blank")) return false
-    
-    val invalidExtensions = listOf(".gif", ".svg", ".ico")
-    if (invalidExtensions.any { url.lowercase().contains(it) }) return false
-    
-    return true
 }
