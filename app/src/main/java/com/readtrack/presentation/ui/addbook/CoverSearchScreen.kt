@@ -296,8 +296,8 @@ private fun doSearch(query: String): Pair<List<ImageResult>, String?> {
         
         val imageResults = mutableListOf<ImageResult>()
         
-        val murlPattern = Regex("\"murl\"\s*:\s*\"([^\"]+)\"")
-        val thumbnailPattern = Regex("\"turl\"\s*:\s*\"([^\"]+)\"")
+        val murlPattern = Regex("\"murl\"\\s*:\\s*\"([^\"]+)\"")
+        val thumbnailPattern = Regex("\"turl\"\\s*:\\s*\"([^\"]+)\"")
         
         val seenUrls = mutableSetOf<String>()
         
