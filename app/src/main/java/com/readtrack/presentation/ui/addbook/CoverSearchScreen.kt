@@ -324,7 +324,7 @@ private fun searchBookCovers(query: String): Pair<List<ImageResult>, String?> {
         
         val url = URL(searchUrl)
         val connection = url.openConnection() as HttpURLConnection
-        connection.requestMethod = "GET")
+        connection.requestMethod = "GET"
         connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
         connection.connectTimeout = 15000
         connection.readTimeout = 15000
