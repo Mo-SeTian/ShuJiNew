@@ -302,8 +302,8 @@ private fun performSearch(query: String, callback: (List<ImageResult>, String?) 
             val imageResults = mutableListOf<ImageResult>()
             
             // Parse image URLs from bing response
-            val murlPattern = Regex(""""murl"""\s*:\s*""([^""]+)""")
-            val thumbnailPattern = Regex(""""turl"""\s*:\s*""([^""]+)""")
+            val murlPattern = Regex("\"murl\"\\s*:\\s*\"([^\"]+)\"")
+            val thumbnailPattern = Regex("\"turl\"\\s*:\\s*\"([^\"]+)\"")
             
             val seenUrls = mutableSetOf<String>()
             
