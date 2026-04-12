@@ -75,8 +75,8 @@ fun HomeScreen(
                 ) {
                     StatCardModern(
                         title = "今日阅读",
-                        value = "${uiState.todayPages.toInt()}",
-                        subtitle = "页",
+                        value = "${uiState.todayChapters.toInt()}章",
+                        subtitle = "${uiState.todayPages.toInt()}页",
                         icon = Icons.Default.MenuBook,
                         gradientColors = listOf(
                             MaterialTheme.colorScheme.primary,

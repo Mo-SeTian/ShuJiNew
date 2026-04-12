@@ -6,6 +6,7 @@ import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.domain.model.BookStatus
 import com.readtrack.domain.repository.BookRepository
 import com.readtrack.domain.repository.ReadingRecordRepository
+import com.readtrack.presentation.viewmodel.ProgressType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -14,6 +15,7 @@ import javax.inject.Inject
 
 data class HomeUiState(
     val todayPages: Double = 0.0,
+    val todayChapters: Double = 0.0,
     val streakDays: Int = 0,
     val totalReadingTime: Double = 0.0,
     val totalBooks: Int = 0,
@@ -73,35 +75,43 @@ class HomeViewModel @Inject constructor(
 
     private fun loadReadingRecords() {
         viewModelScope.launch {
-            // Calculate today's pages
-            val calendar = Calendar.getInstance()
-            calendar.set(Calendar.HOUR_OF_DAY, 0)
-            calendar.set(Calendar.MINUTE, 0)
-            calendar.set(Calendar.SECOND, 0)
-            calendar.set(Calendar.MILLISECOND, 0)
-            val startOfDay = calendar.timeInMillis
-            calendar.add(Calendar.DAY_OF_MONTH, 1)
-            val endOfDay = calendar.timeInMillis
-
-            recordRepository.getTotalPagesReadOnDate(startOfDay, endOfDay)
-                .catch { emit(0.0) }
-                .collect { pages ->
-                    _uiState.update { it.copy(todayPages = pages ?: 0.0) }
-                }
-        }
-
-        viewModelScope.launch {
-            recordRepository.getAllRecords()
+            // Get all books for reference
+            bookRepository.getAllBooks()
                 .catch { emit(emptyList()) }
-                .collect { records ->
-                    val streak = calculateStreak(records.map { it.date })
-                    val totalTime = records.sumOf { it.pagesRead }
-                    _uiState.update { 
-                        it.copy(
-                            streakDays = streak,
-                            totalReadingTime = totalTime
-                        ) 
-                    }
+                .collect { books ->
+                    val booksMap = books.associateBy { it.id }
+                    val chapterBooks = booksMap.filterValues { it.progressType == ProgressType.CHAPTER }.keys
+                    
+                    // Get all records and calculate stats
+                    recordRepository.getAllRecords()
+                        .catch { emit(emptyList()) }
+                        .collect { records ->
+                            val now = System.currentTimeMillis()
+                            val startOfToday = Calendar.getInstance().apply {
+                                set(Calendar.HOUR_OF_DAY, 0)
+                                set(Calendar.MINUTE, 0)
+                                set(Calendar.SECOND, 0)
+                                set(Calendar.MILLISECOND, 0)
+                            }.timeInMillis
+                            
+                            // Today's stats
+                            val todayRecords = records.filter { it.date >= startOfToday }
+                            val todayPages = todayRecords.filter { it.bookId !in chapterBooks }.sumOf { it.pagesRead }
+                            val todayChapters = todayRecords.filter { it.bookId in chapterBooks }.sumOf { it.pagesRead }
+                            
+                            // Calculate streak and total time
+                            val streak = calculateStreak(records.map { it.date })
+                            val totalTime = records.sumOf { it.pagesRead }
+                            
+                            _uiState.update { 
+                                it.copy(
+                                    todayPages = todayPages,
+                                    todayChapters = todayChapters,
+                                    streakDays = streak,
+                                    totalReadingTime = totalTime
+                                ) 
+                            }
+                        }
                 }
         }
     }
