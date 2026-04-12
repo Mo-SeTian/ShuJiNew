@@ -49,12 +49,18 @@ fun AddBookScreen(
         viewModel.updateCoverUri(uri?.toString())
     }
 
+    // 使用 rememberSaveable 追踪是否已经初始化过，避免从封面选择器返回时重置状态
+    var hasInitialized by rememberSaveable { mutableStateOf(false) }
+    
     // Load book data if editing
     LaunchedEffect(bookId) {
         if (bookId != null) {
             viewModel.loadBook(bookId)
-        } else {
+            hasInitialized = true
+        } else if (!hasInitialized) {
+            // 只有在首次进入添加页面时才重置，避免从封面选择器返回时清空数据
             viewModel.resetState()
+            hasInitialized = true
         }
     }
 
