@@ -29,6 +29,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.SavedStateHandle
 import com.readtrack.presentation.ui.components.BookCover
 import com.readtrack.domain.model.BookStatus
 import com.readtrack.presentation.ui.components.getStatusColor
@@ -42,6 +43,7 @@ fun AddBookScreen(
     bookId: Long?,
     onSearchCover: (String) -> Unit = {},
     onPickCover: () -> Unit = {},
+    savedStateHandle: SavedStateHandle? = null,
     viewModel: AddBookViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -65,6 +67,18 @@ fun AddBookScreen(
             // 只有在首次进入添加页面时才重置，避免从封面选择器返回时清空数据
             viewModel.resetState()
             hasInitialized = true
+        }
+    }
+    
+    // 监听从封面选择器返回的封面URI
+    LaunchedEffect(savedStateHandle) {
+        savedStateHandle?.let { handle ->
+            val coverUri = handle.get<String>("selectedCoverUri")
+            if (coverUri != null) {
+                viewModel.updateCoverUri(coverUri)
+                // 清除已使用的封面，避免下次进入时错误应用
+                handle.remove<String>("selectedCoverUri")
+            }
         }
     }
 

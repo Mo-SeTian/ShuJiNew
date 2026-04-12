@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.SavedStateHandle
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
@@ -44,7 +45,10 @@ sealed class Screen(
     data object EditBook : Screen("edit_book/{bookId}", "编辑书籍", Icons.Filled.Edit, Icons.Outlined.Edit) {
         fun createRoute(bookId: Long) = "edit_book/$bookId"
     }
-    data object CoverPicker : Screen("cover_picker", "选择封面", Icons.Filled.Image, Icons.Outlined.Image)
+    data object CoverPicker : Screen("cover_picker?coverUri={coverUri}", "选择封面", Icons.Filled.Image, Icons.Outlined.Image) {
+        fun createRoute(coverUri: String? = null) = 
+            if (coverUri != null) "cover_picker?coverUri=$coverUri" else "cover_picker"
+    }
 }
 
 private val animationSpec = tween<Float>(durationMillis = 150)
@@ -159,13 +163,18 @@ fun MainNavigation() {
             composable(Screen.AddBook.route) { backStackEntry ->
                 val parentViewModel: com.readtrack.presentation.viewmodel.AddBookViewModel = 
                     androidx.hilt.navigation.compose.hiltViewModel(backStackEntry)
+                val savedStateHandle = backStackEntry.savedStateHandle
+                val currentCoverUri = parentViewModel.uiState.value.coverUri
+                
                 AddBookScreen(
                     onNavigateBack = { navController.popBackStack() },
                     bookId = null,
                     onPickCover = {
-                        navController.navigate(Screen.CoverPicker.route)
+                        // 导航到封面选择器时传递当前封面
+                        navController.navigate(Screen.CoverPicker.createRoute(currentCoverUri))
                     },
-                    viewModel = parentViewModel
+                    viewModel = parentViewModel,
+                    savedStateHandle = savedStateHandle
                 )
             }
             
@@ -176,29 +185,39 @@ fun MainNavigation() {
                 val bookId = backStackEntry.arguments?.getLong("bookId") ?: return@composable
                 val parentViewModel: com.readtrack.presentation.viewmodel.AddBookViewModel = 
                     androidx.hilt.navigation.compose.hiltViewModel(backStackEntry)
+                val savedStateHandle = backStackEntry.savedStateHandle
+                val currentCoverUri = parentViewModel.uiState.value.coverUri
+                
                 AddBookScreen(
                     onNavigateBack = { navController.popBackStack() },
                     bookId = bookId,
                     onPickCover = {
-                        navController.navigate(Screen.CoverPicker.route)
+                        navController.navigate(Screen.CoverPicker.createRoute(currentCoverUri))
                     },
-                    viewModel = parentViewModel
+                    viewModel = parentViewModel,
+                    savedStateHandle = savedStateHandle
                 )
             }
             
-            composable(Screen.CoverPicker.route) { backStackEntry ->
-                val parentEntry = remember(backStackEntry) {
-                    try {
-                        navController.getBackStackEntry(Screen.EditBook.route)
-                    } catch (e: Exception) {
-                        navController.getBackStackEntry(Screen.AddBook.route)
+            composable(
+                route = Screen.CoverPicker.route,
+                arguments = listOf(
+                    navArgument("coverUri") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
                     }
-                }
-                val parentViewModel: com.readtrack.presentation.viewmodel.AddBookViewModel = 
-                    androidx.hilt.navigation.compose.hiltViewModel(parentEntry)
+                )
+            ) { backStackEntry ->
+                val coverUri = backStackEntry.arguments?.getString("coverUri")
                 
                 CoverPickerScreen(
-                    viewModel = parentViewModel,
+                    initialCoverUri = coverUri,
+                    onCoverSelected = { selectedUri ->
+                        // 更新导航参数，这样返回时 AddBookScreen 可以通过 SavedStateHandle 获取新封面
+                        backStackEntry.savedStateHandle["selectedCoverUri"] = selectedUri
+                        navController.popBackStack()
+                    },
                     onNavigateBack = { navController.popBackStack() }
                 )
             }
