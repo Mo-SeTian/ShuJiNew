@@ -22,16 +22,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
 import com.readtrack.presentation.ui.components.getContrastColor
 import com.readtrack.presentation.viewmodel.CoverSelectionHolder
 
@@ -53,7 +51,6 @@ val builtInCovers = listOf(
 @Composable
 fun CoverPickerScreen(
     initialCoverUri: String?,
-    onCoverSelected: (String) -> Unit,
     onNavigateBack: () -> Unit
 ) {
     var selectedCover by remember { mutableStateOf(initialCoverUri) }
@@ -71,15 +68,23 @@ fun CoverPickerScreen(
                     }
                 },
                 actions = {
-                    if (selectedCover != null) {
-                        TextButton(onClick = onNavigateBack) {
-                            Text("完成", fontWeight = FontWeight.Bold)
-                        }
+                    TextButton(
+                        onClick = {
+                            selectedCover?.let {
+                                // 直接保存到 holder
+                                CoverSelectionHolder.setCover(it)
+                                onNavigateBack()
+                            }
+                        },
+                        enabled = selectedCover != null
+                    ) {
+                        Text("完成 ✓", fontWeight = FontWeight.Bold)
                     }
                 }
             )
         }
     ) { padding ->
+        // 相册选择器
         val imagePickerLauncher = rememberLauncherForActivityResult(
             contract = ActivityResultContracts.GetContent()
         ) { uri: Uri? ->
@@ -89,7 +94,7 @@ fun CoverPickerScreen(
                 onNavigateBack()
             }
         }
-
+        
         LazyVerticalGrid(
             columns = GridCells.Fixed(3),
             modifier = Modifier
@@ -99,81 +104,126 @@ fun CoverPickerScreen(
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            // 本地图片
+            // 从相册选择
             item {
                 CoverOptionCard(
                     onClick = { imagePickerLauncher.launch("image/*") },
-                    backgroundColor = MaterialTheme.colorScheme.surfaceVariant
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Icon(
-                            Icons.Default.Image,
-                            contentDescription = null,
-                            modifier = Modifier.size(32.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            "本地图片",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                    backgroundColor = MaterialTheme.colorScheme.surfaceVariant,
+                    content = {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                Icons.Default.Image,
+                                contentDescription = "相册",
+                                modifier = Modifier.size(36.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                "相册",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
-                }
+                )
             }
-
-            // 网络图片
+            
+            // 输入URL
             item {
                 CoverOptionCard(
                     onClick = { showUrlDialog = true },
-                    backgroundColor = MaterialTheme.colorScheme.primaryContainer
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Icon(
-                            Icons.Default.Link,
-                            contentDescription = null,
-                            modifier = Modifier.size(32.dp),
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            "网络图片",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
+                    backgroundColor = MaterialTheme.colorScheme.primaryContainer,
+                    content = {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                Icons.Default.Link,
+                                contentDescription = "URL",
+                                modifier = Modifier.size(36.dp),
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                "网络图片",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
                     }
+                )
+            }
+            
+            // 分隔标题
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    Text(
+                        "📚 分类封面",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
-
-            // 内置封面
+            
+            // Emoji封面
             items(builtInCovers) { cover ->
-                BuiltInCoverCard(
-                    cover = cover,
-                    isSelected = selectedCover == cover.url,
+                val isSelected = selectedCover == cover.url
+                CoverOptionCard(
                     onClick = {
                         selectedCover = cover.url
                         CoverSelectionHolder.setCover(cover.url)
                         onNavigateBack()
+                    },
+                    backgroundColor = Color(android.graphics.Color.parseColor("#${cover.color}")),
+                    borderColor = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
+                    content = {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                cover.url.substringAfter("|").substringBefore("|"),
+                                fontSize = 32.sp
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                cover.name,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = getContrastColor(cover.color),
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
                     }
                 )
             }
         }
     }
-
+    
     // URL输入对话框
     if (showUrlDialog) {
         val focusManager = LocalFocusManager.current
+        
         AlertDialog(
-            onDismissRequest = { showUrlDialog = false },
-            title = { Text("输入图片地址", fontWeight = FontWeight.Bold) },
+            onDismissRequest = { 
+                showUrlDialog = false
+                urlInput = ""
+                urlError = null
+            },
+            title = { 
+                Text("输入图片地址", fontWeight = FontWeight.Bold) 
+            },
             text = {
                 Column {
                     Text(
@@ -184,7 +234,10 @@ fun CoverPickerScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                     OutlinedTextField(
                         value = urlInput,
-                        onValueChange = { urlInput = it; urlError = null },
+                        onValueChange = { 
+                            urlInput = it
+                            urlError = null
+                        },
                         label = { Text("图片URL") },
                         placeholder = { Text("https://example.com/image.jpg") },
                         singleLine = true,
@@ -194,25 +247,11 @@ fun CoverPickerScreen(
                             keyboardType = KeyboardType.Uri,
                             imeAction = ImeAction.Done
                         ),
-                        keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
+                        keyboardActions = KeyboardActions(
+                            onDone = { focusManager.clearFocus() }
+                        ),
                         modifier = Modifier.fillMaxWidth()
                     )
-                    if (urlInput.isNotBlank() && (urlInput.startsWith("http://") || urlInput.startsWith("https://"))) {
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(120.dp),
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            AsyncImage(
-                                model = urlInput,
-                                contentDescription = "图片预览",
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Fit
-                            )
-                        }
-                    }
                 }
             },
             confirmButton = {
@@ -222,7 +261,6 @@ fun CoverPickerScreen(
                             urlInput.isBlank() -> urlError = "请输入图片地址"
                             !urlInput.startsWith("http://") && !urlInput.startsWith("https://") -> urlError = "请输入以 http:// 或 https:// 开头的地址"
                             else -> {
-                                selectedCover = urlInput
                                 CoverSelectionHolder.setCover(urlInput)
                                 showUrlDialog = false
                                 urlInput = ""
@@ -246,69 +284,22 @@ fun CoverPickerScreen(
 fun CoverOptionCard(
     onClick: () -> Unit,
     backgroundColor: Color,
+    borderColor: Color = Color.Transparent,
     content: @Composable () -> Unit
 ) {
-    Card(
+    Box(
         modifier = Modifier
             .aspectRatio(0.75f)
+            .clip(RoundedCornerShape(12.dp))
+            .background(backgroundColor)
+            .border(
+                width = if (borderColor != Color.Transparent) 3.dp else 0.dp,
+                color = borderColor,
+                shape = RoundedCornerShape(12.dp)
+            )
             .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(containerColor = backgroundColor),
-        shape = RoundedCornerShape(12.dp)
+        contentAlignment = Alignment.Center
     ) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            content()
-        }
-    }
-}
-
-@Composable
-fun BuiltInCoverCard(
-    cover: BuiltInCover,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    val bgColor = Color(android.graphics.Color.parseColor("#${cover.color}"))
-    // 从URL中解析emoji: emoji://COLOR|EMOJI|TITLE
-    val emoji = cover.url.split("|").getOrNull(1) ?: "📖"
-    val title = cover.name
-    val textColor = getContrastColor(cover.color)
-    
-    Card(
-        modifier = Modifier
-            .aspectRatio(0.75f)
-            .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(containerColor = bgColor),
-        shape = RoundedCornerShape(12.dp),
-        border = if (isSelected) CardDefaults.outlinedCardBorder().copy(width = 3.dp) else null
-    ) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    text = emoji,
-                    fontSize = 32.sp
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = title,
-                    color = textColor,
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-            if (isSelected) {
-                Icon(
-                    Icons.Default.Check,
-                    contentDescription = "已选择",
-                    tint = textColor,
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(4.dp)
-                        .size(20.dp)
-                )
-            }
-        }
+        content()
     }
 }
