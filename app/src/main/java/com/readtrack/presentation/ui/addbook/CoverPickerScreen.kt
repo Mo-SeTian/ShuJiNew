@@ -42,14 +42,19 @@ fun CoverPickerScreen(
     onNavigateBack: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    var selectedCover by remember { mutableStateOf(uiState.coverUri) }
+    // 只在初始化时使用uiState.coverUri，之后由用户选择决定
+    var selectedCover by remember { mutableStateOf<String?>(null) }
     var showUrlDialog by remember { mutableStateOf(false) }
     var urlInput by remember { mutableStateOf("") }
     var urlError by remember { mutableStateOf<String?>(null) }
+    var isInitialized by remember { mutableStateOf(false) }
     
-    // 当ViewModel的coverUri更新时，同步到selectedCover
+    // 初始化时设置当前封面
     LaunchedEffect(uiState.coverUri) {
-        selectedCover = uiState.coverUri
+        if (!isInitialized) {
+            selectedCover = uiState.coverUri
+            isInitialized = true
+        }
     }
     
     Scaffold(
