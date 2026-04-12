@@ -6,6 +6,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -15,13 +16,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import com.readtrack.presentation.viewmodel.AddBookViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CoverPickerScreen(
     initialCoverUri: String?,
-    viewModel: AddBookViewModel,
+    onCoverSelected: (String?) -> Unit,
     onNavigateBack: () -> Unit
 ) {
     var urlInput by remember { mutableStateOf("") }
@@ -38,15 +38,19 @@ fun CoverPickerScreen(
                     }
                 },
                 actions = {
-                    // 如果已经有URL封面，显示清除按钮
+                    // 如果已经有封面，显示清除按钮
                     if (!initialCoverUri.isNullOrEmpty()) {
-                        TextButton(
+                        IconButton(
                             onClick = {
-                                viewModel.updateCoverUri(null)
+                                onCoverSelected(null)
                                 onNavigateBack()
                             }
                         ) {
-                            Text("清除封面")
+                            Icon(
+                                Icons.Default.Delete, 
+                                contentDescription = "清除封面",
+                                tint = MaterialTheme.colorScheme.error
+                            )
                         }
                     }
                 }
@@ -105,8 +109,8 @@ fun CoverPickerScreen(
                         urlInput.isBlank() -> urlError = "请输入图片地址"
                         !urlInput.startsWith("http://") && !urlInput.startsWith("https://") -> urlError = "请输入以 http:// 或 https:// 开头的地址"
                         else -> {
-                            // 直接更新ViewModel的封面URI
-                            viewModel.updateCoverUri(urlInput.trim())
+                            // 调用回调函数传递封面URI
+                            onCoverSelected(urlInput.trim())
                             onNavigateBack()
                         }
                     }
