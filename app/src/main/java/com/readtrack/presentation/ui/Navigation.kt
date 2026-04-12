@@ -56,11 +56,11 @@ fun MainNavigation() {
     val navController = rememberNavController()
     val bottomNavItems = listOf(Screen.Home, Screen.Books, Screen.Stats, Screen.Settings)
 
-    // 在 MainNavigation 层级创建 ViewModel
+    // 创建 ViewModel
     val addBookViewModel: AddBookViewModel = hiltViewModel()
     
-    // 用于存储当前封面URI，在 CoverPicker 中使用
-    var currentCoverUri by remember { mutableStateOf<String?>(null) }
+    // 存储封面回调函数
+    var onCoverSelectedCallback: ((String?) -> Unit)? by remember { mutableStateOf(null) }
 
     Scaffold(
         bottomBar = {
@@ -154,7 +154,7 @@ fun MainNavigation() {
                 route = Screen.BookDetail.route,
                 arguments = listOf(navArgument("bookId") { type = NavType.LongType })
             ) { backStackEntry ->
-                val bookId = backStackEntry.arguments?.getLong("bookId") ?: return@composable
+                val bookId = backStackEntry.arguments?.getLong("bookId") ?: 0L
                 BookDetailScreen(
                     bookId = bookId,
                     onNavigateBack = { navController.popBackStack() },
@@ -165,17 +165,13 @@ fun MainNavigation() {
             }
             
             composable(Screen.AddBook.route) {
-                // 更新当前封面URI
-                LaunchedEffect(addBookViewModel.uiState.value.coverUri) {
-                    currentCoverUri = addBookViewModel.uiState.value.coverUri
-                }
-                
                 AddBookScreen(
                     onNavigateBack = { navController.popBackStack() },
                     bookId = null,
                     onPickCover = {
-                        // 在跳转前更新当前封面
-                        currentCoverUri = addBookViewModel.uiState.value.coverUri
+                        onCoverSelectedCallback = { uri ->
+                            addBookViewModel.updateCoverUri(uri)
+                        }
                         navController.navigate(Screen.CoverPicker.route)
                     },
                     viewModel = addBookViewModel
@@ -186,21 +182,15 @@ fun MainNavigation() {
                 route = Screen.EditBook.route,
                 arguments = listOf(navArgument("bookId") { type = NavType.LongType })
             ) { backStackEntry ->
-                val bookId = backStackEntry.arguments?.getLong("bookId") ?: return@composable
-                
-                // 等待书籍数据加载后再更新封面URI
-                LaunchedEffect(bookId) {
-                    // 等待一小段时间让 loadBook 完成
-                    kotlinx.coroutines.delay(100)
-                    currentCoverUri = addBookViewModel.uiState.value.coverUri
-                }
+                val bookId = backStackEntry.arguments?.getLong("bookId") ?: 0L
                 
                 AddBookScreen(
                     onNavigateBack = { navController.popBackStack() },
                     bookId = bookId,
                     onPickCover = {
-                        // 在跳转前更新当前封面
-                        currentCoverUri = addBookViewModel.uiState.value.coverUri
+                        onCoverSelectedCallback = { uri ->
+                            addBookViewModel.updateCoverUri(uri)
+                        }
                         navController.navigate(Screen.CoverPicker.route)
                     },
                     viewModel = addBookViewModel
@@ -208,11 +198,13 @@ fun MainNavigation() {
             }
             
             composable(Screen.CoverPicker.route) {
+                val currentCoverUri = addBookViewModel.uiState.value.coverUri
+                
                 CoverPickerScreen(
                     initialCoverUri = currentCoverUri,
                     onCoverSelected = { uri ->
-                        // 更新 ViewModel 的封面
-                        addBookViewModel.updateCoverUri(uri)
+                        onCoverSelectedCallback?.invoke(uri)
+                        onCoverSelectedCallback = null
                     },
                     onNavigateBack = { navController.popBackStack() }
                 )
