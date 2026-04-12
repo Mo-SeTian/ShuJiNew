@@ -41,10 +41,8 @@ fun AddBookScreen(
     onNavigateBack: () -> Unit,
     bookId: Long?,
     onSearchCover: (String) -> Unit = {},
-    onPickCover: (String?) -> Unit = {},
-    viewModel: AddBookViewModel = hiltViewModel(),
-    initialCoverUri: String? = null,
-    onCoverUriUpdated: (String?) -> Unit = {}
+    onPickCover: (String) -> Unit = {},
+    viewModel: AddBookViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -201,7 +199,7 @@ fun AddBookScreen(
                             Text("本地添加")
                         }
                         OutlinedButton(
-                            onClick = { onPickCover(uiState.coverUri) },
+                            onClick = { onPickCover(uiState.coverUri ?: "") },
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(12.dp)
                         ) {
