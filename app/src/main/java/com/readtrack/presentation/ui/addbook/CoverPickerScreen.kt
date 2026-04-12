@@ -42,19 +42,13 @@ fun CoverPickerScreen(
     onNavigateBack: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    // 只在初始化时使用uiState.coverUri，之后由用户选择决定
-    var selectedCover by remember { mutableStateOf<String?>(null) }
     var showUrlDialog by remember { mutableStateOf(false) }
     var urlInput by remember { mutableStateOf("") }
     var urlError by remember { mutableStateOf<String?>(null) }
-    var isInitialized by remember { mutableStateOf(false) }
     
-    // 初始化时设置当前封面
-    LaunchedEffect(uiState.coverUri) {
-        if (!isInitialized) {
-            selectedCover = uiState.coverUri
-            isInitialized = true
-        }
+    fun selectCover(coverUrl: String) {
+        viewModel.updateCoverUri(coverUrl)
+        onNavigateBack()
     }
     
     Scaffold(
@@ -67,16 +61,10 @@ fun CoverPickerScreen(
                     }
                 },
                 actions = {
-                    TextButton(
-                        onClick = {
-                            if (selectedCover != null) {
-                                viewModel.updateCoverUri(selectedCover)
-                                onNavigateBack()
-                            }
-                        },
-                        enabled = selectedCover != null
-                    ) {
-                        Text("完成", fontWeight = FontWeight.Bold)
+                    if (uiState.coverUri != null) {
+                        TextButton(onClick = onNavigateBack) {
+                            Text("完成", fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
             )
@@ -86,7 +74,8 @@ fun CoverPickerScreen(
             contract = ActivityResultContracts.GetContent()
         ) { uri: Uri? ->
             uri?.let {
-                selectedCover = it.toString()
+                viewModel.updateCoverUri(it.toString())
+                onNavigateBack()
             }
         }
         
@@ -129,9 +118,9 @@ fun CoverPickerScreen(
             }
             
             items(DefaultCovers.covers) { cover ->
-                val isSelected = selectedCover == cover.url
+                val isSelected = uiState.coverUri == cover.url
                 CoverOptionCard(
-                    onClick = { selectedCover = cover.url },
+                    onClick = { selectCover(cover.url) },
                     backgroundColor = Color(android.graphics.Color.parseColor("#${cover.colorHex}")),
                     borderColor = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent
                 ) {
@@ -150,13 +139,13 @@ fun CoverPickerScreen(
             }
             
             items(DefaultCovers.solidColors) { colorHex ->
-                val isSelected = selectedCover == "color://$colorHex"
+                val isSelected = uiState.coverUri == "color://$colorHex"
                 Box(
                     modifier = Modifier.aspectRatio(0.75f).clip(RoundedCornerShape(12.dp)).background(Color(android.graphics.Color.parseColor("#$colorHex"))).border(
                         width = if (isSelected) 3.dp else 0.dp,
                         color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
                         shape = RoundedCornerShape(12.dp)
-                    ).clickable { selectedCover = "color://$colorHex" },
+                    ).clickable { selectCover("color://$colorHex") },
                     contentAlignment = Alignment.Center
                 ) {
                     if (isSelected) {
@@ -202,7 +191,7 @@ fun CoverPickerScreen(
                     when {
                         urlInput.isBlank() -> urlError = "请输入图片地址"
                         !urlInput.startsWith("http://") && !urlInput.startsWith("https://") -> urlError = "请输入以 http:// 或 https:// 开头的地址"
-                        else -> { selectedCover = urlInput; showUrlDialog = false; urlInput = ""; urlError = null }
+                        else -> { selectCover(urlInput); showUrlDialog = false; urlInput = ""; urlError = null }
                     }
                 }) { Text("确认") }
             },
