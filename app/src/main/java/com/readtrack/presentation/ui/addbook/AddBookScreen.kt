@@ -68,19 +68,6 @@ fun AddBookScreen(
         }
     }
 
-    // 监听从封面选择器返回的封面URI
-    // 使用 SavedStateHandle 的 getStateFlow 监听
-    val coverFromNav by remember {
-        savedStateHandle?.getStateFlow("selectedCoverUri", "") ?: mutableStateOf("")
-    }
-
-    LaunchedEffect(coverFromNav) {
-        if (coverFromNav.isNotEmpty()) {
-            viewModel.updateCoverUri(coverFromNav)
-            savedStateHandle?.remove<String>("selectedCoverUri")
-        }
-    }
-
     LaunchedEffect(uiState.isSaved) {
         if (uiState.isSaved) {
             onNavigateBack()
