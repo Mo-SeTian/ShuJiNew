@@ -206,7 +206,7 @@ fun AddBookScreen(
                             }
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                "选择本地图片或搜索网络封面",
+                                "点击选择本地图片或输入URL下载封面",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )

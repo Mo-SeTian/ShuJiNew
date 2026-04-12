@@ -5,14 +5,11 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.ImageSearch
 import androidx.compose.material.icons.outlined.*
-import androidx.compose.material.icons.filled.ImageSearch
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
@@ -22,7 +19,6 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.readtrack.presentation.ui.addbook.AddBookScreen
-import com.readtrack.presentation.ui.addbook.ImageSearchBrowserScreen
 import com.readtrack.presentation.ui.addbook.CoverPickerScreen
 import com.readtrack.presentation.ui.books.BookDetailScreen
 import com.readtrack.presentation.ui.books.BooksScreen
@@ -47,8 +43,7 @@ sealed class Screen(
     data object EditBook : Screen("edit_book/{bookId}", "编辑书籍", Icons.Filled.Edit, Icons.Outlined.Edit) {
         fun createRoute(bookId: Long) = "edit_book/$bookId"
     }
-    data object CoverSearch : Screen("cover_search", "搜索封面", Icons.Filled.ImageSearch, Icons.Outlined.ImageSearch)
-    data object CoverPicker : Screen("cover_picker", "选择封面", Icons.Filled.ImageSearch, Icons.Outlined.ImageSearch)
+    data object CoverPicker : Screen("cover_picker", "选择封面", Icons.Filled.Image, Icons.Outlined.Image)
 }
 
 private val animationSpec = tween<Float>(durationMillis = 150)
@@ -166,9 +161,6 @@ fun MainNavigation() {
                 AddBookScreen(
                     onNavigateBack = { navController.popBackStack() },
                     bookId = null,
-                    onSearchCover = { query ->
-                        navController.navigate(Screen.CoverSearch.route)
-                    },
                     onPickCover = {
                         navController.navigate(Screen.CoverPicker.route)
                     },
@@ -186,33 +178,10 @@ fun MainNavigation() {
                 AddBookScreen(
                     onNavigateBack = { navController.popBackStack() },
                     bookId = bookId,
-                    onSearchCover = { query ->
-                        navController.navigate(Screen.CoverSearch.route)
-                    },
                     onPickCover = {
                         navController.navigate(Screen.CoverPicker.route)
                     },
                     viewModel = parentViewModel
-                )
-            }
-            
-            composable(Screen.CoverSearch.route) { backStackEntry ->
-                val parentEntry = remember(backStackEntry) {
-                    try {
-                        navController.getBackStackEntry(Screen.EditBook.route)
-                    } catch (e: Exception) {
-                        navController.getBackStackEntry(Screen.AddBook.route)
-                    }
-                }
-                val parentViewModel: com.readtrack.presentation.viewmodel.AddBookViewModel = 
-                    androidx.hilt.navigation.compose.hiltViewModel(parentEntry)
-                
-                ImageSearchBrowserScreen(
-                    onImageSelected = { imageUrl ->
-                        parentViewModel.updateCoverUri(imageUrl)
-                        navController.popBackStack()
-                    },
-                    onNavigateBack = { navController.popBackStack() }
                 )
             }
             
@@ -233,10 +202,7 @@ fun MainNavigation() {
                         parentViewModel.updateCoverUri(coverUri)
                         navController.popBackStack()
                     },
-                    onNavigateBack = { navController.popBackStack() },
-                    onSearchOnline = {
-                        navController.navigate(Screen.CoverSearch.route)
-                    }
+                    onNavigateBack = { navController.popBackStack() }
                 )
             }
         }
