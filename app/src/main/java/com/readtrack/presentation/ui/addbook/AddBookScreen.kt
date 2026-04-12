@@ -29,12 +29,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.SavedStateHandle
 import com.readtrack.presentation.ui.components.BookCover
 import com.readtrack.domain.model.BookStatus
 import com.readtrack.presentation.ui.components.getStatusColor
 import com.readtrack.presentation.viewmodel.AddBookViewModel
-import com.readtrack.presentation.viewmodel.CoverSelectionHolder
 import com.readtrack.presentation.viewmodel.ProgressType
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -44,7 +42,6 @@ fun AddBookScreen(
     bookId: Long?,
     onSearchCover: (String) -> Unit = {},
     onPickCover: () -> Unit = {},
-    savedStateHandle: SavedStateHandle? = null,
     viewModel: AddBookViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -68,16 +65,6 @@ fun AddBookScreen(
             // 只有在首次进入添加页面时才重置，避免从封面选择器返回时清空数据
             viewModel.resetState()
             hasInitialized = true
-        }
-    }
-    
-    // 监听从封面选择器返回的封面URI
-    // 使用 key(savedStateHandle) 确保在 savedStateHandle 变化时重新执行
-    key(savedStateHandle) {
-        val savedCover = savedStateHandle?.get<String>("selectedCoverUri")
-        if (savedCover != null && savedCover.isNotEmpty()) {
-            viewModel.updateCoverUri(savedCover)
-            savedStateHandle.remove<String>("selectedCoverUri")
         }
     }
 
