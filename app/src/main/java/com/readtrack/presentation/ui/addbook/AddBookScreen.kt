@@ -72,14 +72,15 @@ fun AddBookScreen(
     }
     
     // 监听从封面选择器返回的封面URI
-    // 关键：使用 CoverSelectionHolder.coverState 来触发重组
-    val holderCover by CoverSelectionHolder.coverState.collectAsState()
-    
-    LaunchedEffect(holderCover) {
-        val selectedCover = CoverSelectionHolder.consume()
-        if (selectedCover != null) {
-            viewModel.updateCoverUri(selectedCover)
-        }
+    // 使用 snapshotFlow 监听 StateFlow 的变化
+    LaunchedEffect(Unit) {
+        CoverSelectionHolder.coverState.snapshotFlow { it }
+            .collect { value ->
+                if (value != null) {
+                    viewModel.updateCoverUri(value)
+                    CoverSelectionHolder.consume()
+                }
+            }
     }
 
     LaunchedEffect(uiState.isSaved) {
