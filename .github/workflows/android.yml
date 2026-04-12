@@ -29,8 +29,13 @@ jobs:
       - name: 构建 Debug APK
         run: |
           echo "开始构建 Debug APK..."
-          ./gradlew assembleDebug --no-daemon --stacktrace 2>&1 | tee build.log
+          ./gradlew assembleDebug --no-daemon --stacktrace 2>&1 | tee build.log || {
+            echo "=== Gradle 构建失败 ==="
+            tail -200 build.log
+            exit 1
+          }
           echo "=== 构建完成 ==="
+          ls -la app/build/outputs/apk/debug/ 2>/dev/null || echo "APK目录不存在"
 
       - name: 上传构建日志
         if: always()
@@ -52,8 +57,8 @@ jobs:
             echo "❌ APK 文件不存在"
             echo "=== app/build 目录结构 ==="
             ls -laR app/build/ 2>/dev/null | head -100
-            echo "=== build.log 最后 100 行 ==="
-            tail -100 build.log 2>/dev/null || echo "build.log 不存在"
+            echo "=== build.log 最后 200 行 ==="
+            tail -200 build.log 2>/dev/null || echo "build.log 不存在"
             exit 1
           fi
 
