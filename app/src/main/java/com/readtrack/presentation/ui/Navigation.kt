@@ -56,12 +56,6 @@ fun MainNavigation() {
     val navController = rememberNavController()
     val bottomNavItems = listOf(Screen.Home, Screen.Books, Screen.Stats, Screen.Settings)
 
-    // 创建 ViewModel
-    val addBookViewModel: AddBookViewModel = hiltViewModel()
-    
-    // 存储封面回调函数
-    var onCoverSelectedCallback: ((String?) -> Unit)? by remember { mutableStateOf(null) }
-
     Scaffold(
         bottomBar = {
             val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -154,7 +148,7 @@ fun MainNavigation() {
                 route = Screen.BookDetail.route,
                 arguments = listOf(navArgument("bookId") { type = NavType.LongType })
             ) { backStackEntry ->
-                val bookId = backStackEntry.arguments?.getLong("bookId") ?: 0L
+                val bookId = backStackEntry.arguments?.getLong("bookId") ?: return@composable
                 BookDetailScreen(
                     bookId = bookId,
                     onNavigateBack = { navController.popBackStack() },
@@ -165,16 +159,21 @@ fun MainNavigation() {
             }
             
             composable(Screen.AddBook.route) {
+                val viewModel: AddBookViewModel = hiltViewModel()
+                var pendingCoverUri by remember { mutableStateOf<String?>(null) }
+                
                 AddBookScreen(
                     onNavigateBack = { navController.popBackStack() },
                     bookId = null,
-                    onPickCover = {
-                        onCoverSelectedCallback = { uri ->
-                            addBookViewModel.updateCoverUri(uri)
-                        }
+                    onPickCover = { currentUri ->
+                        pendingCoverUri = currentUri
                         navController.navigate(Screen.CoverPicker.route)
                     },
-                    viewModel = addBookViewModel
+                    viewModel = viewModel,
+                    initialCoverUri = pendingCoverUri,
+                    onCoverUriUpdated = { newUri ->
+                        pendingCoverUri = newUri
+                    }
                 )
             }
             
@@ -182,29 +181,36 @@ fun MainNavigation() {
                 route = Screen.EditBook.route,
                 arguments = listOf(navArgument("bookId") { type = NavType.LongType })
             ) { backStackEntry ->
-                val bookId = backStackEntry.arguments?.getLong("bookId") ?: 0L
+                val bookId = backStackEntry.arguments?.getLong("bookId") ?: return@composable
+                val viewModel: AddBookViewModel = hiltViewModel()
+                var pendingCoverUri by remember { mutableStateOf<String?>(null) }
                 
                 AddBookScreen(
                     onNavigateBack = { navController.popBackStack() },
                     bookId = bookId,
-                    onPickCover = {
-                        onCoverSelectedCallback = { uri ->
-                            addBookViewModel.updateCoverUri(uri)
-                        }
+                    onPickCover = { currentUri ->
+                        pendingCoverUri = currentUri
                         navController.navigate(Screen.CoverPicker.route)
                     },
-                    viewModel = addBookViewModel
+                    viewModel = viewModel,
+                    initialCoverUri = pendingCoverUri,
+                    onCoverUriUpdated = { newUri ->
+                        pendingCoverUri = newUri
+                    }
                 )
             }
             
             composable(Screen.CoverPicker.route) {
-                val currentCoverUri = addBookViewModel.uiState.value.coverUri
+                val backStackEntry = navController.previousBackStackEntry
+                val previousViewModel = backStackEntry?.let { 
+                    try { hiltViewModel<AddBookViewModel>(it) } catch (e: Exception) { null }
+                }
+                val initialCoverUri = previousViewModel?.uiState?.value?.coverUri ?: ""
                 
                 CoverPickerScreen(
-                    initialCoverUri = currentCoverUri,
+                    initialCoverUri = initialCoverUri,
                     onCoverSelected = { uri ->
-                        onCoverSelectedCallback?.invoke(uri)
-                        onCoverSelectedCallback = null
+                        previousViewModel?.updateCoverUri(uri)
                     },
                     onNavigateBack = { navController.popBackStack() }
                 )
