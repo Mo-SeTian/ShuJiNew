@@ -132,6 +132,10 @@ class AddBookViewModel @Inject constructor(
             return
         }
 
+        // 如果没有选择封面，使用书名第一个字作为封面
+        val finalCoverUri = state.coverUri?.takeIf { it.isNotBlank() }
+            ?: if (state.title.isNotBlank()) "emoji://${state.title.first()}" else null
+
         _uiState.update { it.copy(isSaving = true, errorMessage = null) }
 
         viewModelScope.launch {
@@ -157,7 +161,7 @@ class AddBookViewModel @Inject constructor(
                             currentPage = currentPage.coerceIn(0.0, pages),
                             totalChapters = null,
                             currentChapter = 0,
-                            coverPath = state.coverUri,
+                            coverPath = finalCoverUri,
                             description = state.description.trim().takeIf { it.isNotBlank() },
                             status = state.status,
                             updatedAt = currentTime
@@ -173,7 +177,7 @@ class AddBookViewModel @Inject constructor(
                             currentPage = currentPage.coerceIn(0.0, pages),
                             totalChapters = null,
                             currentChapter = 0,
-                            coverPath = state.coverUri,
+                            coverPath = finalCoverUri,
                             description = state.description.trim().takeIf { it.isNotBlank() },
                             status = state.status,
                             createdAt = currentTime,
@@ -201,7 +205,7 @@ class AddBookViewModel @Inject constructor(
                             currentPage = 0.0,
                             totalChapters = chapters,
                             currentChapter = currentChapter.coerceIn(0, chapters),
-                            coverPath = state.coverUri,
+                            coverPath = finalCoverUri,
                             description = state.description.trim().takeIf { it.isNotBlank() },
                             status = state.status,
                             updatedAt = currentTime
@@ -217,7 +221,7 @@ class AddBookViewModel @Inject constructor(
                             currentPage = 0.0,
                             totalChapters = chapters,
                             currentChapter = currentChapter.coerceIn(0, chapters),
-                            coverPath = state.coverUri,
+                            coverPath = finalCoverUri,
                             description = state.description.trim().takeIf { it.isNotBlank() },
                             status = state.status,
                             createdAt = currentTime,

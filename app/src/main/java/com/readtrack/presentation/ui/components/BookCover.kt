@@ -51,34 +51,58 @@ fun BookCover(
             }
             coverPath.startsWith("emoji://") -> {
                 // Emoji封面
-                val parts = coverPath.removePrefix("emoji://").split("|")
-                val colorHex = parts.getOrElse(0) { "CCCCCC" }
-                val emoji = parts.getOrElse(1) { "📖" }
-                val title = parts.getOrElse(2) { "" }
+                val emojiContent = coverPath.removePrefix("emoji://")
+                val parts = emojiContent.split("|")
                 
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color(android.graphics.Color.parseColor("#$colorHex"))),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Text(
-                            text = emoji,
-                            fontSize = 36.sp
-                        )
-                        if (title.isNotEmpty()) {
-                            Spacer(modifier = Modifier.height(4.dp))
+                when {
+                    // 单字符模式：emoji://字 -> 显示单个字符作为封面
+                    parts.size == 1 && emojiContent.length <= 2 -> {
+                        val char = emojiContent.first().toString()
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color(android.graphics.Color.parseColor("#4A90D9"))),
+                            contentAlignment = Alignment.Center
+                        ) {
                             Text(
-                                text = title,
-                                fontSize = 12.sp,
-                                color = getContrastColor(colorHex),
-                                fontWeight = FontWeight.Medium,
-                                textAlign = TextAlign.Center
+                                text = char,
+                                fontSize = 42.sp,
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold
                             )
+                        }
+                    }
+                    // 完整格式：emoji://color|emoji|title
+                    else -> {
+                        val colorHex = parts.getOrElse(0) { "CCCCCC" }
+                        val emoji = parts.getOrElse(1) { "📖" }
+                        val title = parts.getOrElse(2) { "" }
+                        
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color(android.graphics.Color.parseColor("#$colorHex"))),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Text(
+                                    text = emoji,
+                                    fontSize = 36.sp
+                                )
+                                if (title.isNotEmpty()) {
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = title,
+                                        fontSize = 12.sp,
+                                        color = getContrastColor(colorHex),
+                                        fontWeight = FontWeight.Medium,
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
+                            }
                         }
                     }
                 }
