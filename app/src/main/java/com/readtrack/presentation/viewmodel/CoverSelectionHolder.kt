@@ -1,16 +1,17 @@
 package com.readtrack.presentation.viewmodel
 
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 /**
  * 封面选择临时存储
- * 使用 Compose State 包装，使其可被重组追踪
+ * 使用 StateFlow 实现可观察的状态变化
  */
 object CoverSelectionHolder {
-    private val _coverState = mutableStateOf<String?>(null)
+    private val _coverState = MutableStateFlow<String?>(null)
     
-    val coverState = _coverState
+    val coverState: StateFlow<String?> = _coverState.asStateFlow()
     
     fun setCover(uri: String?) {
         _coverState.value = uri

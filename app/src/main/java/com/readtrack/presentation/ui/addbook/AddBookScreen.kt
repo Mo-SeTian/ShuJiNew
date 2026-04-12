@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.lifecycle.SavedStateHandle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -72,17 +73,10 @@ fun AddBookScreen(
     }
     
     // 监听从封面选择器返回的封面URI
-    LaunchedEffect(savedStateHandle) {
-        // 检查 savedStateHandle
-        savedStateHandle?.let { handle ->
-            val coverUri = handle.get<String>("selectedCoverUri")
-            if (coverUri != null) {
-                viewModel.updateCoverUri(coverUri)
-                handle.remove<String>("selectedCoverUri")
-            }
-        }
-        
-        // 检查 CoverSelectionHolder
+    // 关键：使用 CoverSelectionHolder.coverState 来触发重组
+    val holderCover by CoverSelectionHolder.coverState.collectAsState()
+    
+    LaunchedEffect(holderCover) {
         val selectedCover = CoverSelectionHolder.consume()
         if (selectedCover != null) {
             viewModel.updateCoverUri(selectedCover)
