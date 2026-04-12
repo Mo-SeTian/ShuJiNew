@@ -111,16 +111,16 @@ fun StatsScreen(
                     ) {
                         StatsCardModern(
                             title = "本月阅读",
-                            value = "${uiState.monthPages.toInt()}",
-                            subtitle = "页",
+                            value = "${uiState.monthChapters.toInt()}章",
+                            subtitle = "${uiState.monthPages.toInt()}页",
                             icon = Icons.Default.MenuBook,
                             color = ReadingOrange,
                             modifier = Modifier.weight(1f)
                         )
                         StatsCardModern(
                             title = "累计阅读",
-                            value = "${uiState.totalPagesRead.toInt()}",
-                            subtitle = "页",
+                            value = "${uiState.totalChaptersRead.toInt()}章",
+                            subtitle = "${uiState.totalPagesRead.toInt()}页",
                             icon = Icons.Default.MenuBook,
                             color = WantToReadGreen,
                             modifier = Modifier.weight(1f)

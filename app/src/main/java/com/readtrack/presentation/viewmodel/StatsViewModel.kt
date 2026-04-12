@@ -7,6 +7,7 @@ import com.readtrack.data.local.entity.ReadingRecordEntity
 import com.readtrack.domain.model.BookStatus
 import com.readtrack.domain.repository.BookRepository
 import com.readtrack.domain.repository.ReadingRecordRepository
+import com.readtrack.presentation.viewmodel.AddBookViewModel.ProgressType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -17,9 +18,13 @@ data class StatsUiState(
     val totalBooks: Int = 0,
     val booksByStatus: Map<BookStatus, Int> = emptyMap(),
     val totalPagesRead: Double = 0.0,
+    val totalChaptersRead: Double = 0.0,
     val todayPages: Double = 0.0,
+    val todayChapters: Double = 0.0,
     val weekPages: Double = 0.0,
+    val weekChapters: Double = 0.0,
     val monthPages: Double = 0.0,
+    val monthChapters: Double = 0.0,
     val averagePagesPerDay: Double = 0.0,
     val weeklyReadingData: List<DailyReading> = emptyList(),
     val recentRecords: List<ReadingRecordEntity> = emptyList(),
@@ -78,17 +83,52 @@ class StatsViewModel @Inject constructor(
 
             combine(
                 bookRepository.getAllBooks(),
-                recordRepository.getAllRecords(),
-                recordRepository.getTotalPagesReadSince(startOfToday),
-                recordRepository.getTotalPagesReadSince(startOfWeek),
-                recordRepository.getTotalPagesReadSince(startOfMonth)
-            ) { books, records, today, week, month ->
+                recordRepository.getAllRecords()
+            ) { books, records ->
                 val booksByStatus = BookStatus.entries.associateWith { status ->
                     books.count { it.status == status }
                 }
                 
                 // Create book lookup map
                 val booksMap = books.associateBy { it.id }
+                
+                // Calculate pages/chapters by time period
+                val now = System.currentTimeMillis()
+                
+                // Today's records
+                val todayRecords = records.filter { it.date >= startOfToday }
+                val todayPages = todayRecords.filter { 
+                    booksMap[it.bookId]?.progressType != ProgressType.CHAPTER 
+                }.sumOf { it.pagesRead }
+                val todayChapters = todayRecords.filter { 
+                    booksMap[it.bookId]?.progressType == ProgressType.CHAPTER 
+                }.sumOf { it.pagesRead }
+                
+                // This week's records
+                val weekRecords = records.filter { it.date >= startOfWeek }
+                val weekPages = weekRecords.filter { 
+                    booksMap[it.bookId]?.progressType != ProgressType.CHAPTER 
+                }.sumOf { it.pagesRead }
+                val weekChapters = weekRecords.filter { 
+                    booksMap[it.bookId]?.progressType == ProgressType.CHAPTER 
+                }.sumOf { it.pagesRead }
+                
+                // This month's records
+                val monthRecords = records.filter { it.date >= startOfMonth }
+                val monthPages = monthRecords.filter { 
+                    booksMap[it.bookId]?.progressType != ProgressType.CHAPTER 
+                }.sumOf { it.pagesRead }
+                val monthChapters = monthRecords.filter { 
+                    booksMap[it.bookId]?.progressType == ProgressType.CHAPTER 
+                }.sumOf { it.pagesRead }
+                
+                // Total
+                val totalPages = records.filter { 
+                    booksMap[it.bookId]?.progressType != ProgressType.CHAPTER 
+                }.sumOf { it.pagesRead }
+                val totalChapters = records.filter { 
+                    booksMap[it.bookId]?.progressType == ProgressType.CHAPTER 
+                }.sumOf { it.pagesRead }
                 
                 // Combine records with book info
                 val recordsWithBooks = records.take(10).map { record ->
@@ -108,9 +148,14 @@ class StatsViewModel @Inject constructor(
                 StatsUiState(
                     totalBooks = books.size,
                     booksByStatus = booksByStatus,
-                    todayPages = today ?: 0.0,
-                    weekPages = week ?: 0.0,
-                    monthPages = month ?: 0.0,
+                    totalPagesRead = totalPages,
+                    totalChaptersRead = totalChapters,
+                    todayPages = todayPages,
+                    todayChapters = todayChapters,
+                    weekPages = weekPages,
+                    weekChapters = weekChapters,
+                    monthPages = monthPages,
+                    monthChapters = monthChapters,
                     averagePagesPerDay = avgPerDay,
                     weeklyReadingData = weeklyData,
                     recentRecords = records.take(10),
