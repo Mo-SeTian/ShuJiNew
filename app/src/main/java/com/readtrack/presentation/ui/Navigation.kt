@@ -10,6 +10,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.SavedStateHandle
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
@@ -20,6 +22,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.readtrack.presentation.ui.addbook.AddBookScreen
 import com.readtrack.presentation.ui.addbook.CoverPickerScreen
+import com.readtrack.presentation.viewmodel.CoverSelectionHolder
 import com.readtrack.presentation.ui.books.BookDetailScreen
 import com.readtrack.presentation.ui.books.BooksScreen
 import com.readtrack.presentation.ui.home.HomeScreen
@@ -61,19 +64,25 @@ fun MainNavigation() {
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentDestination = navBackStackEntry?.destination
             
-            // 只在主页面显示底部导航
-            val showBottomBar = bottomNavItems.any { screen ->
-                currentDestination?.hierarchy?.any { it.route == screen.route } == true
-            }
-            
-            if (showBottomBar) {
-                NavigationBar {
+            val showBottomBar = currentDestination?.route?.let { route ->
+                route in bottomNavItems.map { it.route }
+            } ?: true
+
+            AnimatedVisibility(
+                visible = showBottomBar,
+                enter = slideInVertically(animationSpec = tween(150)) { it },
+                exit = slideOutVertically(animationSpec = tween(150)) { it }
+            ) {
+                NavigationBar(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    tonalElevation = 0.dp
+                ) {
                     bottomNavItems.forEach { screen ->
                         val selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true
                         NavigationBarItem(
                             icon = {
                                 Icon(
-                                    if (selected) screen.selectedIcon else screen.unselectedIcon,
+                                    imageVector = if (selected) screen.selectedIcon else screen.unselectedIcon,
                                     contentDescription = screen.title
                                 )
                             },
@@ -93,39 +102,38 @@ fun MainNavigation() {
                 }
             }
         }
-    ) { innerPadding ->
+    ) { padding ->
         NavHost(
             navController = navController,
             startDestination = Screen.Home.route,
-            modifier = Modifier.padding(innerPadding),
-            enterTransition = { fadeIn(animationSpec) + slideInHorizontally(animationSpec) { it / 4 } },
-            exitTransition = { fadeOut(animationSpec) + slideOutHorizontally(animationSpec) { -it / 4 } },
-            popEnterTransition = { fadeIn(animationSpec) + slideInHorizontally(animationSpec) { -it / 4 } },
-            popExitTransition = { fadeOut(animationSpec) + slideOutHorizontally(animationSpec) { it / 4 } }
+            modifier = Modifier.padding(padding),
+            enterTransition = {
+                fadeIn(animationSpec = tween(150)) + slideInHorizontally(animationSpec = tween(150)) { it / 4 }
+            },
+            exitTransition = {
+                fadeOut(animationSpec = tween(150)) + slideOutHorizontally(animationSpec = tween(150)) { -it / 4 }
+            },
+            popEnterTransition = {
+                fadeIn(animationSpec = tween(150)) + slideInHorizontally(animationSpec = tween(150)) { -it / 4 }
+            },
+            popExitTransition = {
+                fadeOut(animationSpec = tween(150)) + slideOutHorizontally(animationSpec = tween(150)) { it / 4 }
+            }
         ) {
             composable(Screen.Home.route) {
                 HomeScreen(
-                    onNavigateToBook = { bookId ->
+                    onBookClick = { bookId ->
                         navController.navigate(Screen.BookDetail.createRoute(bookId))
-                    },
-                    onNavigateToBooks = {
-                        navController.navigate(Screen.Books.route) {
-                            popUpTo(navController.graph.findStartDestination().id) {
-                                saveState = true
-                            }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
                     }
                 )
             }
             
             composable(Screen.Books.route) {
                 BooksScreen(
-                    onNavigateToBook = { bookId ->
+                    onBookClick = { bookId ->
                         navController.navigate(Screen.BookDetail.createRoute(bookId))
                     },
-                    onAddBook = {
+                    onAddBookClick = {
                         navController.navigate(Screen.AddBook.route)
                     }
                 )
@@ -147,16 +155,27 @@ fun MainNavigation() {
                 BookDetailScreen(
                     bookId = bookId,
                     onNavigateBack = { navController.popBackStack() },
-                    onEditBook = {
+                    onEditBook = { 
                         navController.navigate(Screen.EditBook.createRoute(bookId))
                     }
                 )
             }
             
-            composable(Screen.AddBook.route) {
+            composable(Screen.AddBook.route) { backStackEntry ->
+                val parentViewModel: com.readtrack.presentation.viewmodel.AddBookViewModel = 
+                    androidx.hilt.navigation.compose.hiltViewModel(backStackEntry)
+                val savedStateHandle = backStackEntry.savedStateHandle
+                val currentCoverUri = parentViewModel.uiState.value.coverUri
+                
                 AddBookScreen(
-                    navController = navController,
-                    bookId = null
+                    onNavigateBack = { navController.popBackStack() },
+                    bookId = null,
+                    onPickCover = {
+                        // 导航到封面选择器时传递当前封面
+                        navController.navigate(Screen.CoverPicker.createRoute(currentCoverUri))
+                    },
+                    viewModel = parentViewModel,
+                    savedStateHandle = savedStateHandle
                 )
             }
             
@@ -164,10 +183,20 @@ fun MainNavigation() {
                 route = Screen.EditBook.route,
                 arguments = listOf(navArgument("bookId") { type = NavType.LongType })
             ) { backStackEntry ->
-                val bookId = backStackEntry.arguments?.getLong("bookId")
+                val bookId = backStackEntry.arguments?.getLong("bookId") ?: return@composable
+                val parentViewModel: com.readtrack.presentation.viewmodel.AddBookViewModel = 
+                    androidx.hilt.navigation.compose.hiltViewModel(backStackEntry)
+                val savedStateHandle = backStackEntry.savedStateHandle
+                val currentCoverUri = parentViewModel.uiState.value.coverUri
+                
                 AddBookScreen(
-                    navController = navController,
-                    bookId = bookId
+                    onNavigateBack = { navController.popBackStack() },
+                    bookId = bookId,
+                    onPickCover = {
+                        navController.navigate(Screen.CoverPicker.createRoute(currentCoverUri))
+                    },
+                    viewModel = parentViewModel,
+                    savedStateHandle = savedStateHandle
                 )
             }
             
@@ -185,6 +214,11 @@ fun MainNavigation() {
                 
                 CoverPickerScreen(
                     initialCoverUri = coverUri,
+                    onCoverSelected = { selectedUri ->
+                        // 使用 CoverSelectionHolder 传递封面数据
+                        CoverSelectionHolder.setCover(selectedUri)
+                        navController.popBackStack()
+                    },
                     onNavigateBack = { navController.popBackStack() }
                 )
             }
