@@ -34,26 +34,16 @@ fun BooksScreen(
 
     Scaffold(
         topBar = {
-            LargeTopAppBar(
+            SmallTopAppBar(
                 title = {
-                    Column {
-                        Text(
-                            "我的书籍",
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        if (uiState.books.isNotEmpty()) {
-                            Text(
-                                "共 ${uiState.books.size} 本",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
+                    Text(
+                        "我的书籍",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
                 },
-                colors = TopAppBarDefaults.largeTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    scrolledContainerColor = MaterialTheme.colorScheme.surface
+                colors = TopAppBarDefaults.smallTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface
                 )
             )
         },
