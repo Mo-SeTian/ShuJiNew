@@ -287,16 +287,18 @@ private fun StatCardModern(
             ) {
                 Text(
                     text = value,
-                    style = MaterialTheme.typography.headlineLarge,
+                    style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
-                    color = gradientColors[0]
+                    color = gradientColors[0],
+                    modifier = Modifier.padding(bottom = 2.dp)
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
                     text = subtitle,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(bottom = 4.dp)
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = gradientColors[0].copy(alpha = 0.7f),
+                    modifier = Modifier.padding(bottom = 2.dp)
                 )
             }
             Spacer(modifier = Modifier.height(4.dp))

@@ -205,7 +205,8 @@ fun StatsCardModern(
                     text = value,
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
-                    color = color
+                    color = color,
+                    modifier = Modifier.padding(bottom = 2.dp)
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
