@@ -198,11 +198,7 @@ fun MainNavigation() {
                     androidx.hilt.navigation.compose.hiltViewModel(parentEntry)
                 
                 CoverPickerScreen(
-                    initialCoverPath = parentViewModel.uiState.value.coverUri,
-                    onCoverSelected = { coverUri ->
-                        parentViewModel.updateCoverUri(coverUri)
-                        navController.popBackStack()
-                    },
+                    viewModel = parentViewModel,
                     onNavigateBack = { navController.popBackStack() }
                 )
             }

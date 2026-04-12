@@ -31,7 +31,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.readtrack.presentation.ui.components.getContrastColor
 import com.readtrack.presentation.viewmodel.AddBookViewModel
@@ -39,23 +38,18 @@ import com.readtrack.presentation.viewmodel.AddBookViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CoverPickerScreen(
-    initialCoverPath: String? = null,
-    onCoverSelected: (String?) -> Unit,
-    onNavigateBack: () -> Unit,
-    viewModel: AddBookViewModel = hiltViewModel()
+    viewModel: AddBookViewModel,
+    onNavigateBack: () -> Unit
 ) {
-    // 观察ViewModel的coverUri，确保编辑时能获取到正确的值
     val uiState by viewModel.uiState.collectAsState()
-    var selectedCover by remember { mutableStateOf(uiState.coverUri ?: initialCoverPath) }
+    var selectedCover by remember { mutableStateOf(uiState.coverUri) }
     var showUrlDialog by remember { mutableStateOf(false) }
     var urlInput by remember { mutableStateOf("") }
     var urlError by remember { mutableStateOf<String?>(null) }
     
     // 当ViewModel的coverUri更新时，同步到selectedCover
     LaunchedEffect(uiState.coverUri) {
-        if (selectedCover == null && uiState.coverUri != null) {
-            selectedCover = uiState.coverUri
-        }
+        selectedCover = uiState.coverUri
     }
     
     Scaffold(
@@ -71,7 +65,8 @@ fun CoverPickerScreen(
                     TextButton(
                         onClick = {
                             if (selectedCover != null) {
-                                onCoverSelected(selectedCover)
+                                viewModel.updateCoverUri(selectedCover)
+                                onNavigateBack()
                             }
                         },
                         enabled = selectedCover != null
