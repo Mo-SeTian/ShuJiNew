@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.readtrack.presentation.ui.components.getContrastColor
+import com.readtrack.presentation.viewmodel.CoverSelectionHolder
 
 data class BuiltInCover(val name: String, val url: String, val color: String)
 
@@ -84,7 +85,7 @@ fun CoverPickerScreen(
         ) { uri: Uri? ->
             uri?.let {
                 selectedCover = it.toString()
-                onCoverSelected(it.toString())
+                CoverSelectionHolder.setCover(it.toString())
                 onNavigateBack()
             }
         }
@@ -159,7 +160,7 @@ fun CoverPickerScreen(
                     isSelected = selectedCover == cover.url,
                     onClick = {
                         selectedCover = cover.url
-                        onCoverSelected(cover.url)
+                        CoverSelectionHolder.setCover(cover.url)
                         onNavigateBack()
                     }
                 )
@@ -222,7 +223,7 @@ fun CoverPickerScreen(
                             !urlInput.startsWith("http://") && !urlInput.startsWith("https://") -> urlError = "请输入以 http:// 或 https:// 开头的地址"
                             else -> {
                                 selectedCover = urlInput
-                                onCoverSelected(urlInput)
+                                CoverSelectionHolder.setCover(urlInput)
                                 showUrlDialog = false
                                 urlInput = ""
                                 urlError = null

@@ -34,6 +34,7 @@ import com.readtrack.presentation.ui.components.BookCover
 import com.readtrack.domain.model.BookStatus
 import com.readtrack.presentation.ui.components.getStatusColor
 import com.readtrack.presentation.viewmodel.AddBookViewModel
+import com.readtrack.presentation.viewmodel.CoverSelectionHolder
 import com.readtrack.presentation.viewmodel.ProgressType
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -70,15 +71,11 @@ fun AddBookScreen(
         }
     }
     
-    // 监听从封面选择器返回的封面URI
-    LaunchedEffect(savedStateHandle) {
-        savedStateHandle?.let { handle ->
-            val coverUri = handle.get<String>("selectedCoverUri")
-            if (coverUri != null) {
-                viewModel.updateCoverUri(coverUri)
-                // 清除已使用的封面，避免下次进入时错误应用
-                handle.remove<String>("selectedCoverUri")
-            }
+    // 检查 CoverSelectionHolder 中是否有新选择的封面
+    LaunchedEffect(Unit) {
+        val selectedCover = CoverSelectionHolder.getAndClear()
+        if (selectedCover != null) {
+            viewModel.updateCoverUri(selectedCover)
         }
     }
 
