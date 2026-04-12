@@ -215,8 +215,9 @@ fun MainNavigation() {
                 CoverPickerScreen(
                     initialCoverUri = coverUri,
                     onCoverSelected = { selectedUri ->
-                        // 使用 CoverSelectionHolder 传递封面数据
-                        CoverSelectionHolder.setCover(selectedUri)
+                        // 获取返回目标的 savedStateHandle
+                        val previousEntry = navController.previousBackStackEntry
+                        previousEntry?.savedStateHandle?.set("selectedCoverUri", selectedUri)
                         navController.popBackStack()
                     },
                     onNavigateBack = { navController.popBackStack() }

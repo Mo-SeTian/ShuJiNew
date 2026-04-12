@@ -72,22 +72,12 @@ fun AddBookScreen(
     }
     
     // 监听从封面选择器返回的封面URI
-    // 方法1：在 composable body 中直接检查（会在每次重组时执行）
-    val holderCover = CoverSelectionHolder.coverState.value
-    if (holderCover != null) {
-        viewModel.updateCoverUri(holderCover)
-        CoverSelectionHolder.consume()
-    }
-    
-    // 方法2：使用 LaunchedEffect 确保即使没有重组也会检查
-    // 监听 bookId 变化（添加/编辑进入时）
-    LaunchedEffect(bookId) {
-        kotlinx.coroutines.delay(200) // 等待 CoverPicker 返回
-        CoverSelectionHolder.coverState.value?.let { cover ->
-            if (cover.isNotEmpty()) {
-                viewModel.updateCoverUri(cover)
-                CoverSelectionHolder.consume()
-            }
+    // 使用 key(savedStateHandle) 确保在 savedStateHandle 变化时重新执行
+    key(savedStateHandle) {
+        val savedCover = savedStateHandle?.get<String>("selectedCoverUri")
+        if (savedCover != null && savedCover.isNotEmpty()) {
+            viewModel.updateCoverUri(savedCover)
+            savedStateHandle.remove<String>("selectedCoverUri")
         }
     }
 
