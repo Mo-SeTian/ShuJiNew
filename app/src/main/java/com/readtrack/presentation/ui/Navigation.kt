@@ -202,9 +202,13 @@ fun MainNavigation() {
             
             composable(Screen.CoverPicker.route) {
                 val backStackEntry = navController.previousBackStackEntry
-                val previousViewModel = backStackEntry?.let { 
-                    try { hiltViewModel<AddBookViewModel>(it) } catch (e: Exception) { null }
-                }
+                val parentEntry = backStackEntry
+                
+                // 使用 key 来确保在 parentEntry 变化时重新创建
+                val previousViewModel: AddBookViewModel? = if (parentEntry != null) {
+                    hiltViewModel(parentEntry)
+                } else null
+                
                 val initialCoverUri = previousViewModel?.uiState?.value?.coverUri ?: ""
                 
                 CoverPickerScreen(
