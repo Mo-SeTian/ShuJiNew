@@ -87,16 +87,16 @@ fun StatsScreen(
                     ) {
                         StatsCardModern(
                             title = "今日阅读",
-                            value = "${uiState.todayPages.toInt()}",
-                            subtitle = "页",
+                            value = "${uiState.todayChapters.toInt()}章",
+                            subtitle = "${uiState.todayPages.toInt()}页",
                             icon = Icons.Default.MenuBook,
                             color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.weight(1f)
                         )
                         StatsCardModern(
                             title = "本周阅读",
-                            value = "${uiState.weekPages.toInt()}",
-                            subtitle = "页",
+                            value = "${uiState.weekChapters.toInt()}章",
+                            subtitle = "${uiState.weekPages.toInt()}页",
                             icon = Icons.Default.MenuBook,
                             color = FinishedBlue,
                             modifier = Modifier.weight(1f)
