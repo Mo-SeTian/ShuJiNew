@@ -132,9 +132,8 @@ class AddBookViewModel @Inject constructor(
             return
         }
 
-        // 如果没有选择封面，使用书名第一个字作为封面
+        // 直接使用用户选择的封面，不自动生成
         val finalCoverUri = state.coverUri?.takeIf { it.isNotBlank() }
-            ?: if (state.title.isNotBlank()) "emoji://${state.title.first()}" else null
 
         _uiState.update { it.copy(isSaving = true, errorMessage = null) }
 
