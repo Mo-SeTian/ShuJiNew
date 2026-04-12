@@ -10,6 +10,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
@@ -18,6 +19,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.readtrack.presentation.ui.addbook.AddBookScreen
 import com.readtrack.presentation.ui.addbook.CoverPickerScreen
 import com.readtrack.presentation.ui.books.BookDetailScreen
@@ -26,7 +28,6 @@ import com.readtrack.presentation.ui.home.HomeScreen
 import com.readtrack.presentation.ui.settings.SettingsScreen
 import com.readtrack.presentation.ui.stats.StatsScreen
 import com.readtrack.presentation.viewmodel.AddBookViewModel
-import androidx.hilt.navigation.compose.hiltViewModel
 
 sealed class Screen(
     val route: String, 
@@ -48,7 +49,7 @@ sealed class Screen(
     data object CoverPicker : Screen("cover_picker", "选择封面", Icons.Filled.Image, Icons.Outlined.Image)
 }
 
-private val animationSpec = tween<Float>(durationMillis = 150)
+private const val ANIMATION_DURATION = 150
 
 @Composable
 fun MainNavigation() {
@@ -60,18 +61,25 @@ fun MainNavigation() {
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentDestination = navBackStackEntry?.destination
             
-            val showBottomBar = bottomNavItems.any { screen ->
-                currentDestination?.hierarchy?.any { it.route == screen.route } == true
-            }
-            
-            if (showBottomBar) {
-                NavigationBar {
+            val showBottomBar = currentDestination?.route?.let { route ->
+                route in bottomNavItems.map { it.route }
+            } ?: true
+
+            AnimatedVisibility(
+                visible = showBottomBar,
+                enter = slideInVertically(animationSpec = tween(ANIMATION_DURATION)) { it },
+                exit = slideOutVertically(animationSpec = tween(ANIMATION_DURATION)) { it }
+            ) {
+                NavigationBar(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    tonalElevation = 0.dp
+                ) {
                     bottomNavItems.forEach { screen ->
                         val selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true
                         NavigationBarItem(
                             icon = {
                                 Icon(
-                                    if (selected) screen.selectedIcon else screen.unselectedIcon,
+                                    imageVector = if (selected) screen.selectedIcon else screen.unselectedIcon,
                                     contentDescription = screen.title
                                 )
                             },
@@ -91,39 +99,38 @@ fun MainNavigation() {
                 }
             }
         }
-    ) { innerPadding ->
+    ) { padding ->
         NavHost(
             navController = navController,
             startDestination = Screen.Home.route,
-            modifier = Modifier.padding(innerPadding),
-            enterTransition = { fadeIn(animationSpec) + slideInHorizontally(animationSpec) { it / 4 } },
-            exitTransition = { fadeOut(animationSpec) + slideOutHorizontally(animationSpec) { -it / 4 } },
-            popEnterTransition = { fadeIn(animationSpec) + slideInHorizontally(animationSpec) { -it / 4 } },
-            popExitTransition = { fadeOut(animationSpec) + slideOutHorizontally(animationSpec) { it / 4 } }
+            modifier = Modifier.padding(padding),
+            enterTransition = {
+                fadeIn(animationSpec = tween(ANIMATION_DURATION)) + slideInHorizontally(animationSpec = tween(ANIMATION_DURATION)) { it / 4 }
+            },
+            exitTransition = {
+                fadeOut(animationSpec = tween(ANIMATION_DURATION)) + slideOutHorizontally(animationSpec = tween(ANIMATION_DURATION)) { -it / 4 }
+            },
+            popEnterTransition = {
+                fadeIn(animationSpec = tween(ANIMATION_DURATION)) + slideInHorizontally(animationSpec = tween(ANIMATION_DURATION)) { -it / 4 }
+            },
+            popExitTransition = {
+                fadeOut(animationSpec = tween(ANIMATION_DURATION)) + slideOutHorizontally(animationSpec = tween(ANIMATION_DURATION)) { it / 4 }
+            }
         ) {
             composable(Screen.Home.route) {
                 HomeScreen(
-                    onNavigateToBook = { bookId ->
+                    onBookClick = { bookId ->
                         navController.navigate(Screen.BookDetail.createRoute(bookId))
-                    },
-                    onNavigateToBooks = {
-                        navController.navigate(Screen.Books.route) {
-                            popUpTo(navController.graph.findStartDestination().id) {
-                                saveState = true
-                            }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
                     }
                 )
             }
             
             composable(Screen.Books.route) {
                 BooksScreen(
-                    onNavigateToBook = { bookId ->
+                    onBookClick = { bookId ->
                         navController.navigate(Screen.BookDetail.createRoute(bookId))
                     },
-                    onAddBook = {
+                    onAddBookClick = {
                         navController.navigate(Screen.AddBook.route)
                     }
                 )
@@ -145,15 +152,15 @@ fun MainNavigation() {
                 BookDetailScreen(
                     bookId = bookId,
                     onNavigateBack = { navController.popBackStack() },
-                    onEditBook = {
+                    onEditBook = { 
                         navController.navigate(Screen.EditBook.createRoute(bookId))
                     }
                 )
             }
             
             composable(Screen.AddBook.route) {
-                val parentViewModel: AddBookViewModel = hiltViewModel()
-                val currentCoverUri = parentViewModel.uiState.value.coverUri
+                // 使用 hiltViewModel 获取 AddBookScreen 的 ViewModel
+                val viewModel: AddBookViewModel = hiltViewModel()
                 
                 AddBookScreen(
                     onNavigateBack = { navController.popBackStack() },
@@ -161,7 +168,7 @@ fun MainNavigation() {
                     onPickCover = {
                         navController.navigate(Screen.CoverPicker.route)
                     },
-                    viewModel = parentViewModel
+                    viewModel = viewModel
                 )
             }
             
@@ -169,9 +176,9 @@ fun MainNavigation() {
                 route = Screen.EditBook.route,
                 arguments = listOf(navArgument("bookId") { type = NavType.LongType })
             ) { backStackEntry ->
-                val bookId = backStackEntry.arguments?.getLong("bookId")
-                val parentViewModel: AddBookViewModel = hiltViewModel()
-                val currentCoverUri = parentViewModel.uiState.value.coverUri
+                val bookId = backStackEntry.arguments?.getLong("bookId") ?: return@composable
+                // 使用 hiltViewModel 获取 AddBookScreen 的 ViewModel
+                val viewModel: AddBookViewModel = hiltViewModel()
                 
                 AddBookScreen(
                     onNavigateBack = { navController.popBackStack() },
@@ -179,14 +186,15 @@ fun MainNavigation() {
                     onPickCover = {
                         navController.navigate(Screen.CoverPicker.route)
                     },
-                    viewModel = parentViewModel
+                    viewModel = viewModel
                 )
             }
             
-            composable(Screen.CoverPicker.route) {
-                // 获取前一个屏幕的 ViewModel - 关键！
-                val backStackEntry = navController.previousBackStackEntry
-                val viewModel: AddBookViewModel? = backStackEntry?.let { 
+            composable(Screen.CoverPicker.route) { backStackEntry ->
+                // 关键：从 previousBackStackEntry 获取 AddBookScreen 的 ViewModel
+                // 这样 CoverPicker 和 AddBookScreen 共享同一个 ViewModel 实例
+                val previousEntry = navController.previousBackStackEntry
+                val viewModel: AddBookViewModel? = previousEntry?.let {
                     hiltViewModel<AddBookViewModel>(it)
                 }
                 val initialCoverUri = viewModel?.uiState?.value?.coverUri
@@ -198,7 +206,7 @@ fun MainNavigation() {
                         onNavigateBack = { navController.popBackStack() }
                     )
                 } else {
-                    // 如果没有 ViewModel，直接返回
+                    // 防御：如果 ViewModel 为空，直接返回
                     LaunchedEffect(Unit) {
                         navController.popBackStack()
                     }
