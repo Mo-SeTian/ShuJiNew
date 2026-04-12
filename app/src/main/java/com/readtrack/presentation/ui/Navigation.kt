@@ -56,6 +56,9 @@ fun MainNavigation() {
     val navController = rememberNavController()
     val bottomNavItems = listOf(Screen.Home, Screen.Books, Screen.Stats, Screen.Settings)
 
+    // 关键：在 MainNavigation 层级创建 ViewModel，这样 AddBookScreen 和 CoverPicker 共享同一个实例
+    val addBookViewModel: AddBookViewModel = hiltViewModel()
+
     Scaffold(
         bottomBar = {
             val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -159,16 +162,13 @@ fun MainNavigation() {
             }
             
             composable(Screen.AddBook.route) {
-                // 使用 hiltViewModel 获取 AddBookScreen 的 ViewModel
-                val viewModel: AddBookViewModel = hiltViewModel()
-                
                 AddBookScreen(
                     onNavigateBack = { navController.popBackStack() },
                     bookId = null,
                     onPickCover = {
                         navController.navigate(Screen.CoverPicker.route)
                     },
-                    viewModel = viewModel
+                    viewModel = addBookViewModel
                 )
             }
             
@@ -177,40 +177,22 @@ fun MainNavigation() {
                 arguments = listOf(navArgument("bookId") { type = NavType.LongType })
             ) { backStackEntry ->
                 val bookId = backStackEntry.arguments?.getLong("bookId") ?: return@composable
-                // 使用 hiltViewModel 获取 AddBookScreen 的 ViewModel
-                val viewModel: AddBookViewModel = hiltViewModel()
-                
                 AddBookScreen(
                     onNavigateBack = { navController.popBackStack() },
                     bookId = bookId,
                     onPickCover = {
                         navController.navigate(Screen.CoverPicker.route)
                     },
-                    viewModel = viewModel
+                    viewModel = addBookViewModel
                 )
             }
             
-            composable(Screen.CoverPicker.route) { backStackEntry ->
-                // 关键：从 previousBackStackEntry 获取 AddBookScreen 的 ViewModel
-                // 这样 CoverPicker 和 AddBookScreen 共享同一个 ViewModel 实例
-                val previousEntry = navController.previousBackStackEntry
-                val viewModel: AddBookViewModel? = previousEntry?.let {
-                    hiltViewModel<AddBookViewModel>(it)
-                }
-                val initialCoverUri = viewModel?.uiState?.value?.coverUri
-                
-                if (viewModel != null) {
-                    CoverPickerScreen(
-                        initialCoverUri = initialCoverUri,
-                        viewModel = viewModel,
-                        onNavigateBack = { navController.popBackStack() }
-                    )
-                } else {
-                    // 防御：如果 ViewModel 为空，直接返回
-                    LaunchedEffect(Unit) {
-                        navController.popBackStack()
-                    }
-                }
+            composable(Screen.CoverPicker.route) {
+                CoverPickerScreen(
+                    initialCoverUri = addBookViewModel.uiState.value.coverUri,
+                    viewModel = addBookViewModel,
+                    onNavigateBack = { navController.popBackStack() }
+                )
             }
         }
     }
