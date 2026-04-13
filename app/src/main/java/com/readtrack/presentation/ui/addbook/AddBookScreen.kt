@@ -5,6 +5,8 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -15,12 +17,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.PhotoLibrary
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -28,6 +32,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.AsyncImage
 import com.readtrack.presentation.ui.components.BookCover
 import com.readtrack.domain.model.BookStatus
 import com.readtrack.presentation.ui.components.getStatusColor
@@ -285,19 +290,39 @@ fun AddBookScreen(
                 }
             }
 
-            // Book Title
-            OutlinedTextField(
-                value = uiState.title,
-                onValueChange = { viewModel.updateTitle(it) },
-                label = { Text("书名 *") },
-                placeholder = { Text("请输入书名") },
+            // Book Title with Search
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    focusedLabelColor = MaterialTheme.colorScheme.primary
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.Top
+            ) {
+                OutlinedTextField(
+                    value = uiState.title,
+                    onValueChange = { viewModel.updateTitle(it) },
+                    label = { Text("书名 *") },
+                    placeholder = { Text("请输入书名") },
+                    modifier = Modifier.weight(1f),
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        focusedLabelColor = MaterialTheme.colorScheme.primary
+                    )
                 )
+                FilledTonalIconButton(
+                    onClick = { viewModel.showSearchDialog() },
+                    modifier = Modifier.padding(top = 8.dp)
+                ) {
+                    Icon(Icons.Default.Search, contentDescription = "搜索书籍")
+                }
+            }
+            
+            // 搜索提示文字
+            Text(
+                text = "💡 点击搜索图标可从网络自动填充书籍信息",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
             )
 
             // Author
@@ -499,5 +524,220 @@ fun AddBookScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
         }
+    }
+    
+    // 书籍搜索 Bottom Sheet
+    if (uiState.showSearchDialog) {
+        BookSearchBottomSheet(
+            isSearching = uiState.isSearching,
+            searchQuery = uiState.searchQuery,
+            searchResults = uiState.searchResults,
+            searchError = uiState.searchError,
+            onQueryChange = { viewModel.updateSearchQuery(it) },
+            onDismiss = { viewModel.hideSearchDialog() },
+            onSelectBook = { viewModel.fillFromSearchResult(it) }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun BookSearchBottomSheet(
+    isSearching: Boolean,
+    searchQuery: String,
+    searchResults: List<com.readtrack.data.remote.BookSearchResult>,
+    searchError: String?,
+    onQueryChange: (String) -> Unit,
+    onDismiss: () -> Unit,
+    onSelectBook: (com.readtrack.data.remote.BookSearchResult) -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.surface
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 32.dp)
+        ) {
+            // 标题
+            Text(
+                text = "搜索书籍",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+            
+            // 搜索输入框
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = onQueryChange,
+                label = { Text("输入书名或作者") },
+                placeholder = { Text("例如：活着 三体") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp),
+                leadingIcon = {
+                    Icon(Icons.Default.Search, contentDescription = null)
+                },
+                trailingIcon = {
+                    if (isSearching) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            strokeWidth = 2.dp
+                        )
+                    }
+                }
+            )
+            
+            // 数据来源提示
+            Text(
+                text = "数据来源：Open Library",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp, bottom = 16.dp)
+            )
+            
+            // 错误提示
+            searchError?.let { error ->
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp)
+                ) {
+                    Text(
+                        text = error,
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        modifier = Modifier.padding(12.dp)
+                    )
+                }
+            }
+            
+            // 搜索结果列表
+            if (searchResults.isNotEmpty()) {
+                Text(
+                    text = "找到 ${searchResults.size} 本书",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 400.dp)
+                ) {
+                    searchResults.forEach { book ->
+                        BookSearchResultItem(
+                            book = book,
+                            onClick = { onSelectBook(book) }
+                        )
+                        HorizontalDivider()
+                    }
+                }
+            } else if (!isSearching && searchQuery.length >= 2 && searchError == null) {
+                Text(
+                    text = "未找到相关书籍，试试其他关键词",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(vertical = 16.dp)
+                )
+            } else if (searchQuery.isEmpty()) {
+                Text(
+                    text = "输入书名或作者名开始搜索",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(vertical = 16.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun BookSearchResultItem(
+    book: com.readtrack.data.remote.BookSearchResult,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        // 封面缩略图
+        AsyncImage(
+            model = book.coverUrl,
+            contentDescription = book.title,
+            modifier = Modifier
+                .size(60.dp, 80.dp)
+                .clip(RoundedCornerShape(4.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant),
+            onError = {
+                // 图片加载失败时显示占位符
+            }
+        )
+        
+        // 书籍信息
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(
+                text = book.title,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Medium,
+                maxLines = 2
+            )
+            
+            book.author?.let { author ->
+                Text(
+                    text = author,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1
+                )
+            }
+            
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                book.publishYear?.let { year ->
+                    Text(
+                        text = year.toString(),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                
+                book.publisher?.let { publisher ->
+                    Text(
+                        text = publisher,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        modifier = Modifier.weight(1f, fill = false)
+                    )
+                }
+            }
+        }
+        
+        // 选中提示
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier
+                .graphicsLayer { this.rotationZ = 180f }
+                .size(20.dp)
+        )
     }
 }

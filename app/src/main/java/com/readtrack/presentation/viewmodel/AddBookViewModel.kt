@@ -3,9 +3,13 @@ package com.readtrack.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.readtrack.data.local.entity.BookEntity
+import com.readtrack.data.remote.BookSearchResult
+import com.readtrack.data.remote.BookSearchService
 import com.readtrack.domain.model.BookStatus
 import com.readtrack.domain.repository.BookRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -34,19 +38,26 @@ data class AddBookUiState(
     val isSaved: Boolean = false,
     val isEditing: Boolean = false,
     val editingBookId: Long? = null,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    // 搜索相关状态
+    val isSearching: Boolean = false,
+    val searchQuery: String = "",
+    val searchResults: List<BookSearchResult> = emptyList(),
+    val searchError: String? = null,
+    val showSearchDialog: Boolean = false
 )
 
 @HiltViewModel
 class AddBookViewModel @Inject constructor(
-    private val bookRepository: BookRepository
+    private val bookRepository: BookRepository,
+    private val bookSearchService: BookSearchService
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AddBookUiState())
     val uiState: StateFlow<AddBookUiState> = _uiState.asStateFlow()
 
-    // Store loaded book for update
     private var loadedBook: BookEntity? = null
+    private var searchJob: Job? = null
 
     fun loadBook(bookId: Long) {
         viewModelScope.launch {
@@ -74,13 +85,13 @@ class AddBookViewModel @Inject constructor(
                     }
                 }
             } catch (e: Exception) {
-                _uiState.update { it.copy(errorMessage = "加载书籍失败: ${e.message}") }
+                _uiState.update { it.copy(errorMessage = "加载失败: ${e.message}") }
             }
         }
     }
 
     fun updateTitle(title: String) {
-        _uiState.update { it.copy(title = title, errorMessage = null) }
+        _uiState.update { it.copy(title = title) }
     }
 
     fun updateAuthor(author: String) {
@@ -91,12 +102,12 @@ class AddBookViewModel @Inject constructor(
         _uiState.update { it.copy(publisher = publisher) }
     }
 
-    fun updateProgressType(type: ProgressType) {
-        _uiState.update { it.copy(progressType = type) }
+    fun updateProgressType(progressType: ProgressType) {
+        _uiState.update { it.copy(progressType = progressType) }
     }
 
     fun updateTotalPages(pages: String) {
-        _uiState.update { it.copy(totalPages = pages, errorMessage = null) }
+        _uiState.update { it.copy(totalPages = pages) }
     }
 
     fun updateCurrentPage(page: String) {
@@ -104,141 +115,192 @@ class AddBookViewModel @Inject constructor(
     }
 
     fun updateTotalChapters(chapters: String) {
-        _uiState.update { it.copy(totalChapters = chapters.filter { c -> c.isDigit() }) }
+        _uiState.update { it.copy(totalChapters = chapters) }
     }
 
     fun updateCurrentChapter(chapter: String) {
-        _uiState.update { it.copy(currentChapter = chapter.filter { c -> c.isDigit() }) }
+        _uiState.update { it.copy(currentChapter = chapter) }
     }
 
     fun updateDescription(description: String) {
         _uiState.update { it.copy(description = description) }
     }
 
-    fun updateCoverUri(coverPath: String?) {
-        _uiState.update { it.copy(coverUri = coverPath) }
+    fun updateCoverUri(uri: String?) {
+        _uiState.update { it.copy(coverUri = uri) }
     }
 
     fun updateStatus(status: BookStatus) {
         _uiState.update { it.copy(status = status) }
     }
 
+    // ========== 搜索功能 ==========
+
+    fun showSearchDialog() {
+        _uiState.update { it.copy(showSearchDialog = true, searchQuery = "", searchResults = emptyList(), searchError = null) }
+    }
+
+    fun hideSearchDialog() {
+        _uiState.update { it.copy(showSearchDialog = false, searchQuery = "", searchResults = emptyList(), searchError = null) }
+    }
+
+    fun updateSearchQuery(query: String) {
+        _uiState.update { it.copy(searchQuery = query) }
+        
+        // 防抖搜索
+        searchJob?.cancel()
+        if (query.length >= 2) {
+            searchJob = viewModelScope.launch {
+                delay(500) // 500ms 防抖
+                searchBooks(query)
+            }
+        } else {
+            _uiState.update { it.copy(searchResults = emptyList()) }
+        }
+    }
+
+    fun searchBooks(query: String) {
+        if (query.isBlank()) return
+        
+        viewModelScope.launch {
+            _uiState.update { it.copy(isSearching = true, searchError = null) }
+            
+            bookSearchService.searchBooks(query)
+                .onSuccess { results ->
+                    _uiState.update { it.copy(isSearching = false, searchResults = results) }
+                }
+                .onFailure { error ->
+                    _uiState.update { it.copy(isSearching = false, searchError = "搜索失败: ${error.message}") }
+                }
+        }
+    }
+
+    /**
+     * 从搜索结果填充书籍信息
+     */
+    fun fillFromSearchResult(result: BookSearchResult) {
+        _uiState.update { state ->
+            state.copy(
+                title = result.title,
+                author = result.author ?: "",
+                publisher = result.publisher ?: "",
+                coverUri = result.coverUrl,
+                description = result.description ?: "",
+                totalPages = result.pageCount?.toString() ?: "",
+                showSearchDialog = false,
+                searchQuery = "",
+                searchResults = emptyList()
+            )
+        }
+    }
+
+    // ========== 保存功能 ==========
+
     fun saveBook() {
         val state = _uiState.value
-
+        
         // Validation
         if (state.title.isBlank()) {
             _uiState.update { it.copy(errorMessage = "请输入书名") }
             return
         }
 
-        // 直接使用用户选择的封面，不自动生成
-        val finalCoverUri = state.coverUri?.takeIf { it.isNotBlank() }
+        val totalPages = if (state.progressType == ProgressType.PAGE) {
+            state.totalPages.toDoubleOrNull() ?: 0.0
+        } else {
+            0.0
+        }
 
-        _uiState.update { it.copy(isSaving = true, errorMessage = null) }
+        val currentPage = if (state.progressType == ProgressType.PAGE) {
+            state.currentPage.toDoubleOrNull() ?: 0.0
+        } else {
+            0.0
+        }
+
+        val totalChapters = if (state.progressType == ProgressType.CHAPTER) {
+            state.totalChapters.toIntOrNull() ?: 0
+        } else {
+            0
+        }
+
+        val currentChapter = if (state.progressType == ProgressType.CHAPTER) {
+            state.currentChapter.toIntOrNull() ?: 0
+        } else {
+            0
+        }
 
         viewModelScope.launch {
+            _uiState.update { it.copy(isSaving = true, errorMessage = null) }
+            
             try {
-                val currentTime = System.currentTimeMillis()
+                val now = System.currentTimeMillis()
                 
-                if (state.progressType == ProgressType.PAGE) {
-                    val pages = state.totalPages.toDoubleOrNull()
-                    if (pages == null || pages <= 0) {
-                        _uiState.update { it.copy(isSaving = false, errorMessage = "请输入有效的页数（大于0）") }
-                        return@launch
-                    }
-                    val currentPage = state.currentPage.toDoubleOrNull() ?: 0.0
-                    
-                    if (state.isEditing && loadedBook != null) {
-                        val existingBook = loadedBook!!
-                        val updatedBook = existingBook.copy(
-                            title = state.title.trim(),
-                            author = state.author.trim().takeIf { it.isNotBlank() },
-                            publisher = state.publisher.trim().takeIf { it.isNotBlank() },
-                            progressType = ProgressType.PAGE,
-                            totalPages = pages,
-                            currentPage = currentPage.coerceIn(0.0, pages),
-                            totalChapters = null,
-                            currentChapter = 0,
-                            coverPath = finalCoverUri,
-                            description = state.description.trim().takeIf { it.isNotBlank() },
-                            status = state.status,
-                            updatedAt = currentTime
-                        )
-                        bookRepository.updateBook(updatedBook)
-                    } else {
-                        val book = BookEntity(
-                            title = state.title.trim(),
-                            author = state.author.trim().takeIf { it.isNotBlank() },
-                            publisher = state.publisher.trim().takeIf { it.isNotBlank() },
-                            progressType = ProgressType.PAGE,
-                            totalPages = pages,
-                            currentPage = currentPage.coerceIn(0.0, pages),
-                            totalChapters = null,
-                            currentChapter = 0,
-                            coverPath = finalCoverUri,
-                            description = state.description.trim().takeIf { it.isNotBlank() },
-                            status = state.status,
-                            createdAt = currentTime,
-                            updatedAt = currentTime,
-                            lastReadAt = null
-                        )
-                        bookRepository.insertBook(book)
-                    }
-                } else {
-                    val chapters = state.totalChapters.toIntOrNull()
-                    if (chapters == null || chapters <= 0) {
-                        _uiState.update { it.copy(isSaving = false, errorMessage = "请输入有效的章节数（大于0）") }
-                        return@launch
-                    }
-                    val currentChapter = state.currentChapter.toIntOrNull() ?: 0
-                    
-                    if (state.isEditing && loadedBook != null) {
-                        val existingBook = loadedBook!!
-                        val updatedBook = existingBook.copy(
-                            title = state.title.trim(),
-                            author = state.author.trim().takeIf { it.isNotBlank() },
-                            publisher = state.publisher.trim().takeIf { it.isNotBlank() },
-                            progressType = ProgressType.CHAPTER,
-                            totalPages = 0.0,
-                            currentPage = 0.0,
-                            totalChapters = chapters,
-                            currentChapter = currentChapter.coerceIn(0, chapters),
-                            coverPath = finalCoverUri,
-                            description = state.description.trim().takeIf { it.isNotBlank() },
-                            status = state.status,
-                            updatedAt = currentTime
-                        )
-                        bookRepository.updateBook(updatedBook)
-                    } else {
-                        val book = BookEntity(
-                            title = state.title.trim(),
-                            author = state.author.trim().takeIf { it.isNotBlank() },
-                            publisher = state.publisher.trim().takeIf { it.isNotBlank() },
-                            progressType = ProgressType.CHAPTER,
-                            totalPages = 0.0,
-                            currentPage = 0.0,
-                            totalChapters = chapters,
-                            currentChapter = currentChapter.coerceIn(0, chapters),
-                            coverPath = finalCoverUri,
-                            description = state.description.trim().takeIf { it.isNotBlank() },
-                            status = state.status,
-                            createdAt = currentTime,
-                            updatedAt = currentTime,
-                            lastReadAt = null
-                        )
-                        bookRepository.insertBook(book)
-                    }
+                if (state.isEditing && loadedBook != null) {
+                    // Update existing book
+                    val updatedBook = loadedBook!!.copy(
+                        title = state.title,
+                        author = state.author.ifBlank { null },
+                        publisher = state.publisher.ifBlank { null },
+                        progressType = com.readtrack.domain.model.ProgressType.valueOf(state.progressType.name),
+                        totalPages = totalPages,
+                        currentPage = currentPage,
+                        totalChapters = if (totalChapters > 0) totalChapters else null,
+                        currentChapter = currentChapter,
+                        description = state.description.ifBlank { null },
+                        coverPath = state.coverUri,
+                        status = state.status,
+                        createdAt = now,
+                        updatedAt = now,
+                        lastReadAt = null
+                    )
+                    bookRepository.insertBook(newBook)
                 }
                 
                 _uiState.update { it.copy(isSaving = false, isSaved = true) }
             } catch (e: Exception) {
-                _uiState.update { 
-                    it.copy(
-                        isSaving = false, 
-                        errorMessage = "保存失败: ${e.message}"
-                    ) 
+                _uiState.update { it.copy(isSaving = false, errorMessage = "保存失败: ${e.message}") }
+            }
+        }
+    }
+    
+    fun clearError() {
+        _uiState.update { it.copy(errorMessage = null) }
+    }
+    
+    fun resetState() {
+        loadedBook = null
+        _uiState.value = AddBookUiState()
+    }
+} { null },
+                        coverPath = state.coverUri,
+                        status = state.status,
+                        updatedAt = now
+                    )
+                    bookRepository.updateBook(updatedBook)
+                } else {
+                    // Create new book
+                    val newBook = BookEntity(
+                        title = state.title,
+                        author = state.author.ifBlank { null },
+                        publisher = state.publisher.ifBlank { null },
+                        progressType = com.readtrack.domain.model.ProgressType.valueOf(state.progressType.name),
+                        totalPages = totalPages,
+                        currentPage = currentPage,
+                        totalChapters = if (totalChapters > 0) totalChapters else null,
+                        currentChapter = currentChapter,
+                        description = state.description.ifBlank { null },
+                        coverPath = state.coverUri,
+                        status = state.status,
+                        createdAt = now,
+                        updatedAt = now,
+                        lastReadAt = null
+                    )
+                    bookRepository.insertBook(newBook)
                 }
+                
+                _uiState.update { it.copy(isSaving = false, isSaved = true) }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isSaving = false, errorMessage = "保存失败: ${e.message}") }
             }
         }
     }
