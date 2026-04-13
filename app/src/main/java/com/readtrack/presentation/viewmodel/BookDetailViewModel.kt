@@ -78,17 +78,27 @@ class BookDetailViewModel @Inject constructor(
         }
     }
 
-    fun addReadingRecord(pagesRead: Double) {
+    /**
+     * 添加阅读记录（更新进度）
+     * @param pages 输入的页数
+     * @param isIncrement true=增量模式（当前进度+输入值），false=直接模式（直接设置到输入值）
+     */
+    fun addReadingRecord(pages: Double, isIncrement: Boolean = true) {
         val currentBook = _uiState.value.book ?: return
         viewModelScope.launch {
             try {
                 val currentTime = System.currentTimeMillis()
                 val fromPage = currentBook.currentPage
-                val toPage = (fromPage + pagesRead).coerceAtMost(currentBook.totalPages)
+                val toPage = if (isIncrement) {
+                    (fromPage + pages).coerceAtMost(currentBook.totalPages)
+                } else {
+                    pages.coerceIn(0.0, currentBook.totalPages)
+                }
+                val pagesActuallyRead = if (isIncrement) pages else (toPage - fromPage).coerceAtLeast(0.0)
                 
                 val record = ReadingRecordEntity(
                     bookId = currentBook.id,
-                    pagesRead = pagesRead,
+                    pagesRead = pagesActuallyRead,
                     fromPage = fromPage,
                     toPage = toPage,
                     date = currentTime
@@ -108,7 +118,12 @@ class BookDetailViewModel @Inject constructor(
         }
     }
 
-    fun addChapterProgress(chaptersRead: Int) {
+    /**
+     * 添加章节进度
+     * @param chapters 输入的章节数
+     * @param isIncrement true=增量模式（当前章节+输入值），false=直接模式（直接设置到输入值）
+     */
+    fun addChapterProgress(chapters: Int, isIncrement: Boolean = true) {
         val currentBook = _uiState.value.book ?: return
         if (currentBook.progressType != ProgressType.CHAPTER) return
         
@@ -116,11 +131,17 @@ class BookDetailViewModel @Inject constructor(
             try {
                 val currentTime = System.currentTimeMillis()
                 val fromChapter = currentBook.currentChapter
-                val toChapter = (fromChapter + chaptersRead).coerceAtMost(currentBook.totalChapters ?: 0)
+                val maxChapter = currentBook.totalChapters ?: 0
+                val toChapter = if (isIncrement) {
+                    (fromChapter + chapters).coerceAtMost(maxChapter)
+                } else {
+                    chapters.coerceIn(0, maxChapter)
+                }
+                val chaptersActuallyRead = if (isIncrement) chapters else (toChapter - fromChapter).coerceAtLeast(0)
                 
                 val record = ReadingRecordEntity(
                     bookId = currentBook.id,
-                    pagesRead = chaptersRead.toDouble(),
+                    pagesRead = chaptersActuallyRead.toDouble(),
                     fromPage = fromChapter.toDouble(),
                     toPage = toChapter.toDouble(),
                     date = currentTime

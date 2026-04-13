@@ -185,6 +185,7 @@ fun BookDetailScreen(
     if (showAddRecordDialog && uiState.book != null) {
         val book = uiState.book!!
         var inputText by remember { mutableStateOf("") }
+        var isIncrement by remember { mutableStateOf(true) } // true=增量模式，false=直接模式
         val isChapterBased = book.progressType == ProgressType.CHAPTER
         
         AlertDialog(
@@ -192,33 +193,75 @@ fun BookDetailScreen(
             title = { Text("更新阅读进度", fontWeight = FontWeight.Bold) },
             text = {
                 Column {
+                    // 模式切换
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        FilterChip(
+                            selected = isIncrement,
+                            onClick = { isIncrement = true },
+                            label = { Text("本次读了") },
+                            modifier = Modifier.weight(1f)
+                        )
+                        FilterChip(
+                            selected = !isIncrement,
+                            onClick = { isIncrement = false },
+                            label = { Text("本次到") },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
                     OutlinedTextField(
                         value = inputText,
                         onValueChange = { inputText = if (isChapterBased) it.filter { c -> c.isDigit() } else it.filter { c -> c.isDigit() || c == '.' } },
-                        label = { Text(if (isChapterBased) "阅读章节数" else "阅读页数") },
-                        placeholder = { Text(if (isChapterBased) "输入本次阅读章节数" else "输入本次阅读页数") },
+                        label = { 
+                            Text(
+                                if (isChapterBased) 
+                                    if (isIncrement) "阅读章节数" else "章节号" 
+                                else 
+                                    if (isIncrement) "阅读页数" else "页码"
+                            ) 
+                        },
+                        placeholder = { 
+                            Text(
+                                if (isChapterBased)
+                                    if (isIncrement) "输入本次阅读章节数" else "输入目标章节号"
+                                else
+                                    if (isIncrement) "输入本次阅读页数" else "输入目标页码"
+                            ) 
+                        },
                         keyboardOptions = KeyboardOptions(keyboardType = if (isChapterBased) KeyboardType.Number else KeyboardType.Decimal),
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp)
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        if (isChapterBased) "当前：第 ${book.currentChapter}/${book.totalChapters ?: 0} 章" else "当前：第 ${book.currentPage.toInt()} / ${book.totalPages.toInt()} 页",
+                        if (isChapterBased) 
+                            if (isIncrement) "当前：第 ${book.currentChapter}/${book.totalChapters ?: 0} 章"
+                            else "将更新到第 X 章"
+                        else 
+                            if (isIncrement) "当前：第 ${book.currentPage.toInt()} / ${book.totalPages.toInt()} 页"
+                            else "将更新到第 X 页",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             },
             confirmButton = {
-                TextButton(onClick = {
-                    if (isChapterBased) {
-                        val chapters = inputText.toIntOrNull() ?: 0
-                        if (chapters > 0) { viewModel.addChapterProgress(chapters); showAddRecordDialog = false }
-                    } else {
-                        val pages = inputText.toDoubleOrNull() ?: 0.0
-                        if (pages > 0) { viewModel.addReadingRecord(pages); showAddRecordDialog = false }
+                TextButton(
+                    onClick = {
+                        if (isChapterBased) {
+                            val chapters = inputText.toIntOrNull() ?: 0
+                            if (chapters > 0) { viewModel.addChapterProgress(chapters, isIncrement); showAddRecordDialog = false }
+                        } else {
+                            val pages = inputText.toDoubleOrNull() ?: 0.0
+                            if (pages > 0) { viewModel.addReadingRecord(pages, isIncrement); showAddRecordDialog = false }
+                        }
                     }
-                }) { Text("确认") }
+                ) { Text("确认") }
             },
             dismissButton = { TextButton(onClick = { showAddRecordDialog = false }) { Text("取消") } }
         )
