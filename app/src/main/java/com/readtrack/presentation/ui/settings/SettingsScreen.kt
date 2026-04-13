@@ -309,7 +309,7 @@ fun SettingsScreen(
             title = { Text("选择主题模式") },
             text = {
                 Column {
-                    ThemeMode.entries.forEach { mode ->
+                    ThemeMode.values().forEach { mode ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
