@@ -47,8 +47,6 @@ sealed class Screen(
     }
 }
 
-private const val ANIMATION_DURATION = 150
-
 @Composable
 fun MainNavigation() {
     val navController = rememberNavController()
@@ -63,11 +61,7 @@ fun MainNavigation() {
                 route in bottomNavItems.map { it.route }
             } ?: true
 
-            AnimatedVisibility(
-                visible = showBottomBar,
-                enter = slideInVertically(animationSpec = tween(ANIMATION_DURATION)) { it },
-                exit = slideOutVertically(animationSpec = tween(ANIMATION_DURATION)) { it }
-            ) {
+            if (showBottomBar) {
                 NavigationBar(
                     containerColor = MaterialTheme.colorScheme.surface,
                     tonalElevation = 0.dp
@@ -101,19 +95,8 @@ fun MainNavigation() {
         NavHost(
             navController = navController,
             startDestination = Screen.Home.route,
-            modifier = Modifier.padding(padding),
-            enterTransition = {
-                fadeIn(animationSpec = tween(ANIMATION_DURATION)) + slideInHorizontally(animationSpec = tween(ANIMATION_DURATION)) { it / 4 }
-            },
-            exitTransition = {
-                fadeOut(animationSpec = tween(ANIMATION_DURATION)) + slideOutHorizontally(animationSpec = tween(ANIMATION_DURATION)) { -it / 4 }
-            },
-            popEnterTransition = {
-                fadeIn(animationSpec = tween(ANIMATION_DURATION)) + slideInHorizontally(animationSpec = tween(ANIMATION_DURATION)) { -it / 4 }
-            },
-            popExitTransition = {
-                fadeOut(animationSpec = tween(ANIMATION_DURATION)) + slideOutHorizontally(animationSpec = tween(ANIMATION_DURATION)) { it / 4 }
-            }
+            modifier = Modifier.padding(padding)
+            // 移除动画以提升性能
         ) {
             composable(Screen.Home.route) {
                 HomeScreen(
