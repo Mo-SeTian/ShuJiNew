@@ -15,7 +15,7 @@ class BookSearchService @Inject constructor() {
 
     companion object {
         private const val BASE_URL = "https://openlibrary.org/search.json"
-        private const val USER_AGENT = "ReadTrack/1.0"
+        private const val USER_AGENT = "ReadTrack/1.0 (Android App)"
     }
 
     /**
@@ -30,16 +30,21 @@ class BookSearchService @Inject constructor() {
                     return@withContext Result.success(emptyList())
                 }
 
-                val encodedQuery = java.net.URLEncoder.encode(query, "UTF-8")
+                val encodedQuery = java.net.URLEncoder.encode(query.trim(), "UTF-8")
                 val url = "$BASE_URL?q=$encodedQuery&limit=$limit&fields=key,title,author_name,publisher,first_publish_year,isbn,cover_i,number_of_pages_median,first_sentence"
 
                 val connection = java.net.URL(url).openConnection()
                 connection.setRequestProperty("User-Agent", USER_AGENT)
                 connection.setRequestProperty("Accept", "application/json")
-                connection.connectTimeout = 15000
-                connection.readTimeout = 15000
+                connection.connectTimeout = 30000  // 30秒连接超时
+                connection.readTimeout = 30000      // 30秒读取超时
 
-                val response = connection.getInputStream().bufferedReader().use { it.readText() }
+                val responseCode = (connection as java.net.HttpURLConnection).responseCode
+                if (responseCode != 200) {
+                    return@withContext Result.failure(Exception("服务器返回错误: $responseCode"))
+                }
+
+                val response = connection.inputStream.bufferedReader().use { it.readText() }
                 val results = parseSearchResponse(response)
 
                 Result.success(results)
