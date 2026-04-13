@@ -72,7 +72,35 @@ class AddBookViewModel @Inject constructor(
                                 publisher = it.publisher ?: "",
                                 progressType = if ((it.totalChapters ?: 0) > 0) ProgressType.CHAPTER else ProgressType.PAGE,
                                 totalPages = if ((it.totalChapters ?: 0) == 0) it.totalPages.toInt().toString() else "",
-                                currentPage = if ((it.totalChapters ?: 0) == 0) it.currentPage.toInt().toString() else "",
+                                currentPage = currentPage,
+                        totalChapters = if (totalChapters > 0) totalChapters else null,
+                        currentChapter = currentChapter,
+                        description = state.description.ifBlank { null },
+                        coverPath = state.coverUri,
+                        status = state.status,
+                        createdAt = now,
+                        updatedAt = now,
+                        lastReadAt = null
+                    )
+                    bookRepository.insertBook(newBook)
+                }
+                
+                _uiState.update { it.copy(isSaving = false, isSaved = true) }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isSaving = false, errorMessage = "保存失败: ${e.message}") }
+            }
+        }
+    }
+    
+    fun clearError() {
+        _uiState.update { it.copy(errorMessage = null) }
+    }
+    
+    fun resetState() {
+        loadedBook = null
+        _uiState.value = AddBookUiState()
+    }
+} = if ((it.totalChapters ?: 0) == 0) it.currentPage.toInt().toString() else "",
                                 totalChapters = (it.totalChapters ?: 0).toString(),
                                 currentChapter = it.currentChapter.toString(),
                                 description = it.description ?: "",
@@ -271,7 +299,10 @@ class AddBookViewModel @Inject constructor(
         loadedBook = null
         _uiState.value = AddBookUiState()
     }
-} { null },
+} = currentPage,
+                        totalChapters = if (totalChapters > 0) totalChapters else null,
+                        currentChapter = currentChapter,
+                        description = state.description.ifBlank { null },
                         coverPath = state.coverUri,
                         status = state.status,
                         updatedAt = now
