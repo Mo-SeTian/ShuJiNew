@@ -24,12 +24,3 @@ interface DataBackupRepository {
      */
     fun getExportJson(): Flow<String>
 }
-
-/**
- * 导入结果
- */
-data class ImportResult(
-    val booksImported: Int,
-    val recordsImported: Int,
-    val errors: List<String> = emptyList()
-)
