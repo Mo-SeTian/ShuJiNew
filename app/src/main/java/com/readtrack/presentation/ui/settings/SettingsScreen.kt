@@ -1,6 +1,5 @@
 package com.readtrack.presentation.ui.settings
 
-import android.content.Context
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -34,11 +33,9 @@ fun SettingsScreen(
     var showThemeDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
     
-    // 存储待导入的数据
     var pendingImportUri by remember { mutableStateOf<Uri?>(null) }
     var pendingImportContent by remember { mutableStateOf<String?>(null) }
     
-    // 文件选择器 - 导入
     val importLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
@@ -46,26 +43,25 @@ fun SettingsScreen(
             val content = context.contentResolver.openInputStream(it)?.bufferedReader()?.readText()
             if (content != null) {
                 viewModel.showClearConfirmDialog()
-                // 保存URI和内容以便后续使用
                 pendingImportUri = uri
                 pendingImportContent = content
             }
         }
     }
     
-    // 文件保存器 - 导出
     val exportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/json")
     ) { uri ->
-        uri?.let { 
-            context.contentResolver.openOutputStream(it)?.bufferedWriter()?.use { writer ->
-                writer.write(uiState.exportJson ?: "")
+        uri?.let { savedUri ->
+            viewModel.exportJson?.let { json ->
+                context.contentResolver.openOutputStream(savedUri)?.bufferedWriter()?.use { writer ->
+                    writer.write(json)
+                }
             }
             viewModel.clearExportSuccess()
         }
     }
     
-    // 确认对话框
     if (uiState.showClearConfirmDialog && pendingImportUri != null && pendingImportContent != null) {
         AlertDialog(
             onDismissRequest = { 
@@ -74,87 +70,79 @@ fun SettingsScreen(
                 pendingImportContent = null
             },
             title = { Text("导入选项") },
-            text = { 
-                Text("是否清空现有数据后再导入？\n\n• 是：删除所有现有书籍和记录\n• 否：保留现有数据，追加导入的数据") 
-            },
+            text = { Text("是否清空现有数据后再导入？\n\n• 是：删除所有现有书籍和记录\n• 否：保留现有数据，追加导入") },
             confirmButton = {
-                TextButton(
-                    onClick = {
+                TextButton(onClick = {
+                    pendingImportUri?.let { uri ->
+                        pendingImportContent?.let { content ->
+                            viewModel.importData(uri, content, true)
+                        }
+                    }
+                    pendingImportUri = null
+                    pendingImportContent = null
+                }) { Text("清空并导入") }
+            },
+            dismissButton = {
+                Row {
+                    TextButton(onClick = { 
+                        viewModel.dismissClearConfirmDialog()
+                        pendingImportUri = null
+                        pendingImportContent = null
+                    }) { Text("取消") }
+                    TextButton(onClick = {
                         pendingImportUri?.let { uri ->
                             pendingImportContent?.let { content ->
-                                viewModel.importData(uri, content, clearExisting = true)
+                                viewModel.importData(uri, content, false)
                             }
                         }
                         pendingImportUri = null
                         pendingImportContent = null
-                    }
-                ) {
-                    Text("清空并导入")
-                }
-            },
-            dismissButton = {
-                Row {
-                    TextButton(
-                        onClick = { 
-                            viewModel.dismissClearConfirmDialog()
-                            pendingImportUri = null
-                            pendingImportContent = null
-                        }
-                    ) {
-                        Text("取消")
-                    }
-                    TextButton(
-                        onClick = {
-                            pendingImportUri?.let { uri ->
-                                pendingImportContent?.let { content ->
-                                    viewModel.importData(uri, content, clearExisting = false)
-                                }
-                            }
-                            pendingImportUri = null
-                            pendingImportContent = null
-                        }
-                    ) {
-                        Text("追加导入")
-                    }
+                    }) { Text("追加导入") }
                 }
             }
         )
     }
     
-    // 导入成功对话框
+    if (uiState.exportSuccess && uiState.exportJson != null) {
+        AlertDialog(
+            onDismissRequest = { viewModel.clearExportSuccess() },
+            icon = { Icon(Icons.Default.CheckCircle, null) },
+            title = { Text("导出成功") },
+            text = { Text("数据已准备好，是否保存到文件？") },
+            confirmButton = {
+                TextButton(onClick = {
+                    val ts = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+                    exportLauncher.launch("readtrack_backup_$ts.json")
+                }) { Text("保存文件") }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.clearExportSuccess() }) { Text("稍后保存") }
+            }
+        )
+    }
+    
     if (uiState.importSuccess && uiState.lastImportResult != null) {
         val result = uiState.lastImportResult!!
         AlertDialog(
             onDismissRequest = { viewModel.clearImportSuccess() },
-            icon = { Icon(Icons.Default.CheckCircle, contentDescription = null) },
+            icon = { Icon(Icons.Default.CheckCircle, null) },
             title = { Text("导入成功") },
-            text = { 
+            text = {
                 Column {
                     Text("成功导入：")
                     Text("• 书籍：${result.booksImported} 本")
                     Text("• 阅读记录：${result.recordsImported} 条")
                     if (result.errors.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(Modifier.height(8.dp))
                         Text("警告：", color = MaterialTheme.colorScheme.error)
-                        result.errors.take(3).forEach { error ->
-                            Text(error, style = MaterialTheme.typography.bodySmall)
-                        }
+                        result.errors.take(3).forEach { Text(it, style = MaterialTheme.typography.bodySmall) }
                     }
                 }
             },
             confirmButton = {
-                TextButton(onClick = { viewModel.clearImportSuccess() }) {
-                    Text("确定")
-                }
+                TextButton(onClick = { viewModel.clearImportSuccess() }) { Text("确定") }
             }
         )
-    }
-    
-    // 错误提示
-    LaunchedEffect(uiState.errorMessage) {
-        if (uiState.errorMessage != null) {
-            // 显示 Snackbar 或 Toast
-        }
     }
 
     Scaffold(
@@ -162,148 +150,61 @@ fun SettingsScreen(
             LargeTopAppBar(
                 title = {
                     Column {
-                        Text(
-                            "设置",
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            "个性化你的阅读体验",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Text("设置", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                        Text("个性化你的阅读体验", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 },
-                colors = TopAppBarDefaults.largeTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    scrolledContainerColor = MaterialTheme.colorScheme.surface
-                )
+                colors = TopAppBarDefaults.largeTopAppBarColors(containerColor = MaterialTheme.colorScheme.surface, scrolledContainerColor = MaterialTheme.colorScheme.surface)
             )
         }
     ) { padding ->
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp),
+            modifier = Modifier.fillMaxSize().padding(padding),
+            contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // 数据管理 Section
-            item {
-                SettingsSectionCard(title = "数据管理")
-            }
+            item { SettingsSectionCard("数据管理") }
+            item { SettingsClickableCard(Icons.Outlined.Upload, "导出数据", "将数据导出为JSON文件") { viewModel.exportData() } }
+            item { SettingsClickableCard(Icons.Outlined.Download, "导入数据", "从JSON文件恢复数据") { importLauncher.launch(arrayOf("application/json", "*/*")) } }
             
-            item {
-                SettingsClickableCard(
-                    icon = Icons.Outlined.Upload,
-                    title = "导出数据",
-                    subtitle = "将所有书籍和阅读记录导出为JSON文件",
-                    onClick = { viewModel.exportData() }
-                )
-            }
-            
-            item {
-                SettingsClickableCard(
-                    icon = Icons.Outlined.Download,
-                    title = "导入数据",
-                    subtitle = "从JSON文件恢复书籍和阅读记录",
-                    onClick = { importLauncher.launch(arrayOf("application/json", "*/*")) }
-                )
-            }
-            
-            // 导出进度
             if (uiState.isExporting) {
                 item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
-                        )
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            CircularProgressIndicator(modifier = Modifier.size(20.dp))
-                            Spacer(modifier = Modifier.width(12.dp))
+                    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+                        Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+                            CircularProgressIndicator(Modifier.size(20.dp))
+                            Spacer(Modifier.width(12.dp))
                             Text("正在导出数据...")
                         }
                     }
                 }
             }
             
-            // 导入进度
             if (uiState.isImporting) {
                 item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
-                        )
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            CircularProgressIndicator(modifier = Modifier.size(20.dp))
-                            Spacer(modifier = Modifier.width(12.dp))
+                    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+                        Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+                            CircularProgressIndicator(Modifier.size(20.dp))
+                            Spacer(Modifier.width(12.dp))
                             Text("正在导入数据...")
                         }
                     }
                 }
             }
             
-            // 导出成功后自动触发保存
-            LaunchedEffect(uiState.exportSuccess) {
-                if (uiState.exportSuccess && uiState.exportJson != null) {
-                    val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-                    exportLauncher.launch("readtrack_backup_$timestamp.json")
-                }
-            }
-            
-            // Appearance Section
+            item { Spacer(Modifier.height(8.dp)); SettingsSectionCard("外观") }
             item {
-                Spacer(modifier = Modifier.height(8.dp))
-                SettingsSectionCard(title = "外观")
-            }
-            
-            item {
-                SettingsClickableCard(
-                    icon = Icons.Outlined.DarkMode,
-                    title = "主题模式",
-                    subtitle = when (uiState.themeMode) {
-                        ThemeMode.SYSTEM -> "跟随系统"
-                        ThemeMode.LIGHT -> "浅色模式"
-                        ThemeMode.DARK -> "深色模式"
-                    },
-                    onClick = { showThemeDialog = true }
-                )
+                SettingsClickableCard(Icons.Outlined.DarkMode, "主题模式", when (uiState.themeMode) {
+                    ThemeMode.SYSTEM -> "跟随系统"
+                    ThemeMode.LIGHT -> "浅色模式"
+                    ThemeMode.DARK -> "深色模式"
+                }) { showThemeDialog = true }
             }
 
-            // About Section
-            item {
-                Spacer(modifier = Modifier.height(8.dp))
-                SettingsSectionCard(title = "关于")
-            }
-
-            item {
-                SettingsClickableCard(
-                    icon = Icons.Outlined.Info,
-                    title = "应用信息",
-                    subtitle = "版本 1.0.0",
-                    onClick = { }
-                )
-            }
+            item { Spacer(Modifier.height(8.dp)); SettingsSectionCard("关于") }
+            item { SettingsClickableCard(Icons.Outlined.Info, "应用信息", "版本 1.0.0") { } }
         }
     }
 
-    // 主题选择对话框
     if (showThemeDialog) {
         AlertDialog(
             onDismissRequest = { showThemeDialog = false },
@@ -311,40 +212,15 @@ fun SettingsScreen(
             text = {
                 Column {
                     ThemeMode.values().forEach { mode ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    viewModel.setThemeMode(mode)
-                                    showThemeDialog = false
-                                }
-                                .padding(vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            RadioButton(
-                                selected = uiState.themeMode == mode,
-                                onClick = {
-                                    viewModel.setThemeMode(mode)
-                                    showThemeDialog = false
-                                }
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text(
-                                text = when (mode) {
-                                    ThemeMode.SYSTEM -> "跟随系统"
-                                    ThemeMode.LIGHT -> "浅色模式"
-                                    ThemeMode.DARK -> "深色模式"
-                                }
-                            )
+                        Row(Modifier.fillMaxWidth().clickable { viewModel.setThemeMode(mode); showThemeDialog = false }.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(selected = uiState.themeMode == mode, onClick = { viewModel.setThemeMode(mode); showThemeDialog = false })
+                            Spacer(Modifier.width(12.dp))
+                            Text(when (mode) { ThemeMode.SYSTEM -> "跟随系统"; ThemeMode.LIGHT -> "浅色模式"; ThemeMode.DARK -> "深色模式" })
                         }
                     }
                 }
             },
-            confirmButton = {
-                TextButton(onClick = { showThemeDialog = false }) {
-                    Text("取消")
-                }
-            }
+            confirmButton = { TextButton(onClick = { showThemeDialog = false }) { Text("取消") } }
         )
     }
 }
@@ -352,10 +228,8 @@ fun SettingsScreen(
 @Composable
 fun SettingsSectionCard(title: String) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-        ),
+        Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Text(
@@ -376,45 +250,22 @@ fun SettingsClickableCard(
     onClick: () -> Unit
 ) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
         shape = RoundedCornerShape(12.dp),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                modifier = Modifier.size(24.dp),
-                tint = MaterialTheme.colorScheme.primary
-            )
-            Spacer(modifier = Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium
-                )
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            Icon(imageVector = icon, contentDescription = null, modifier = Modifier.size(24.dp), tint = MaterialTheme.colorScheme.primary)
+            Spacer(Modifier.width(16.dp))
+            Column(Modifier.weight(1f)) {
+                Text(text = title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                Text(text = subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            Icon(
-                imageVector = Icons.Default.ChevronRight,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-            )
+            Icon(imageVector = Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
         }
     }
 }
