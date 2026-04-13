@@ -1,6 +1,7 @@
 package com.readtrack.domain.repository
 
 import com.readtrack.domain.model.DataBackup
+import com.readtrack.domain.model.ImportResult
 import kotlinx.coroutines.flow.Flow
 
 /**

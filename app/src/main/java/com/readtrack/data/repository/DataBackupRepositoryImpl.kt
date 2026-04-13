@@ -57,7 +57,7 @@ class DataBackupRepositoryImpl @Inject constructor(
             if (clearExisting) {
                 // 清空现有数据
                 bookDao.getAllBooks().first().forEach { book ->
-                    bookDao.deleteBook(book.id)
+                    bookDao.deleteBook(book)
                 }
             }
             
