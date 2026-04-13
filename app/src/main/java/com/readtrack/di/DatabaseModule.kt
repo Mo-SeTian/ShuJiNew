@@ -6,8 +6,10 @@ import com.readtrack.data.local.dao.BookDao
 import com.readtrack.data.local.dao.ReadingRecordDao
 import com.readtrack.data.local.database.ReadTrackDatabase
 import com.readtrack.data.repository.BookRepositoryImpl
+import com.readtrack.data.repository.DataBackupRepositoryImpl
 import com.readtrack.data.repository.ReadingRecordRepositoryImpl
 import com.readtrack.domain.repository.BookRepository
+import com.readtrack.domain.repository.DataBackupRepository
 import com.readtrack.domain.repository.ReadingRecordRepository
 import dagger.Module
 import dagger.Provides
@@ -54,5 +56,14 @@ object DatabaseModule {
     @Singleton
     fun provideReadingRecordRepository(readingRecordDao: ReadingRecordDao): ReadingRecordRepository {
         return ReadingRecordRepositoryImpl(readingRecordDao)
+    }
+
+    @Provides
+    @Singleton
+    fun provideDataBackupRepository(
+        bookDao: BookDao,
+        readingRecordDao: ReadingRecordDao
+    ): DataBackupRepository {
+        return DataBackupRepositoryImpl(bookDao, readingRecordDao)
     }
 }
