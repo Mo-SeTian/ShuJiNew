@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -33,6 +34,10 @@ fun SettingsScreen(
     var showThemeDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
     
+    // 存储待导入的数据
+    var pendingImportUri by remember { mutableStateOf<Uri?>(null) }
+    var pendingImportContent by remember { mutableStateOf<String?>(null) }
+    
     // 文件选择器 - 导入
     val importLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
@@ -47,10 +52,6 @@ fun SettingsScreen(
             }
         }
     }
-    
-    // 存储待导入的数据
-    var pendingImportUri by remember { mutableStateOf<Uri?>(null) }
-    var pendingImportContent by remember { mutableStateOf<String?>(null) }
     
     // 文件保存器 - 导出
     val exportLauncher = rememberLauncherForActivityResult(

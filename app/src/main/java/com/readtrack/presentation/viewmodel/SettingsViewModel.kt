@@ -194,12 +194,10 @@ class SettingsViewModel @Inject constructor(
                     put("bookId", record.bookId)
                     put("bookTitle", record.bookTitle)
                     put("pagesRead", record.pagesRead)
-                    put("startPage", record.startPage)
-                    put("endPage", record.endPage)
-                    put("duration", record.duration)
+                    put("fromPage", record.fromPage)
+                    put("toPage", record.toPage)
                     put("note", record.note ?: JSONObject.NULL)
-                    put("recordDate", record.recordDate)
-                    put("createdAt", record.createdAt)
+                    put("date", record.date)
                 })
             }
             put("readingRecords", recordsArray)
@@ -244,12 +242,10 @@ class SettingsViewModel @Inject constructor(
                     bookId = recordJson.getLong("bookId"),
                     bookTitle = recordJson.getString("bookTitle"),
                     pagesRead = recordJson.getDouble("pagesRead"),
-                    startPage = recordJson.getDouble("startPage"),
-                    endPage = recordJson.getDouble("endPage"),
-                    duration = recordJson.getLong("duration"),
-                    note = if (recordJson.isNull("note")) null else recordJson.getString("note"),
-                    recordDate = recordJson.getLong("recordDate"),
-                    createdAt = recordJson.getLong("createdAt")
+                    fromPage = recordJson.getDouble("fromPage"),
+                    toPage = recordJson.getDouble("toPage"),
+                    date = recordJson.getLong("date"),
+                    note = if (recordJson.isNull("note")) null else recordJson.getString("note")
                 ))
             }
             

@@ -2,6 +2,7 @@ package com.readtrack.domain.model
 
 import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.data.local.entity.ReadingRecordEntity
+import com.readtrack.presentation.viewmodel.ProgressType
 
 /**
  * 数据备份模型 - 用于导入导出
@@ -57,7 +58,7 @@ data class BookExport(
         title = title,
         author = author,
         publisher = publisher,
-        progressType = com.readtrack.domain.model.ProgressType.valueOf(progressType),
+        progressType = ProgressType.valueOf(progressType),
         totalPages = totalPages,
         currentPage = currentPage,
         totalChapters = if (totalChapters > 0) totalChapters else null,
@@ -78,12 +79,10 @@ data class ReadingRecordExport(
     val bookId: Long, // 导出时用外部ID引用
     val bookTitle: String, // 用于匹配导入后的书籍
     val pagesRead: Double,
-    val startPage: Double,
-    val endPage: Double,
-    val duration: Long,
-    val note: String?,
-    val recordDate: Long,
-    val createdAt: Long
+    val fromPage: Double,
+    val toPage: Double,
+    val date: Long,
+    val note: String?
 ) {
     companion object {
         fun fromEntity(record: ReadingRecordEntity, bookTitle: String): ReadingRecordExport = 
@@ -92,12 +91,10 @@ data class ReadingRecordExport(
                 bookId = record.bookId,
                 bookTitle = bookTitle,
                 pagesRead = record.pagesRead,
-                startPage = record.startPage,
-                endPage = record.endPage,
-                duration = record.duration,
-                note = record.note,
-                recordDate = record.recordDate,
-                createdAt = record.createdAt
+                fromPage = record.fromPage,
+                toPage = record.toPage,
+                date = record.date,
+                note = record.note
             )
     }
 }

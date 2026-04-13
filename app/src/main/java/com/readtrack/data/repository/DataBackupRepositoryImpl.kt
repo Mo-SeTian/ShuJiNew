@@ -9,11 +9,7 @@ import com.readtrack.domain.model.DataBackup
 import com.readtrack.domain.model.ImportResult
 import com.readtrack.domain.model.ReadingRecordExport
 import com.readtrack.domain.repository.DataBackupRepository
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onStart
 import org.json.JSONArray
 import org.json.JSONObject
 import javax.inject.Inject
@@ -84,12 +80,10 @@ class DataBackupRepositoryImpl @Inject constructor(
                             id = 0,
                             bookId = newBookId,
                             pagesRead = recordExport.pagesRead,
-                            startPage = recordExport.startPage,
-                            endPage = recordExport.endPage,
-                            duration = recordExport.duration,
-                            note = recordExport.note,
-                            recordDate = recordExport.recordDate,
-                            createdAt = recordExport.createdAt
+                            fromPage = recordExport.fromPage,
+                            toPage = recordExport.toPage,
+                            date = recordExport.date,
+                            note = recordExport.note
                         )
                         recordDao.insertRecord(newRecord)
                         recordsImported++
@@ -143,12 +137,10 @@ class DataBackupRepositoryImpl @Inject constructor(
                         put("bookId", record.bookId)
                         put("bookTitle", record.bookTitle)
                         put("pagesRead", record.pagesRead)
-                        put("startPage", record.startPage)
-                        put("endPage", record.endPage)
-                        put("duration", record.duration)
+                        put("fromPage", record.fromPage)
+                        put("toPage", record.toPage)
                         put("note", record.note ?: JSONObject.NULL)
-                        put("recordDate", record.recordDate)
-                        put("createdAt", record.createdAt)
+                        put("date", record.date)
                     })
                 }
                 put("readingRecords", recordsArray)
