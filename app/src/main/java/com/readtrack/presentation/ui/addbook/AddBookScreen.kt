@@ -5,26 +5,25 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.PhotoLibrary
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -41,7 +40,7 @@ fun AddBookScreen(
     onNavigateBack: () -> Unit,
     bookId: Long?,
     onSearchCover: (String) -> Unit = {},
-    onPickCover: (String) -> Unit = {},
+    onPickCover: () -> Unit = {},
     viewModel: AddBookViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -52,6 +51,12 @@ fun AddBookScreen(
     ) { uri ->
         viewModel.updateCoverUri(uri?.toString())
     }
+
+    // URL输入弹窗状态
+    var showUrlDialog by remember { mutableStateOf(false) }
+    var urlInput by remember { mutableStateOf("") }
+    var urlError by remember { mutableStateOf<String?>(null) }
+    val focusManager = LocalFocusManager.current
 
     // 使用 rememberSaveable 追踪是否已经初始化过，避免从封面选择器返回时重置状态
     var hasInitialized by rememberSaveable { mutableStateOf(false) }
@@ -79,6 +84,75 @@ fun AddBookScreen(
             snackbarHostState.showSnackbar(error)
             viewModel.clearError()
         }
+    }
+
+    // URL输入弹窗
+    if (showUrlDialog) {
+        AlertDialog(
+            onDismissRequest = { 
+                showUrlDialog = false
+                urlInput = ""
+                urlError = null
+            },
+            title = { 
+                Text("网络导入封面", fontWeight = FontWeight.Bold) 
+            },
+            text = {
+                Column {
+                    Text(
+                        "输入图片的网络链接地址",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    OutlinedTextField(
+                        value = urlInput,
+                        onValueChange = { 
+                            urlInput = it
+                            urlError = null
+                        },
+                        label = { Text("图片URL") },
+                        placeholder = { Text("https://example.com/cover.jpg") },
+                        singleLine = true,
+                        isError = urlError != null,
+                        supportingText = urlError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Uri,
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onDone = { focusManager.clearFocus() }
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        when {
+                            urlInput.isBlank() -> urlError = "请输入图片地址"
+                            !urlInput.startsWith("http://") && !urlInput.startsWith("https://") -> urlError = "请输入以 http:// 或 https:// 开头的地址"
+                            else -> {
+                                viewModel.updateCoverUri(urlInput.trim())
+                                showUrlDialog = false
+                                urlInput = ""
+                                urlError = null
+                            }
+                        }
+                    }
+                ) { Text("确定") }
+            },
+            dismissButton = {
+                TextButton(onClick = { 
+                    showUrlDialog = false
+                    urlInput = ""
+                    urlError = null
+                }) {
+                    Text("取消")
+                }
+            }
+        )
     }
 
     Scaffold(
@@ -199,7 +273,7 @@ fun AddBookScreen(
                             Text("本地添加")
                         }
                         OutlinedButton(
-                            onClick = { onPickCover(uiState.coverUri ?: "") },
+                            onClick = { showUrlDialog = true },
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(12.dp)
                         ) {

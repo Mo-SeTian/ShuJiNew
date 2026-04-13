@@ -21,7 +21,6 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.readtrack.presentation.ui.addbook.AddBookScreen
-import com.readtrack.presentation.ui.addbook.CoverPickerScreen
 import com.readtrack.presentation.ui.books.BookDetailScreen
 import com.readtrack.presentation.ui.books.BooksScreen
 import com.readtrack.presentation.ui.home.HomeScreen
@@ -46,9 +45,6 @@ sealed class Screen(
     data object EditBook : Screen("edit_book/{bookId}", "编辑书籍", Icons.Filled.Edit, Icons.Outlined.Edit) {
         fun createRoute(bookId: Long) = "edit_book/$bookId"
     }
-    data object CoverPicker : Screen("cover_picker/{currentCoverUri}", "选择封面", Icons.Filled.Image, Icons.Outlined.Image) {
-        fun createRoute(currentCoverUri: String) = "cover_picker/$currentCoverUri"
-    }
 }
 
 private const val ANIMATION_DURATION = 150
@@ -57,10 +53,6 @@ private const val ANIMATION_DURATION = 150
 fun MainNavigation() {
     val navController = rememberNavController()
     val bottomNavItems = listOf(Screen.Home, Screen.Books, Screen.Stats, Screen.Settings)
-
-    // 用于在 AddBook/EditBook 和 CoverPicker 之间传递封面
-    var sharedCoverUri by remember { mutableStateOf<String?>(null) }
-    var sharedViewModel by remember { mutableStateOf<AddBookViewModel?>(null) }
 
     Scaffold(
         bottomBar = {
@@ -166,15 +158,11 @@ fun MainNavigation() {
             
             composable(Screen.AddBook.route) {
                 val viewModel: AddBookViewModel = hiltViewModel()
-                sharedViewModel = viewModel
                 
                 AddBookScreen(
                     onNavigateBack = { navController.popBackStack() },
                     bookId = null,
-                    onPickCover = { currentCoverUri ->
-                        sharedCoverUri = currentCoverUri
-                        navController.navigate(Screen.CoverPicker.createRoute(currentCoverUri ?: ""))
-                    },
+                    onPickCover = { },
                     viewModel = viewModel
                 )
             }
@@ -185,32 +173,12 @@ fun MainNavigation() {
             ) { backStackEntry ->
                 val bookId = backStackEntry.arguments?.getLong("bookId") ?: return@composable
                 val viewModel: AddBookViewModel = hiltViewModel()
-                sharedViewModel = viewModel
                 
                 AddBookScreen(
                     onNavigateBack = { navController.popBackStack() },
                     bookId = bookId,
-                    onPickCover = { currentCoverUri ->
-                        sharedCoverUri = currentCoverUri
-                        navController.navigate(Screen.CoverPicker.createRoute(currentCoverUri ?: ""))
-                    },
+                    onPickCover = { },
                     viewModel = viewModel
-                )
-            }
-            
-            composable(
-                route = Screen.CoverPicker.route,
-                arguments = listOf(navArgument("currentCoverUri") { type = NavType.StringType })
-            ) { backStackEntry ->
-                val currentCoverUri = backStackEntry.arguments?.getString("currentCoverUri")
-                val viewModel = sharedViewModel
-                
-                CoverPickerScreen(
-                    initialCoverUri = currentCoverUri,
-                    onCoverSelected = { uri ->
-                        viewModel?.updateCoverUri(uri)
-                    },
-                    onNavigateBack = { navController.popBackStack() }
                 )
             }
         }
