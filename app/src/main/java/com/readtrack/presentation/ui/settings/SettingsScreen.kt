@@ -53,7 +53,7 @@ fun SettingsScreen(
         contract = ActivityResultContracts.CreateDocument("application/json")
     ) { uri ->
         uri?.let { savedUri ->
-            viewModel.exportJson?.let { json ->
+            uiState.exportJson?.let { json ->
                 context.contentResolver.openOutputStream(savedUri)?.bufferedWriter()?.use { writer ->
                     writer.write(json)
                 }
