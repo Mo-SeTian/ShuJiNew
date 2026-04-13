@@ -39,7 +39,6 @@ data class AddBookUiState(
     val isEditing: Boolean = false,
     val editingBookId: Long? = null,
     val errorMessage: String? = null,
-    // 搜索相关状态
     val isSearching: Boolean = false,
     val searchQuery: String = "",
     val searchResults: List<BookSearchResult> = emptyList(),
@@ -72,35 +71,7 @@ class AddBookViewModel @Inject constructor(
                                 publisher = it.publisher ?: "",
                                 progressType = if ((it.totalChapters ?: 0) > 0) ProgressType.CHAPTER else ProgressType.PAGE,
                                 totalPages = if ((it.totalChapters ?: 0) == 0) it.totalPages.toInt().toString() else "",
-                                currentPage = currentPage,
-                        totalChapters = if (totalChapters > 0) totalChapters else null,
-                        currentChapter = currentChapter,
-                        description = state.description.ifBlank { null },
-                        coverPath = state.coverUri,
-                        status = state.status,
-                        createdAt = now,
-                        updatedAt = now,
-                        lastReadAt = null
-                    )
-                    bookRepository.insertBook(newBook)
-                }
-                
-                _uiState.update { it.copy(isSaving = false, isSaved = true) }
-            } catch (e: Exception) {
-                _uiState.update { it.copy(isSaving = false, errorMessage = "保存失败: ${e.message}") }
-            }
-        }
-    }
-    
-    fun clearError() {
-        _uiState.update { it.copy(errorMessage = null) }
-    }
-    
-    fun resetState() {
-        loadedBook = null
-        _uiState.value = AddBookUiState()
-    }
-} = if ((it.totalChapters ?: 0) == 0) it.currentPage.toInt().toString() else "",
+                                currentPage = if ((it.totalChapters ?: 0) == 0) it.currentPage.toInt().toString() else "",
                                 totalChapters = (it.totalChapters ?: 0).toString(),
                                 currentChapter = it.currentChapter.toString(),
                                 description = it.description ?: "",
@@ -118,51 +89,17 @@ class AddBookViewModel @Inject constructor(
         }
     }
 
-    fun updateTitle(title: String) {
-        _uiState.update { it.copy(title = title) }
-    }
-
-    fun updateAuthor(author: String) {
-        _uiState.update { it.copy(author = author) }
-    }
-
-    fun updatePublisher(publisher: String) {
-        _uiState.update { it.copy(publisher = publisher) }
-    }
-
-    fun updateProgressType(progressType: ProgressType) {
-        _uiState.update { it.copy(progressType = progressType) }
-    }
-
-    fun updateTotalPages(pages: String) {
-        _uiState.update { it.copy(totalPages = pages) }
-    }
-
-    fun updateCurrentPage(page: String) {
-        _uiState.update { it.copy(currentPage = page) }
-    }
-
-    fun updateTotalChapters(chapters: String) {
-        _uiState.update { it.copy(totalChapters = chapters) }
-    }
-
-    fun updateCurrentChapter(chapter: String) {
-        _uiState.update { it.copy(currentChapter = chapter) }
-    }
-
-    fun updateDescription(description: String) {
-        _uiState.update { it.copy(description = description) }
-    }
-
-    fun updateCoverUri(uri: String?) {
-        _uiState.update { it.copy(coverUri = uri) }
-    }
-
-    fun updateStatus(status: BookStatus) {
-        _uiState.update { it.copy(status = status) }
-    }
-
-    // ========== 搜索功能 ==========
+    fun updateTitle(title: String) = _uiState.update { it.copy(title = title) }
+    fun updateAuthor(author: String) = _uiState.update { it.copy(author = author) }
+    fun updatePublisher(publisher: String) = _uiState.update { it.copy(publisher = publisher) }
+    fun updateProgressType(progressType: ProgressType) = _uiState.update { it.copy(progressType = progressType) }
+    fun updateTotalPages(pages: String) = _uiState.update { it.copy(totalPages = pages) }
+    fun updateCurrentPage(page: String) = _uiState.update { it.copy(currentPage = page) }
+    fun updateTotalChapters(chapters: String) = _uiState.update { it.copy(totalChapters = chapters) }
+    fun updateCurrentChapter(chapter: String) = _uiState.update { it.copy(currentChapter = chapter) }
+    fun updateDescription(description: String) = _uiState.update { it.copy(description = description) }
+    fun updateCoverUri(uri: String?) = _uiState.update { it.copy(coverUri = uri) }
+    fun updateStatus(status: BookStatus) = _uiState.update { it.copy(status = status) }
 
     fun showSearchDialog() {
         _uiState.update { it.copy(showSearchDialog = true, searchQuery = "", searchResults = emptyList(), searchError = null) }
@@ -174,12 +111,10 @@ class AddBookViewModel @Inject constructor(
 
     fun updateSearchQuery(query: String) {
         _uiState.update { it.copy(searchQuery = query) }
-        
-        // 防抖搜索
         searchJob?.cancel()
         if (query.length >= 2) {
             searchJob = viewModelScope.launch {
-                delay(500) // 500ms 防抖
+                delay(500)
                 searchBooks(query)
             }
         } else {
@@ -189,23 +124,14 @@ class AddBookViewModel @Inject constructor(
 
     fun searchBooks(query: String) {
         if (query.isBlank()) return
-        
         viewModelScope.launch {
             _uiState.update { it.copy(isSearching = true, searchError = null) }
-            
             bookSearchService.searchBooks(query)
-                .onSuccess { results ->
-                    _uiState.update { it.copy(isSearching = false, searchResults = results) }
-                }
-                .onFailure { error ->
-                    _uiState.update { it.copy(isSearching = false, searchError = "搜索失败: ${error.message}") }
-                }
+                .onSuccess { results -> _uiState.update { it.copy(isSearching = false, searchResults = results) } }
+                .onFailure { error -> _uiState.update { it.copy(isSearching = false, searchError = "搜索失败: ${error.message}") } }
         }
     }
 
-    /**
-     * 从搜索结果填充书籍信息
-     */
     fun fillFromSearchResult(result: BookSearchResult) {
         _uiState.update { state ->
             state.copy(
@@ -222,49 +148,23 @@ class AddBookViewModel @Inject constructor(
         }
     }
 
-    // ========== 保存功能 ==========
-
     fun saveBook() {
         val state = _uiState.value
-        
-        // Validation
         if (state.title.isBlank()) {
             _uiState.update { it.copy(errorMessage = "请输入书名") }
             return
         }
 
-        val totalPages = if (state.progressType == ProgressType.PAGE) {
-            state.totalPages.toDoubleOrNull() ?: 0.0
-        } else {
-            0.0
-        }
-
-        val currentPage = if (state.progressType == ProgressType.PAGE) {
-            state.currentPage.toDoubleOrNull() ?: 0.0
-        } else {
-            0.0
-        }
-
-        val totalChapters = if (state.progressType == ProgressType.CHAPTER) {
-            state.totalChapters.toIntOrNull() ?: 0
-        } else {
-            0
-        }
-
-        val currentChapter = if (state.progressType == ProgressType.CHAPTER) {
-            state.currentChapter.toIntOrNull() ?: 0
-        } else {
-            0
-        }
+        val totalPages = if (state.progressType == ProgressType.PAGE) state.totalPages.toDoubleOrNull() ?: 0.0 else 0.0
+        val currentPage = if (state.progressType == ProgressType.PAGE) state.currentPage.toDoubleOrNull() ?: 0.0 else 0.0
+        val totalChapters = if (state.progressType == ProgressType.CHAPTER) state.totalChapters.toIntOrNull() ?: 0 else 0
+        val currentChapter = if (state.progressType == ProgressType.CHAPTER) state.currentChapter.toIntOrNull() ?: 0 else 0
 
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true, errorMessage = null) }
-            
             try {
                 val now = System.currentTimeMillis()
-                
                 if (state.isEditing && loadedBook != null) {
-                    // Update existing book
                     val updatedBook = loadedBook!!.copy(
                         title = state.title,
                         author = state.author.ifBlank { null },
@@ -277,39 +177,10 @@ class AddBookViewModel @Inject constructor(
                         description = state.description.ifBlank { null },
                         coverPath = state.coverUri,
                         status = state.status,
-                        createdAt = now,
-                        updatedAt = now,
-                        lastReadAt = null
-                    )
-                    bookRepository.insertBook(newBook)
-                }
-                
-                _uiState.update { it.copy(isSaving = false, isSaved = true) }
-            } catch (e: Exception) {
-                _uiState.update { it.copy(isSaving = false, errorMessage = "保存失败: ${e.message}") }
-            }
-        }
-    }
-    
-    fun clearError() {
-        _uiState.update { it.copy(errorMessage = null) }
-    }
-    
-    fun resetState() {
-        loadedBook = null
-        _uiState.value = AddBookUiState()
-    }
-} = currentPage,
-                        totalChapters = if (totalChapters > 0) totalChapters else null,
-                        currentChapter = currentChapter,
-                        description = state.description.ifBlank { null },
-                        coverPath = state.coverUri,
-                        status = state.status,
                         updatedAt = now
                     )
                     bookRepository.updateBook(updatedBook)
                 } else {
-                    // Create new book
                     val newBook = BookEntity(
                         title = state.title,
                         author = state.author.ifBlank { null },
@@ -328,7 +199,6 @@ class AddBookViewModel @Inject constructor(
                     )
                     bookRepository.insertBook(newBook)
                 }
-                
                 _uiState.update { it.copy(isSaving = false, isSaved = true) }
             } catch (e: Exception) {
                 _uiState.update { it.copy(isSaving = false, errorMessage = "保存失败: ${e.message}") }
@@ -336,9 +206,7 @@ class AddBookViewModel @Inject constructor(
         }
     }
     
-    fun clearError() {
-        _uiState.update { it.copy(errorMessage = null) }
-    }
+    fun clearError() = _uiState.update { it.copy(errorMessage = null) }
     
     fun resetState() {
         loadedBook = null
