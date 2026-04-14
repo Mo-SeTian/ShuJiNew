@@ -12,11 +12,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import coil.request.CachePolicy
+import coil.request.ImageRequest
 
 /**
  * 书籍封面组件
@@ -33,6 +36,8 @@ fun BookCover(
     modifier: Modifier = Modifier,
     showPlaceholder: Boolean = true
 ) {
+    val context = LocalContext.current
+
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(12.dp))
@@ -119,7 +124,7 @@ fun BookCover(
             coverPath.startsWith("http") -> {
                 // 网络图片
                 AsyncImage(
-                    model = coverPath,
+                    model = buildBookImageRequest(context, coverPath),
                     contentDescription = contentDescription,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
@@ -136,6 +141,26 @@ fun BookCover(
             }
         }
     }
+}
+
+fun buildBookImageRequest(
+    context: android.content.Context,
+    imageUrl: String
+): ImageRequest {
+    val builder = ImageRequest.Builder(context)
+        .data(imageUrl)
+        .memoryCachePolicy(CachePolicy.ENABLED)
+        .diskCachePolicy(CachePolicy.ENABLED)
+        .crossfade(true)
+
+    if (imageUrl.contains("doubanio.com")) {
+        builder
+            .addHeader("Referer", "https://book.douban.com/")
+            .addHeader("User-Agent", "Mozilla/5.0")
+            .addHeader("Accept", "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8")
+    }
+
+    return builder.build()
 }
 
 /**
