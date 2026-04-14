@@ -25,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -34,6 +35,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.readtrack.presentation.ui.components.BookCover
+import com.readtrack.presentation.ui.components.buildBookImageRequest
 import com.readtrack.domain.model.BookStatus
 import com.readtrack.presentation.ui.components.getStatusColor
 import com.readtrack.presentation.viewmodel.AddBookViewModel
@@ -666,6 +668,8 @@ private fun BookSearchResultItem(
     book: com.readtrack.data.remote.BookSearchResult,
     onClick: () -> Unit
 ) {
+    val context = LocalContext.current
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -675,7 +679,7 @@ private fun BookSearchResultItem(
     ) {
         // 封面缩略图
         AsyncImage(
-            model = book.coverUrl,
+            model = book.coverUrl?.let { buildBookImageRequest(context, it) },
             contentDescription = book.title,
             modifier = Modifier
                 .size(60.dp, 80.dp)
