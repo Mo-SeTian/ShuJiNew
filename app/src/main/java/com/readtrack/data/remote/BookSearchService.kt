@@ -31,7 +31,9 @@ class BookSearchService @Inject constructor() {
                 }
 
                 val encodedQuery = java.net.URLEncoder.encode(query.trim(), "UTF-8")
-                val url = "$BASE_URL?q=$encodedQuery&limit=$limit&fields=key,title,author_name,publisher,first_publish_year,isbn,cover_i,number_of_pages_median,first_sentence"
+                // 简化字段列表，避免422错误
+                val fields = "key,title,author_name,publisher,first_publish_year,isbn,cover_i"
+                val url = "$BASE_URL?q=$encodedQuery&limit=$limit&fields=$fields"
 
                 val connection = java.net.URL(url).openConnection()
                 connection.setRequestProperty("User-Agent", USER_AGENT)
@@ -110,11 +112,6 @@ class BookSearchService @Inject constructor() {
             "https://covers.openlibrary.org/b/isbn/$isbn-M.jpg"
         } else null
         
-        val firstSentenceArray = doc.optJSONArray("first_sentence")
-        val description = if (firstSentenceArray != null && firstSentenceArray.length() > 0) {
-            firstSentenceArray.getString(0)
-        } else null
-        
         return BookSearchResult(
             key = key,
             title = title,
@@ -124,8 +121,8 @@ class BookSearchService @Inject constructor() {
             publishYear = if (doc.has("first_publish_year")) doc.getInt("first_publish_year") else null,
             isbn = isbn,
             coverUrl = coverUrl,
-            pageCount = if (doc.has("number_of_pages_median")) doc.getInt("number_of_pages_median") else null,
-            description = description
+            pageCount = null,  // 移除不稳定的字段
+            description = null  // 移除不稳定的字段
         )
     }
 }
