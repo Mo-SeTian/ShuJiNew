@@ -596,7 +596,7 @@ private fun BookSearchBottomSheet(
             
             // 数据来源提示
             Text(
-                text = "数据来源：Open Library",
+                text = "数据来源：豆瓣搜索",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 4.dp, bottom = 16.dp)

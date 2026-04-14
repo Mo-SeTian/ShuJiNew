@@ -303,14 +303,14 @@ private fun DoubanCookieCard(
             )
             Spacer(Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text("豆瓣Cookie", style = MaterialTheme.typography.bodyLarge)
+                Text("豆瓣 Cookie（可选）", style = MaterialTheme.typography.bodyLarge)
                 Text(
-                    if (uiState.doubanCookie.isNotBlank()) "已配置" else "未配置",
+                    if (uiState.doubanCookie.isNotBlank()) "已配置，可提升兼容性" else "未配置，搜索也可直接使用",
                     style = MaterialTheme.typography.bodySmall,
                     color = if (uiState.doubanCookie.isNotBlank()) 
                         MaterialTheme.colorScheme.primary 
                     else 
-                        MaterialTheme.colorScheme.error
+                        MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             Icon(Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
@@ -321,11 +321,11 @@ private fun DoubanCookieCard(
     if (showCookieDialog) {
         AlertDialog(
             onDismissRequest = { showCookieDialog = false },
-            title = { Text("配置豆瓣Cookie", fontWeight = FontWeight.Bold) },
+            title = { Text("配置豆瓣 Cookie（可选）", fontWeight = FontWeight.Bold) },
             text = {
                 Column {
                     Text(
-                        "从电脑端豆瓣登录后，复制浏览器Cookie粘贴到此处。",
+                        "现在书籍搜索默认可直接使用。若你有豆瓣登录态，也可以粘贴 Cookie 以提升兼容性。",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

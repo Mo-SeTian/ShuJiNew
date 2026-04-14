@@ -142,25 +142,14 @@ class AddBookViewModel @Inject constructor(
 
     fun searchBooks(query: String) {
         if (query.isBlank()) return
-        
-        val cookie = _uiState.value.doubanCookie
-        if (cookie.isBlank()) {
-            _uiState.update { it.copy(searchError = "请先在设置中配置豆瓣Cookie", isSearching = false) }
-            return
-        }
-        
+
         viewModelScope.launch {
             _uiState.update { it.copy(isSearching = true, searchError = null) }
-            
-            // 重新获取最新Cookie
+
+            // 重新获取最新 Cookie（可选，仅用于兼容旧配置）
             val latestCookie = context.dataStore.data.first()[doubanCookieKey] ?: ""
             _uiState.update { it.copy(doubanCookie = latestCookie) }
-            
-            if (latestCookie.isBlank()) {
-                _uiState.update { it.copy(isSearching = false, searchError = "请先在设置中配置豆瓣Cookie") }
-                return@launch
-            }
-            
+
             doubanSearchService.searchBooks(query, latestCookie)
                 .onSuccess { results -> 
                     _uiState.update { it.copy(isSearching = false, searchResults = results) }
