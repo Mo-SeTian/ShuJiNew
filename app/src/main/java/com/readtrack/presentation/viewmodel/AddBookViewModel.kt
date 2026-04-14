@@ -1,21 +1,28 @@
 package com.readtrack.presentation.viewmodel
 
+import android.content.Context
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.data.remote.BookSearchResult
-import com.readtrack.data.remote.BookSearchService
+import com.readtrack.data.remote.DoubanSearchService
 import com.readtrack.domain.model.BookStatus
 import com.readtrack.domain.repository.BookRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+private val Context.dataStore by preferencesDataStore(name = "settings")
 
 enum class ProgressType {
     PAGE,
@@ -43,13 +50,15 @@ data class AddBookUiState(
     val searchQuery: String = "",
     val searchResults: List<BookSearchResult> = emptyList(),
     val searchError: String? = null,
-    val showSearchDialog: Boolean = false
+    val showSearchDialog: Boolean = false,
+    val doubanCookie: String = ""
 )
 
 @HiltViewModel
 class AddBookViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val bookRepository: BookRepository,
-    private val bookSearchService: BookSearchService
+    private val doubanSearchService: DoubanSearchService
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AddBookUiState())
@@ -57,6 +66,15 @@ class AddBookViewModel @Inject constructor(
 
     private var loadedBook: BookEntity? = null
     private var searchJob: Job? = null
+    private val doubanCookieKey = stringPreferencesKey("douban_cookie")
+
+    init {
+        // 加载豆瓣Cookie
+        viewModelScope.launch {
+            val cookie = context.dataStore.data.first()[doubanCookieKey] ?: ""
+            _uiState.update { it.copy(doubanCookie = cookie) }
+        }
+    }
 
     fun loadBook(bookId: Long) {
         viewModelScope.launch {
@@ -124,11 +142,32 @@ class AddBookViewModel @Inject constructor(
 
     fun searchBooks(query: String) {
         if (query.isBlank()) return
+        
+        val cookie = _uiState.value.doubanCookie
+        if (cookie.isBlank()) {
+            _uiState.update { it.copy(searchError = "请先在设置中配置豆瓣Cookie", isSearching = false) }
+            return
+        }
+        
         viewModelScope.launch {
             _uiState.update { it.copy(isSearching = true, searchError = null) }
-            bookSearchService.searchBooks(query)
-                .onSuccess { results -> _uiState.update { it.copy(isSearching = false, searchResults = results) } }
-                .onFailure { error -> _uiState.update { it.copy(isSearching = false, searchError = "搜索失败: ${error.message}") } }
+            
+            // 重新获取最新Cookie
+            val latestCookie = context.dataStore.data.first()[doubanCookieKey] ?: ""
+            _uiState.update { it.copy(doubanCookie = latestCookie) }
+            
+            if (latestCookie.isBlank()) {
+                _uiState.update { it.copy(isSearching = false, searchError = "请先在设置中配置豆瓣Cookie") }
+                return@launch
+            }
+            
+            doubanSearchService.searchBooks(query, latestCookie)
+                .onSuccess { results -> 
+                    _uiState.update { it.copy(isSearching = false, searchResults = results) }
+                }
+                .onFailure { error -> 
+                    _uiState.update { it.copy(isSearching = false, searchError = "搜索失败: ${error.message}") }
+                }
         }
     }
 

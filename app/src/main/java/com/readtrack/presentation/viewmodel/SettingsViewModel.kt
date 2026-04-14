@@ -30,8 +30,18 @@ data class SettingsUiState(
     val lastImportResult: ImportResult? = null,
     val errorMessage: String? = null,
     val exportJson: String? = null,
-    val showClearConfirmDialog: Boolean = false
+    val showClearConfirmDialog: Boolean = false,
+    // 豆瓣Cookie设置
+    val doubanCookie: String = "",
+    val isTestingCookie: Boolean = false,
+    val cookieTestResult: CookieTestResult? = null
 )
+
+enum class CookieTestResult {
+    SUCCESS,
+    INVALID,
+    NETWORK_ERROR
+}
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
@@ -43,20 +53,23 @@ class SettingsViewModel @Inject constructor(
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
     
     private val themeModeKey = stringPreferencesKey("theme_mode")
+    private val doubanCookieKey = stringPreferencesKey("douban_cookie")
     
     init {
         viewModelScope.launch {
             context.dataStore.data
                 .map { preferences ->
                     val themeName = preferences[themeModeKey] ?: ThemeMode.SYSTEM.name
-                    try {
-                        ThemeMode.valueOf(themeName)
-                    } catch (e: Exception) {
-                        ThemeMode.SYSTEM
-                    }
+                    val cookie = preferences[doubanCookieKey] ?: ""
+                    Pair(themeName, cookie)
                 }
-                .collect { themeMode ->
-                    _uiState.update { it.copy(themeMode = themeMode) }
+                .collect { (themeName, cookie) ->
+                    _uiState.update { state ->
+                        state.copy(
+                            themeMode = try { ThemeMode.valueOf(themeName) } catch (e: Exception) { ThemeMode.SYSTEM },
+                            doubanCookie = cookie
+                        )
+                    }
                 }
         }
     }
@@ -259,5 +272,54 @@ class SettingsViewModel @Inject constructor(
         } catch (e: Exception) {
             null
         }
+    }
+    
+    // ========== 豆瓣Cookie设置 ==========
+    
+    fun updateDoubanCookie(cookie: String) {
+        viewModelScope.launch {
+            context.dataStore.edit { preferences ->
+                preferences[doubanCookieKey] = cookie
+            }
+            _uiState.update { it.copy(doubanCookie = cookie, cookieTestResult = null) }
+        }
+    }
+    
+    fun testDoubanCookie() {
+        val cookie = _uiState.value.doubanCookie
+        if (cookie.isBlank()) {
+            _uiState.update { it.copy(errorMessage = "请先输入Cookie") }
+            return
+        }
+        
+        viewModelScope.launch {
+            _uiState.update { it.copy(isTestingCookie = true, cookieTestResult = null, errorMessage = null) }
+            
+            try {
+                val url = "https://api.douban.com/v2/book/search?q=test&count=1"
+                val connection = java.net.URL(url).openConnection()
+                connection.setRequestProperty("Cookie", cookie)
+                connection.setRequestProperty("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X)")
+                connection.connectTimeout = 10000
+                connection.readTimeout = 10000
+                
+                val responseCode = (connection as java.net.HttpURLConnection).responseCode
+                val response = connection.inputStream.bufferedReader().use { it.readText() }
+                
+                if (responseCode == 200 && response.contains("\"count\"")) {
+                    _uiState.update { it.copy(isTestingCookie = false, cookieTestResult = CookieTestResult.SUCCESS) }
+                } else if (responseCode == 401 || responseCode == 403) {
+                    _uiState.update { it.copy(isTestingCookie = false, cookieTestResult = CookieTestResult.INVALID, errorMessage = "Cookie无效或已过期") }
+                } else {
+                    _uiState.update { it.copy(isTestingCookie = false, cookieTestResult = CookieTestResult.INVALID, errorMessage = "Cookie测试失败") }
+                }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isTestingCookie = false, cookieTestResult = CookieTestResult.NETWORK_ERROR, errorMessage = "网络错误: ${e.message}") }
+            }
+        }
+    }
+    
+    fun clearCookieTestResult() {
+        _uiState.update { it.copy(cookieTestResult = null) }
     }
 }

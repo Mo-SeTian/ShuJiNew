@@ -163,7 +163,11 @@ fun SettingsScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            item { SettingsSectionCard("数据管理") }
+            item { Spacer(Modifier.height(8.dp)); SettingsSectionCard("书籍搜索") }
+            
+            item { DoubanCookieCard(viewModel, uiState) }
+            
+            item { Spacer(Modifier.height(8.dp)); SettingsSectionCard("数据管理") }
             item { SettingsClickableCard(Icons.Outlined.Upload, "导出数据", "将数据导出为JSON文件") { viewModel.exportData() } }
             item { SettingsClickableCard(Icons.Outlined.Download, "导入数据", "从JSON文件恢复数据") { importLauncher.launch(arrayOf("application/json", "*/*")) } }
             
@@ -267,5 +271,127 @@ fun SettingsClickableCard(
             }
             Icon(imageVector = Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
         }
+    }
+}
+
+@Composable
+private fun DoubanCookieCard(
+    viewModel: SettingsViewModel,
+    uiState: com.readtrack.presentation.viewmodel.SettingsUiState
+) {
+    var showCookieDialog by remember { mutableStateOf(false) }
+    var cookieInput by remember { mutableStateOf(uiState.doubanCookie) }
+    
+    // 更新输入框当外部cookie变化时
+    LaunchedEffect(uiState.doubanCookie) {
+        cookieInput = uiState.doubanCookie
+    }
+    
+    Card(
+        modifier = Modifier.fillMaxWidth().clickable { showCookieDialog = true },
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.Cookie,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Spacer(Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text("豆瓣Cookie", style = MaterialTheme.typography.bodyLarge)
+                Text(
+                    if (uiState.doubanCookie.isNotBlank()) "已配置" else "未配置",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (uiState.doubanCookie.isNotBlank()) 
+                        MaterialTheme.colorScheme.primary 
+                    else 
+                        MaterialTheme.colorScheme.error
+                )
+            }
+            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
+        }
+    }
+    
+    // Cookie配置弹窗
+    if (showCookieDialog) {
+        AlertDialog(
+            onDismissRequest = { showCookieDialog = false },
+            title = { Text("配置豆瓣Cookie", fontWeight = FontWeight.Bold) },
+            text = {
+                Column {
+                    Text(
+                        "从电脑端豆瓣登录后，复制浏览器Cookie粘贴到此处。",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = cookieInput,
+                        onValueChange = { cookieInput = it },
+                        label = { Text("Cookie") },
+                        placeholder = { Text("bid=xxx; dbcl2=xxx...") },
+                        modifier = Modifier.fillMaxWidth(),
+                        maxLines = 3,
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    
+                    // 测试结果提示
+                    uiState.cookieTestResult?.let { result ->
+                        Spacer(Modifier.height(8.dp))
+                        val (text, color) = when (result) {
+                            com.readtrack.presentation.viewmodel.CookieTestResult.SUCCESS -> 
+                                "✓ Cookie有效" to MaterialTheme.colorScheme.primary
+                            com.readtrack.presentation.viewmodel.CookieTestResult.INVALID -> 
+                                "✗ Cookie无效" to MaterialTheme.colorScheme.error
+                            com.readtrack.presentation.viewmodel.CookieTestResult.NETWORK_ERROR -> 
+                                "✗ 网络错误" to MaterialTheme.colorScheme.error
+                        }
+                        Text(text, color = color, style = MaterialTheme.typography.bodySmall)
+                    }
+                    
+                    uiState.errorMessage?.let { error ->
+                        Spacer(Modifier.height(4.dp))
+                        Text(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            },
+            confirmButton = {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // 测试按钮
+                    TextButton(
+                        onClick = { 
+                            viewModel.updateDoubanCookie(cookieInput)
+                            viewModel.testDoubanCookie()
+                        },
+                        enabled = !uiState.isTestingCookie && cookieInput.isNotBlank()
+                    ) {
+                        if (uiState.isTestingCookie) {
+                            CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
+                        } else {
+                            Text("测试")
+                        }
+                    }
+                    // 保存按钮
+                    TextButton(
+                        onClick = { 
+                            viewModel.updateDoubanCookie(cookieInput)
+                            showCookieDialog = false
+                        }
+                    ) {
+                        Text("保存")
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCookieDialog = false }) {
+                    Text("取消")
+                }
+            }
+        )
     }
 }
