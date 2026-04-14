@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -19,6 +20,18 @@ fun BookCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val statusColor = remember(book.status) { getStatusColor(book.status) }
+    val isChapterBased = remember(book.totalChapters) { book.totalChapters != null && book.totalChapters > 0 }
+    val progress = remember(book.currentPage, book.totalPages, book.currentChapter, book.totalChapters, isChapterBased) {
+        if (isChapterBased) {
+            (book.currentChapter.toFloat() / (book.totalChapters ?: 1) * 100).toInt()
+        } else if (book.totalPages > 0) {
+            (book.currentPage.toFloat() / book.totalPages * 100).toInt()
+        } else {
+            0
+        }
+    }
+
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -76,26 +89,18 @@ fun BookCard(
                 // Status Chip
                 Surface(
                     shape = RoundedCornerShape(8.dp),
-                    color = getStatusColor(book.status).copy(alpha = 0.15f)
+                    color = statusColor.copy(alpha = 0.15f)
                 ) {
                     Text(
                         text = book.status.displayName,
                         style = MaterialTheme.typography.labelSmall,
-                        color = getStatusColor(book.status),
+                        color = statusColor,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                         fontWeight = FontWeight.Medium
                     )
                 }
 
                 Spacer(modifier = Modifier.height(10.dp))
-
-                // Progress Bar - Handle chapter-based books
-                val isChapterBased = book.totalChapters != null && book.totalChapters > 0
-                val progress = if (isChapterBased) 
-                    (book.currentChapter.toFloat() / (book.totalChapters ?: 1) * 100).toInt()
-                else if (book.totalPages > 0) 
-                    (book.currentPage.toFloat() / book.totalPages * 100).toInt() 
-                else 0
 
                 Column {
                     Row(
@@ -112,7 +117,7 @@ fun BookCard(
                             text = "$progress%",
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Medium,
-                            color = getStatusColor(book.status)
+                            color = statusColor
                         )
                     }
                     Spacer(modifier = Modifier.height(4.dp))
@@ -122,8 +127,8 @@ fun BookCard(
                             .fillMaxWidth()
                             .height(6.dp)
                             .clip(RoundedCornerShape(3.dp)),
-                        color = getStatusColor(book.status),
-                        trackColor = getStatusColor(book.status).copy(alpha = 0.2f)
+                        color = statusColor,
+                        trackColor = statusColor.copy(alpha = 0.2f)
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(

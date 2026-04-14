@@ -159,7 +159,7 @@ fun buildBookImageRequest(
         .data(imageUrl)
         .memoryCachePolicy(CachePolicy.ENABLED)
         .diskCachePolicy(CachePolicy.ENABLED)
-        .crossfade(true)
+        .crossfade(false)
 
     if (imageUrl.contains("doubanio.com")) {
         builder

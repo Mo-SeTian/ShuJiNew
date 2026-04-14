@@ -26,6 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.readtrack.presentation.ui.components.BookCover
 import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.data.local.entity.ReadingRecordEntity
@@ -45,7 +46,7 @@ fun BookDetailScreen(
     onEditBook: () -> Unit,
     viewModel: BookDetailViewModel = hiltViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showAddRecordDialog by remember { mutableStateOf(false) }
 
@@ -155,7 +156,10 @@ fun BookDetailScreen(
                         }
                     } else {
                         val isChapterBased = book.progressType == ProgressType.CHAPTER
-                        items(uiState.readingRecords) { record ->
+                        items(
+                            items = uiState.readingRecords,
+                            key = { it.id }
+                        ) { record ->
                             ReadingRecordRow(record = record, isChapterBased = isChapterBased)
                         }
                     }

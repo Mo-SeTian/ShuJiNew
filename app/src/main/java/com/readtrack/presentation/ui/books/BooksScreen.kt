@@ -1,10 +1,9 @@
 package com.readtrack.presentation.ui.books
 
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -88,24 +87,28 @@ fun BooksScreen(
             )
 
             // Status Filter Chips - Modern Style
-            Row(
+            LazyRow(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState())
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                FilterChip(
-                    selected = uiState.selectedStatus == null,
-                    onClick = { viewModel.setStatusFilter(null) },
-                    label = { Text("全部") },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MaterialTheme.colorScheme.primary,
-                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary
-                    ),
-                    shape = RoundedCornerShape(20.dp)
-                )
-                BookStatus.entries.forEach { status ->
+                item(key = "all") {
+                    FilterChip(
+                        selected = uiState.selectedStatus == null,
+                        onClick = { viewModel.setStatusFilter(null) },
+                        label = { Text("全部") },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                        ),
+                        shape = RoundedCornerShape(20.dp)
+                    )
+                }
+                items(
+                    items = BookStatus.entries,
+                    key = { it.name }
+                ) { status ->
                     FilterChip(
                         selected = uiState.selectedStatus == status,
                         onClick = { viewModel.setStatusFilter(status) },
