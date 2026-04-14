@@ -28,6 +28,7 @@ class PreferencesManager @Inject constructor(
         val THEME_MODE = stringPreferencesKey("theme_mode")
         val FIRST_LAUNCH = booleanPreferencesKey("first_launch")
         val LAST_READ_BOOK_ID = longPreferencesKey("last_read_book_id")
+        val DOUBAN_COOKIE = stringPreferencesKey("douban_cookie")
     }
 
     val themeMode: Flow<ThemeMode> = dataStore.data.map { preferences ->
@@ -47,6 +48,10 @@ class PreferencesManager @Inject constructor(
         preferences[LAST_READ_BOOK_ID]
     }
 
+    val doubanCookie: Flow<String> = dataStore.data.map { preferences ->
+        preferences[DOUBAN_COOKIE] ?: ""
+    }
+
     suspend fun setThemeMode(mode: ThemeMode) {
         dataStore.edit { preferences ->
             preferences[THEME_MODE] = mode.name
@@ -62,6 +67,12 @@ class PreferencesManager @Inject constructor(
     suspend fun setLastReadBookId(bookId: Long) {
         dataStore.edit { preferences ->
             preferences[LAST_READ_BOOK_ID] = bookId
+        }
+    }
+
+    suspend fun setDoubanCookie(cookie: String) {
+        dataStore.edit { preferences ->
+            preferences[DOUBAN_COOKIE] = cookie
         }
     }
 

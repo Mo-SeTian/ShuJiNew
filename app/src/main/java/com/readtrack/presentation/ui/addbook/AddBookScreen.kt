@@ -669,6 +669,9 @@ private fun BookSearchResultItem(
     onClick: () -> Unit
 ) {
     val context = LocalContext.current
+    val coverModel = remember(book.coverUrl) {
+        book.coverUrl?.let { buildBookImageRequest(context, it) }
+    }
 
     Row(
         modifier = Modifier
@@ -679,7 +682,7 @@ private fun BookSearchResultItem(
     ) {
         // 封面缩略图
         AsyncImage(
-            model = book.coverUrl?.let { buildBookImageRequest(context, it) },
+            model = coverModel,
             contentDescription = book.title,
             modifier = Modifier
                 .size(60.dp, 80.dp)
