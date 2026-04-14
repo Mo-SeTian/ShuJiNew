@@ -299,22 +299,41 @@ class SettingsViewModel @Inject constructor(
                 val url = "https://api.douban.com/v2/book/search?q=test&count=1"
                 val connection = java.net.URL(url).openConnection()
                 connection.setRequestProperty("Cookie", cookie)
-                connection.setRequestProperty("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X)")
-                connection.connectTimeout = 10000
-                connection.readTimeout = 10000
+                connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+                connection.setRequestProperty("Accept", "application/json")
+                connection.setRequestProperty("Referer", "https://book.douban.com/")
+                connection.connectTimeout = 15000
+                connection.readTimeout = 15000
                 
                 val responseCode = (connection as java.net.HttpURLConnection).responseCode
+                
+                // 豆瓣API可能返回401但仍然有JSON响应，所以需要读取响应体
                 val response = connection.inputStream.bufferedReader().use { it.readText() }
                 
-                if (responseCode == 200 && response.contains("\"count\"")) {
+                // 检查是否返回了有效的JSON（包含books或count字段）
+                if (response.contains("\"books\"") || response.contains("\"count\"")) {
                     _uiState.update { it.copy(isTestingCookie = false, cookieTestResult = CookieTestResult.SUCCESS) }
-                } else if (responseCode == 401 || responseCode == 403) {
-                    _uiState.update { it.copy(isTestingCookie = false, cookieTestResult = CookieTestResult.INVALID, errorMessage = "Cookie无效或已过期") }
+                } else if (responseCode == 401 || responseCode == 403 || responseCode == 400) {
+                    // 检查响应内容是否包含错误信息
+                    val errorMsg = if (response.contains("\"msg\"")) {
+                        val msg = response.substringAfter("\"msg\":\"").substringBefore("\"")
+                        "Cookie无效: $msg"
+                    } else {
+                        "Cookie无效或已过期 (HTTP $responseCode)"
+                    }
+                    _uiState.update { it.copy(isTestingCookie = false, cookieTestResult = CookieTestResult.INVALID, errorMessage = errorMsg) }
+                } else if (responseCode == 200 && response.isBlank()) {
+                    _uiState.update { it.copy(isTestingCookie = false, cookieTestResult = CookieTestResult.INVALID, errorMessage = "API返回空响应，请检查Cookie格式") }
                 } else {
-                    _uiState.update { it.copy(isTestingCookie = false, cookieTestResult = CookieTestResult.INVALID, errorMessage = "Cookie测试失败") }
+                    _uiState.update { it.copy(isTestingCookie = false, cookieTestResult = CookieTestResult.INVALID, errorMessage = "Cookie测试失败 (HTTP $responseCode)") }
                 }
+            } catch (e: java.net.SocketTimeoutException) {
+                _uiState.update { it.copy(isTestingCookie = false, cookieTestResult = CookieTestResult.NETWORK_ERROR, errorMessage = "连接超时，请检查网络") }
+            } catch (e: java.net.UnknownHostException) {
+                _uiState.update { it.copy(isTestingCookie = false, cookieTestResult = CookieTestResult.NETWORK_ERROR, errorMessage = "无法连接豆瓣API，请检查网络") }
             } catch (e: Exception) {
-                _uiState.update { it.copy(isTestingCookie = false, cookieTestResult = CookieTestResult.NETWORK_ERROR, errorMessage = "网络错误: ${e.message}") }
+                val errorMsg = e.message ?: "未知错误"
+                _uiState.update { it.copy(isTestingCookie = false, cookieTestResult = CookieTestResult.NETWORK_ERROR, errorMessage = "网络错误: $errorMsg") }
             }
         }
     }

@@ -105,6 +105,11 @@ class DoubanSearchService @Inject constructor() {
         // 解析页数
         val pages = book.optString("pages", "").replace("[^0-9]".toRegex(), "").toIntOrNull()
         
+        // 解析ISBN
+        val isbn13 = book.optString("isbn13", "")
+        val isbn10 = book.optString("isbn10", "")
+        val isbn = if (isbn13.isNotBlank()) isbn13 else if (isbn10.isNotBlank()) isbn10 else null
+        
         return BookSearchResult(
             key = book.optString("id", ""),
             title = book.optString("title", "未知书名"),
@@ -112,7 +117,7 @@ class DoubanSearchService @Inject constructor() {
             authors = authors,
             publisher = book.optString("publisher", null)?.takeIf { it.isNotBlank() },
             publishYear = publishYear,
-            isbn = book.optString("isbn13", book.optString("isbn10", null)),
+            isbn = isbn,
             coverUrl = coverUrl,
             pageCount = pages,
             description = book.optString("summary", null)?.take(200)?.takeIf { it.isNotBlank() }
