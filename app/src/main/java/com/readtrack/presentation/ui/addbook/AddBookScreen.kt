@@ -697,6 +697,9 @@ private fun BookSearchResultItem(
                 fontWeight = FontWeight.Medium,
                 maxLines = 2
             )
+                fontWeight = FontWeight.Medium,
+                maxLines = 2
+            )
             
             book.author?.let { author ->
                 Text(
