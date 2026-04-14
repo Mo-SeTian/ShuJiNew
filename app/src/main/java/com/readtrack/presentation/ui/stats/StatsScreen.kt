@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -420,6 +421,14 @@ fun ReadingRecordItem(recordWithBook: RecordWithBook) {
     val record = recordWithBook.record
     val book = recordWithBook.book
     val isChapterBased = book?.totalChapters != null && book.totalChapters > 0
+    val dateFormatter = remember { SimpleDateFormat("MM月dd日 E", Locale.getDefault()) }
+    val noteText = remember(record.note, record.pagesRead, isChapterBased) {
+        record.note?.takeIf { it.isNotBlank() } ?: "阅读了 ${record.pagesRead.toInt()} ${if (isChapterBased) "章" else "页"}"
+    }
+    val progressText = remember(record.pagesRead, isChapterBased) {
+        "+${record.pagesRead.toInt()} ${if (isChapterBased) "章" else "页"}"
+    }
+    val dateText = remember(record.date) { dateFormatter.format(Date(record.date)) }
     
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -446,14 +455,14 @@ fun ReadingRecordItem(recordWithBook: RecordWithBook) {
                 }
                 // Date
                 Text(
-                    text = SimpleDateFormat("MM月dd日 E", Locale.getDefault()).format(Date(record.date)),
+                    text = dateText,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 // Note
                 Text(
-                    text = record.note?.takeIf { it.isNotBlank() } ?: "阅读了 ${record.pagesRead.toInt()} ${if (isChapterBased) "章" else "页"}",
+                    text = noteText,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -463,7 +472,7 @@ fun ReadingRecordItem(recordWithBook: RecordWithBook) {
                 color = MaterialTheme.colorScheme.primaryContainer
             ) {
                 Text(
-                    text = "+${record.pagesRead.toInt()} ${if (isChapterBased) "章" else "页"}",
+                    text = progressText,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)

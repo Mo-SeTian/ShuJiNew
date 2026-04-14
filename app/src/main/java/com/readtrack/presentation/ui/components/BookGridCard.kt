@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -18,6 +19,18 @@ fun BookGridCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val statusColor = remember(book.status) { getStatusColor(book.status) }
+    val isChapterBased = remember(book.totalChapters) { book.totalChapters != null && book.totalChapters > 0 }
+    val progress = remember(book.currentPage, book.totalPages, book.currentChapter, book.totalChapters, isChapterBased) {
+        if (isChapterBased) {
+            (book.currentChapter.toFloat() / (book.totalChapters ?: 1) * 100).toInt()
+        } else if (book.totalPages > 0) {
+            (book.currentPage.toFloat() / book.totalPages * 100).toInt()
+        } else {
+            0
+        }
+    }
+
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -73,21 +86,13 @@ fun BookGridCard(
                 
                 Spacer(modifier = Modifier.height(4.dp))
                 
-                // Progress - Handle chapter-based books
-                val isChapterBased = book.totalChapters != null && book.totalChapters > 0
-                val progress = if (isChapterBased)
-                    (book.currentChapter.toFloat() / (book.totalChapters ?: 1) * 100).toInt()
-                else if (book.totalPages > 0) 
-                    (book.currentPage.toFloat() / book.totalPages * 100).toInt() 
-                else 0
-                
                 LinearProgressIndicator(
                     progress = { (progress / 100f).coerceIn(0f, 1f) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(4.dp)
                         .clip(RoundedCornerShape(2.dp)),
-                    color = getStatusColor(book.status),
+                    color = statusColor,
                     trackColor = MaterialTheme.colorScheme.surfaceVariant,
                 )
                 
