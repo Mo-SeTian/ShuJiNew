@@ -84,15 +84,8 @@ class DoubanSearchService @Inject constructor() {
      * 解析豆瓣搜索页中的 window.__DATA__ 数据
      */
     private fun parseSearchResponse(html: String, limit: Int): List<BookSearchResult> {
-        val searchDataRegex = Regex(
-            pattern = """window\.__DATA__\s*=\s*(\{.*?})\s*;\s*window\.__USER__""",
-            options = setOf(RegexOption.DOT_MATCHES_ALL)
-        )
-
-        val match = searchDataRegex.find(html)
-            ?: throw IllegalStateException("未能解析豆瓣搜索结果")
-
-        val jsonObject = JSONObject(match.groupValues[1])
+        val jsonText = extractSearchDataJson(html)
+        val jsonObject = JSONObject(jsonText)
         val items = jsonObject.optJSONArray("items") ?: return emptyList()
         val results = mutableListOf<BookSearchResult>()
 
@@ -108,6 +101,30 @@ class DoubanSearchService @Inject constructor() {
         }
 
         return results
+    }
+
+    private fun extractSearchDataJson(html: String): String {
+        val startMarker = "window.__DATA__ ="
+        val endMarker = "window.__USER__"
+
+        val startIndex = html.indexOf(startMarker)
+        if (startIndex == -1) {
+            throw IllegalStateException("未找到豆瓣搜索数据起始标记")
+        }
+
+        val endIndex = html.indexOf(endMarker, startIndex)
+        if (endIndex == -1) {
+            throw IllegalStateException("未找到豆瓣搜索数据结束标记")
+        }
+
+        val scriptSegment = html.substring(startIndex + startMarker.length, endIndex)
+        val jsonText = scriptSegment.substringBeforeLast(';').trim()
+
+        if (!jsonText.startsWith("{") || !jsonText.endsWith("}")) {
+            throw IllegalStateException("豆瓣搜索数据格式异常")
+        }
+
+        return jsonText
     }
 
     /**
