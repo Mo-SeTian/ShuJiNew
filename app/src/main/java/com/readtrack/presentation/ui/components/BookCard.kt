@@ -20,7 +20,7 @@ fun BookCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val statusColor = remember(book.status) { getStatusColor(book.status) }
+    val statusColor = getStatusColor(book.status)
     val isChapterBased = remember(book.totalChapters) { book.totalChapters != null && book.totalChapters > 0 }
     val progress = remember(book.currentPage, book.totalPages, book.currentChapter, book.totalChapters, isChapterBased) {
         if (isChapterBased) {
