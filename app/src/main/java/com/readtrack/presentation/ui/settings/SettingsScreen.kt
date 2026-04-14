@@ -19,6 +19,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.readtrack.data.local.ThemeMode
 import com.readtrack.presentation.viewmodel.SettingsViewModel
 import java.text.SimpleDateFormat
@@ -29,7 +30,7 @@ import java.util.*
 fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showThemeDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
     
@@ -365,8 +366,7 @@ private fun DoubanCookieCard(
                     // 测试按钮
                     TextButton(
                         onClick = { 
-                            viewModel.updateDoubanCookie(cookieInput)
-                            viewModel.testDoubanCookie()
+                            viewModel.testDoubanCookie(cookieInput)
                         },
                         enabled = !uiState.isTestingCookie && cookieInput.isNotBlank()
                     ) {

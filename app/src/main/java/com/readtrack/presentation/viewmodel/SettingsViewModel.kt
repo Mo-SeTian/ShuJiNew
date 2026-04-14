@@ -1,25 +1,19 @@
 package com.readtrack.presentation.viewmodel
 
-import android.content.Context
 import android.net.Uri
-import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.readtrack.data.local.PreferencesManager
 import com.readtrack.data.local.ThemeMode
 import com.readtrack.domain.model.DataBackup
 import com.readtrack.domain.model.ImportResult
 import com.readtrack.domain.repository.DataBackupRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONObject
 import javax.inject.Inject
-
-private val Context.dataStore by preferencesDataStore(name = "settings")
 
 data class SettingsUiState(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
@@ -45,28 +39,24 @@ enum class CookieTestResult {
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
-    @ApplicationContext private val context: Context,
-    private val dataBackupRepository: DataBackupRepository
+    private val dataBackupRepository: DataBackupRepository,
+    private val preferencesManager: PreferencesManager
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(SettingsUiState())
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
     
-    private val themeModeKey = stringPreferencesKey("theme_mode")
-    private val doubanCookieKey = stringPreferencesKey("douban_cookie")
-    
     init {
         viewModelScope.launch {
-            context.dataStore.data
-                .map { preferences ->
-                    val themeName = preferences[themeModeKey] ?: ThemeMode.SYSTEM.name
-                    val cookie = preferences[doubanCookieKey] ?: ""
-                    Pair(themeName, cookie)
-                }
-                .collect { (themeName, cookie) ->
+            combine(
+                preferencesManager.themeMode,
+                preferencesManager.doubanCookie
+            ) { themeMode, cookie ->
+                themeMode to cookie
+            }.collect { (themeMode, cookie) ->
                     _uiState.update { state ->
                         state.copy(
-                            themeMode = try { ThemeMode.valueOf(themeName) } catch (e: Exception) { ThemeMode.SYSTEM },
+                            themeMode = themeMode,
                             doubanCookie = cookie
                         )
                     }
@@ -76,9 +66,7 @@ class SettingsViewModel @Inject constructor(
     
     fun setThemeMode(themeMode: ThemeMode) {
         viewModelScope.launch {
-            context.dataStore.edit { preferences ->
-                preferences[themeModeKey] = themeMode.name
-            }
+            preferencesManager.setThemeMode(themeMode)
             _uiState.update { it.copy(themeMode = themeMode) }
         }
     }
@@ -278,15 +266,13 @@ class SettingsViewModel @Inject constructor(
     
     fun updateDoubanCookie(cookie: String) {
         viewModelScope.launch {
-            context.dataStore.edit { preferences ->
-                preferences[doubanCookieKey] = cookie
-            }
+            preferencesManager.setDoubanCookie(cookie)
             _uiState.update { it.copy(doubanCookie = cookie, cookieTestResult = null) }
         }
     }
     
-    fun testDoubanCookie() {
-        val cookie = _uiState.value.doubanCookie
+    fun testDoubanCookie(cookieToTest: String = _uiState.value.doubanCookie) {
+        val cookie = cookieToTest.trim()
         if (cookie.isBlank()) {
             _uiState.update { it.copy(errorMessage = "可先留空；当前搜索功能已可直接使用") }
             return
@@ -294,6 +280,8 @@ class SettingsViewModel @Inject constructor(
         
         viewModelScope.launch {
             _uiState.update { it.copy(isTestingCookie = true, cookieTestResult = null, errorMessage = null) }
+            preferencesManager.setDoubanCookie(cookie)
+            _uiState.update { it.copy(doubanCookie = cookie) }
             
             try {
                 val url = "https://search.douban.com/book/subject_search?search_text=test&cat=1001"

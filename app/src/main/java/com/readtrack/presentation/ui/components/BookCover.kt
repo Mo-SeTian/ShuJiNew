@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
+import androidx.compose.runtime.remember
 
 /**
  * 书籍封面组件
@@ -37,6 +38,13 @@ fun BookCover(
     showPlaceholder: Boolean = true
 ) {
     val context = LocalContext.current
+    val imageModel = remember(coverPath) {
+        if (!coverPath.isNullOrBlank() && coverPath.startsWith("http")) {
+            buildBookImageRequest(context, coverPath)
+        } else {
+            coverPath
+        }
+    }
 
     Box(
         modifier = modifier
@@ -124,7 +132,7 @@ fun BookCover(
             coverPath.startsWith("http") -> {
                 // 网络图片
                 AsyncImage(
-                    model = buildBookImageRequest(context, coverPath),
+                    model = imageModel,
                     contentDescription = contentDescription,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
@@ -133,7 +141,7 @@ fun BookCover(
             else -> {
                 // 本地图片URI
                 AsyncImage(
-                    model = coverPath,
+                    model = imageModel,
                     contentDescription = contentDescription,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop

@@ -1,17 +1,14 @@
 package com.readtrack.presentation.viewmodel
 
-import android.content.Context
-import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.readtrack.data.local.PreferencesManager
 import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.data.remote.BookSearchResult
 import com.readtrack.data.remote.DoubanSearchService
 import com.readtrack.domain.model.BookStatus
 import com.readtrack.domain.repository.BookRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,8 +18,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-
-private val Context.dataStore by preferencesDataStore(name = "settings")
 
 enum class ProgressType {
     PAGE,
@@ -56,9 +51,9 @@ data class AddBookUiState(
 
 @HiltViewModel
 class AddBookViewModel @Inject constructor(
-    @ApplicationContext private val context: Context,
     private val bookRepository: BookRepository,
-    private val doubanSearchService: DoubanSearchService
+    private val doubanSearchService: DoubanSearchService,
+    private val preferencesManager: PreferencesManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AddBookUiState())
@@ -66,12 +61,10 @@ class AddBookViewModel @Inject constructor(
 
     private var loadedBook: BookEntity? = null
     private var searchJob: Job? = null
-    private val doubanCookieKey = stringPreferencesKey("douban_cookie")
 
     init {
-        // 加载豆瓣Cookie
         viewModelScope.launch {
-            val cookie = context.dataStore.data.first()[doubanCookieKey] ?: ""
+            val cookie = preferencesManager.doubanCookie.first()
             _uiState.update { it.copy(doubanCookie = cookie) }
         }
     }
@@ -146,8 +139,7 @@ class AddBookViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isSearching = true, searchError = null) }
 
-            // 重新获取最新 Cookie（可选，仅用于兼容旧配置）
-            val latestCookie = context.dataStore.data.first()[doubanCookieKey] ?: ""
+            val latestCookie = preferencesManager.doubanCookie.first()
             _uiState.update { it.copy(doubanCookie = latestCookie) }
 
             doubanSearchService.searchBooks(query, latestCookie)
