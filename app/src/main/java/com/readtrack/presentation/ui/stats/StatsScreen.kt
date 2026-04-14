@@ -10,7 +10,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -21,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.readtrack.domain.model.BookStatus
 import com.readtrack.presentation.ui.components.getStatusColor
 import com.readtrack.presentation.ui.components.getStatusLabel
@@ -36,7 +36,7 @@ import java.util.*
 fun StatsScreen(
     viewModel: StatsViewModel = hiltViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {
@@ -147,7 +147,10 @@ fun StatsScreen(
                         EmptyRecordsCard()
                     }
                 } else {
-                    items(uiState.recentRecordsWithBooks) { recordWithBook ->
+                    items(
+                        items = uiState.recentRecordsWithBooks,
+                        key = { it.record.id }
+                    ) { recordWithBook ->
                         ReadingRecordItem(recordWithBook = recordWithBook)
                     }
                 }

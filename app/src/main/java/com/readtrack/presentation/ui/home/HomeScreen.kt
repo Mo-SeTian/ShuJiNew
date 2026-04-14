@@ -13,7 +13,6 @@ import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -24,6 +23,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.presentation.ui.components.BookCard
 import com.readtrack.presentation.viewmodel.HomeViewModel
@@ -34,7 +34,7 @@ fun HomeScreen(
     onBookClick: (Long) -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {
@@ -187,7 +187,10 @@ fun HomeScreen(
                     }
                 }
                 
-                items(uiState.recentBooks.take(3)) { book ->
+                items(
+                    items = uiState.recentBooks.take(3),
+                    key = { it.id }
+                ) { book ->
                     BookCard(
                         book = book,
                         onClick = { onBookClick(book.id) }

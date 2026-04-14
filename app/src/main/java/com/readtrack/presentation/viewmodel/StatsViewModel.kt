@@ -7,11 +7,14 @@ import com.readtrack.data.local.entity.ReadingRecordEntity
 import com.readtrack.domain.model.BookStatus
 import com.readtrack.domain.repository.BookRepository
 import com.readtrack.domain.repository.ReadingRecordRepository
-
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
-import java.util.*
+import java.util.Calendar
 import javax.inject.Inject
 
 data class StatsUiState(
@@ -38,7 +41,6 @@ data class DailyReading(
     val dayOfWeek: String
 )
 
-// 阅读记录+书籍信息
 data class RecordWithBook(
     val record: ReadingRecordEntity,
     val book: BookEntity?
@@ -59,142 +61,147 @@ class StatsViewModel @Inject constructor(
 
     private fun loadStats() {
         viewModelScope.launch {
-            val calendar = Calendar.getInstance()
-            
-            // Start of today
-            calendar.set(Calendar.HOUR_OF_DAY, 0)
-            calendar.set(Calendar.MINUTE, 0)
-            calendar.set(Calendar.SECOND, 0)
-            calendar.set(Calendar.MILLISECOND, 0)
-            val startOfToday = calendar.timeInMillis
-            
-            // Start of week
-            calendar.set(Calendar.DAY_OF_WEEK, calendar.firstDayOfWeek)
-            val startOfWeek = calendar.timeInMillis
-            
-            // Start of month
-            calendar.set(Calendar.DAY_OF_MONTH, 1)
-            val startOfMonth = calendar.timeInMillis
-            
-            // Start of 7 days ago
-            calendar.timeInMillis = System.currentTimeMillis()
-            calendar.add(Calendar.DAY_OF_MONTH, -7)
-            val sevenDaysAgo = calendar.timeInMillis
-
             combine(
-                bookRepository.getAllBooks(),
-                recordRepository.getAllRecords()
+                bookRepository.getAllBooks().catch { emit(emptyList()) },
+                recordRepository.getAllRecords().catch { emit(emptyList()) }
             ) { books, records ->
-                val booksByStatus = BookStatus.entries.associateWith { status ->
-                    books.count { it.status == status }
-                }
-                
-                // Create book lookup map
-                val booksMap = books.associateBy { it.id }
-                
-                // Calculate pages/chapters by time period
-                val now = System.currentTimeMillis()
-                
-                // Today's records
-                val todayRecords = records.filter { it.date >= startOfToday }
-                val todayPages = todayRecords.filter { 
-                    booksMap[it.bookId]?.progressType != ProgressType.CHAPTER 
-                }.sumOf { it.pagesRead }
-                val todayChapters = todayRecords.filter { 
-                    booksMap[it.bookId]?.progressType == ProgressType.CHAPTER 
-                }.sumOf { it.pagesRead }
-                
-                // This week's records
-                val weekRecords = records.filter { it.date >= startOfWeek }
-                val weekPages = weekRecords.filter { 
-                    booksMap[it.bookId]?.progressType != ProgressType.CHAPTER 
-                }.sumOf { it.pagesRead }
-                val weekChapters = weekRecords.filter { 
-                    booksMap[it.bookId]?.progressType == ProgressType.CHAPTER 
-                }.sumOf { it.pagesRead }
-                
-                // This month's records
-                val monthRecords = records.filter { it.date >= startOfMonth }
-                val monthPages = monthRecords.filter { 
-                    booksMap[it.bookId]?.progressType != ProgressType.CHAPTER 
-                }.sumOf { it.pagesRead }
-                val monthChapters = monthRecords.filter { 
-                    booksMap[it.bookId]?.progressType == ProgressType.CHAPTER 
-                }.sumOf { it.pagesRead }
-                
-                // Total
-                val totalPages = records.filter { 
-                    booksMap[it.bookId]?.progressType != ProgressType.CHAPTER 
-                }.sumOf { it.pagesRead }
-                val totalChapters = records.filter { 
-                    booksMap[it.bookId]?.progressType == ProgressType.CHAPTER 
-                }.sumOf { it.pagesRead }
-                
-                // Combine records with book info
-                val recordsWithBooks = records.take(10).map { record ->
-                    RecordWithBook(
-                        record = record,
-                        book = booksMap[record.bookId]
-                    )
-                }
-                
-                val weeklyData = generateWeeklyData(records, sevenDaysAgo)
-                val avgPerDay = if (records.isNotEmpty()) {
-                    val oldestRecord = records.minByOrNull { it.date }?.date ?: System.currentTimeMillis()
-                    val daysSinceOldest = ((System.currentTimeMillis() - oldestRecord) / (1000 * 60 * 60 * 24)).toInt().coerceAtLeast(1)
-                    records.sumOf { it.pagesRead } / daysSinceOldest
-                } else 0.0
-
-                StatsUiState(
-                    totalBooks = books.size,
-                    booksByStatus = booksByStatus,
-                    totalPagesRead = totalPages,
-                    totalChaptersRead = totalChapters,
-                    todayPages = todayPages,
-                    todayChapters = todayChapters,
-                    weekPages = weekPages,
-                    weekChapters = weekChapters,
-                    monthPages = monthPages,
-                    monthChapters = monthChapters,
-                    averagePagesPerDay = avgPerDay,
-                    weeklyReadingData = weeklyData,
-                    recentRecords = records.take(10),
-                    recentRecordsWithBooks = recordsWithBooks,
-                    isLoading = false
-                )
+                buildStatsUiState(books, records)
             }.collect { state ->
                 _uiState.value = state
             }
         }
     }
 
-    private fun generateWeeklyData(records: List<ReadingRecordEntity>, startTime: Long): List<DailyReading> {
-        val calendar = Calendar.getInstance()
-        val result = mutableListOf<DailyReading>()
-        
-        val dayNames = listOf("周日", "周一", "周二", "周三", "周四", "周五", "周六")
-        
-        calendar.timeInMillis = startTime
-        for (i in 0..6) {
-            calendar.set(Calendar.HOUR_OF_DAY, 0)
-            calendar.set(Calendar.MINUTE, 0)
-            calendar.set(Calendar.SECOND, 0)
-            calendar.set(Calendar.MILLISECOND, 0)
-            val dayStart = calendar.timeInMillis
-            calendar.add(Calendar.DAY_OF_MONTH, 1)
-            val dayEnd = calendar.timeInMillis
-            
-            val dayPages = records
-                .filter { it.date in dayStart until dayEnd }
-                .sumOf { it.pagesRead }
-            
-            result.add(DailyReading(
-                date = dayStart,
-                pages = dayPages,
-                dayOfWeek = dayNames[Calendar.getInstance().apply { timeInMillis = dayStart }.get(Calendar.DAY_OF_WEEK) - 1]
-            ))
+    private fun buildStatsUiState(
+        books: List<BookEntity>,
+        records: List<ReadingRecordEntity>
+    ): StatsUiState {
+        val now = System.currentTimeMillis()
+        val boundaries = createTimeBoundaries(now)
+        val booksMap = books.associateBy { it.id }
+        val weeklyBuckets = boundaries.weeklyBuckets.toMutableMap()
+
+        var todayPages = 0.0
+        var todayChapters = 0.0
+        var weekPages = 0.0
+        var weekChapters = 0.0
+        var monthPages = 0.0
+        var monthChapters = 0.0
+        var totalPages = 0.0
+        var totalChapters = 0.0
+
+        records.forEach { record ->
+            val isChapterBook = booksMap[record.bookId]?.progressType == ProgressType.CHAPTER
+            val value = record.pagesRead
+
+            if (isChapterBook) {
+                totalChapters += value
+                if (record.date >= boundaries.startOfMonth) monthChapters += value
+                if (record.date >= boundaries.startOfWeek) weekChapters += value
+                if (record.date >= boundaries.startOfToday) todayChapters += value
+            } else {
+                totalPages += value
+                if (record.date >= boundaries.startOfMonth) monthPages += value
+                if (record.date >= boundaries.startOfWeek) weekPages += value
+                if (record.date >= boundaries.startOfToday) todayPages += value
+            }
+
+            weeklyBuckets.keys.firstOrNull { dayStart ->
+                record.date in dayStart until (dayStart + ONE_DAY_MILLIS)
+            }?.let { dayStart ->
+                weeklyBuckets[dayStart] = weeklyBuckets.getValue(dayStart) + value
+            }
         }
-        
-        return result
+
+        val booksByStatus = BookStatus.entries.associateWith { status ->
+            books.count { it.status == status }
+        }
+
+        val recentRecords = records.take(10)
+        val recordsWithBooks = recentRecords.map { record ->
+            RecordWithBook(record = record, book = booksMap[record.bookId])
+        }
+
+        val averagePagesPerDay = if (records.isNotEmpty()) {
+            val oldestRecord = records.minOf { it.date }
+            val daysSinceOldest = ((now - oldestRecord) / ONE_DAY_MILLIS).toInt().coerceAtLeast(1)
+            records.sumOf { it.pagesRead } / daysSinceOldest
+        } else {
+            0.0
+        }
+
+        return StatsUiState(
+            totalBooks = books.size,
+            booksByStatus = booksByStatus,
+            totalPagesRead = totalPages,
+            totalChaptersRead = totalChapters,
+            todayPages = todayPages,
+            todayChapters = todayChapters,
+            weekPages = weekPages,
+            weekChapters = weekChapters,
+            monthPages = monthPages,
+            monthChapters = monthChapters,
+            averagePagesPerDay = averagePagesPerDay,
+            weeklyReadingData = weeklyBuckets.map { (date, pages) ->
+                DailyReading(
+                    date = date,
+                    pages = pages,
+                    dayOfWeek = dayLabel(date)
+                )
+            },
+            recentRecords = recentRecords,
+            recentRecordsWithBooks = recordsWithBooks,
+            isLoading = false
+        )
+    }
+
+    private fun createTimeBoundaries(now: Long): TimeBoundaries {
+        val calendar = Calendar.getInstance().apply {
+            timeInMillis = now
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val startOfToday = calendar.timeInMillis
+
+        calendar.set(Calendar.DAY_OF_WEEK, calendar.firstDayOfWeek)
+        val startOfWeek = calendar.timeInMillis
+
+        calendar.timeInMillis = startOfToday
+        calendar.set(Calendar.DAY_OF_MONTH, 1)
+        val startOfMonth = calendar.timeInMillis
+
+        calendar.timeInMillis = startOfToday
+        calendar.add(Calendar.DAY_OF_MONTH, -7)
+        val weeklyBuckets = linkedMapOf<Long, Double>()
+        repeat(7) {
+            weeklyBuckets[calendar.timeInMillis] = 0.0
+            calendar.add(Calendar.DAY_OF_MONTH, 1)
+        }
+
+        return TimeBoundaries(
+            startOfToday = startOfToday,
+            startOfWeek = startOfWeek,
+            startOfMonth = startOfMonth,
+            weeklyBuckets = weeklyBuckets
+        )
+    }
+
+    private fun dayLabel(timeMillis: Long): String {
+        val dayNames = listOf("周日", "周一", "周二", "周三", "周四", "周五", "周六")
+        val calendar = Calendar.getInstance().apply { timeInMillis = timeMillis }
+        return dayNames[calendar.get(Calendar.DAY_OF_WEEK) - 1]
+    }
+
+    private data class TimeBoundaries(
+        val startOfToday: Long,
+        val startOfWeek: Long,
+        val startOfMonth: Long,
+        val weeklyBuckets: LinkedHashMap<Long, Double>
+    )
+
+    private companion object {
+        private const val ONE_DAY_MILLIS = 24L * 60L * 60L * 1000L
     }
 }
