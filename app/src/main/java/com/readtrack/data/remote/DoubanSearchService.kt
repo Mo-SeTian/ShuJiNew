@@ -21,10 +21,6 @@ class DoubanSearchService @Inject constructor() {
 
     companion object {
         private const val SEARCH_URL = "https://search.douban.com/book/subject_search"
-        private val SEARCH_DATA_REGEX = Regex(
-            pattern = """window\.__DATA__\s*=\s*(\{.*?})\s*;\s*window\.__USER__""",
-            options = setOf(RegexOption.DOT_MATCHES_ALL)
-        )
     }
 
     /**
@@ -88,7 +84,12 @@ class DoubanSearchService @Inject constructor() {
      * 解析豆瓣搜索页中的 window.__DATA__ 数据
      */
     private fun parseSearchResponse(html: String, limit: Int): List<BookSearchResult> {
-        val match = SEARCH_DATA_REGEX.find(html)
+        val searchDataRegex = Regex(
+            pattern = """window\.__DATA__\s*=\s*(\{.*?})\s*;\s*window\.__USER__""",
+            options = setOf(RegexOption.DOT_MATCHES_ALL)
+        )
+
+        val match = searchDataRegex.find(html)
             ?: throw IllegalStateException("未能解析豆瓣搜索结果")
 
         val jsonObject = JSONObject(match.groupValues[1])
