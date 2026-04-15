@@ -2,12 +2,17 @@ package com.readtrack.presentation.ui.stats
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -23,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.readtrack.data.local.StatsUnit
+import com.readtrack.data.local.entity.RecordType
 import com.readtrack.domain.model.BookStatus
 import com.readtrack.presentation.ui.components.statusColorOf
 import com.readtrack.presentation.ui.components.statusLabelOf
@@ -434,14 +440,26 @@ fun ReadingRecordItem(recordWithBook: RecordWithBook) {
     val book = recordWithBook.book
     val isChapterBased = book?.totalChapters != null && book.totalChapters > 0
     val dateFormatter = remember { SimpleDateFormat("MM月dd日 E", Locale.getDefault()) }
-    val noteText = remember(record.note, record.pagesRead, isChapterBased) {
-        record.note?.takeIf { it.isNotBlank() } ?: "阅读了 ${record.pagesRead.toInt()} ${if (isChapterBased) "章" else "页"}"
-    }
-    val progressText = remember(record.pagesRead, isChapterBased) {
-        "+${record.pagesRead.toInt()} ${if (isChapterBased) "章" else "页"}"
-    }
     val dateText = remember(record.date) { dateFormatter.format(Date(record.date)) }
-    
+    val isStatusRecord = record.recordType != RecordType.NORMAL
+
+    // 状态记录的颜色和标签
+    val (statusColor, statusLabel, statusIcon) = when (record.recordType) {
+        RecordType.STATUS_ADDED -> Triple(MaterialTheme.colorScheme.primary, "添加", Icons.Default.Add)
+        RecordType.STATUS_READING -> Triple(Color(0xFFFF9800), "开始阅读", Icons.Default.PlayArrow)
+        RecordType.STATUS_FINISHED -> Triple(Color(0xFF4CAF50), "读完", Icons.Default.CheckCircle)
+        RecordType.STATUS_DROPPED -> Triple(Color(0xFFF44336), "抛弃", Icons.Default.Delete)
+        else -> Triple(MaterialTheme.colorScheme.primary, "", Icons.Default.Add)
+    }
+
+    val noteText = remember(record.note, record.pagesRead, isChapterBased, isStatusRecord) {
+        if (isStatusRecord) {
+            record.note?.takeIf { it.isNotBlank() } ?: ""
+        } else {
+            record.note?.takeIf { it.isNotBlank() } ?: "阅读了 ${record.pagesRead.toInt()} ${if (isChapterBased) "章" else "页"}"
+        }
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp)
@@ -471,24 +489,56 @@ fun ReadingRecordItem(recordWithBook: RecordWithBook) {
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Spacer(modifier = Modifier.height(4.dp))
-                // Note
-                Text(
-                    text = noteText,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                if (noteText.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = noteText,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
-            Surface(
-                shape = RoundedCornerShape(8.dp),
-                color = MaterialTheme.colorScheme.primaryContainer
-            ) {
-                Text(
-                    text = progressText,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                )
+            if (isStatusRecord) {
+                // 状态记录：显示图标 + 彩色标签
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = statusColor.copy(alpha = 0.15f)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = statusIcon,
+                            contentDescription = null,
+                            tint = statusColor,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            text = statusLabel,
+                            fontWeight = FontWeight.Bold,
+                            color = statusColor,
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                    }
+                }
+            } else {
+                // 普通阅读记录：显示进度
+                val progressText = remember(record.pagesRead, isChapterBased) {
+                    "+${record.pagesRead.toInt()} ${if (isChapterBased) "章" else "页"}"
+                }
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer
+                ) {
+                    Text(
+                        text = progressText,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                    )
+                }
             }
         }
     }
