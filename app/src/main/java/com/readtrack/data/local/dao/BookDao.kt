@@ -16,6 +16,9 @@ interface BookDao {
     @Query("SELECT * FROM books WHERE id = :id")
     fun getBookById(id: Long): Flow<BookEntity?>
 
+    @Query("SELECT * FROM books WHERE id = :id")
+    suspend fun getBookByIdOnce(id: Long): BookEntity?
+
     @Query("SELECT * FROM books WHERE title LIKE '%' || :query || '%' OR author LIKE '%' || :query || '%' ORDER BY updatedAt DESC")
     fun searchBooks(query: String): Flow<List<BookEntity>>
 

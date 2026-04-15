@@ -32,4 +32,7 @@ interface ReadingRecordDao {
 
     @Query("DELETE FROM reading_records")
     suspend fun deleteAllRecords()
+
+    @Query("SELECT * FROM reading_records WHERE bookId = :bookId ORDER BY date DESC")
+    suspend fun getRecordsByBookIdOnce(bookId: Long): List<ReadingRecordEntity>
 }

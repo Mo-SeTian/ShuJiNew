@@ -44,4 +44,39 @@ class BookRepositoryImpl @Inject constructor(
             bookDao.updateBook(book)
         }
     }
+
+    override suspend fun deleteRecordAndRecalculateBook(record: ReadingRecordEntity) {
+        database.withTransaction {
+            readingRecordDao.deleteRecord(record)
+            recalculateBookProgress(record.bookId)
+        }
+    }
+
+    override suspend fun updateRecordAndRecalculateBook(record: ReadingRecordEntity) {
+        database.withTransaction {
+            readingRecordDao.insertRecord(record) // insert with REPLACE (id already set)
+            recalculateBookProgress(record.bookId)
+        }
+    }
+
+    private suspend fun recalculateBookProgress(bookId: Long) {
+        val book = bookDao.getBookByIdOnce(bookId) ?: return
+        val records = readingRecordDao.getRecordsByBookIdOnce(bookId)
+        if (records.isEmpty()) {
+            // 无记录时重置进度
+            val reset = book.copy(currentPage = 0.0, currentChapter = 0, updatedAt = System.currentTimeMillis())
+            bookDao.updateBook(reset)
+            return
+        }
+        // 取最新一条记录的 toPage
+        val latest = records.maxByOrNull { it.date } ?: return
+        val updatedAt = System.currentTimeMillis()
+        if (book.progressType.name == "PAGE") {
+            val updated = book.copy(currentPage = latest.toPage, lastReadAt = latest.date, updatedAt = updatedAt)
+            bookDao.updateBook(updated)
+        } else {
+            val updated = book.copy(currentChapter = latest.toPage.toInt(), lastReadAt = latest.date, updatedAt = updatedAt)
+            bookDao.updateBook(updated)
+        }
+    }
 }
