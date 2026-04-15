@@ -22,6 +22,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.readtrack.data.local.StatsUnit
 import com.readtrack.domain.model.BookStatus
 import com.readtrack.presentation.ui.components.statusColorOf
 import com.readtrack.presentation.ui.components.statusLabelOf
@@ -31,6 +32,9 @@ import com.readtrack.presentation.viewmodel.StatsViewModel
 import com.readtrack.presentation.viewmodel.RecordWithBook
 import java.text.SimpleDateFormat
 import java.util.*
+
+private fun StatsUnit.label(): String = if (this == StatsUnit.CHAPTER) "章" else "页"
+private fun StatsUnit.subLabel(): String = if (this == StatsUnit.CHAPTER) "页" else "章"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -80,16 +84,16 @@ fun StatsScreen(
                     ) {
                         StatsCardModern(
                             title = "今日阅读",
-                            value = "${uiState.todayChapters.toInt()}章",
-                            subtitle = "${uiState.todayPages.toInt()}页",
+                            value = "${uiState.todayValue.toInt()}${uiState.statsUnit.label()}",
+                            subtitle = "累计${uiState.totalValue.toInt()}${uiState.statsUnit.label()}",
                             icon = Icons.Default.MenuBook,
                             color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.weight(1f)
                         )
                         StatsCardModern(
                             title = "本周阅读",
-                            value = "${uiState.weekChapters.toInt()}章",
-                            subtitle = "${uiState.weekPages.toInt()}页",
+                            value = "${uiState.weekValue.toInt()}${uiState.statsUnit.label()}",
+                            subtitle = "本月${uiState.monthValue.toInt()}${uiState.statsUnit.label()}",
                             icon = Icons.Default.MenuBook,
                             color = FinishedBlue,
                             modifier = Modifier.weight(1f)
@@ -104,16 +108,16 @@ fun StatsScreen(
                     ) {
                         StatsCardModern(
                             title = "本月阅读",
-                            value = "${uiState.monthChapters.toInt()}章",
-                            subtitle = "${uiState.monthPages.toInt()}页",
+                            value = "${uiState.monthValue.toInt()}${uiState.statsUnit.label()}",
+                            subtitle = "本周${uiState.weekValue.toInt()}${uiState.statsUnit.label()}",
                             icon = Icons.Default.MenuBook,
                             color = ReadingOrange,
                             modifier = Modifier.weight(1f)
                         )
                         StatsCardModern(
                             title = "累计阅读",
-                            value = "${uiState.totalChaptersRead.toInt()}章",
-                            subtitle = "${uiState.totalPagesRead.toInt()}页",
+                            value = "${uiState.totalValue.toInt()}${uiState.statsUnit.label()}",
+                            subtitle = "今日${uiState.todayValue.toInt()}${uiState.statsUnit.label()}",
                             icon = Icons.Default.MenuBook,
                             color = WantToReadGreen,
                             modifier = Modifier.weight(1f)
@@ -123,7 +127,7 @@ fun StatsScreen(
 
                 // Weekly Chart
                 item {
-                    WeeklyChartModern(weeklyData = uiState.weeklyReadingData)
+                    WeeklyChartModern(weeklyData = uiState.weeklyReadingData, statsUnit = uiState.statsUnit)
                 }
 
                 // Books by Status
@@ -232,9 +236,14 @@ private fun StatsCardModern(
 }
 
 @Composable
-fun WeeklyChartModern(weeklyData: List<DailyReading>) {
-    val maxPages = remember(weeklyData) {
-        weeklyData.maxOfOrNull { it.pages }?.coerceAtLeast(1.0) ?: 1.0
+fun WeeklyChartModern(weeklyData: List<DailyReading>, statsUnit: StatsUnit = StatsUnit.CHAPTER) {
+    val valueSelector: (DailyReading) -> Double = if (statsUnit == StatsUnit.CHAPTER) {
+        { it.chapters }
+    } else {
+        { it.pages }
+    }
+    val maxValue = remember(weeklyData, statsUnit) {
+        weeklyData.maxOfOrNull(valueSelector)?.coerceAtLeast(1.0) ?: 1.0
     }
 
     Card(
@@ -259,17 +268,18 @@ fun WeeklyChartModern(weeklyData: List<DailyReading>) {
                 verticalAlignment = Alignment.Bottom
             ) {
                 weeklyData.forEachIndexed { _, day ->
-                    val height = if (maxPages > 0) {
-                        (day.pages / maxPages * 100).coerceIn(4.0, 100.0)
+                    val dayValue = valueSelector(day)
+                    val height = if (maxValue > 0) {
+                        (dayValue / maxValue * 100).coerceIn(4.0, 100.0)
                     } else 4.0
 
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.weight(1f)
                     ) {
-                        if (day.pages > 0) {
+                        if (dayValue > 0) {
                             Text(
-                                text = "${day.pages.toInt()}",
+                                text = "${dayValue.toInt()}",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.primary,
                                 fontWeight = FontWeight.Bold
@@ -283,7 +293,7 @@ fun WeeklyChartModern(weeklyData: List<DailyReading>) {
                                 .height(height.dp)
                                 .clip(RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp))
                                 .background(
-                                    if (day.pages > 0)
+                                    if (dayValue > 0)
                                         MaterialTheme.colorScheme.primary
                                     else
                                         MaterialTheme.colorScheme.surfaceVariant

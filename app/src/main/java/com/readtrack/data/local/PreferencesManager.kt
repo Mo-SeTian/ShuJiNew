@@ -18,6 +18,11 @@ enum class ThemeMode {
     DARK
 }
 
+enum class StatsUnit {
+    CHAPTER,
+    PAGE
+}
+
 @Singleton
 class PreferencesManager @Inject constructor(
     @ApplicationContext private val context: Context
@@ -29,6 +34,7 @@ class PreferencesManager @Inject constructor(
         val FIRST_LAUNCH = booleanPreferencesKey("first_launch")
         val LAST_READ_BOOK_ID = longPreferencesKey("last_read_book_id")
         val DOUBAN_COOKIE = stringPreferencesKey("douban_cookie")
+        val STATS_UNIT = stringPreferencesKey("stats_unit")
     }
 
     val themeMode: Flow<ThemeMode> = dataStore.data.map { preferences ->
@@ -37,6 +43,15 @@ class PreferencesManager @Inject constructor(
             ThemeMode.valueOf(themeName)
         } catch (e: Exception) {
             ThemeMode.SYSTEM
+        }
+    }
+
+    val statsUnit: Flow<StatsUnit> = dataStore.data.map { preferences ->
+        val unitName = preferences[STATS_UNIT] ?: StatsUnit.CHAPTER.name
+        try {
+            StatsUnit.valueOf(unitName)
+        } catch (e: Exception) {
+            StatsUnit.CHAPTER
         }
     }
 
@@ -73,6 +88,12 @@ class PreferencesManager @Inject constructor(
     suspend fun setDoubanCookie(cookie: String) {
         dataStore.edit { preferences ->
             preferences[DOUBAN_COOKIE] = cookie
+        }
+    }
+
+    suspend fun setStatsUnit(unit: StatsUnit) {
+        dataStore.edit { preferences ->
+            preferences[STATS_UNIT] = unit.name
         }
     }
 

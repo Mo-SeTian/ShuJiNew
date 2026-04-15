@@ -1,5 +1,6 @@
 package com.readtrack.presentation.viewmodel;
 
+import com.readtrack.data.local.PreferencesManager;
 import com.readtrack.domain.repository.BookRepository;
 import com.readtrack.domain.repository.ReadingRecordRepository;
 import dagger.internal.DaggerGenerated;
@@ -28,24 +29,29 @@ public final class StatsViewModel_Factory implements Factory<StatsViewModel> {
 
   private final Provider<ReadingRecordRepository> recordRepositoryProvider;
 
+  private final Provider<PreferencesManager> preferencesManagerProvider;
+
   public StatsViewModel_Factory(Provider<BookRepository> bookRepositoryProvider,
-      Provider<ReadingRecordRepository> recordRepositoryProvider) {
+      Provider<ReadingRecordRepository> recordRepositoryProvider,
+      Provider<PreferencesManager> preferencesManagerProvider) {
     this.bookRepositoryProvider = bookRepositoryProvider;
     this.recordRepositoryProvider = recordRepositoryProvider;
+    this.preferencesManagerProvider = preferencesManagerProvider;
   }
 
   @Override
   public StatsViewModel get() {
-    return newInstance(bookRepositoryProvider.get(), recordRepositoryProvider.get());
+    return newInstance(bookRepositoryProvider.get(), recordRepositoryProvider.get(), preferencesManagerProvider.get());
   }
 
   public static StatsViewModel_Factory create(Provider<BookRepository> bookRepositoryProvider,
-      Provider<ReadingRecordRepository> recordRepositoryProvider) {
-    return new StatsViewModel_Factory(bookRepositoryProvider, recordRepositoryProvider);
+      Provider<ReadingRecordRepository> recordRepositoryProvider,
+      Provider<PreferencesManager> preferencesManagerProvider) {
+    return new StatsViewModel_Factory(bookRepositoryProvider, recordRepositoryProvider, preferencesManagerProvider);
   }
 
   public static StatsViewModel newInstance(BookRepository bookRepository,
-      ReadingRecordRepository recordRepository) {
-    return new StatsViewModel(bookRepository, recordRepository);
+      ReadingRecordRepository recordRepository, PreferencesManager preferencesManager) {
+    return new StatsViewModel(bookRepository, recordRepository, preferencesManager);
   }
 }

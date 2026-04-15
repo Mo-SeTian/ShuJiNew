@@ -416,38 +416,38 @@ public final class DaggerReadTrackApp_HiltComponents_SingletonC {
     private static final class LazyClassKeyProvider {
       static String com_readtrack_presentation_viewmodel_HomeViewModel = "com.readtrack.presentation.viewmodel.HomeViewModel";
 
+      static String com_readtrack_presentation_viewmodel_StatsViewModel = "com.readtrack.presentation.viewmodel.StatsViewModel";
+
+      static String com_readtrack_presentation_viewmodel_SettingsViewModel = "com.readtrack.presentation.viewmodel.SettingsViewModel";
+
+      static String com_readtrack_presentation_viewmodel_BooksViewModel = "com.readtrack.presentation.viewmodel.BooksViewModel";
+
+      static String com_readtrack_presentation_viewmodel_AddBookViewModel = "com.readtrack.presentation.viewmodel.AddBookViewModel";
+
       static String com_readtrack_presentation_viewmodel_BookDetailViewModel = "com.readtrack.presentation.viewmodel.BookDetailViewModel";
 
       static String com_readtrack_presentation_viewmodel_TimelineViewModel = "com.readtrack.presentation.viewmodel.TimelineViewModel";
 
-      static String com_readtrack_presentation_viewmodel_StatsViewModel = "com.readtrack.presentation.viewmodel.StatsViewModel";
-
-      static String com_readtrack_presentation_viewmodel_BooksViewModel = "com.readtrack.presentation.viewmodel.BooksViewModel";
-
-      static String com_readtrack_presentation_viewmodel_SettingsViewModel = "com.readtrack.presentation.viewmodel.SettingsViewModel";
-
-      static String com_readtrack_presentation_viewmodel_AddBookViewModel = "com.readtrack.presentation.viewmodel.AddBookViewModel";
-
       @KeepFieldType
       HomeViewModel com_readtrack_presentation_viewmodel_HomeViewModel2;
+
+      @KeepFieldType
+      StatsViewModel com_readtrack_presentation_viewmodel_StatsViewModel2;
+
+      @KeepFieldType
+      SettingsViewModel com_readtrack_presentation_viewmodel_SettingsViewModel2;
+
+      @KeepFieldType
+      BooksViewModel com_readtrack_presentation_viewmodel_BooksViewModel2;
+
+      @KeepFieldType
+      AddBookViewModel com_readtrack_presentation_viewmodel_AddBookViewModel2;
 
       @KeepFieldType
       BookDetailViewModel com_readtrack_presentation_viewmodel_BookDetailViewModel2;
 
       @KeepFieldType
       TimelineViewModel com_readtrack_presentation_viewmodel_TimelineViewModel2;
-
-      @KeepFieldType
-      StatsViewModel com_readtrack_presentation_viewmodel_StatsViewModel2;
-
-      @KeepFieldType
-      BooksViewModel com_readtrack_presentation_viewmodel_BooksViewModel2;
-
-      @KeepFieldType
-      SettingsViewModel com_readtrack_presentation_viewmodel_SettingsViewModel2;
-
-      @KeepFieldType
-      AddBookViewModel com_readtrack_presentation_viewmodel_AddBookViewModel2;
     }
   }
 
@@ -508,19 +508,28 @@ public final class DaggerReadTrackApp_HiltComponents_SingletonC {
 
     @IdentifierNameString
     private static final class LazyClassKeyProvider {
+      static String com_readtrack_presentation_viewmodel_BookDetailViewModel = "com.readtrack.presentation.viewmodel.BookDetailViewModel";
+
+      static String com_readtrack_presentation_viewmodel_HomeViewModel = "com.readtrack.presentation.viewmodel.HomeViewModel";
+
+      static String com_readtrack_presentation_viewmodel_AddBookViewModel = "com.readtrack.presentation.viewmodel.AddBookViewModel";
+
       static String com_readtrack_presentation_viewmodel_SettingsViewModel = "com.readtrack.presentation.viewmodel.SettingsViewModel";
 
       static String com_readtrack_presentation_viewmodel_BooksViewModel = "com.readtrack.presentation.viewmodel.BooksViewModel";
-
-      static String com_readtrack_presentation_viewmodel_BookDetailViewModel = "com.readtrack.presentation.viewmodel.BookDetailViewModel";
 
       static String com_readtrack_presentation_viewmodel_TimelineViewModel = "com.readtrack.presentation.viewmodel.TimelineViewModel";
 
       static String com_readtrack_presentation_viewmodel_StatsViewModel = "com.readtrack.presentation.viewmodel.StatsViewModel";
 
-      static String com_readtrack_presentation_viewmodel_HomeViewModel = "com.readtrack.presentation.viewmodel.HomeViewModel";
+      @KeepFieldType
+      BookDetailViewModel com_readtrack_presentation_viewmodel_BookDetailViewModel2;
 
-      static String com_readtrack_presentation_viewmodel_AddBookViewModel = "com.readtrack.presentation.viewmodel.AddBookViewModel";
+      @KeepFieldType
+      HomeViewModel com_readtrack_presentation_viewmodel_HomeViewModel2;
+
+      @KeepFieldType
+      AddBookViewModel com_readtrack_presentation_viewmodel_AddBookViewModel2;
 
       @KeepFieldType
       SettingsViewModel com_readtrack_presentation_viewmodel_SettingsViewModel2;
@@ -529,19 +538,10 @@ public final class DaggerReadTrackApp_HiltComponents_SingletonC {
       BooksViewModel com_readtrack_presentation_viewmodel_BooksViewModel2;
 
       @KeepFieldType
-      BookDetailViewModel com_readtrack_presentation_viewmodel_BookDetailViewModel2;
-
-      @KeepFieldType
       TimelineViewModel com_readtrack_presentation_viewmodel_TimelineViewModel2;
 
       @KeepFieldType
       StatsViewModel com_readtrack_presentation_viewmodel_StatsViewModel2;
-
-      @KeepFieldType
-      HomeViewModel com_readtrack_presentation_viewmodel_HomeViewModel2;
-
-      @KeepFieldType
-      AddBookViewModel com_readtrack_presentation_viewmodel_AddBookViewModel2;
     }
 
     private static final class SwitchingProvider<T> implements Provider<T> {
@@ -575,13 +575,13 @@ public final class DaggerReadTrackApp_HiltComponents_SingletonC {
           return (T) new BooksViewModel(singletonCImpl.provideBookRepositoryProvider.get());
 
           case 3: // com.readtrack.presentation.viewmodel.HomeViewModel 
-          return (T) new HomeViewModel(singletonCImpl.provideBookRepositoryProvider.get(), singletonCImpl.provideReadingRecordRepositoryProvider.get());
+          return (T) new HomeViewModel(singletonCImpl.provideBookRepositoryProvider.get(), singletonCImpl.provideReadingRecordRepositoryProvider.get(), singletonCImpl.preferencesManagerProvider.get());
 
           case 4: // com.readtrack.presentation.viewmodel.SettingsViewModel 
           return (T) new SettingsViewModel(singletonCImpl.provideDataBackupRepositoryProvider.get(), singletonCImpl.preferencesManagerProvider.get());
 
           case 5: // com.readtrack.presentation.viewmodel.StatsViewModel 
-          return (T) new StatsViewModel(singletonCImpl.provideBookRepositoryProvider.get(), singletonCImpl.provideReadingRecordRepositoryProvider.get());
+          return (T) new StatsViewModel(singletonCImpl.provideBookRepositoryProvider.get(), singletonCImpl.provideReadingRecordRepositoryProvider.get(), singletonCImpl.preferencesManagerProvider.get());
 
           case 6: // com.readtrack.presentation.viewmodel.TimelineViewModel 
           return (T) new TimelineViewModel(singletonCImpl.provideBookRepositoryProvider.get(), singletonCImpl.provideReadingRecordRepositoryProvider.get());

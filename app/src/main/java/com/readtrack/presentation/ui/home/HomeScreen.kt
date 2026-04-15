@@ -25,8 +25,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.readtrack.data.local.StatsUnit
 import com.readtrack.presentation.ui.components.BookCard
 import com.readtrack.presentation.viewmodel.HomeViewModel
+
+private fun StatsUnit.label(): String = if (this == StatsUnit.CHAPTER) "章" else "页"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -80,8 +83,8 @@ fun HomeScreen(
                     ) {
                         StatCardModern(
                             title = "今日阅读",
-                            value = "${uiState.todayChapters.toInt()}章",
-                            subtitle = "${uiState.todayPages.toInt()}页",
+                            value = "${uiState.todayValue.toInt()}${uiState.statsUnit.label()}",
+                            subtitle = "已读 ${uiState.streakDays} 天",
                             icon = Icons.Default.MenuBook,
                             gradientColors = listOf(
                                 MaterialTheme.colorScheme.primary,
@@ -103,8 +106,9 @@ fun HomeScreen(
                     }
                 }
 
-            // Reading Time Card
-            item {
+            // Reading Time Card — only show in PAGE mode (CHAPTER mode label is empty)
+            if (uiState.statsUnit == StatsUnit.PAGE && uiState.totalReadingTimeLabel.isNotEmpty()) {
+                item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
@@ -143,6 +147,7 @@ fun HomeScreen(
                             )
                         }
                     }
+                }
                 }
             }
 
