@@ -25,6 +25,8 @@ data class HomeUiState(
     val todayChapters: Double = 0.0,
     val streakDays: Int = 0,
     val totalReadingTime: Double = 0.0,
+    // 预计算好的格式化字符串，避免 UI 层每次 recomposition 都重算
+    val totalReadingTimeLabel: String = "0 小时 0 分钟",
     val totalBooks: Int = 0,
     val readingBooks: Int = 0,
     val finishedBooks: Int = 0,

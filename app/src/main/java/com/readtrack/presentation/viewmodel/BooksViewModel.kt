@@ -102,7 +102,8 @@ class BooksViewModel @Inject constructor(
 
     fun setSearchQuery(query: String) {
         searchQueryFlow.value = normalizeSearchQuery(query)
-        _uiState.update { it.copy(searchQuery = query) }
+        // 不在这里更新 searchQuery！combine 里用 searchQueryFlow.debounce(250).distinctUntilChanged()
+        // 来驱动 filteredBooks 和 searchQuery 的更新，避免每次按键都触发 recomposition
     }
 
     fun setSortOrder(sortOrder: BookSortOrder) {

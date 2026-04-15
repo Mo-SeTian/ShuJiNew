@@ -136,7 +136,7 @@ fun HomeScreen(
                                 color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
                             )
                             Text(
-                                text = "${(uiState.totalReadingTime / 60).toInt()} 小时 ${(uiState.totalReadingTime % 60).toInt()} 分钟",
+                                text = uiState.totalReadingTimeLabel,
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSecondaryContainer

@@ -47,18 +47,23 @@ internal fun buildHomeUiState(
         }
     }
 
-    // 最近在读（最近翻阅的3本，固定小数量）
+    // 最近在读：直接复用上面遍历时找出的最大 lastReadAt 书籍，最多取3本
+    // 先按 lastReadAt 降序（从大到小），取前3本即最近翻阅的
     val recentBooks = books.asSequence()
-        .filter { it.status == BookStatus.READING }
-        .sortedWith(compareByDescending<BookEntity> { it.lastReadAt ?: 0L }.thenByDescending { it.updatedAt })
+        .filter { it.status == BookStatus.READING && it.lastReadAt != null && it.lastReadAt > 0L }
+        .sortedByDescending { it.lastReadAt }
         .take(3)
         .toList()
+
+    // 格式化阅读时长，避免 UI 层每次 recomposition 都重算
+    val totalReadingTimeLabel = formatReadingTime(totalReadingTime)
 
     return HomeUiState(
         todayPages = todayPages,
         todayChapters = todayChapters,
         streakDays = calculateReadingStreak(records.map { it.date }, now),
         totalReadingTime = totalReadingTime,
+        totalReadingTimeLabel = totalReadingTimeLabel,
         totalBooks = books.size,
         readingBooks = readingBooks,
         finishedBooks = finishedBooks,
@@ -103,3 +108,9 @@ internal fun calculateReadingStreak(
 }
 
 private const val ONE_DAY_MILLIS = 24L * 60L * 60L * 1000L
+
+private fun formatReadingTime(totalMinutes: Double): String {
+    val hours = (totalMinutes / 60).toInt()
+    val minutes = (totalMinutes % 60).toInt()
+    return "$hours 小时 $minutes 分钟"
+}

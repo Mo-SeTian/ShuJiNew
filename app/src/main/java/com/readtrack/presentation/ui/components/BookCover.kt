@@ -70,12 +70,21 @@ fun BookCover(
             val emojiContent = coverPath.removePrefix("emoji://")
             val parts = emojiContent.split("|")
             val isSingleChar = parts.size == 1 && emojiContent.length <= 2
+            val colorHex = parts.getOrElse(0) { "CCCCCC" }
+            val parsedColor = try {
+                android.graphics.Color.parseColor("#$colorHex")
+            } catch (e: Exception) {
+                0xFFCCCCCC.toInt()
+            }
+            val contrastColor = getContrastColorInt(colorHex)
             EmojiCoverData(
                 isSingleChar = isSingleChar,
                 char = if (isSingleChar) emojiContent.first().toString() else null,
-                colorHex = parts.getOrElse(0) { "CCCCCC" },
+                colorHex = colorHex,
                 emoji = parts.getOrElse(1) { "📖" },
-                title = parts.getOrElse(2) { "" }
+                title = parts.getOrElse(2) { "" },
+                parsedColor = parsedColor,
+                contrastColor = contrastColor
             )
         } else null
     }
@@ -102,7 +111,7 @@ fun BookCover(
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(Color(android.graphics.Color.parseColor("#4A90D9"))),
+                            .background(Color(emojiData.parsedColor)),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
@@ -116,7 +125,7 @@ fun BookCover(
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(Color(android.graphics.Color.parseColor("#${emojiData.colorHex}"))),
+                            .background(Color(emojiData.parsedColor)),
                         contentAlignment = Alignment.Center
                     ) {
                         Column(
@@ -132,7 +141,7 @@ fun BookCover(
                                 Text(
                                     text = emojiData.title,
                                     fontSize = 12.sp,
-                                    color = getContrastColor(emojiData.colorHex),
+                                    color = Color(emojiData.contrastColor),
                                     fontWeight = FontWeight.Medium,
                                     textAlign = TextAlign.Center
                                 )
@@ -144,10 +153,17 @@ fun BookCover(
             coverPath.startsWith("color://") -> {
                 // 纯色封面
                 val colorHex = coverPath.removePrefix("color://")
+                val parsedColor = remember(colorHex) {
+                    try {
+                        android.graphics.Color.parseColor("#$colorHex")
+                    } catch (e: Exception) {
+                        0xFFFFFFFF.toInt()
+                    }
+                }
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(Color(android.graphics.Color.parseColor("#$colorHex")))
+                        .background(Color(parsedColor))
                 ) {}
             }
             coverPath.startsWith("http") -> {
@@ -177,7 +193,10 @@ private data class EmojiCoverData(
     val char: String?,
     val colorHex: String,
     val emoji: String,
-    val title: String
+    val title: String,
+    // 预解析的颜色，避免每次 recomposition 都 parseColor
+    val parsedColor: Int,
+    val contrastColor: Int
 )
 
 fun buildBookImageRequest(

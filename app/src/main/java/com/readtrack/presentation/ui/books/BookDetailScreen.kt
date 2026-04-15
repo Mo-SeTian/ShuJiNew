@@ -398,7 +398,7 @@ fun BookDetailScreen(
 
 @Composable
 private fun BookInfoCard(book: BookEntity) {
-    val statusColor = statusColorOf(book.status)
+    val statusColor = remember(book.status) { statusColorOf(book.status) }
     val primaryColor = MaterialTheme.colorScheme.primary
     
     Card(
@@ -477,12 +477,15 @@ private fun BookInfoCard(book: BookEntity) {
 @Composable
 private fun ProgressInfoCard(book: BookEntity) {
     val isChapterBased = book.progressType == ProgressType.CHAPTER
-    val statusColor = statusColorOf(book.status)
-    
-    val total = if (isChapterBased) (book.totalChapters ?: 0).toDouble() else book.totalPages
-    val current = if (isChapterBased) book.currentChapter.toDouble() else book.currentPage
-    val progress = if (total > 0) (current / total).coerceIn(0.0, 1.0).toFloat() else 0f
-    val progressPercent = (progress * 100).toInt()
+    val statusColor = remember(book.status) { statusColorOf(book.status) }
+
+    val progressData = remember(isChapterBased, book.totalChapters, book.totalPages, book.currentChapter, book.currentPage) {
+        val total = if (isChapterBased) (book.totalChapters ?: 0).toDouble() else book.totalPages
+        val current = if (isChapterBased) book.currentChapter.toDouble() else book.currentPage
+        val progress = if (total > 0) (current / total).coerceIn(0.0, 1.0).toFloat() else 0f
+        val progressPercent = (progress * 100).toInt()
+        ProgressData(total = total, current = current, progress = progress, progressPercent = progressPercent)
+    }
     
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -502,17 +505,17 @@ private fun ProgressInfoCard(book: BookEntity) {
                     color = statusColor
                 )
                 Text(
-                    "$progressPercent%",
+                    "${progressData.progressPercent}%",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = statusColor
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             LinearProgressIndicator(
-                progress = { progress },
+                progress = { progressData.progress },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(10.dp)
@@ -520,20 +523,20 @@ private fun ProgressInfoCard(book: BookEntity) {
                 color = statusColor,
                 trackColor = statusColor.copy(alpha = 0.2f)
             )
-            
+
             Spacer(modifier = Modifier.height(10.dp))
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    if (isChapterBased) "第 $current 章" else "第 ${current.toInt()} 页",
+                    if (isChapterBased) "第 ${progressData.current.toInt()} 章" else "第 ${progressData.current.toInt()} 页",
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium
                 )
                 Text(
-                    if (isChapterBased) "共 $total 章" else "共 ${total.toInt()} 页",
+                    if (isChapterBased) "共 ${progressData.total.toInt()} 章" else "共 ${progressData.total.toInt()} 页",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -542,10 +545,17 @@ private fun ProgressInfoCard(book: BookEntity) {
     }
 }
 
+private data class ProgressData(
+    val total: Double,
+    val current: Double,
+    val progress: Float,
+    val progressPercent: Int
+)
+
 @Composable
 private fun StatusCard(book: BookEntity, onStatusChange: (BookStatus) -> Unit) {
     val currentStatus = book.status
-    val statusColor = statusColorOf(currentStatus)
+    val statusColor = remember(currentStatus) { statusColorOf(currentStatus) }
     
     Card(
         modifier = Modifier.fillMaxWidth(),
