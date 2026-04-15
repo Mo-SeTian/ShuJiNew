@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.data.local.entity.ReadingRecordEntity
 import com.readtrack.data.local.entity.RecordType
+import com.readtrack.domain.model.BookSnapshot
 import com.readtrack.domain.model.BookStatus
 import com.readtrack.domain.repository.BookRepository
 import com.readtrack.domain.repository.ReadingRecordRepository
@@ -102,6 +103,14 @@ class BookDetailViewModel @Inject constructor(
 
                 val record = ReadingRecordEntity(
                     bookId = currentBook.id,
+                    bookSnapshot = BookSnapshot(
+                        id = currentBook.id,
+                        title = currentBook.title,
+                        author = currentBook.author,
+                        coverPath = currentBook.coverPath,
+                        progressType = currentBook.progressType,
+                        status = currentBook.status
+                    ),
                     pagesRead = pagesActuallyRead,
                     fromPage = fromPage,
                     toPage = toPage,
@@ -144,6 +153,14 @@ class BookDetailViewModel @Inject constructor(
 
                 val record = ReadingRecordEntity(
                     bookId = currentBook.id,
+                    bookSnapshot = BookSnapshot(
+                        id = currentBook.id,
+                        title = currentBook.title,
+                        author = currentBook.author,
+                        coverPath = currentBook.coverPath,
+                        progressType = currentBook.progressType,
+                        status = currentBook.status
+                    ),
                     pagesRead = chaptersActuallyRead.toDouble(),
                     fromPage = fromChapter.toDouble(),
                     toPage = toChapter.toDouble(),

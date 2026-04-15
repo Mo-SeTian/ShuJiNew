@@ -6,6 +6,7 @@ import com.readtrack.data.local.database.ReadTrackDatabase
 import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.data.local.entity.ReadingRecordEntity
 import com.readtrack.data.local.entity.RecordType
+import com.readtrack.domain.model.BookSnapshot
 import com.readtrack.domain.model.BookStatus
 import com.readtrack.domain.repository.BookRepository
 import androidx.room.withTransaction
@@ -83,9 +84,19 @@ class BookRepositoryImpl @Inject constructor(
 
     override suspend fun updateBookStatus(bookId: Long, newStatus: BookStatus, recordType: RecordType) {
         database.withTransaction {
+            val book = bookDao.getBookByIdOnce(bookId) ?: return@withTransaction
+            val snapshot = BookSnapshot(
+                id = book.id,
+                title = book.title,
+                author = book.author,
+                coverPath = book.coverPath,
+                progressType = book.progressType,
+                status = newStatus  // 快照里用新状态（因为这是状态变更记录）
+            )
             // 写入状态变更记录（pagesRead/fromPage/toPage 均为 0）
             val statusRecord = ReadingRecordEntity(
                 bookId = bookId,
+                bookSnapshot = snapshot,
                 pagesRead = 0.0,
                 fromPage = 0.0,
                 toPage = 0.0,
@@ -94,7 +105,6 @@ class BookRepositoryImpl @Inject constructor(
             )
             readingRecordDao.insertRecord(statusRecord)
             // 更新图书状态
-            val book = bookDao.getBookByIdOnce(bookId) ?: return@withTransaction
             val updatedBook = book.copy(status = newStatus, updatedAt = System.currentTimeMillis())
             bookDao.updateBook(updatedBook)
         }
@@ -103,9 +113,18 @@ class BookRepositoryImpl @Inject constructor(
     override suspend fun insertBookWithStatus(book: BookEntity) {
         database.withTransaction {
             val bookId = bookDao.insertBook(book)
+            val snapshot = BookSnapshot(
+                id = bookId,
+                title = book.title,
+                author = book.author,
+                coverPath = book.coverPath,
+                progressType = book.progressType,
+                status = book.status
+            )
             // 写入添加图书记录
             val statusRecord = ReadingRecordEntity(
                 bookId = bookId,
+                bookSnapshot = snapshot,
                 pagesRead = 0.0,
                 fromPage = 0.0,
                 toPage = 0.0,
