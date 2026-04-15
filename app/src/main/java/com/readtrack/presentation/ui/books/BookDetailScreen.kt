@@ -27,9 +27,13 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.readtrack.presentation.viewmodel.TrendPoint
 import com.readtrack.presentation.ui.components.BookCover
 import com.readtrack.presentation.ui.components.BookCoverQuality
 import com.readtrack.data.local.entity.BookEntity
@@ -103,7 +107,17 @@ fun BookDetailScreen(
                     item {
                         ProgressInfoCard(book = book)
                     }
-                    
+
+                    // 阅读趋势图（至少2个数据点才显示）
+                    if (uiState.trendData.size >= 2) {
+                        item {
+                            ReadingTrendCard(
+                                trendData = uiState.trendData,
+                                isChapterBased = book.progressType == ProgressType.CHAPTER
+                            )
+                        }
+                    }
+
                     // 状态选择
                     item {
                         StatusCard(book = book, onStatusChange = { viewModel.updateStatus(it) })
@@ -544,6 +558,181 @@ private fun ProgressInfoCard(book: BookEntity) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun ReadingTrendCard(
+    trendData: List<TrendPoint>,
+    isChapterBased: Boolean
+) {
+    if (trendData.size < 2) {
+        // 数据点太少时不显示趋势图
+        return
+    }
+
+    val lineColor = MaterialTheme.colorScheme.primary
+    val gridColor = MaterialTheme.colorScheme.outlineVariant
+    val textColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val unit = if (isChapterBased) "章" else "页"
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "阅读趋势",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                val lastPoint = trendData.last()
+                Text(
+                    "累计 ${lastPoint.cumulative.toInt()} $unit",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = textColor
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // 折线图
+            ReadingLineChart(
+                trendData = trendData,
+                lineColor = lineColor,
+                gridColor = gridColor,
+                textColor = textColor,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(140.dp)
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // 底部日期标签
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    trendData.first().dateLabel,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = textColor
+                )
+                Text(
+                    trendData.last().dateLabel,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = textColor
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ReadingLineChart(
+    trendData: List<TrendPoint>,
+    lineColor: androidx.compose.ui.graphics.Color,
+    gridColor: androidx.compose.ui.graphics.Color,
+    textColor: androidx.compose.ui.graphics.Color,
+    modifier: Modifier = Modifier
+) {
+    if (trendData.size < 2) return
+
+    androidx.compose.foundation.Canvas(modifier = modifier) {
+        val paddingLeft = 0f
+        val paddingRight = 0f
+        val paddingTop = 8f
+        val paddingBottom = 20f
+
+        val chartWidth = size.width - paddingLeft - paddingRight
+        val chartHeight = size.height - paddingTop - paddingBottom
+
+        val maxValue = trendData.maxOf { it.cumulative }.coerceAtLeast(1.0)
+        val minValue = 0.0
+
+        val xStep = chartWidth / (trendData.size - 1)
+
+        // 绘制水平网格线（3条）
+        val gridCount = 3
+        for (i in 0..gridCount) {
+            val y = paddingTop + chartHeight * i / gridCount
+            drawLine(
+                color = gridColor,
+                start = Offset(paddingLeft, y),
+                end = Offset(paddingLeft + chartWidth, y),
+                strokeWidth = 1f
+            )
+        }
+
+        // 构建折线路径和填充路径
+        val linePath = Path()
+        val fillPath = Path()
+        val points = trendData.mapIndexed { index, point ->
+            val x = paddingLeft + index * xStep
+            val normalizedY = ((point.cumulative - minValue) / (maxValue - minValue)).toFloat()
+            val y = paddingTop + chartHeight * (1 - normalizedY)
+            Offset(x, y)
+        }
+
+        points.forEachIndexed { index, point ->
+            if (index == 0) {
+                linePath.moveTo(point.x, point.y)
+                fillPath.moveTo(point.x, paddingTop + chartHeight)
+                fillPath.lineTo(point.x, point.y)
+            } else {
+                // 平滑曲线：用二次贝塞尔连接
+                val prev = points[index - 1]
+                val midX = (prev.x + point.x) / 2
+                linePath.quadraticBezierTo(prev.x, prev.y, midX, (prev.y + point.y) / 2)
+                fillPath.quadraticBezierTo(prev.x, prev.y, midX, (prev.y + point.y) / 2)
+                if (index == points.size - 1) {
+                    linePath.quadraticBezierTo(point.x, point.y, point.x, point.y)
+                    fillPath.quadraticBezierTo(point.x, point.y, point.x, point.y)
+                }
+            }
+        }
+        fillPath.lineTo(points.last().x, paddingTop + chartHeight)
+        fillPath.close()
+
+        // 填充区域渐变
+        drawPath(
+            path = fillPath,
+            brush = androidx.compose.ui.graphics.Brush.verticalGradient(
+                colors = listOf(
+                    lineColor.copy(alpha = 0.3f),
+                    lineColor.copy(alpha = 0.05f)
+                ),
+                startY = paddingTop,
+                endY = paddingTop + chartHeight
+            )
+        )
+
+        // 绘制折线
+        drawPath(
+            path = linePath,
+            color = lineColor,
+            style = Stroke(width = 2.5f)
+        )
+
+        // 绘制数据点
+        points.forEach { point ->
+            drawCircle(
+                color = lineColor,
+                radius = 4f,
+                center = point
+            )
+            drawCircle(
+                color = androidx.compose.ui.graphics.Color.White,
+                radius = 2f,
+                center = point
+            )
         }
     }
 }
