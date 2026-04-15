@@ -5,11 +5,18 @@ import androidx.lifecycle.viewModelScope
 import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.domain.model.BookStatus
 import com.readtrack.domain.repository.BookRepository
+import com.readtrack.util.PerformanceTrace
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -23,6 +30,7 @@ data class BooksUiState(
     val errorMessage: String? = null
 )
 
+@OptIn(FlowPreview::class)
 @HiltViewModel
 class BooksViewModel @Inject constructor(
     private val bookRepository: BookRepository
@@ -31,59 +39,63 @@ class BooksViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(BooksUiState())
     val uiState: StateFlow<BooksUiState> = _uiState.asStateFlow()
 
+    private val selectedStatusFlow = MutableStateFlow<BookStatus?>(null)
+    private val searchQueryFlow = MutableStateFlow("")
+
     init {
         loadBooks()
     }
 
     private fun loadBooks() {
         viewModelScope.launch {
-            bookRepository.getAllBooks()
-                .catch { e ->
-                    _uiState.update { it.copy(isLoading = false, errorMessage = "加载失败: ${e.message}") }
-                }
-                .collect { books ->
-                    _uiState.update { state ->
-                        state.copy(
+            combine(
+                bookRepository.getAllBooks().distinctUntilChanged(),
+                selectedStatusFlow.distinctUntilChanged(),
+                searchQueryFlow
+                    .debounce(250)
+                    .distinctUntilChanged()
+            ) { books, selectedStatus, rawQuery ->
+                PerformanceTrace.measure("books.filter") {
+                    val filteredBooks = filterBooks(
+                        BooksFilterInput(
                             books = books,
-                            filteredBooks = filterBooks(books, state.selectedStatus, state.searchQuery),
-                            isLoading = false,
-                            errorMessage = null
+                            status = selectedStatus,
+                            query = rawQuery
                         )
+                    )
+                    BooksUiState(
+                        books = books,
+                        filteredBooks = filteredBooks,
+                        selectedStatus = selectedStatus,
+                        searchQuery = _uiState.value.searchQuery,
+                        isLoading = false,
+                        errorMessage = null
+                    )
+                }
+            }
+                .flowOn(Dispatchers.Default)
+                .catch { e ->
+                    _uiState.update {
+                        it.copy(isLoading = false, errorMessage = "加载失败: ${e.message}")
                     }
+                }
+                .collect { state ->
+                    _uiState.value = state
+                    PerformanceTrace.mark(
+                        "books.render ready total=${state.books.size} filtered=${state.filteredBooks.size} query='${state.searchQuery}'"
+                    )
                 }
         }
     }
 
     fun setStatusFilter(status: BookStatus?) {
-        _uiState.update { state ->
-            state.copy(
-                selectedStatus = status,
-                filteredBooks = filterBooks(state.books, status, state.searchQuery)
-            )
-        }
+        selectedStatusFlow.value = status
+        _uiState.update { it.copy(selectedStatus = status) }
     }
 
     fun setSearchQuery(query: String) {
-        _uiState.update { state ->
-            state.copy(
-                searchQuery = query,
-                filteredBooks = filterBooks(state.books, state.selectedStatus, query)
-            )
-        }
-    }
-
-    private fun filterBooks(
-        books: List<BookEntity>,
-        status: BookStatus?,
-        query: String
-    ): List<BookEntity> {
-        return books.filter { book ->
-            val matchesStatus = status == null || book.status == status
-            val matchesQuery = query.isBlank() ||
-                    book.title.contains(query, ignoreCase = true) ||
-                    (book.author?.contains(query, ignoreCase = true) == true)
-            matchesStatus && matchesQuery
-        }
+        searchQueryFlow.value = normalizeSearchQuery(query)
+        _uiState.update { it.copy(searchQuery = query) }
     }
 
     fun deleteBook(bookId: Long) {

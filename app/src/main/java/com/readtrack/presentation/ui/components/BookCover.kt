@@ -17,10 +17,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.DpSize
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalDensity
+import coil.size.Precision
 
 /**
  * 书籍封面组件
@@ -35,12 +38,27 @@ fun BookCover(
     coverPath: String?,
     contentDescription: String,
     modifier: Modifier = Modifier,
-    showPlaceholder: Boolean = true
+    showPlaceholder: Boolean = true,
+    requestSize: DpSize? = null,
+    quality: BookCoverQuality = BookCoverQuality.PREVIEW
 ) {
     val context = LocalContext.current
-    val imageModel = remember(coverPath) {
+    val density = LocalDensity.current
+    val requestSizePx = remember(requestSize, density) {
+        requestSize?.let {
+            with(density) {
+                it.width.roundToPx() to it.height.roundToPx()
+            }
+        }
+    }
+    val imageModel = remember(coverPath, requestSizePx, quality) {
         if (!coverPath.isNullOrBlank() && coverPath.startsWith("http")) {
-            buildBookImageRequest(context, coverPath)
+            buildBookImageRequest(
+                context = context,
+                imageUrl = coverPath,
+                requestedSizePx = requestSizePx,
+                quality = quality
+            )
         } else {
             coverPath
         }
@@ -153,15 +171,25 @@ fun BookCover(
 
 fun buildBookImageRequest(
     context: android.content.Context,
-    imageUrl: String
+    imageUrl: String,
+    requestedSizePx: Pair<Int, Int>? = null,
+    quality: BookCoverQuality = BookCoverQuality.PREVIEW
 ): ImageRequest {
+    val optimizedUrl = optimizeCoverUrl(imageUrl, quality)
     val builder = ImageRequest.Builder(context)
-        .data(imageUrl)
+        .data(optimizedUrl)
         .memoryCachePolicy(CachePolicy.ENABLED)
         .diskCachePolicy(CachePolicy.ENABLED)
         .crossfade(false)
+        .precision(Precision.INEXACT)
 
-    if (imageUrl.contains("doubanio.com")) {
+    requestedSizePx?.let { (width, height) ->
+        if (width > 0 && height > 0) {
+            builder.size(width, height)
+        }
+    }
+
+    if (optimizedUrl.contains("doubanio.com")) {
         builder
             .addHeader("Referer", "https://book.douban.com/")
             .addHeader("User-Agent", "Mozilla/5.0")
@@ -169,6 +197,22 @@ fun buildBookImageRequest(
     }
 
     return builder.build()
+}
+
+enum class BookCoverQuality {
+    THUMBNAIL,
+    PREVIEW,
+    FULL
+}
+
+private fun optimizeCoverUrl(imageUrl: String, quality: BookCoverQuality): String {
+    if (!imageUrl.contains("doubanio.com")) return imageUrl
+
+    return when (quality) {
+        BookCoverQuality.THUMBNAIL -> imageUrl.replace("/l/public/", "/m/public/")
+        BookCoverQuality.PREVIEW -> imageUrl.replace("/l/public/", "/m/public/")
+        BookCoverQuality.FULL -> imageUrl
+    }
 }
 
 /**

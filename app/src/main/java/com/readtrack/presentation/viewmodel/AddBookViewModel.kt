@@ -8,6 +8,7 @@ import com.readtrack.data.remote.BookSearchResult
 import com.readtrack.data.remote.DoubanSearchService
 import com.readtrack.domain.model.BookStatus
 import com.readtrack.domain.repository.BookRepository
+import com.readtrack.util.PerformanceTrace
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -61,6 +62,7 @@ class AddBookViewModel @Inject constructor(
 
     private var loadedBook: BookEntity? = null
     private var searchJob: Job? = null
+    private var lastSearchQuery: String = ""
 
     init {
         viewModelScope.launch {
@@ -113,28 +115,56 @@ class AddBookViewModel @Inject constructor(
     fun updateStatus(status: BookStatus) = _uiState.update { it.copy(status = status) }
 
     fun showSearchDialog() {
-        _uiState.update { it.copy(showSearchDialog = true, searchQuery = "", searchResults = emptyList(), searchError = null) }
+        searchJob?.cancel()
+        lastSearchQuery = ""
+        _uiState.update {
+            it.copy(
+                showSearchDialog = true,
+                searchQuery = "",
+                searchResults = emptyList(),
+                searchError = null,
+                isSearching = false
+            )
+        }
     }
 
     fun hideSearchDialog() {
-        _uiState.update { it.copy(showSearchDialog = false, searchQuery = "", searchResults = emptyList(), searchError = null) }
+        searchJob?.cancel()
+        lastSearchQuery = ""
+        _uiState.update {
+            it.copy(
+                showSearchDialog = false,
+                searchQuery = "",
+                searchResults = emptyList(),
+                searchError = null,
+                isSearching = false
+            )
+        }
     }
 
     fun updateSearchQuery(query: String) {
+        val normalizedQuery = normalizeSearchQuery(query)
         _uiState.update { it.copy(searchQuery = query) }
         searchJob?.cancel()
-        if (query.length >= 2) {
+
+        if (normalizedQuery.length >= 2) {
             searchJob = viewModelScope.launch {
-                delay(500)
-                searchBooks(query)
+                delay(350)
+                if (normalizedQuery != lastSearchQuery) {
+                    searchBooks(normalizedQuery)
+                }
             }
         } else {
-            _uiState.update { it.copy(searchResults = emptyList()) }
+            lastSearchQuery = ""
+            _uiState.update { it.copy(searchResults = emptyList(), searchError = null, isSearching = false) }
         }
     }
 
     fun searchBooks(query: String) {
-        if (query.isBlank()) return
+        val normalizedQuery = normalizeSearchQuery(query)
+        if (normalizedQuery.isBlank()) return
+
+        lastSearchQuery = normalizedQuery
 
         viewModelScope.launch {
             _uiState.update { it.copy(isSearching = true, searchError = null) }
@@ -142,17 +172,32 @@ class AddBookViewModel @Inject constructor(
             val latestCookie = preferencesManager.doubanCookie.first()
             _uiState.update { it.copy(doubanCookie = latestCookie) }
 
-            doubanSearchService.searchBooks(query, latestCookie)
-                .onSuccess { results -> 
-                    _uiState.update { it.copy(isSearching = false, searchResults = results) }
-                }
-                .onFailure { error -> 
-                    _uiState.update { it.copy(isSearching = false, searchError = "搜索失败: ${error.message}") }
-                }
+            PerformanceTrace.measure("cover.search:$normalizedQuery") {
+                doubanSearchService.searchBooks(normalizedQuery, latestCookie)
+                    .onSuccess { results ->
+                        if (normalizedQuery == lastSearchQuery) {
+                            _uiState.update {
+                                it.copy(isSearching = false, searchResults = results)
+                            }
+                        }
+                    }
+                    .onFailure { error ->
+                        if (normalizedQuery == lastSearchQuery) {
+                            _uiState.update {
+                                it.copy(
+                                    isSearching = false,
+                                    searchError = "搜索失败: ${error.message}"
+                                )
+                            }
+                        }
+                    }
+            }
         }
     }
 
     fun fillFromSearchResult(result: BookSearchResult) {
+        searchJob?.cancel()
+        lastSearchQuery = ""
         _uiState.update { state ->
             state.copy(
                 title = result.title,
@@ -163,7 +208,9 @@ class AddBookViewModel @Inject constructor(
                 totalPages = result.pageCount?.toString() ?: "",
                 showSearchDialog = false,
                 searchQuery = "",
-                searchResults = emptyList()
+                searchResults = emptyList(),
+                isSearching = false,
+                searchError = null
             )
         }
     }

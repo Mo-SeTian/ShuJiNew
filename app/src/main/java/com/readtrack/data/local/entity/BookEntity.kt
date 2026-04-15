@@ -1,11 +1,21 @@
 package com.readtrack.data.local.entity
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.readtrack.domain.model.BookStatus
 import com.readtrack.presentation.viewmodel.ProgressType
 
-@Entity(tableName = "books")
+@Entity(
+    tableName = "books",
+    indices = [
+        Index(value = ["status", "updatedAt"]),
+        Index(value = ["updatedAt"]),
+        Index(value = ["lastReadAt"]),
+        Index(value = ["title"]),
+        Index(value = ["author"])
+    ]
+)
 data class BookEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,

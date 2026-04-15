@@ -125,50 +125,63 @@ fun BooksScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             // Book List
-            if (uiState.filteredBooks.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(32.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
+            when {
+                uiState.isLoading -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = if (uiState.searchQuery.isNotEmpty() || uiState.selectedStatus != null) 
-                                "没有找到匹配的书籍" 
-                            else "还没有添加任何书籍",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        if (uiState.searchQuery.isEmpty() && uiState.selectedStatus == null) {
-                            Spacer(modifier = Modifier.height(8.dp))
+                        CircularProgressIndicator()
+                    }
+                }
+
+                uiState.filteredBooks.isEmpty() -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
                             Text(
-                                text = "点击右下角「添加书籍」开始",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                text = if (uiState.searchQuery.isNotEmpty() || uiState.selectedStatus != null)
+                                    "没有找到匹配的书籍"
+                                else "还没有添加任何书籍",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
+                            if (uiState.searchQuery.isEmpty() && uiState.selectedStatus == null) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "点击右下角「添加书籍」开始",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                )
+                            }
                         }
                     }
                 }
-            } else {
-                LazyColumn(
-                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 80.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(
-                        items = uiState.filteredBooks,
-                        key = { it.id }
-                    ) { book ->
-                        BookCard(
-                            book = book,
-                            onClick = { onBookClick(book.id) }
-                        )
-                    }
-                    // Bottom spacing for FAB
-                    item {
-                        Spacer(modifier = Modifier.height(72.dp))
+
+                else -> {
+                    LazyColumn(
+                        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 80.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(
+                            items = uiState.filteredBooks,
+                            key = { it.id }
+                        ) { book ->
+                            BookCard(
+                                book = book,
+                                onClick = { onBookClick(book.id) }
+                            )
+                        }
+                        // Bottom spacing for FAB
+                        item {
+                            Spacer(modifier = Modifier.height(72.dp))
+                        }
                     }
                 }
             }
