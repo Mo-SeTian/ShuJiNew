@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.readtrack.domain.model.BookStatus
@@ -40,6 +41,7 @@ fun BooksScreen(
     Scaffold(
         topBar = {
             SmallTopAppBar(
+                modifier = Modifier.statusBarsPadding(),
                 title = {
                     Text(
                         "我的书籍",
