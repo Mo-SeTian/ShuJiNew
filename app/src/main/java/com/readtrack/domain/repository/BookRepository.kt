@@ -19,4 +19,16 @@ interface BookRepository {
      * 解决 addReadingRecord / addChapterProgress 中记录落库但书籍更新失败的数据不一致问题
      */
     suspend fun insertRecordAndUpdateBook(record: ReadingRecordEntity, book: BookEntity)
+
+    /**
+     * 原子操作：删除阅读记录 + 重算书籍进度
+     * 从剩余记录中找到最新一条，用其 toPage 重算 currentPage / currentChapter
+     */
+    suspend fun deleteRecordAndRecalculateBook(record: ReadingRecordEntity)
+
+    /**
+     * 原子操作：更新阅读记录 + 重算书籍进度
+     * 更新记录后用新的 toPage 重算 currentPage / currentChapter
+     */
+    suspend fun updateRecordAndRecalculateBook(record: ReadingRecordEntity)
 }

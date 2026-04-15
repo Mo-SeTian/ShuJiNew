@@ -51,6 +51,9 @@ fun BookDetailScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showAddRecordDialog by remember { mutableStateOf(false) }
+    var showEditRecordDialog by remember { mutableStateOf(false) }
+    var recordToEdit by remember { mutableStateOf<ReadingRecordEntity?>(null) }
+    var recordToDelete by remember { mutableStateOf<ReadingRecordEntity?>(null) }
 
     Scaffold(
         topBar = {
@@ -162,7 +165,12 @@ fun BookDetailScreen(
                             items = uiState.readingRecords,
                             key = { it.id }
                         ) { record ->
-                            ReadingRecordRow(record = record, isChapterBased = isChapterBased)
+                            ReadingRecordRow(
+                                record = record,
+                                isChapterBased = isChapterBased,
+                                onEdit = { recordToEdit = record; showEditRecordDialog = true },
+                                onDelete = { recordToDelete = record }
+                            )
                         }
                     }
                     
@@ -172,7 +180,7 @@ fun BookDetailScreen(
         }
     }
 
-    // 删除确认
+    // 删除书籍确认
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
@@ -184,6 +192,120 @@ fun BookDetailScreen(
                 }
             },
             dismissButton = { TextButton(onClick = { showDeleteDialog = false }) { Text("取消") } }
+        )
+    }
+
+    // 删除阅读记录确认
+    recordToDelete?.let { record ->
+        AlertDialog(
+            onDismissRequest = { recordToDelete = null },
+            title = { Text("删除记录", fontWeight = FontWeight.Bold) },
+            text = { Text("确定要删除这条阅读记录吗？书籍进度将重新计算。") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.deleteReadingRecord(record)
+                    recordToDelete = null
+                }) {
+                    Text("删除", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = { TextButton(onClick = { recordToDelete = null }) { Text("取消") } }
+        )
+    }
+
+    // 编辑阅读记录对话框
+    if (showEditRecordDialog && recordToEdit != null && uiState.book != null) {
+        val book = uiState.book!!
+        val record = recordToEdit!!
+        val isChapterBased = book.progressType == ProgressType.CHAPTER
+        var inputText by remember { mutableStateOf("") }
+        var noteText by remember { mutableStateOf(record.note ?: "") }
+        var isIncrement by remember { mutableStateOf(true) }
+
+        AlertDialog(
+            onDismissRequest = { showEditRecordDialog = false; recordToEdit = null },
+            title = { Text("编辑阅读记录", fontWeight = FontWeight.Bold) },
+            text = {
+                Column {
+                    Row(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+                        Text(
+                            "原始记录：${record.pagesRead.toInt()} ${if (isChapterBased) "章" else "页"}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        FilterChip(
+                            selected = isIncrement,
+                            onClick = { isIncrement = true },
+                            label = { Text("本次读了") },
+                            modifier = Modifier.weight(1f)
+                        )
+                        FilterChip(
+                            selected = !isIncrement,
+                            onClick = { isIncrement = false },
+                            label = { Text("本次到") },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = inputText,
+                        onValueChange = { inputText = if (isChapterBased) it.filter { c -> c.isDigit() } else it.filter { c -> c.isDigit() || c == '.' } },
+                        label = {
+                            Text(
+                                if (isChapterBased)
+                                    if (isIncrement) "阅读章节数" else "章节号"
+                                else
+                                    if (isIncrement) "阅读页数" else "页码"
+                            )
+                        },
+                        keyboardOptions = KeyboardOptions(keyboardType = if (isChapterBased) KeyboardType.Number else KeyboardType.Decimal),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = noteText,
+                        onValueChange = { noteText = it },
+                        label = { Text("备注（可选）") },
+                        placeholder = { Text("添加备注...") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        maxLines = 2
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val updatedRecord = if (isChapterBased) {
+                        val chapters = inputText.toIntOrNull() ?: 0
+                        val toChapter = if (isIncrement) (record.fromPage.toInt() + chapters).coerceAtMost(book.totalChapters ?: 0) else inputText.toIntOrNull()?.coerceIn(0, book.totalChapters ?: 0) ?: record.toPage.toInt()
+                        val pagesActuallyRead = if (isIncrement) chapters.toDouble() else (toChapter - record.fromPage.toInt()).coerceAtLeast(0).toDouble()
+                        record.copy(
+                            pagesRead = pagesActuallyRead,
+                            toPage = toChapter.toDouble(),
+                            note = noteText.takeIf { it.isNotBlank() }
+                        )
+                    } else {
+                        val pages = inputText.toDoubleOrNull() ?: 0.0
+                        val toPage = if (isIncrement) (record.fromPage + pages).coerceAtMost(book.totalPages) else inputText.toDoubleOrNull()?.coerceIn(0.0, book.totalPages) ?: record.toPage
+                        val pagesActuallyRead = if (isIncrement) pages else (toPage - record.fromPage).coerceAtLeast(0.0)
+                        record.copy(
+                            pagesRead = pagesActuallyRead,
+                            toPage = toPage,
+                            note = noteText.takeIf { it.isNotBlank() }
+                        )
+                    }
+                    viewModel.updateReadingRecord(updatedRecord)
+                    showEditRecordDialog = false
+                    recordToEdit = null
+                }) { Text("保存") }
+            },
+            dismissButton = { TextButton(onClick = { showEditRecordDialog = false; recordToEdit = null }) { Text("取消") } }
         )
     }
 
@@ -469,9 +591,14 @@ private fun StatusCard(book: BookEntity, onStatusChange: (BookStatus) -> Unit) {
 }
 
 @Composable
-private fun ReadingRecordRow(record: ReadingRecordEntity, isChapterBased: Boolean) {
+private fun ReadingRecordRow(
+    record: ReadingRecordEntity,
+    isChapterBased: Boolean,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit
+) {
     val dateFormat = remember { SimpleDateFormat("MM-dd HH:mm", Locale.getDefault()) }
-    
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
@@ -482,7 +609,7 @@ private fun ReadingRecordRow(record: ReadingRecordEntity, isChapterBased: Boolea
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     dateFormat.format(Date(record.date)),
                     style = MaterialTheme.typography.bodyMedium,
@@ -494,20 +621,36 @@ private fun ReadingRecordRow(record: ReadingRecordEntity, isChapterBased: Boolea
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            Surface(
-                shape = RoundedCornerShape(16.dp),
-                color = MaterialTheme.colorScheme.primaryContainer
-            ) {
-                Text(
-                    "+${record.pagesRead.toInt()} ${if (isChapterBased) "章" else "页"}",
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-                )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer
+                ) {
+                    Text(
+                        "+${record.pagesRead.toInt()} ${if (isChapterBased) "章" else "页"}",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                    )
+                }
+                IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) {
+                    Icon(
+                        Icons.Default.Edit,
+                        contentDescription = "编辑",
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = "删除",
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
+                    )
+                }
             }
         }
     }
 }
-
-           

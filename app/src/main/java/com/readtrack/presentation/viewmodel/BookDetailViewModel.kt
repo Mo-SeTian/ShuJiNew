@@ -171,6 +171,32 @@ class BookDetailViewModel @Inject constructor(
         }
     }
 
+    /**
+     * 删除单条阅读记录，同时重算书籍进度
+     */
+    fun deleteReadingRecord(record: ReadingRecordEntity) {
+        viewModelScope.launch {
+            try {
+                bookRepository.deleteRecordAndRecalculateBook(record)
+            } catch (e: Exception) {
+                _uiState.update { it.copy(errorMessage = "删除记录失败: ${e.message}") }
+            }
+        }
+    }
+
+    /**
+     * 更新单条阅读记录，同时重算书籍进度
+     */
+    fun updateReadingRecord(record: ReadingRecordEntity) {
+        viewModelScope.launch {
+            try {
+                bookRepository.updateRecordAndRecalculateBook(record)
+            } catch (e: Exception) {
+                _uiState.update { it.copy(errorMessage = "更新记录失败: ${e.message}") }
+            }
+        }
+    }
+
     fun clearError() {
         _uiState.update { it.copy(errorMessage = null) }
     }
