@@ -266,7 +266,7 @@ class AddBookViewModel @Inject constructor(
                         updatedAt = now,
                         lastReadAt = null
                     )
-                    bookRepository.insertBook(newBook)
+                    bookRepository.insertBookWithStatus(newBook)
                 }
                 _uiState.update { it.copy(isSaving = false, isSaved = true) }
             } catch (e: Exception) {

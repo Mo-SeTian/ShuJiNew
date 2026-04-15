@@ -416,38 +416,38 @@ public final class DaggerReadTrackApp_HiltComponents_SingletonC {
     private static final class LazyClassKeyProvider {
       static String com_readtrack_presentation_viewmodel_HomeViewModel = "com.readtrack.presentation.viewmodel.HomeViewModel";
 
-      static String com_readtrack_presentation_viewmodel_StatsViewModel = "com.readtrack.presentation.viewmodel.StatsViewModel";
-
-      static String com_readtrack_presentation_viewmodel_SettingsViewModel = "com.readtrack.presentation.viewmodel.SettingsViewModel";
+      static String com_readtrack_presentation_viewmodel_BookDetailViewModel = "com.readtrack.presentation.viewmodel.BookDetailViewModel";
 
       static String com_readtrack_presentation_viewmodel_BooksViewModel = "com.readtrack.presentation.viewmodel.BooksViewModel";
 
+      static String com_readtrack_presentation_viewmodel_TimelineViewModel = "com.readtrack.presentation.viewmodel.TimelineViewModel";
+
       static String com_readtrack_presentation_viewmodel_AddBookViewModel = "com.readtrack.presentation.viewmodel.AddBookViewModel";
 
-      static String com_readtrack_presentation_viewmodel_BookDetailViewModel = "com.readtrack.presentation.viewmodel.BookDetailViewModel";
+      static String com_readtrack_presentation_viewmodel_SettingsViewModel = "com.readtrack.presentation.viewmodel.SettingsViewModel";
 
-      static String com_readtrack_presentation_viewmodel_TimelineViewModel = "com.readtrack.presentation.viewmodel.TimelineViewModel";
+      static String com_readtrack_presentation_viewmodel_StatsViewModel = "com.readtrack.presentation.viewmodel.StatsViewModel";
 
       @KeepFieldType
       HomeViewModel com_readtrack_presentation_viewmodel_HomeViewModel2;
 
       @KeepFieldType
-      StatsViewModel com_readtrack_presentation_viewmodel_StatsViewModel2;
-
-      @KeepFieldType
-      SettingsViewModel com_readtrack_presentation_viewmodel_SettingsViewModel2;
+      BookDetailViewModel com_readtrack_presentation_viewmodel_BookDetailViewModel2;
 
       @KeepFieldType
       BooksViewModel com_readtrack_presentation_viewmodel_BooksViewModel2;
 
       @KeepFieldType
+      TimelineViewModel com_readtrack_presentation_viewmodel_TimelineViewModel2;
+
+      @KeepFieldType
       AddBookViewModel com_readtrack_presentation_viewmodel_AddBookViewModel2;
 
       @KeepFieldType
-      BookDetailViewModel com_readtrack_presentation_viewmodel_BookDetailViewModel2;
+      SettingsViewModel com_readtrack_presentation_viewmodel_SettingsViewModel2;
 
       @KeepFieldType
-      TimelineViewModel com_readtrack_presentation_viewmodel_TimelineViewModel2;
+      StatsViewModel com_readtrack_presentation_viewmodel_StatsViewModel2;
     }
   }
 
@@ -510,38 +510,38 @@ public final class DaggerReadTrackApp_HiltComponents_SingletonC {
     private static final class LazyClassKeyProvider {
       static String com_readtrack_presentation_viewmodel_BookDetailViewModel = "com.readtrack.presentation.viewmodel.BookDetailViewModel";
 
-      static String com_readtrack_presentation_viewmodel_HomeViewModel = "com.readtrack.presentation.viewmodel.HomeViewModel";
-
       static String com_readtrack_presentation_viewmodel_AddBookViewModel = "com.readtrack.presentation.viewmodel.AddBookViewModel";
 
-      static String com_readtrack_presentation_viewmodel_SettingsViewModel = "com.readtrack.presentation.viewmodel.SettingsViewModel";
+      static String com_readtrack_presentation_viewmodel_StatsViewModel = "com.readtrack.presentation.viewmodel.StatsViewModel";
 
       static String com_readtrack_presentation_viewmodel_BooksViewModel = "com.readtrack.presentation.viewmodel.BooksViewModel";
 
-      static String com_readtrack_presentation_viewmodel_TimelineViewModel = "com.readtrack.presentation.viewmodel.TimelineViewModel";
+      static String com_readtrack_presentation_viewmodel_SettingsViewModel = "com.readtrack.presentation.viewmodel.SettingsViewModel";
 
-      static String com_readtrack_presentation_viewmodel_StatsViewModel = "com.readtrack.presentation.viewmodel.StatsViewModel";
+      static String com_readtrack_presentation_viewmodel_HomeViewModel = "com.readtrack.presentation.viewmodel.HomeViewModel";
+
+      static String com_readtrack_presentation_viewmodel_TimelineViewModel = "com.readtrack.presentation.viewmodel.TimelineViewModel";
 
       @KeepFieldType
       BookDetailViewModel com_readtrack_presentation_viewmodel_BookDetailViewModel2;
 
       @KeepFieldType
-      HomeViewModel com_readtrack_presentation_viewmodel_HomeViewModel2;
-
-      @KeepFieldType
       AddBookViewModel com_readtrack_presentation_viewmodel_AddBookViewModel2;
 
       @KeepFieldType
-      SettingsViewModel com_readtrack_presentation_viewmodel_SettingsViewModel2;
+      StatsViewModel com_readtrack_presentation_viewmodel_StatsViewModel2;
 
       @KeepFieldType
       BooksViewModel com_readtrack_presentation_viewmodel_BooksViewModel2;
 
       @KeepFieldType
-      TimelineViewModel com_readtrack_presentation_viewmodel_TimelineViewModel2;
+      SettingsViewModel com_readtrack_presentation_viewmodel_SettingsViewModel2;
 
       @KeepFieldType
-      StatsViewModel com_readtrack_presentation_viewmodel_StatsViewModel2;
+      HomeViewModel com_readtrack_presentation_viewmodel_HomeViewModel2;
+
+      @KeepFieldType
+      TimelineViewModel com_readtrack_presentation_viewmodel_TimelineViewModel2;
     }
 
     private static final class SwitchingProvider<T> implements Provider<T> {

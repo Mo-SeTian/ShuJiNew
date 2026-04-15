@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.data.local.entity.ReadingRecordEntity
+import com.readtrack.data.local.entity.RecordType
 import com.readtrack.domain.model.BookStatus
 import com.readtrack.domain.repository.BookRepository
 import com.readtrack.domain.repository.ReadingRecordRepository
@@ -67,11 +68,13 @@ class BookDetailViewModel @Inject constructor(
         val currentBook = _uiState.value.book ?: return
         viewModelScope.launch {
             try {
-                val updatedBook = currentBook.copy(
-                    status = status,
-                    updatedAt = System.currentTimeMillis()
-                )
-                bookRepository.updateBook(updatedBook)
+                val recordType = when (status) {
+                    BookStatus.READING -> RecordType.STATUS_READING
+                    BookStatus.FINISHED -> RecordType.STATUS_FINISHED
+                    BookStatus.ABANDONED -> RecordType.STATUS_DROPPED
+                    else -> return@launch
+                }
+                bookRepository.updateBookStatus(currentBook.id, status, recordType)
             } catch (e: Exception) {
                 _uiState.update { it.copy(errorMessage = "更新状态失败: ${e.message}") }
             }

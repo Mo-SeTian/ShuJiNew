@@ -2,6 +2,7 @@ package com.readtrack.domain.repository
 
 import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.data.local.entity.ReadingRecordEntity
+import com.readtrack.data.local.entity.RecordType
 import com.readtrack.domain.model.BookStatus
 import kotlinx.coroutines.flow.Flow
 
@@ -27,8 +28,20 @@ interface BookRepository {
     suspend fun deleteRecordAndRecalculateBook(record: ReadingRecordEntity)
 
     /**
-     * 原子操作：更新阅读记录 + 重算书籍进度
+     * 更新阅读记录 + 重算书籍进度
      * 更新记录后用新的 toPage 重算 currentPage / currentChapter
      */
     suspend fun updateRecordAndRecalculateBook(record: ReadingRecordEntity)
+
+    /**
+     * 更新图书状态，同时写入状态变更记录
+     * 状态记录类型：ADDED（添加）、READING（开始阅读）、FINISHED（读完）、DROPPED（抛弃）
+     */
+    suspend fun updateBookStatus(bookId: Long, newStatus: BookStatus, recordType: RecordType)
+
+    /**
+     * 添加图书，同时写入状态变更记录（STATUS_ADDED）
+     * 用于记录"添加图书"事件到阅读记录中
+     */
+    suspend fun insertBookWithStatus(book: BookEntity)
 }
