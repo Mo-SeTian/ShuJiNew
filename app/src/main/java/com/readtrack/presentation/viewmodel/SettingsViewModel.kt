@@ -4,6 +4,7 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.readtrack.data.local.PreferencesManager
+import com.readtrack.data.local.StatsUnit
 import com.readtrack.data.local.ThemeMode
 import com.readtrack.domain.model.ImportResult
 import com.readtrack.domain.repository.DataBackupRepository
@@ -14,6 +15,7 @@ import javax.inject.Inject
 
 data class SettingsUiState(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
+    val statsUnit: StatsUnit = StatsUnit.CHAPTER,
     val isExporting: Boolean = false,
     val isImporting: Boolean = false,
     val exportSuccess: Boolean = false,
@@ -47,13 +49,15 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             combine(
                 preferencesManager.themeMode,
+                preferencesManager.statsUnit,
                 preferencesManager.doubanCookie
-            ) { themeMode, cookie ->
-                themeMode to cookie
-            }.collect { (themeMode, cookie) ->
+            ) { themeMode, statsUnit, cookie ->
+                Triple(themeMode, statsUnit, cookie)
+            }.collect { (themeMode, statsUnit, cookie) ->
                     _uiState.update { state ->
                         state.copy(
                             themeMode = themeMode,
+                            statsUnit = statsUnit,
                             doubanCookie = cookie
                         )
                     }
@@ -65,6 +69,13 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             preferencesManager.setThemeMode(themeMode)
             _uiState.update { it.copy(themeMode = themeMode) }
+        }
+    }
+
+    fun setStatsUnit(unit: StatsUnit) {
+        viewModelScope.launch {
+            preferencesManager.setStatsUnit(unit)
+            _uiState.update { it.copy(statsUnit = unit) }
         }
     }
 

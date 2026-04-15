@@ -20,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.readtrack.data.local.StatsUnit
 import com.readtrack.data.local.ThemeMode
 import com.readtrack.presentation.viewmodel.SettingsViewModel
 import java.text.SimpleDateFormat
@@ -32,6 +33,7 @@ fun SettingsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showThemeDialog by remember { mutableStateOf(false) }
+    var showStatsUnitDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
     
     var pendingImportUri by remember { mutableStateOf<Uri?>(null) }
@@ -201,6 +203,12 @@ fun SettingsScreen(
                     ThemeMode.DARK -> "深色模式"
                 }) { showThemeDialog = true }
             }
+            item {
+                SettingsClickableCard(Icons.Outlined.Analytics, "统计单位", when (uiState.statsUnit) {
+                    StatsUnit.CHAPTER -> "章节数"
+                    StatsUnit.PAGE -> "页数"
+                }) { showStatsUnitDialog = true }
+            }
 
             item { Spacer(Modifier.height(8.dp)); SettingsSectionCard("关于") }
             item { SettingsClickableCard(Icons.Outlined.Info, "应用信息", "版本 1.0.0") { } }
@@ -213,7 +221,7 @@ fun SettingsScreen(
             title = { Text("选择主题模式") },
             text = {
                 Column {
-                    ThemeMode.values().forEach { mode ->
+                    ThemeMode.entries.forEach { mode ->
                         Row(Modifier.fillMaxWidth().clickable { viewModel.setThemeMode(mode); showThemeDialog = false }.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                             RadioButton(selected = uiState.themeMode == mode, onClick = { viewModel.setThemeMode(mode); showThemeDialog = false })
                             Spacer(Modifier.width(12.dp))
@@ -223,6 +231,25 @@ fun SettingsScreen(
                 }
             },
             confirmButton = { TextButton(onClick = { showThemeDialog = false }) { Text("取消") } }
+        )
+    }
+
+    if (showStatsUnitDialog) {
+        AlertDialog(
+            onDismissRequest = { showStatsUnitDialog = false },
+            title = { Text("选择统计单位") },
+            text = {
+                Column {
+                    StatsUnit.entries.forEach { unit ->
+                        Row(Modifier.fillMaxWidth().clickable { viewModel.setStatsUnit(unit); showStatsUnitDialog = false }.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(selected = uiState.statsUnit == unit, onClick = { viewModel.setStatsUnit(unit); showStatsUnitDialog = false })
+                            Spacer(Modifier.width(12.dp))
+                            Text(when (unit) { StatsUnit.CHAPTER -> "章节数"; StatsUnit.PAGE -> "页数" })
+                        }
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { showStatsUnitDialog = false }) { Text("取消") } }
         )
     }
 }

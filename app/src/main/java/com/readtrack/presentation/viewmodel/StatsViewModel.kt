@@ -2,6 +2,8 @@ package com.readtrack.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.readtrack.data.local.PreferencesManager
+import com.readtrack.data.local.StatsUnit
 import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.data.local.entity.ReadingRecordEntity
 import com.readtrack.domain.model.BookStatus
@@ -25,15 +27,12 @@ import javax.inject.Inject
 data class StatsUiState(
     val totalBooks: Int = 0,
     val booksByStatus: Map<BookStatus, Int> = emptyMap(),
-    val totalPagesRead: Double = 0.0,
-    val totalChaptersRead: Double = 0.0,
-    val todayPages: Double = 0.0,
-    val todayChapters: Double = 0.0,
-    val weekPages: Double = 0.0,
-    val weekChapters: Double = 0.0,
-    val monthPages: Double = 0.0,
-    val monthChapters: Double = 0.0,
-    val averagePagesPerDay: Double = 0.0,
+    val statsUnit: StatsUnit = StatsUnit.CHAPTER,
+    // 按偏好过滤后的显示值
+    val todayValue: Double = 0.0,
+    val weekValue: Double = 0.0,
+    val monthValue: Double = 0.0,
+    val totalValue: Double = 0.0,
     val weeklyReadingData: List<DailyReading> = emptyList(),
     val recentRecords: List<ReadingRecordEntity> = emptyList(),
     val recentRecordsWithBooks: List<RecordWithBook> = emptyList(),
@@ -43,6 +42,7 @@ data class StatsUiState(
 data class DailyReading(
     val date: Long,
     val pages: Double,
+    val chapters: Double,
     val dayOfWeek: String
 )
 
@@ -54,7 +54,8 @@ data class RecordWithBook(
 @HiltViewModel
 class StatsViewModel @Inject constructor(
     private val bookRepository: BookRepository,
-    private val recordRepository: ReadingRecordRepository
+    private val recordRepository: ReadingRecordRepository,
+    private val preferencesManager: PreferencesManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(StatsUiState())
@@ -68,26 +69,21 @@ class StatsViewModel @Inject constructor(
         viewModelScope.launch {
             combine(
                 bookRepository.getAllBooks().catch { emit(emptyList()) },
-                recordRepository.getAllRecords().catch { emit(emptyList()) }
-            ) { books, records ->
-                PerformanceTrace.measure("stats.build") {
-                    buildStatsUiState(books, records)
-                }
+                recordRepository.getAllRecords().catch { emit(emptyList()) },
+                preferencesManager.statsUnit
+            ) { books, records, statsUnit ->
+                Triple(books, records, statsUnit)
+            }.collect { (books, records, statsUnit) ->
+                val state = buildStatsUiState(books, records, statsUnit)
+                _uiState.value = state
             }
-                .distinctUntilChanged()
-                .flowOn(Dispatchers.Default)
-                .collect { state ->
-                    _uiState.value = state
-                    PerformanceTrace.mark(
-                        "stats.ready books=${state.totalBooks} records=${state.recentRecordsWithBooks.size}"
-                    )
-                }
         }
     }
 
     private fun buildStatsUiState(
         books: List<BookEntity>,
-        records: List<ReadingRecordEntity>
+        records: List<ReadingRecordEntity>,
+        statsUnit: StatsUnit
     ): StatsUiState {
         val now = System.currentTimeMillis()
         val boundaries = createTimeBoundaries(now)
@@ -102,7 +98,6 @@ class StatsViewModel @Inject constructor(
         var monthChapters = 0.0
         var totalPages = 0.0
         var totalChapters = 0.0
-        var totalReadingTime = 0.0
 
         // 按天分组的 records（用于 weekly 桶）
         val recordsByDay = records.groupBy { record ->
@@ -112,7 +107,6 @@ class StatsViewModel @Inject constructor(
         }
 
         records.forEach { record ->
-            totalReadingTime += record.pagesRead
             val isChapterBook = booksMap[record.bookId]?.progressType == ProgressType.CHAPTER
             val value = record.pagesRead
 
@@ -129,48 +123,43 @@ class StatsViewModel @Inject constructor(
             }
         }
 
-        // weekly 桶累加（一次性分组查找）
+        // weekly 桶累加
         recordsByDay.forEach { (dayStart, dayRecords) ->
             if (dayStart != null) {
                 weeklyBuckets[dayStart] = dayRecords.sumOf { it.pagesRead }
             }
         }
 
+        // 按偏好计算今天的 value（章节桶也需要按书籍类型分别累加）
+        val recordsByDayChapter = recordsByDay.mapValues { (_, recs) ->
+            recs.filter { booksMap[it.bookId]?.progressType == ProgressType.CHAPTER }.sumOf { it.pagesRead }
+        }
+        val recordsByDayPage = recordsByDay.mapValues { (_, recs) ->
+            recs.filter { booksMap[it.bookId]?.progressType != ProgressType.CHAPTER }.sumOf { it.pagesRead }
+        }
+
         // 单次遍历获取 booksByStatus
         val booksByStatus = books.groupBy { it.status }.mapValues { it.value.size }
 
-        // recentRecords 取最近10条（不需要全排序）
-        val recentRecords = records
-            .sortedByDescending { it.date }
-            .take(10)
+        // recentRecords 取最近10条
+        val recentRecords = records.sortedByDescending { it.date }.take(10)
         val recordsWithBooks = recentRecords.map { record ->
             RecordWithBook(record = record, book = booksMap[record.bookId])
-        }
-
-        val averagePagesPerDay = if (totalReadingTime > 0 && records.isNotEmpty()) {
-            val oldestRecord = records.minOf { it.date }
-            val daysSinceOldest = ((now - oldestRecord) / ONE_DAY_MILLIS).toInt().coerceAtLeast(1)
-            totalReadingTime / daysSinceOldest
-        } else {
-            0.0
         }
 
         return StatsUiState(
             totalBooks = books.size,
             booksByStatus = booksByStatus,
-            totalPagesRead = totalPages,
-            totalChaptersRead = totalChapters,
-            todayPages = todayPages,
-            todayChapters = todayChapters,
-            weekPages = weekPages,
-            weekChapters = weekChapters,
-            monthPages = monthPages,
-            monthChapters = monthChapters,
-            averagePagesPerDay = averagePagesPerDay,
-            weeklyReadingData = weeklyBuckets.map { (date, pages) ->
+            statsUnit = statsUnit,
+            todayValue = if (statsUnit == StatsUnit.CHAPTER) todayChapters else todayPages,
+            weekValue = if (statsUnit == StatsUnit.CHAPTER) weekChapters else weekPages,
+            monthValue = if (statsUnit == StatsUnit.CHAPTER) monthChapters else monthPages,
+            totalValue = if (statsUnit == StatsUnit.CHAPTER) totalChapters else totalPages,
+            weeklyReadingData = weeklyBuckets.map { (date, _) ->
                 DailyReading(
                     date = date,
-                    pages = pages,
+                    pages = recordsByDayPage[date] ?: 0.0,
+                    chapters = recordsByDayChapter[date] ?: 0.0,
                     dayOfWeek = dayLabel(date)
                 )
             },

@@ -1,5 +1,7 @@
 package com.readtrack.presentation.viewmodel
 
+import com.readtrack.data.local.PreferencesManager
+import com.readtrack.data.local.StatsUnit
 import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.data.local.entity.ReadingRecordEntity
 import com.readtrack.domain.model.BookStatus
@@ -8,6 +10,7 @@ import com.readtrack.util.getStartOfDay
 internal fun buildHomeUiState(
     books: List<BookEntity>,
     records: List<ReadingRecordEntity>,
+    statsUnit: StatsUnit = StatsUnit.CHAPTER,
     now: Long = System.currentTimeMillis()
 ): HomeUiState {
     val startOfToday = getStartOfDay(now)
@@ -47,6 +50,9 @@ internal fun buildHomeUiState(
         }
     }
 
+    // 按偏好计算今日显示值
+    val todayValue = if (statsUnit == StatsUnit.CHAPTER) todayChapters else todayPages
+
     // 最近在读：直接复用上面遍历时找出的最大 lastReadAt 书籍，最多取3本
     // 先按 lastReadAt 降序（从大到小），取前3本即最近翻阅的
     val recentBooks = books.asSequence()
@@ -56,11 +62,16 @@ internal fun buildHomeUiState(
         .toList()
 
     // 格式化阅读时长，避免 UI 层每次 recomposition 都重算
-    val totalReadingTimeLabel = formatReadingTime(totalReadingTime)
+    // 仅当使用页数模式时才有意义（章节模式下该字段不展示）
+    val totalReadingTimeLabel = if (statsUnit == StatsUnit.PAGE) {
+        formatReadingTime(totalReadingTime)
+    } else {
+        ""
+    }
 
     return HomeUiState(
-        todayPages = todayPages,
-        todayChapters = todayChapters,
+        statsUnit = statsUnit,
+        todayValue = todayValue,
         streakDays = calculateReadingStreak(records.map { it.date }, now),
         totalReadingTime = totalReadingTime,
         totalReadingTimeLabel = totalReadingTimeLabel,

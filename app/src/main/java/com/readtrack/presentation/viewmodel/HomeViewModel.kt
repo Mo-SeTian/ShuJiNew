@@ -2,6 +2,8 @@ package com.readtrack.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.readtrack.data.local.PreferencesManager
+import com.readtrack.data.local.StatsUnit
 import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.domain.model.BookStatus
 import com.readtrack.domain.repository.BookRepository
@@ -21,8 +23,8 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class HomeUiState(
-    val todayPages: Double = 0.0,
-    val todayChapters: Double = 0.0,
+    val statsUnit: StatsUnit = StatsUnit.CHAPTER,
+    val todayValue: Double = 0.0,
     val streakDays: Int = 0,
     val totalReadingTime: Double = 0.0,
     // 预计算好的格式化字符串，避免 UI 层每次 recomposition 都重算
@@ -39,7 +41,8 @@ data class HomeUiState(
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val bookRepository: BookRepository,
-    private val recordRepository: ReadingRecordRepository
+    private val recordRepository: ReadingRecordRepository,
+    private val preferencesManager: PreferencesManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -53,26 +56,17 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             combine(
                 bookRepository.getAllBooks().catch { emit(emptyList()) },
-                recordRepository.getAllRecords().catch { emit(emptyList()) }
-            ) { books, records ->
-                PerformanceTrace.measure("home.build") {
-                    buildHomeUiState(books, records)
-                }
+                recordRepository.getAllRecords().catch { emit(emptyList()) },
+                preferencesManager.statsUnit
+            ) { books, records, statsUnit ->
+                Triple(books, records, statsUnit)
+            }.collect { (books, records, statsUnit) ->
+                val state = buildHomeUiState(books, records, statsUnit)
+                _uiState.value = state
+                PerformanceTrace.mark(
+                    "home.ready total=${state.totalBooks} recent=${state.recentBooks.size} streak=${state.streakDays}"
+                )
             }
-                .distinctUntilChanged()
-                .flowOn(Dispatchers.Default)
-                .catch { e ->
-                    _uiState.value = HomeUiState(
-                        isLoading = false,
-                        errorMessage = e.message
-                    )
-                }
-                .collect { state ->
-                    _uiState.value = state
-                    PerformanceTrace.mark(
-                        "home.ready total=${state.totalBooks} recent=${state.recentBooks.size} streak=${state.streakDays}"
-                    )
-                }
         }
     }
 }
