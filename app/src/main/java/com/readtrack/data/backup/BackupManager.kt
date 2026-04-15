@@ -59,7 +59,11 @@ class BackupManager @Inject constructor(
         data.records.forEach { record ->
             val recordJson = JSONObject().apply {
                 put("id", record.id)
-                put("bookId", record.bookId)
+                if (record.bookId != null) {
+                    put("bookId", record.bookId)
+                } else {
+                    put("bookId", JSONObject.NULL)
+                }
                 put("pagesRead", record.pagesRead)
                 put("fromPage", record.fromPage)
                 put("toPage", record.toPage)

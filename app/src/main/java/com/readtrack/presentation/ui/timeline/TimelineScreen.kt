@@ -202,25 +202,26 @@ private fun TimelineRecordItem(
 ) {
     val record = item.record
     val book = item.book
-    val isChapterBased = book.progressType == ProgressType.CHAPTER
+    val isBookMissing = book == null
+    val isChapterBased = book?.progressType == ProgressType.CHAPTER
     val isStatusRecord = record.recordType != RecordType.NORMAL
 
     // 状态记录的颜色和标签
     val statusLabel: String = when (record.recordType) {
-        RecordType.STATUS_ADDED -> book.status.displayName
+        RecordType.STATUS_ADDED -> book?.status?.displayName ?: "添加"
         RecordType.STATUS_READING -> "在读"
         RecordType.STATUS_FINISHED -> "已读"
         RecordType.STATUS_DROPPED -> "放弃"
         else -> ""
     }
     val statusColor: Color = when (record.recordType) {
-        RecordType.STATUS_ADDED -> when (book.status) {
+        RecordType.STATUS_ADDED -> when (book?.status) {
             BookStatus.WANT_TO_READ -> Color(0xFF4CAF50)
             BookStatus.READING -> Color(0xFFFF9800)
             BookStatus.FINISHED -> Color(0xFF2196F3)
             BookStatus.ON_HOLD -> Color(0xFF9E9E9E)
             BookStatus.ABANDONED -> Color(0xFFF44336)
-            else -> Color(0xFF2196F3)
+            else -> Color(0xFF9E9E9E)
         }
         RecordType.STATUS_READING -> Color(0xFFFF9800)
         RecordType.STATUS_FINISHED -> Color(0xFF2196F3)
@@ -239,7 +240,10 @@ private fun TimelineRecordItem(
         modifier = Modifier
             .fillMaxWidth()
             .padding(start = 0.dp, end = 0.dp)
-            .clickable { onBookClick(book.id) },
+            .then(
+                if (!isBookMissing) Modifier.clickable { onBookClick(book!!.id) }
+                else Modifier
+            ),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
@@ -274,33 +278,52 @@ private fun TimelineRecordItem(
                     .align(Alignment.Top)
             )
 
-            // 书籍封面缩略
-            BookCover(
-                coverPath = book.coverPath,
-                contentDescription = book.title,
-                modifier = Modifier
-                    .width(44.dp)
-                    .height(66.dp)
-                    .clip(RoundedCornerShape(6.dp)),
-                requestSize = androidx.compose.ui.unit.DpSize(88.dp, 132.dp),
-                quality = BookCoverQuality.THUMBNAIL
-            )
+            // 书籍封面缩略（图书已删除时显示占位）
+            if (isBookMissing) {
+                Box(
+                    modifier = Modifier
+                        .width(44.dp)
+                        .height(66.dp)
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            } else {
+                BookCover(
+                    coverPath = book!!.coverPath,
+                    contentDescription = book!!.title,
+                    modifier = Modifier
+                        .width(44.dp)
+                        .height(66.dp)
+                        .clip(RoundedCornerShape(6.dp)),
+                    requestSize = androidx.compose.ui.unit.DpSize(88.dp, 132.dp),
+                    quality = BookCoverQuality.THUMBNAIL
+                )
+            }
 
             // 信息
             Column(
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = book.title,
+                    text = if (!isBookMissing) book?.title ?: "" else "[已删除图书]",
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    color = if (isBookMissing) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f) else MaterialTheme.colorScheme.onSurface
                 )
 
-                if (!book.author.isNullOrBlank()) {
+                if (!isBookMissing && !book?.author.isNullOrBlank()) {
                     Text(
-                        text = book.author,
+                        text = book?.author ?: "",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,

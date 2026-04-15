@@ -23,7 +23,7 @@ import javax.inject.Inject
 
 data class TimelineItem(
     val record: ReadingRecordEntity,
-    val book: BookEntity,
+    val book: BookEntity?,  // 可空：图书删除后保留记录
     val dateLabel: String,   // 如 "今天"、"昨天"、"3月15日"
     val timeLabel: String    // 如 "14:30"
 )
@@ -64,11 +64,11 @@ class TimelineViewModel @Inject constructor(
                 val today = clearTime(calendar.timeInMillis)
                 val yesterday = today - 24 * 3600 * 1000
 
+                // 保留所有记录（包括 bookId 为 null 的，即已删除图书的记录）
                 records
-                    .filter { bookMap.containsKey(it.bookId) }
                     .sortedByDescending { it.date }
                     .map { record ->
-                        val book = bookMap[record.bookId]!!
+                        val book = record.bookId?.let { bookMap[it] }
                         calendar.timeInMillis = record.date
                         val recordDate = clearTime(record.date)
                         val dateLabel = when (recordDate) {

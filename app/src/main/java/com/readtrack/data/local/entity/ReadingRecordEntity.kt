@@ -28,7 +28,7 @@ enum class RecordType {
             entity = BookEntity::class,
             parentColumns = ["id"],
             childColumns = ["bookId"],
-            onDelete = ForeignKey.CASCADE
+            onDelete = ForeignKey.SET_NULL
         )
     ],
     indices = [
@@ -40,7 +40,7 @@ enum class RecordType {
 data class ReadingRecordEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
-    val bookId: Long,
+    val bookId: Long?,   // 可空：图书删除后保留记录但断开关联
     val pagesRead: Double,
     val fromPage: Double,
     val toPage: Double,
