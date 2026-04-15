@@ -186,8 +186,8 @@ class StatsViewModel @Inject constructor(
         calendar.set(Calendar.DAY_OF_MONTH, 1)
         val startOfMonth = calendar.timeInMillis
 
-        // 近7天趋势：从今天-6天开始，向后遍历7天
-        // 不用 firstDayOfWeek，保证今天的数据一定落在今天的桶里
+        // 近7天趋势桶：从今天-6天开始向后遍历7天
+        // 严格以今天为终点，保证今天的数据落在今天的桶里
         calendar.timeInMillis = startOfToday
         calendar.add(Calendar.DAY_OF_MONTH, -6)
         val weeklyBuckets = linkedMapOf<Long, Double>()
@@ -205,9 +205,17 @@ class StatsViewModel @Inject constructor(
     }
 
     private fun dayLabel(timeMillis: Long): String {
-        val dayNames = listOf("周日", "周一", "周二", "周三", "周四", "周五", "周六")
         val calendar = Calendar.getInstance().apply { timeInMillis = timeMillis }
-        return dayNames[calendar.get(Calendar.DAY_OF_WEEK) - 1]
+        return when (calendar.get(Calendar.DAY_OF_WEEK)) {
+            Calendar.MONDAY -> "周一"
+            Calendar.TUESDAY -> "周二"
+            Calendar.WEDNESDAY -> "周三"
+            Calendar.THURSDAY -> "周四"
+            Calendar.FRIDAY -> "周五"
+            Calendar.SATURDAY -> "周六"
+            Calendar.SUNDAY -> "周日"
+            else -> ""
+        }
     }
 
     private data class TimeBoundaries(
