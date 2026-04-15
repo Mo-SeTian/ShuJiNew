@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.readtrack.presentation.ui.components.BookCover
 import com.readtrack.presentation.ui.components.BookCoverQuality
@@ -54,7 +55,7 @@ fun AddBookScreen(
     onPickCover: () -> Unit = {},
     viewModel: AddBookViewModel = hiltViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
     val photoPickerLauncher = rememberLauncherForActivityResult(

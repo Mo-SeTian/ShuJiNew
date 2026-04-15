@@ -102,8 +102,17 @@ class StatsViewModel @Inject constructor(
         var monthChapters = 0.0
         var totalPages = 0.0
         var totalChapters = 0.0
+        var totalReadingTime = 0.0
+
+        // 按天分组的 records（用于 weekly 桶）
+        val recordsByDay = records.groupBy { record ->
+            weeklyBuckets.keys.firstOrNull { dayStart ->
+                record.date in dayStart until (dayStart + ONE_DAY_MILLIS)
+            }
+        }
 
         records.forEach { record ->
+            totalReadingTime += record.pagesRead
             val isChapterBook = booksMap[record.bookId]?.progressType == ProgressType.CHAPTER
             val value = record.pagesRead
 
@@ -118,27 +127,30 @@ class StatsViewModel @Inject constructor(
                 if (record.date >= boundaries.startOfWeek) weekPages += value
                 if (record.date >= boundaries.startOfToday) todayPages += value
             }
+        }
 
-            weeklyBuckets.keys.firstOrNull { dayStart ->
-                record.date in dayStart until (dayStart + ONE_DAY_MILLIS)
-            }?.let { dayStart ->
-                weeklyBuckets[dayStart] = weeklyBuckets.getValue(dayStart) + value
+        // weekly 桶累加（一次性分组查找）
+        recordsByDay.forEach { (dayStart, dayRecords) ->
+            if (dayStart != null) {
+                weeklyBuckets[dayStart] = dayRecords.sumOf { it.pagesRead }
             }
         }
 
-        val booksByStatus = BookStatus.entries.associateWith { status ->
-            books.count { it.status == status }
-        }
+        // 单次遍历获取 booksByStatus
+        val booksByStatus = books.groupBy { it.status }.mapValues { it.value.size }
 
-        val recentRecords = records.sortedByDescending { it.date }.take(10)
+        // recentRecords 取最近10条（不需要全排序）
+        val recentRecords = records
+            .sortedByDescending { it.date }
+            .take(10)
         val recordsWithBooks = recentRecords.map { record ->
             RecordWithBook(record = record, book = booksMap[record.bookId])
         }
 
-        val averagePagesPerDay = if (records.isNotEmpty()) {
+        val averagePagesPerDay = if (totalReadingTime > 0 && records.isNotEmpty()) {
             val oldestRecord = records.minOf { it.date }
             val daysSinceOldest = ((now - oldestRecord) / ONE_DAY_MILLIS).toInt().coerceAtLeast(1)
-            records.sumOf { it.pagesRead } / daysSinceOldest
+            totalReadingTime / daysSinceOldest
         } else {
             0.0
         }
