@@ -2,8 +2,8 @@ package com.readtrack.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.data.local.entity.ReadingRecordEntity
+import com.readtrack.domain.model.BookSnapshot
 import com.readtrack.domain.repository.BookRepository
 import com.readtrack.domain.repository.ReadingRecordRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,9 +21,13 @@ import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
 
+/**
+ * 阅读时间线中的单个记录项。
+ * book 使用写入时冻结的 BookSnapshot，删除图书后仍可完整显示。
+ */
 data class TimelineItem(
     val record: ReadingRecordEntity,
-    val book: BookEntity?,  // 可空：图书删除后保留记录
+    val bookSnapshot: BookSnapshot?,  // 快照：删除图书后仍可显示书名封面
     val dateLabel: String,   // 如 "今天"、"昨天"、"3月15日"
     val timeLabel: String    // 如 "14:30"
 )
@@ -56,19 +60,31 @@ class TimelineViewModel @Inject constructor(
     private fun loadTimeline() {
         viewModelScope.launch {
             combine(
+                // 关联 live books 用于补充 bookSnapshot 为 null 的旧数据
                 bookRepository.getAllBooks().catch { emit(emptyList()) },
                 recordRepository.getAllRecords().catch { emit(emptyList()) }
             ) { books, records ->
-                val bookMap = books.associateBy { it.id }
+                val liveBookMap = books.associateBy { it.id }
                 val calendar = Calendar.getInstance()
                 val today = clearTime(calendar.timeInMillis)
                 val yesterday = today - 24 * 3600 * 1000
 
-                // 保留所有记录（包括 bookId 为 null 的，即已删除图书的记录）
                 records
                     .sortedByDescending { it.date }
                     .map { record ->
-                        val book = record.bookId?.let { bookMap[it] }
+                        // 优先用写入时冻结的快照；旧数据（snapshot=null）用 live book 补全
+                        val snapshot: BookSnapshot? = record.bookSnapshot
+                            ?: record.bookId?.let { liveBookMap[it] }?.let { book ->
+                                BookSnapshot(
+                                    id = book.id,
+                                    title = book.title,
+                                    author = book.author,
+                                    coverPath = book.coverPath,
+                                    progressType = book.progressType,
+                                    status = book.status
+                                )
+                            }
+
                         calendar.timeInMillis = record.date
                         val recordDate = clearTime(record.date)
                         val dateLabel = when (recordDate) {
@@ -79,7 +95,7 @@ class TimelineViewModel @Inject constructor(
                         val timeLabel = SimpleDateFormat("HH:mm", Locale.CHINESE).format(Date(record.date))
                         TimelineItem(
                             record = record,
-                            book = book,
+                            bookSnapshot = snapshot,
                             dateLabel = dateLabel,
                             timeLabel = timeLabel
                         )

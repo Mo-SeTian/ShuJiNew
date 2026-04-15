@@ -4,6 +4,7 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.readtrack.domain.model.BookSnapshot
 
 /**
  * 阅读记录类型
@@ -41,6 +42,8 @@ data class ReadingRecordEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val bookId: Long?,   // 可空：图书删除后保留记录但断开关联
+    /** 写入记录时对图书信息的快照，删除图书后仍可通过此字段显示书名、封面等 */
+    val bookSnapshot: BookSnapshot? = null,
     val pagesRead: Double,
     val fromPage: Double,
     val toPage: Double,
