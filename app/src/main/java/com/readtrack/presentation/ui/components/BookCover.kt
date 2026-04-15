@@ -64,6 +64,22 @@ fun BookCover(
         }
     }
 
+    // 缓存 emoji 封面解析结果，避免每次 recompose 都重新解析
+    val emojiData = remember(coverPath) {
+        if (!coverPath.isNullOrBlank() && coverPath.startsWith("emoji://")) {
+            val emojiContent = coverPath.removePrefix("emoji://")
+            val parts = emojiContent.split("|")
+            val isSingleChar = parts.size == 1 && emojiContent.length <= 2
+            EmojiCoverData(
+                isSingleChar = isSingleChar,
+                char = if (isSingleChar) emojiContent.first().toString() else null,
+                colorHex = parts.getOrElse(0) { "CCCCCC" },
+                emoji = parts.getOrElse(1) { "📖" },
+                title = parts.getOrElse(2) { "" }
+            )
+        } else null
+    }
+
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(12.dp))
@@ -80,59 +96,46 @@ fun BookCover(
                     )
                 }
             }
-            coverPath.startsWith("emoji://") -> {
+            emojiData != null -> {
                 // Emoji封面
-                val emojiContent = coverPath.removePrefix("emoji://")
-                val parts = emojiContent.split("|")
-                
-                when {
-                    // 单字符模式：emoji://字 -> 显示单个字符作为封面
-                    parts.size == 1 && emojiContent.length <= 2 -> {
-                        val char = emojiContent.first().toString()
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(Color(android.graphics.Color.parseColor("#4A90D9"))),
-                            contentAlignment = Alignment.Center
+                if (emojiData.isSingleChar) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color(android.graphics.Color.parseColor("#4A90D9"))),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = emojiData.char ?: "",
+                            fontSize = 42.sp,
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color(android.graphics.Color.parseColor("#${emojiData.colorHex}"))),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
                         ) {
                             Text(
-                                text = char,
-                                fontSize = 42.sp,
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold
+                                text = emojiData.emoji,
+                                fontSize = 36.sp
                             )
-                        }
-                    }
-                    // 完整格式：emoji://color|emoji|title
-                    else -> {
-                        val colorHex = parts.getOrElse(0) { "CCCCCC" }
-                        val emoji = parts.getOrElse(1) { "📖" }
-                        val title = parts.getOrElse(2) { "" }
-                        
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(Color(android.graphics.Color.parseColor("#$colorHex"))),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                            ) {
+                            if (emojiData.title.isNotEmpty()) {
+                                Spacer(modifier = Modifier.height(4.dp))
                                 Text(
-                                    text = emoji,
-                                    fontSize = 36.sp
+                                    text = emojiData.title,
+                                    fontSize = 12.sp,
+                                    color = getContrastColor(emojiData.colorHex),
+                                    fontWeight = FontWeight.Medium,
+                                    textAlign = TextAlign.Center
                                 )
-                                if (title.isNotEmpty()) {
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(
-                                        text = title,
-                                        fontSize = 12.sp,
-                                        color = getContrastColor(colorHex),
-                                        fontWeight = FontWeight.Medium,
-                                        textAlign = TextAlign.Center
-                                    )
-                                }
                             }
                         }
                     }
@@ -168,6 +171,14 @@ fun BookCover(
         }
     }
 }
+
+private data class EmojiCoverData(
+    val isSingleChar: Boolean,
+    val char: String?,
+    val colorHex: String,
+    val emoji: String,
+    val title: String
+)
 
 fun buildBookImageRequest(
     context: android.content.Context,

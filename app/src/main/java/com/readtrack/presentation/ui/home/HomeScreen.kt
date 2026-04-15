@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -256,6 +257,13 @@ private fun StatCardModern(
     gradientColors: List<Color>,
     modifier: Modifier = Modifier
 ) {
+    val title_remembered = remember(title) { title }
+    val value_remembered = remember(value) { value }
+    val subtitle_remembered = remember(subtitle) { subtitle }
+    val gradientBrush = remember(gradientColors) {
+        Brush.horizontalGradient(colors = gradientColors.map { it.copy(alpha = 0.15f) })
+    }
+
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(16.dp),
@@ -267,11 +275,7 @@ private fun StatCardModern(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(
-                    brush = Brush.horizontalGradient(
-                        colors = gradientColors.map { it.copy(alpha = 0.15f) }
-                    )
-                )
+                .background(brush = gradientBrush)
                 .padding(16.dp)
         ) {
             Row(
@@ -297,7 +301,7 @@ private fun StatCardModern(
                 verticalAlignment = Alignment.Bottom
             ) {
                 Text(
-                    text = value,
+                    text = value_remembered,
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
                     color = gradientColors[0],
@@ -305,7 +309,7 @@ private fun StatCardModern(
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    text = subtitle,
+                    text = subtitle_remembered,
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
                     color = gradientColors[0].copy(alpha = 0.7f),
@@ -314,7 +318,7 @@ private fun StatCardModern(
             }
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = title,
+                text = title_remembered,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
