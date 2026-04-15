@@ -14,7 +14,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 import java.util.Calendar
@@ -72,6 +74,7 @@ class StatsViewModel @Inject constructor(
                     buildStatsUiState(books, records)
                 }
             }
+                .distinctUntilChanged()
                 .flowOn(Dispatchers.Default)
                 .collect { state ->
                     _uiState.value = state
@@ -127,7 +130,7 @@ class StatsViewModel @Inject constructor(
             books.count { it.status == status }
         }
 
-        val recentRecords = records.take(10)
+        val recentRecords = records.sortedByDescending { it.date }.take(10)
         val recordsWithBooks = recentRecords.map { record ->
             RecordWithBook(record = record, book = booksMap[record.bookId])
         }
@@ -183,7 +186,7 @@ class StatsViewModel @Inject constructor(
         val startOfMonth = calendar.timeInMillis
 
         calendar.timeInMillis = startOfToday
-        calendar.add(Calendar.DAY_OF_MONTH, -7)
+        calendar.add(Calendar.DAY_OF_MONTH, -6)
         val weeklyBuckets = linkedMapOf<Long, Double>()
         repeat(7) {
             weeklyBuckets[calendar.timeInMillis] = 0.0

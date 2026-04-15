@@ -6,14 +6,18 @@ import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.domain.model.BookStatus
 import com.readtrack.domain.repository.BookRepository
 import com.readtrack.domain.repository.ReadingRecordRepository
+import com.readtrack.util.PerformanceTrace
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
-import java.util.Calendar
 import javax.inject.Inject
 
 data class HomeUiState(
@@ -49,106 +53,24 @@ class HomeViewModel @Inject constructor(
                 bookRepository.getAllBooks().catch { emit(emptyList()) },
                 recordRepository.getAllRecords().catch { emit(emptyList()) }
             ) { books, records ->
-                val chapterBookIds = books.asSequence()
-                    .filter { it.progressType == ProgressType.CHAPTER }
-                    .map { it.id }
-                    .toHashSet()
-
-                val startOfToday = startOfTodayMillis()
-                var todayPages = 0.0
-                var todayChapters = 0.0
-                var totalReadingTime = 0.0
-
-                records.forEach { record ->
-                    totalReadingTime += record.pagesRead
-                    if (record.date >= startOfToday) {
-                        if (record.bookId in chapterBookIds) {
-                            todayChapters += record.pagesRead
-                        } else {
-                            todayPages += record.pagesRead
-                        }
-                    }
+                PerformanceTrace.measure("home.build") {
+                    buildHomeUiState(books, records)
                 }
-
-                val statusCounts = BookStatus.entries.associateWith { status ->
-                    books.count { it.status == status }
+            }
+                .distinctUntilChanged()
+                .flowOn(Dispatchers.Default)
+                .catch { e ->
+                    _uiState.value = HomeUiState(
+                        isLoading = false,
+                        errorMessage = e.message
+                    )
                 }
-
-                HomeUiState(
-                    todayPages = todayPages,
-                    todayChapters = todayChapters,
-                    streakDays = calculateStreak(records.map { it.date }),
-                    totalReadingTime = totalReadingTime,
-                    totalBooks = books.size,
-                    readingBooks = books.count { it.status == BookStatus.READING },
-                    finishedBooks = books.count { it.status == BookStatus.FINISHED },
-                    recentBooks = books.filter { it.status == BookStatus.READING },
-                    statusCounts = statusCounts,
-                    isLoading = false
-                )
-            }.collect { state ->
-                _uiState.value = state
-            }
+                .collect { state ->
+                    _uiState.value = state
+                    PerformanceTrace.mark(
+                        "home.ready total=${state.totalBooks} recent=${state.recentBooks.size} streak=${state.streakDays}"
+                    )
+                }
         }
-    }
-
-    private fun startOfTodayMillis(): Long {
-        return Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }.timeInMillis
-    }
-
-    private fun calculateStreak(dates: List<Long>): Int {
-        if (dates.isEmpty()) return 0
-
-        val calendar = Calendar.getInstance()
-        calendar.set(Calendar.HOUR_OF_DAY, 0)
-        calendar.set(Calendar.MINUTE, 0)
-        calendar.set(Calendar.SECOND, 0)
-        calendar.set(Calendar.MILLISECOND, 0)
-
-        val sortedDates = dates.map { date ->
-            calendar.timeInMillis = date
-            calendar.set(Calendar.HOUR_OF_DAY, 0)
-            calendar.set(Calendar.MINUTE, 0)
-            calendar.set(Calendar.SECOND, 0)
-            calendar.set(Calendar.MILLISECOND, 0)
-            calendar.timeInMillis
-        }.distinct().sortedDescending()
-
-        if (sortedDates.isEmpty()) return 0
-
-        calendar.timeInMillis = System.currentTimeMillis()
-        calendar.set(Calendar.HOUR_OF_DAY, 0)
-        calendar.set(Calendar.MINUTE, 0)
-        calendar.set(Calendar.SECOND, 0)
-        calendar.set(Calendar.MILLISECOND, 0)
-        val today = calendar.timeInMillis
-
-        calendar.add(Calendar.DAY_OF_MONTH, -1)
-        val yesterday = calendar.timeInMillis
-
-        if (sortedDates[0] != today && sortedDates[0] != yesterday) return 0
-
-        var streak = 1
-        var currentDate = sortedDates[0]
-
-        for (i in 1 until sortedDates.size) {
-            calendar.timeInMillis = currentDate
-            calendar.add(Calendar.DAY_OF_MONTH, -1)
-            val expectedPrevDate = calendar.timeInMillis
-
-            if (sortedDates[i] == expectedPrevDate) {
-                streak++
-                currentDate = expectedPrevDate
-            } else {
-                break
-            }
-        }
-
-        return streak
     }
 }
