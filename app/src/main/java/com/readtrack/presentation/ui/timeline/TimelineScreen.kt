@@ -2,20 +2,54 @@ package com.readtrack.presentation.ui.timeline
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material3.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -32,14 +66,13 @@ import com.readtrack.presentation.ui.components.BookCoverQuality
 import com.readtrack.presentation.viewmodel.ProgressType
 import com.readtrack.presentation.viewmodel.TimelineDayGroup
 import com.readtrack.presentation.viewmodel.TimelineItem
+import com.readtrack.presentation.viewmodel.TimelineTimeRange
 import com.readtrack.presentation.viewmodel.TimelineUiState
 import com.readtrack.presentation.viewmodel.TimelineViewModel
+import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
-import java.text.SimpleDateFormat
-import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.rememberLazyListState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -48,21 +81,35 @@ fun TimelineScreen(
     viewModel: TimelineViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var showCustomPicker by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        "阅读历史",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
+            Column {
+                TopAppBar(
+                    title = {
+                        Text(
+                            "阅读历史",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface
                     )
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
                 )
-            )
+                // 时间范围筛选 Chips
+                TimeRangeFilterBar(
+                    selectedRange = uiState.selectedRange,
+                    onRangeSelected = { range ->
+                        if (range is TimelineTimeRange.Custom) {
+                            showCustomPicker = true
+                        } else {
+                            viewModel.selectRange(range)
+                        }
+                    }
+                )
+            }
         }
     ) { padding ->
         when {
@@ -97,6 +144,161 @@ fun TimelineScreen(
             }
         }
     }
+
+    // 自定义日期范围选择弹窗
+    if (showCustomPicker) {
+        CustomDateRangePickerDialog(
+            onDismiss = { showCustomPicker = false },
+            onConfirm = { startMs, endMs ->
+                viewModel.selectRange(TimelineTimeRange.Custom(startMs, endMs))
+                showCustomPicker = false
+            }
+        )
+    }
+}
+
+@Composable
+private fun TimeRangeFilterBar(
+    selectedRange: TimelineTimeRange,
+    onRangeSelected: (TimelineTimeRange) -> Unit
+) {
+    val fixedRanges = listOf(
+        TimelineTimeRange.Week,
+        TimelineTimeRange.Month,
+        TimelineTimeRange.ThreeMonths,
+        TimelineTimeRange.HalfYear,
+        TimelineTimeRange.All
+    )
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        fixedRanges.forEach { range ->
+            FilterChip(
+                selected = selectedRange == range,
+                onClick = { onRangeSelected(range) },
+                label = { Text(range.label) },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            )
+        }
+        // 自定义按钮
+        FilterChip(
+            selected = selectedRange is TimelineTimeRange.Custom,
+            onClick = { onRangeSelected(TimelineTimeRange.Custom(0, 0)) },
+            label = { Text("自定义") },
+            leadingIcon = {
+                Icon(
+                    imageVector = Icons.Default.DateRange,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp)
+                )
+            },
+            colors = FilterChipDefaults.filterChipColors(
+                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CustomDateRangePickerDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (startMs: Long, endMs: Long) -> Unit
+) {
+    var selectingStart by remember { mutableStateOf(true) }
+    var startDateMs by remember { mutableStateOf<Long?>(null) }
+    var endDateMs by remember { mutableStateOf<Long?>(null) }
+
+    val datePickerState = rememberDatePickerState()
+    val dateFormatter = remember { SimpleDateFormat("yyyy年MM月dd日", Locale.CHINESE) }
+
+    val titleText = if (selectingStart) "选择开始日期" else "选择结束日期"
+    val confirmText = if (selectingStart) "下一步" else "确定"
+    val dismissText = if (selectingStart) "取消" else "上一步"
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(titleText) },
+        text = {
+            Column {
+                // 当前已选日期显示
+                if (startDateMs != null || endDateMs != null) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        startDateMs?.let {
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = MaterialTheme.colorScheme.primaryContainer
+                            ) {
+                                Text(
+                                    "开始: ${dateFormatter.format(Date(it))}",
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                        }
+                        endDateMs?.let {
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = MaterialTheme.colorScheme.secondaryContainer
+                            ) {
+                                Text(
+                                    "结束: ${dateFormatter.format(Date(it))}",
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+                // 日期选择器
+                DatePicker(
+                    state = datePickerState,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    if (selectingStart) {
+                        datePickerState.selectedDateMillis?.let { startDateMs = it }
+                        selectingStart = false
+                    } else {
+                        datePickerState.selectedDateMillis?.let { endDateMs = it }
+                        if (startDateMs != null && endDateMs != null) {
+                            val start = minOf(startDateMs!!, endDateMs!!)
+                            val end = maxOf(startDateMs!!, endDateMs!!)
+                            onConfirm(start, end)
+                        } else if (startDateMs != null) {
+                            onConfirm(startDateMs!!, System.currentTimeMillis())
+                        }
+                    }
+                },
+                enabled = datePickerState.selectedDateMillis != null
+            ) {
+                Text(confirmText)
+            }
+        },
+        dismissButton = {
+            Row {
+                if (selectingStart) {
+                    TextButton(onClick = onDismiss) { Text(dismissText) }
+                } else {
+                    TextButton(onClick = { selectingStart = true }) { Text(dismissText) }
+                }
+            }
+        }
+    )
 }
 
 @Composable
