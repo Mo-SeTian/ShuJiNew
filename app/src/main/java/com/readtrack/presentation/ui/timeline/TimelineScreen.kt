@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -271,10 +272,8 @@ private fun TimelineRecordItem(
                 Spacer(modifier = Modifier.height(6.dp))
 
                 // 阅读量标签
-                val pagesText = if (isChapterBased) {
-                    "${record.pagesRead.toInt()} 章"
-                } else {
-                    "${record.pagesRead.toInt()} 页"
+                val pagesText = remember(record.pagesRead, isChapterBased) {
+                    if (isChapterBased) "${record.pagesRead.toInt()} 章" else "${record.pagesRead.toInt()} 页"
                 }
 
                 Surface(

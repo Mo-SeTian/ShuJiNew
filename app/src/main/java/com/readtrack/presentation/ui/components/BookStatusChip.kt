@@ -46,22 +46,32 @@ fun getStatusColor(status: BookStatus): Color {
     return statusColorOf(status)
 }
 
+// 静态颜色缓存，避免每次 getStatusColor 调用都执行 when 表达式
+private val statusColorCache = mutableMapOf<BookStatus, Color>()
+
 fun statusColorOf(status: BookStatus): Color {
-    return when (status) {
-        BookStatus.WANT_TO_READ -> WantToReadGreen
-        BookStatus.READING -> ReadingOrange
-        BookStatus.FINISHED -> FinishedBlue
-        BookStatus.ON_HOLD -> OnHoldGray
-        BookStatus.ABANDONED -> AbandonedRed
+    return statusColorCache.getOrPut(status) {
+        when (status) {
+            BookStatus.WANT_TO_READ -> WantToReadGreen
+            BookStatus.READING -> ReadingOrange
+            BookStatus.FINISHED -> FinishedBlue
+            BookStatus.ON_HOLD -> OnHoldGray
+            BookStatus.ABANDONED -> AbandonedRed
+        }
     }
 }
 
+// 静态标签缓存
+private val statusLabelCache = mutableMapOf<BookStatus, String>()
+
 fun statusLabelOf(status: BookStatus): String {
-    return when (status) {
-        BookStatus.WANT_TO_READ -> "想读"
-        BookStatus.READING -> "在读"
-        BookStatus.FINISHED -> "已读"
-        BookStatus.ON_HOLD -> "闲置"
-        BookStatus.ABANDONED -> "放弃"
+    return statusLabelCache.getOrPut(status) {
+        when (status) {
+            BookStatus.WANT_TO_READ -> "想读"
+            BookStatus.READING -> "在读"
+            BookStatus.FINISHED -> "已读"
+            BookStatus.ON_HOLD -> "闲置"
+            BookStatus.ABANDONED -> "放弃"
+        }
     }
 }
