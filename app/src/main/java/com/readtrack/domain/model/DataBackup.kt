@@ -83,7 +83,7 @@ data class BookExport(
 @Serializable
 data class ReadingRecordExport(
     val id: Long,
-    val bookId: Long,          // 导出时用外部ID引用
+    val bookId: Long?,        // 可空：图书删除后为 null
     val bookTitle: String,     // 用于匹配导入后的书籍
     val pagesRead: Double,
     val fromPage: Double,

@@ -61,7 +61,11 @@ public final class ReadingRecordDao_Impl implements ReadingRecordDao {
       protected void bind(@NonNull final SupportSQLiteStatement statement,
           @NonNull final ReadingRecordEntity entity) {
         statement.bindLong(1, entity.getId());
-        statement.bindLong(2, entity.getBookId());
+        if (entity.getBookId() == null) {
+          statement.bindNull(2);
+        } else {
+          statement.bindLong(2, entity.getBookId());
+        }
         statement.bindDouble(3, entity.getPagesRead());
         statement.bindDouble(4, entity.getFromPage());
         statement.bindDouble(5, entity.getToPage());
@@ -218,8 +222,12 @@ public final class ReadingRecordDao_Impl implements ReadingRecordDao {
             final ReadingRecordEntity _item;
             final long _tmpId;
             _tmpId = _cursor.getLong(_cursorIndexOfId);
-            final long _tmpBookId;
-            _tmpBookId = _cursor.getLong(_cursorIndexOfBookId);
+            final Long _tmpBookId;
+            if (_cursor.isNull(_cursorIndexOfBookId)) {
+              _tmpBookId = null;
+            } else {
+              _tmpBookId = _cursor.getLong(_cursorIndexOfBookId);
+            }
             final double _tmpPagesRead;
             _tmpPagesRead = _cursor.getDouble(_cursorIndexOfPagesRead);
             final double _tmpFromPage;
@@ -277,8 +285,12 @@ public final class ReadingRecordDao_Impl implements ReadingRecordDao {
             final ReadingRecordEntity _item;
             final long _tmpId;
             _tmpId = _cursor.getLong(_cursorIndexOfId);
-            final long _tmpBookId;
-            _tmpBookId = _cursor.getLong(_cursorIndexOfBookId);
+            final Long _tmpBookId;
+            if (_cursor.isNull(_cursorIndexOfBookId)) {
+              _tmpBookId = null;
+            } else {
+              _tmpBookId = _cursor.getLong(_cursorIndexOfBookId);
+            }
             final double _tmpPagesRead;
             _tmpPagesRead = _cursor.getDouble(_cursorIndexOfPagesRead);
             final double _tmpFromPage;
@@ -341,8 +353,12 @@ public final class ReadingRecordDao_Impl implements ReadingRecordDao {
             final ReadingRecordEntity _item;
             final long _tmpId;
             _tmpId = _cursor.getLong(_cursorIndexOfId);
-            final long _tmpBookId;
-            _tmpBookId = _cursor.getLong(_cursorIndexOfBookId);
+            final Long _tmpBookId;
+            if (_cursor.isNull(_cursorIndexOfBookId)) {
+              _tmpBookId = null;
+            } else {
+              _tmpBookId = _cursor.getLong(_cursorIndexOfBookId);
+            }
             final double _tmpPagesRead;
             _tmpPagesRead = _cursor.getDouble(_cursorIndexOfPagesRead);
             final double _tmpFromPage;
@@ -480,8 +496,12 @@ public final class ReadingRecordDao_Impl implements ReadingRecordDao {
             final ReadingRecordEntity _item;
             final long _tmpId;
             _tmpId = _cursor.getLong(_cursorIndexOfId);
-            final long _tmpBookId;
-            _tmpBookId = _cursor.getLong(_cursorIndexOfBookId);
+            final Long _tmpBookId;
+            if (_cursor.isNull(_cursorIndexOfBookId)) {
+              _tmpBookId = null;
+            } else {
+              _tmpBookId = _cursor.getLong(_cursorIndexOfBookId);
+            }
             final double _tmpPagesRead;
             _tmpPagesRead = _cursor.getDouble(_cursorIndexOfPagesRead);
             final double _tmpFromPage;

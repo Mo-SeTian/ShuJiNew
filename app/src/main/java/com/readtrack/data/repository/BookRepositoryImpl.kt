@@ -49,14 +49,14 @@ class BookRepositoryImpl @Inject constructor(
     override suspend fun deleteRecordAndRecalculateBook(record: ReadingRecordEntity) {
         database.withTransaction {
             readingRecordDao.deleteRecord(record)
-            recalculateBookProgress(record.bookId)
+            record.bookId?.let { recalculateBookProgress(it) }
         }
     }
 
     override suspend fun updateRecordAndRecalculateBook(record: ReadingRecordEntity) {
         database.withTransaction {
             readingRecordDao.insertRecord(record) // insert with REPLACE (id already set)
-            recalculateBookProgress(record.bookId)
+            record.bookId?.let { recalculateBookProgress(it) }
         }
     }
 
