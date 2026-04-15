@@ -34,6 +34,7 @@ import com.readtrack.presentation.ui.components.statusColorOf
 import com.readtrack.presentation.ui.components.statusLabelOf
 import com.readtrack.presentation.ui.theme.*
 import com.readtrack.presentation.viewmodel.DailyReading
+import com.readtrack.presentation.viewmodel.ProgressType
 import com.readtrack.presentation.viewmodel.StatsViewModel
 import com.readtrack.presentation.viewmodel.RecordWithBook
 import java.text.SimpleDateFormat
@@ -437,18 +438,17 @@ fun EmptyRecordsCard() {
 @Composable
 fun ReadingRecordItem(recordWithBook: RecordWithBook) {
     val record = recordWithBook.record
-    val book = recordWithBook.book
-    val isChapterBased = book?.totalChapters != null && book.totalChapters > 0
+    val snapshot = recordWithBook.bookSnapshot
+    val isChapterBased = snapshot?.progressType == ProgressType.CHAPTER
     val dateFormatter = remember { SimpleDateFormat("MM月dd日 E", Locale.getDefault()) }
     val dateText = remember(record.date) { dateFormatter.format(Date(record.date)) }
     val isStatusRecord = record.recordType != RecordType.NORMAL
 
-    // 状态记录：根据 recordType 和图书当前状态显示彩色标签
-    // STATUS_ADDED 显示图书当前状态；状态变更显示对应状态（想读/在读/已读/闲置/放弃）
-    val bookStatusLabel: String? = book?.status?.displayName
+    // 状态记录：根据 recordType 和快照中的状态显示彩色标签
+    val bookStatusLabel: String? = snapshot?.status?.displayName
     val (statusColor, statusIcon) = when (record.recordType) {
         RecordType.STATUS_ADDED -> {
-            val color: Color = when (book?.status) {
+            val color: Color = when (snapshot?.status) {
                 BookStatus.WANT_TO_READ -> Color(0xFF4CAF50)
                 BookStatus.READING -> Color(0xFFFF9800)
                 BookStatus.FINISHED -> Color(0xFF2196F3)
@@ -463,7 +463,6 @@ fun ReadingRecordItem(recordWithBook: RecordWithBook) {
         RecordType.STATUS_DROPPED -> Color(0xFFF44336) to Icons.Default.Delete
         else -> MaterialTheme.colorScheme.primary to Icons.Default.Add
     }
-    // 标签：STATUS_ADDED 用图书状态名，其他用 recordType 对应的状态名
     val statusLabel: String = when (record.recordType) {
         RecordType.STATUS_ADDED -> bookStatusLabel ?: "添加"
         RecordType.STATUS_READING -> "在读"
@@ -474,7 +473,6 @@ fun ReadingRecordItem(recordWithBook: RecordWithBook) {
 
     val noteText = remember(record.note, record.pagesRead, isChapterBased, isStatusRecord) {
         if (isStatusRecord) {
-            // 状态变更记录：备注字段才显示内容（徽章已显示状态）
             record.note?.takeIf { it.isNotBlank() } ?: ""
         } else {
             record.note?.takeIf { it.isNotBlank() } ?: "阅读了 ${record.pagesRead.toInt()} ${if (isChapterBased) "章" else "页"}"
@@ -494,16 +492,15 @@ fun ReadingRecordItem(recordWithBook: RecordWithBook) {
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 // Book title
-                if (book != null) {
-                    Text(
-                        text = book.title,
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Spacer(modifier = Modifier.height(2.dp))
-                }
+                Text(
+                    text = snapshot?.title ?: "[已删除图书]",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    color = if (snapshot == null) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f) else MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.height(2.dp))
                 // Date
                 Text(
                     text = dateText,

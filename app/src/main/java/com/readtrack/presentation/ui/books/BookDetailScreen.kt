@@ -9,11 +9,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Book
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.Book
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -32,6 +34,7 @@ import com.readtrack.presentation.ui.components.BookCover
 import com.readtrack.presentation.ui.components.BookCoverQuality
 import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.data.local.entity.ReadingRecordEntity
+import com.readtrack.data.local.entity.RecordType
 import com.readtrack.domain.model.BookStatus
 import com.readtrack.presentation.ui.components.statusColorOf
 import com.readtrack.presentation.ui.components.statusLabelOf
@@ -608,6 +611,22 @@ private fun ReadingRecordRow(
     onDelete: () -> Unit
 ) {
     val dateFormat = remember { SimpleDateFormat("MM-dd HH:mm", Locale.getDefault()) }
+    val isStatusRecord = record.recordType != RecordType.NORMAL
+
+    val (statusColor, statusIcon) = when (record.recordType) {
+        RecordType.STATUS_ADDED -> Color(0xFF4CAF50) to Icons.Default.Add
+        RecordType.STATUS_READING -> Color(0xFFFF9800) to Icons.Default.PlayArrow
+        RecordType.STATUS_FINISHED -> Color(0xFF2196F3) to Icons.Default.CheckCircle
+        RecordType.STATUS_DROPPED -> Color(0xFFF44336) to Icons.Default.Delete
+        else -> MaterialTheme.colorScheme.primary to Icons.Default.Add
+    }
+    val statusLabel: String = when (record.recordType) {
+        RecordType.STATUS_ADDED -> "添加"
+        RecordType.STATUS_READING -> "在读"
+        RecordType.STATUS_FINISHED -> "已读"
+        RecordType.STATUS_DROPPED -> "放弃"
+        else -> ""
+    }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -625,24 +644,63 @@ private fun ReadingRecordRow(
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium
                 )
-                Text(
-                    record.note?.takeIf { it.isNotBlank() } ?: "阅读了 ${record.pagesRead.toInt()} ${if (isChapterBased) "章" else "页"}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                if (isStatusRecord) {
+                    // 状态记录：显示备注
+                    val noteText = record.note?.takeIf { it.isNotBlank() } ?: ""
+                    if (noteText.isNotBlank()) {
+                        Text(
+                            noteText,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                } else {
+                    Text(
+                        record.note?.takeIf { it.isNotBlank() } ?: "阅读了 ${record.pagesRead.toInt()} ${if (isChapterBased) "章" else "页"}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.primaryContainer
-                ) {
-                    Text(
-                        "+${record.pagesRead.toInt()} ${if (isChapterBased) "章" else "页"}",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-                    )
+                if (isStatusRecord) {
+                    // 状态记录：彩色徽章
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = statusColor.copy(alpha = 0.15f)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                imageVector = statusIcon,
+                                contentDescription = null,
+                                tint = statusColor,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Text(
+                                text = statusLabel,
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = statusColor
+                            )
+                        }
+                    }
+                } else {
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer
+                    ) {
+                        Text(
+                            "+${record.pagesRead.toInt()} ${if (isChapterBased) "章" else "页"}",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                        )
+                    }
                 }
                 IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) {
                     Icon(
