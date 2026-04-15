@@ -14,7 +14,7 @@
     <color name="black">#FF000000</color>
     <color name="call_notification_answer_color">#1d873b</color>
     <color name="call_notification_decline_color">#d93025</color>
-    <color name="ic_launcher_background">#C7522A</color>
+    <color name="ic_launcher_background">#1A5F7A</color>
     <color name="md_theme_light_background">#FAFAFA</color>
     <color name="md_theme_light_onBackground">#1C1B1F</color>
     <color name="md_theme_light_onPrimary">#FFFFFF</color>
