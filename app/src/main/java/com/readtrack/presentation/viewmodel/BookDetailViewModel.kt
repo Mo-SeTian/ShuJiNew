@@ -13,17 +13,29 @@ import com.readtrack.domain.repository.ReadingRecordRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.*
 import javax.inject.Inject
+import kotlin.math.max
 
 data class BookDetailUiState(
     val book: BookEntity? = null,
     val readingRecords: List<ReadingRecordEntity> = emptyList(),
     val isLoading: Boolean = true,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    /** 阅读趋势数据：按日期累计阅读量（排除状态变更记录） */
+    val trendData: List<TrendPoint> = emptyList()
 ) {
     val recentRecords: List<ReadingRecordEntity>
         get() = readingRecords.sortedByDescending { it.date }.take(10)
 }
+
+/** 趋势图数据点 */
+data class TrendPoint(
+    val dateLabel: String,    // 显示用如 "6/12"
+    val dateMs: Long,        // 排序用
+    val cumulative: Double    // 累计阅读量
+)
 
 @HiltViewModel
 class BookDetailViewModel @Inject constructor(
@@ -51,10 +63,12 @@ class BookDetailViewModel @Inject constructor(
                     bookRepository.getBookById(bookId).catch { emit(null) },
                     recordRepository.getRecordsByBookId(bookId).catch { emit(emptyList()) }
                 ) { book, records ->
+                    val trendData = computeTrendData(records)
                     BookDetailUiState(
                         book = book,
                         readingRecords = records,
-                        isLoading = false
+                        isLoading = false,
+                        trendData = trendData
                     )
                 }.collect { state ->
                     _uiState.value = state
@@ -63,6 +77,57 @@ class BookDetailViewModel @Inject constructor(
                 _uiState.value = BookDetailUiState(isLoading = false, errorMessage = e.message)
             }
         }
+    }
+
+    /**
+     * 计算阅读趋势数据：
+     * - 按天聚合阅读记录（排除状态变更记录）
+     * - 返回每日累计阅读量，用于折线图绘制
+     */
+    private fun computeTrendData(records: List<ReadingRecordEntity>): List<TrendPoint> {
+        val normalRecords = records.filter { it.recordType == RecordType.NORMAL }
+        if (normalRecords.isEmpty()) return emptyList()
+
+        val calendar = Calendar.getInstance()
+        val dateFormatter = SimpleDateFormat("M/d", Locale.CHINESE)
+        val dayKeyFormatter = SimpleDateFormat("yyyy-MM-dd", Locale.CHINESE)
+
+        // 按天聚合每日阅读量
+        val dailyPages = normalRecords
+            .groupBy { record ->
+                calendar.timeInMillis = record.date
+                calendar.set(Calendar.HOUR_OF_DAY, 0)
+                calendar.set(Calendar.MINUTE, 0)
+                calendar.set(Calendar.SECOND, 0)
+                calendar.set(Calendar.MILLISECOND, 0)
+                dayKeyFormatter.format(Date(calendar.timeInMillis)) to calendar.timeInMillis
+            }
+            .map { (dayKey, dayRecords) ->
+                val (dateKey, dateMs) = dayKey
+                val total = dayRecords.sumOf { it.pagesRead }
+                dateKey to (dateMs to total)
+            }
+            .toMap()
+
+        // 构建日期范围（从第一次阅读到最后一次阅读）
+        val sortedDays = dailyPages.keys.sorted()
+        if (sortedDays.isEmpty()) return emptyList()
+
+        // 转为累计曲线点
+        val result = mutableListOf<TrendPoint>()
+        var cumulative = 0.0
+        for (dayKey in sortedDays) {
+            val (dateMs, dailyTotal) = dailyPages[dayKey]!!
+            cumulative += dailyTotal
+            result.add(
+                TrendPoint(
+                    dateLabel = dateFormatter.format(Date(dateMs)),
+                    dateMs = dateMs,
+                    cumulative = cumulative
+                )
+            )
+        }
+        return result
     }
 
     fun updateStatus(status: BookStatus) {
