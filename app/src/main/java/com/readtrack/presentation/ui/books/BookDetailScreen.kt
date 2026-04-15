@@ -33,8 +33,8 @@ import com.readtrack.presentation.ui.components.BookCoverQuality
 import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.data.local.entity.ReadingRecordEntity
 import com.readtrack.domain.model.BookStatus
-import com.readtrack.presentation.ui.components.getStatusColor
-import com.readtrack.presentation.ui.components.getStatusLabel
+import com.readtrack.presentation.ui.components.statusColorOf
+import com.readtrack.presentation.ui.components.statusLabelOf
 import com.readtrack.presentation.viewmodel.BookDetailViewModel
 import com.readtrack.presentation.viewmodel.ProgressType
 import java.text.SimpleDateFormat
@@ -398,7 +398,7 @@ fun BookDetailScreen(
 
 @Composable
 private fun BookInfoCard(book: BookEntity) {
-    val statusColor = getStatusColor(book.status)
+    val statusColor = statusColorOf(book.status)
     val primaryColor = MaterialTheme.colorScheme.primary
     
     Card(
@@ -462,7 +462,7 @@ private fun BookInfoCard(book: BookEntity) {
                     color = statusColor.copy(alpha = 0.15f)
                 ) {
                     Text(
-                        getStatusLabel(book.status),
+                        statusLabelOf(book.status),
                         style = MaterialTheme.typography.labelMedium,
                         color = statusColor,
                         fontWeight = FontWeight.Bold,
@@ -477,7 +477,7 @@ private fun BookInfoCard(book: BookEntity) {
 @Composable
 private fun ProgressInfoCard(book: BookEntity) {
     val isChapterBased = book.progressType == ProgressType.CHAPTER
-    val statusColor = getStatusColor(book.status)
+    val statusColor = statusColorOf(book.status)
     
     val total = if (isChapterBased) (book.totalChapters ?: 0).toDouble() else book.totalPages
     val current = if (isChapterBased) book.currentChapter.toDouble() else book.currentPage
@@ -545,7 +545,7 @@ private fun ProgressInfoCard(book: BookEntity) {
 @Composable
 private fun StatusCard(book: BookEntity, onStatusChange: (BookStatus) -> Unit) {
     val currentStatus = book.status
-    val statusColor = getStatusColor(currentStatus)
+    val statusColor = statusColorOf(currentStatus)
     
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -567,12 +567,12 @@ private fun StatusCard(book: BookEntity, onStatusChange: (BookStatus) -> Unit) {
             ) {
                 BookStatus.entries.forEach { status ->
                     val isSelected = status == currentStatus
-                    val color = getStatusColor(status)
+                    val color = statusColorOf(status)
                     
                     FilterChip(
                         selected = isSelected,
                         onClick = { onStatusChange(status) },
-                        label = { Text(getStatusLabel(status), fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal) },
+                        label = { Text(statusLabelOf(status), fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal) },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = color.copy(alpha = 0.2f),
                             selectedLabelColor = color

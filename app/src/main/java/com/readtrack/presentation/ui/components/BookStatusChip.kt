@@ -43,6 +43,10 @@ fun BookStatusChip(
 
 @Composable
 fun getStatusColor(status: BookStatus): Color {
+    return statusColorOf(status)
+}
+
+fun statusColorOf(status: BookStatus): Color {
     return when (status) {
         BookStatus.WANT_TO_READ -> WantToReadGreen
         BookStatus.READING -> ReadingOrange
@@ -52,7 +56,7 @@ fun getStatusColor(status: BookStatus): Color {
     }
 }
 
-fun getStatusLabel(status: BookStatus): String {
+fun statusLabelOf(status: BookStatus): String {
     return when (status) {
         BookStatus.WANT_TO_READ -> "想读"
         BookStatus.READING -> "在读"
