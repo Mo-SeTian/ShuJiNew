@@ -3,7 +3,6 @@ package com.readtrack.presentation.ui.home
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -24,7 +23,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.presentation.ui.components.BookCard
 import com.readtrack.presentation.viewmodel.HomeViewModel
 
@@ -59,36 +57,48 @@ fun HomeScreen(
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Stats Cards Row - Modern Card Design
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    StatCardModern(
-                        title = "今日阅读",
-                        value = "${uiState.todayChapters.toInt()}章",
-                        subtitle = "${uiState.todayPages.toInt()}页",
-                        icon = Icons.Default.MenuBook,
-                        gradientColors = listOf(
-                            MaterialTheme.colorScheme.primary,
-                            MaterialTheme.colorScheme.primaryContainer
-                        ),
-                        modifier = Modifier.weight(1f)
-                    )
-                    StatCardModern(
-                        title = "连续阅读",
-                        value = "${uiState.streakDays}",
-                        subtitle = "天",
-                        icon = Icons.Default.LocalFireDepartment,
-                        gradientColors = listOf(
-                            Color(0xFFFF7043),
-                            Color(0xFFFFAB91)
-                        ),
-                        modifier = Modifier.weight(1f)
-                    )
+            if (uiState.isLoading) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 48.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
                 }
-            }
+            } else {
+                // Stats Cards Row - Modern Card Design
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        StatCardModern(
+                            title = "今日阅读",
+                            value = "${uiState.todayChapters.toInt()}章",
+                            subtitle = "${uiState.todayPages.toInt()}页",
+                            icon = Icons.Default.MenuBook,
+                            gradientColors = listOf(
+                                MaterialTheme.colorScheme.primary,
+                                MaterialTheme.colorScheme.primaryContainer
+                            ),
+                            modifier = Modifier.weight(1f)
+                        )
+                        StatCardModern(
+                            title = "连续阅读",
+                            value = "${uiState.streakDays}",
+                            subtitle = "天",
+                            icon = Icons.Default.LocalFireDepartment,
+                            gradientColors = listOf(
+                                Color(0xFFFF7043),
+                                Color(0xFFFFAB91)
+                            ),
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
 
             // Reading Time Card
             item {
@@ -186,9 +196,9 @@ fun HomeScreen(
                         )
                     }
                 }
-                
+
                 items(
-                    items = uiState.recentBooks.take(3),
+                    items = uiState.recentBooks,
                     key = { it.id }
                 ) { book ->
                     BookCard(
@@ -196,10 +206,7 @@ fun HomeScreen(
                         onClick = { onBookClick(book.id) }
                     )
                 }
-            }
-
-            // Empty State
-            if (uiState.recentBooks.isEmpty()) {
+            } else if (uiState.totalBooks == 0) {
                 item {
                     Box(
                         modifier = Modifier
@@ -234,6 +241,7 @@ fun HomeScreen(
                         }
                     }
                 }
+            }
             }
         }
     }
