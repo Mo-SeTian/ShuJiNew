@@ -7,12 +7,15 @@ import com.readtrack.data.local.entity.ReadingRecordEntity
 import com.readtrack.domain.model.BookStatus
 import com.readtrack.domain.repository.BookRepository
 import com.readtrack.domain.repository.ReadingRecordRepository
+import com.readtrack.util.PerformanceTrace
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 import java.util.Calendar
 import javax.inject.Inject
@@ -65,10 +68,17 @@ class StatsViewModel @Inject constructor(
                 bookRepository.getAllBooks().catch { emit(emptyList()) },
                 recordRepository.getAllRecords().catch { emit(emptyList()) }
             ) { books, records ->
-                buildStatsUiState(books, records)
-            }.collect { state ->
-                _uiState.value = state
+                PerformanceTrace.measure("stats.build") {
+                    buildStatsUiState(books, records)
+                }
             }
+                .flowOn(Dispatchers.Default)
+                .collect { state ->
+                    _uiState.value = state
+                    PerformanceTrace.mark(
+                        "stats.ready books=${state.totalBooks} records=${state.recentRecordsWithBooks.size}"
+                    )
+                }
         }
     }
 

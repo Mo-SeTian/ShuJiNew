@@ -15,7 +15,11 @@ import androidx.room.PrimaryKey
             onDelete = ForeignKey.CASCADE
         )
     ],
-    indices = [Index("bookId")]
+    indices = [
+        Index(value = ["bookId"]),
+        Index(value = ["date"]),
+        Index(value = ["bookId", "date"])
+    ]
 )
 data class ReadingRecordEntity(
     @PrimaryKey(autoGenerate = true)

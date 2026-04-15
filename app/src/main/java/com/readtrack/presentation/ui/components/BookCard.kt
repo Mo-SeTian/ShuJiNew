@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import com.readtrack.data.local.entity.BookEntity
 
@@ -21,16 +22,7 @@ fun BookCard(
     modifier: Modifier = Modifier
 ) {
     val statusColor = getStatusColor(book.status)
-    val isChapterBased = remember(book.totalChapters) { book.totalChapters != null && book.totalChapters > 0 }
-    val progress = remember(book.currentPage, book.totalPages, book.currentChapter, book.totalChapters, isChapterBased) {
-        if (isChapterBased) {
-            (book.currentChapter.toFloat() / (book.totalChapters ?: 1) * 100).toInt()
-        } else if (book.totalPages > 0) {
-            (book.currentPage.toFloat() / book.totalPages * 100).toInt()
-        } else {
-            0
-        }
-    }
+    val progressModel = remember(book) { book.toBookProgressUiModel() }
 
     Card(
         modifier = modifier
@@ -54,7 +46,9 @@ fun BookCard(
                 contentDescription = book.title,
                 modifier = Modifier
                     .width(70.dp)
-                    .height(105.dp)
+                    .height(105.dp),
+                requestSize = DpSize(70.dp, 105.dp),
+                quality = BookCoverQuality.THUMBNAIL
             )
 
             Spacer(modifier = Modifier.width(14.dp))
@@ -114,7 +108,7 @@ fun BookCard(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            text = "$progress%",
+                            text = "${progressModel.progressPercent}%",
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Medium,
                             color = statusColor
@@ -122,7 +116,7 @@ fun BookCard(
                     }
                     Spacer(modifier = Modifier.height(4.dp))
                     LinearProgressIndicator(
-                        progress = { (progress / 100f).coerceIn(0f, 1f) },
+                        progress = { progressModel.progressFraction },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(6.dp)
@@ -132,7 +126,7 @@ fun BookCard(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = if (isChapterBased) "${book.currentChapter}/${book.totalChapters} 章" else "${book.currentPage}/${book.totalPages} 页",
+                        text = progressModel.progressLabel,
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

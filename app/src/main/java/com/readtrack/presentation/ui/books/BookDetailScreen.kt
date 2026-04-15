@@ -24,10 +24,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.readtrack.presentation.ui.components.BookCover
+import com.readtrack.presentation.ui.components.BookCoverQuality
 import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.data.local.entity.ReadingRecordEntity
 import com.readtrack.domain.model.BookStatus
@@ -292,7 +294,9 @@ private fun BookInfoCard(book: BookEntity) {
                 contentDescription = book.title,
                 modifier = Modifier
                     .width(100.dp)
-                    .height(150.dp)
+                    .height(150.dp),
+                requestSize = DpSize(200.dp, 300.dp),
+                quality = BookCoverQuality.PREVIEW
             )
             
             // 信息

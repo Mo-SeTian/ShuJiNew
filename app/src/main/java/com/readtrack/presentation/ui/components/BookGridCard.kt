@@ -10,6 +10,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import com.readtrack.data.local.entity.BookEntity
 
@@ -20,16 +21,7 @@ fun BookGridCard(
     modifier: Modifier = Modifier
 ) {
     val statusColor = getStatusColor(book.status)
-    val isChapterBased = remember(book.totalChapters) { book.totalChapters != null && book.totalChapters > 0 }
-    val progress = remember(book.currentPage, book.totalPages, book.currentChapter, book.totalChapters, isChapterBased) {
-        if (isChapterBased) {
-            (book.currentChapter.toFloat() / (book.totalChapters ?: 1) * 100).toInt()
-        } else if (book.totalPages > 0) {
-            (book.currentPage.toFloat() / book.totalPages * 100).toInt()
-        } else {
-            0
-        }
-    }
+    val progressModel = remember(book) { book.toBookProgressUiModel() }
 
     Card(
         modifier = modifier
@@ -50,7 +42,9 @@ fun BookGridCard(
                     contentDescription = book.title,
                     modifier = Modifier
                         .fillMaxSize()
-                        .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
+                        .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)),
+                    requestSize = DpSize(160.dp, 228.dp),
+                    quality = BookCoverQuality.THUMBNAIL
                 )
                 
                 // Status chip overlay
@@ -87,7 +81,7 @@ fun BookGridCard(
                 Spacer(modifier = Modifier.height(4.dp))
                 
                 LinearProgressIndicator(
-                    progress = { (progress / 100f).coerceIn(0f, 1f) },
+                    progress = { progressModel.progressFraction },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(4.dp)
@@ -97,7 +91,7 @@ fun BookGridCard(
                 )
                 
                 Text(
-                    text = if (isChapterBased) "${book.currentChapter.toInt()}/${book.totalChapters?.toInt()}章" else "${book.currentPage.toInt()}/${book.totalPages.toInt()}页",
+                    text = progressModel.progressLabel.replace(" ", ""),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

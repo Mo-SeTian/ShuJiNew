@@ -8,6 +8,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -30,11 +32,13 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.readtrack.presentation.ui.components.BookCover
+import com.readtrack.presentation.ui.components.BookCoverQuality
 import com.readtrack.presentation.ui.components.buildBookImageRequest
 import com.readtrack.domain.model.BookStatus
 import com.readtrack.presentation.ui.components.getStatusColor
@@ -239,7 +243,9 @@ fun AddBookScreen(
                             BookCover(
                                 coverPath = uiState.coverUri,
                                 contentDescription = "书籍封面",
-                                modifier = Modifier.fillMaxSize()
+                                modifier = Modifier.fillMaxSize(),
+                                requestSize = DpSize(240.dp, 320.dp),
+                                quality = BookCoverQuality.PREVIEW
                             )
                         } else {
                             Box(
@@ -631,12 +637,16 @@ private fun BookSearchBottomSheet(
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
                 
-                Column(
+                LazyColumn(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(max = 400.dp)
+                        .heightIn(max = 400.dp),
+                    verticalArrangement = Arrangement.spacedBy(0.dp)
                 ) {
-                    searchResults.forEach { book ->
+                    items(
+                        items = searchResults,
+                        key = { "${it.title}-${it.author}-${it.coverUrl}" }
+                    ) { book ->
                         BookSearchResultItem(
                             book = book,
                             onClick = { onSelectBook(book) }
@@ -670,7 +680,14 @@ private fun BookSearchResultItem(
 ) {
     val context = LocalContext.current
     val coverModel = remember(book.coverUrl) {
-        book.coverUrl?.let { buildBookImageRequest(context, it) }
+        book.coverUrl?.let {
+            buildBookImageRequest(
+                context = context,
+                imageUrl = it,
+                requestedSizePx = 120 to 160,
+                quality = BookCoverQuality.THUMBNAIL
+            )
+        }
     }
 
     Row(
