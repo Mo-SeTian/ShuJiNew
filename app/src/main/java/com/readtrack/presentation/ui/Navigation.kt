@@ -26,6 +26,7 @@ import com.readtrack.presentation.ui.books.BooksScreen
 import com.readtrack.presentation.ui.home.HomeScreen
 import com.readtrack.presentation.ui.settings.SettingsScreen
 import com.readtrack.presentation.ui.stats.StatsScreen
+import com.readtrack.presentation.ui.timeline.TimelineScreen
 import com.readtrack.presentation.viewmodel.AddBookViewModel
 
 sealed class Screen(
@@ -36,6 +37,7 @@ sealed class Screen(
 ) {
     data object Home : Screen("home", "首页", Icons.Filled.Home, Icons.Outlined.Home)
     data object Books : Screen("books", "我的书籍", Icons.Filled.MenuBook, Icons.Outlined.MenuBook)
+    data object Timeline : Screen("timeline", "时间线", Icons.Filled.DateRange, Icons.Outlined.DateRange)
     data object Stats : Screen("stats", "统计", Icons.Filled.BarChart, Icons.Outlined.BarChart)
     data object Settings : Screen("settings", "设置", Icons.Filled.Settings, Icons.Outlined.Settings)
     data object BookDetail : Screen("book/{bookId}", "书籍详情", Icons.Filled.Book, Icons.Outlined.Book) {
@@ -50,7 +52,7 @@ sealed class Screen(
 @Composable
 fun MainNavigation() {
     val navController = rememberNavController()
-    val bottomNavItems = listOf(Screen.Home, Screen.Books, Screen.Stats, Screen.Settings)
+    val bottomNavItems = listOf(Screen.Home, Screen.Books, Screen.Timeline, Screen.Stats, Screen.Settings)
 
     Scaffold(
         bottomBar = {
@@ -116,7 +118,15 @@ fun MainNavigation() {
                     }
                 )
             }
-            
+
+            composable(Screen.Timeline.route) {
+                TimelineScreen(
+                    onBookClick = { bookId ->
+                        navController.navigate(Screen.BookDetail.createRoute(bookId))
+                    }
+                )
+            }
+
             composable(Screen.Stats.route) {
                 StatsScreen()
             }
