@@ -41,7 +41,7 @@ fun BookStatusChip(
     )
 }
 
-@Composable
+// 注意：不是 @Composable，因为不需要组合上下文（避免在 remember {} 内调用报错）
 fun getStatusColor(status: BookStatus): Color {
     return statusColorOf(status)
 }
