@@ -474,6 +474,7 @@ fun ReadingRecordItem(recordWithBook: RecordWithBook) {
 
     val noteText = remember(record.note, record.pagesRead, isChapterBased, isStatusRecord) {
         if (isStatusRecord) {
+            // 状态变更记录：备注字段才显示内容（徽章已显示状态）
             record.note?.takeIf { it.isNotBlank() } ?: ""
         } else {
             record.note?.takeIf { it.isNotBlank() } ?: "阅读了 ${record.pagesRead.toInt()} ${if (isChapterBased) "章" else "页"}"

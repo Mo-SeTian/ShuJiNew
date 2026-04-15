@@ -1,6 +1,6 @@
 package com.readtrack.presentation.viewmodel
 
-import com.readtrack.data.local.PreferencesManager
+import com.readtrack.data.local.entity.RecordType
 import com.readtrack.data.local.StatsUnit
 import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.data.local.entity.ReadingRecordEntity
@@ -39,7 +39,9 @@ internal fun buildHomeUiState(
     }
     BookStatus.entries.forEach { status -> statusCounts.putIfAbsent(status, 0) }
 
-    records.forEach { record ->
+    // 跳过状态变更记录，只统计普通阅读记录
+    val normalRecords = records.filter { it.recordType == RecordType.NORMAL }
+    normalRecords.forEach { record ->
         totalReadingTime += record.pagesRead
         if (record.date >= startOfToday) {
             if (record.bookId in chapterBookIds) {
@@ -72,7 +74,7 @@ internal fun buildHomeUiState(
     return HomeUiState(
         statsUnit = statsUnit,
         todayValue = todayValue,
-        streakDays = calculateReadingStreak(records.map { it.date }, now),
+        streakDays = calculateReadingStreak(normalRecords.map { it.date }, now),
         totalReadingTime = totalReadingTime,
         totalReadingTimeLabel = totalReadingTimeLabel,
         totalBooks = books.size,
