@@ -50,7 +50,7 @@ class BooksViewModel @Inject constructor(
         viewModelScope.launch {
             combine(
                 bookRepository.getAllBooks().distinctUntilChanged(),
-                selectedStatusFlow.distinctUntilChanged(),
+                selectedStatusFlow,
                 searchQueryFlow
                     .debounce(250)
                     .distinctUntilChanged()

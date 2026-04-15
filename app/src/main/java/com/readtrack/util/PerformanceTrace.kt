@@ -4,7 +4,7 @@ import android.os.SystemClock
 import android.util.Log
 
 object PerformanceTrace {
-    private const val TAG = "ReadTrackPerf"
+    const val TAG = "ReadTrackPerf"
 
     inline fun <T> measure(label: String, block: () -> T): T {
         val start = SystemClock.elapsedRealtimeNanos()
