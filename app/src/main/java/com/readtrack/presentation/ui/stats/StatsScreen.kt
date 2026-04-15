@@ -248,8 +248,7 @@ fun WeeklyChartModern(weeklyData: List<DailyReading>) {
             Spacer(modifier = Modifier.height(16.dp))
             
             val maxPages = weeklyData.maxOfOrNull { it.pages }?.coerceAtLeast(1.0) ?: 1.0
-            val days = listOf("一", "二", "三", "四", "五", "六", "日")
-            
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -294,7 +293,7 @@ fun WeeklyChartModern(weeklyData: List<DailyReading>) {
                         
                         // Day label
                         Text(
-                            text = if (index < days.size) "周${days[index]}" else "",
+                            text = day.dayOfWeek,
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
