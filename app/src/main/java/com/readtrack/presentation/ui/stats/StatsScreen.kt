@@ -443,13 +443,33 @@ fun ReadingRecordItem(recordWithBook: RecordWithBook) {
     val dateText = remember(record.date) { dateFormatter.format(Date(record.date)) }
     val isStatusRecord = record.recordType != RecordType.NORMAL
 
-    // 状态记录的颜色和标签
-    val (statusColor, statusLabel, statusIcon) = when (record.recordType) {
-        RecordType.STATUS_ADDED -> Triple(MaterialTheme.colorScheme.primary, "添加", Icons.Default.Add)
-        RecordType.STATUS_READING -> Triple(Color(0xFFFF9800), "开始阅读", Icons.Default.PlayArrow)
-        RecordType.STATUS_FINISHED -> Triple(Color(0xFF4CAF50), "读完", Icons.Default.CheckCircle)
-        RecordType.STATUS_DROPPED -> Triple(Color(0xFFF44336), "抛弃", Icons.Default.Delete)
-        else -> Triple(MaterialTheme.colorScheme.primary, "", Icons.Default.Add)
+    // 状态记录：根据 recordType 和图书当前状态显示彩色标签
+    // STATUS_ADDED 显示图书当前状态；状态变更显示对应状态（想读/在读/已读/闲置/放弃）
+    val bookStatusLabel: String? = book?.status?.displayName
+    val (statusColor, statusIcon) = when (record.recordType) {
+        RecordType.STATUS_ADDED -> {
+            val color: Color = when (book?.status) {
+                BookStatus.WANT_TO_READ -> Color(0xFF4CAF50)
+                BookStatus.READING -> Color(0xFFFF9800)
+                BookStatus.FINISHED -> Color(0xFF2196F3)
+                BookStatus.ON_HOLD -> Color(0xFF9E9E9E)
+                BookStatus.ABANDONED -> Color(0xFFF44336)
+                else -> MaterialTheme.colorScheme.primary
+            }
+            color to Icons.Default.Add
+        }
+        RecordType.STATUS_READING -> Color(0xFFFF9800) to Icons.Default.PlayArrow
+        RecordType.STATUS_FINISHED -> Color(0xFF2196F3) to Icons.Default.CheckCircle
+        RecordType.STATUS_DROPPED -> Color(0xFFF44336) to Icons.Default.Delete
+        else -> MaterialTheme.colorScheme.primary to Icons.Default.Add
+    }
+    // 标签：STATUS_ADDED 用图书状态名，其他用 recordType 对应的状态名
+    val statusLabel: String = when (record.recordType) {
+        RecordType.STATUS_ADDED -> bookStatusLabel ?: "添加"
+        RecordType.STATUS_READING -> "在读"
+        RecordType.STATUS_FINISHED -> "已读"
+        RecordType.STATUS_DROPPED -> "放弃"
+        else -> ""
     }
 
     val noteText = remember(record.note, record.pagesRead, isChapterBased, isStatusRecord) {

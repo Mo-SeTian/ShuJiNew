@@ -90,7 +90,8 @@ fun HomeScreen(
                                 MaterialTheme.colorScheme.primary,
                                 MaterialTheme.colorScheme.primaryContainer
                             ),
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
+                            valueColor = MaterialTheme.colorScheme.primary
                         )
                         StatCardModern(
                             title = "连续阅读",
@@ -262,11 +263,13 @@ private fun StatCardModern(
     subtitle: String,
     icon: ImageVector,
     gradientColors: List<Color>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    valueColor: Color? = null
 ) {
     val gradientBrush = remember(gradientColors) {
         Brush.horizontalGradient(colors = gradientColors.map { it.copy(alpha = 0.15f) })
     }
+    val vc = valueColor ?: gradientColors[0]
 
     Card(
         modifier = modifier,
@@ -301,26 +304,20 @@ private fun StatCardModern(
                 }
             }
             Spacer(modifier = Modifier.height(12.dp))
-            Row(
-                verticalAlignment = Alignment.Bottom
-            ) {
-                Text(
-                    text = value,
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = gradientColors[0],
-                    modifier = Modifier.padding(bottom = 2.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = gradientColors[0].copy(alpha = 0.7f),
-                    modifier = Modifier.padding(bottom = 2.dp)
-                )
-            }
+            Text(
+                text = value,
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = vc,
+                modifier = Modifier.padding(bottom = 2.dp)
+            )
             Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = title,
                 style = MaterialTheme.typography.bodySmall,
