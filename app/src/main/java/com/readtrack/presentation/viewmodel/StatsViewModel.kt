@@ -178,13 +178,16 @@ class StatsViewModel @Inject constructor(
         }
         val startOfToday = calendar.timeInMillis
 
-        calendar.set(Calendar.DAY_OF_WEEK, calendar.firstDayOfWeek)
+        // 自然周起始（周一/周日，取决于 locale 的 firstDayOfWeek）
+        calendar.set(Calendar.DAY_OF_WEEK, calendar.getFirstDayOfWeek())
         val startOfWeek = calendar.timeInMillis
 
         calendar.timeInMillis = startOfToday
         calendar.set(Calendar.DAY_OF_MONTH, 1)
         val startOfMonth = calendar.timeInMillis
 
+        // 近7天趋势：从今天-6天开始，向后遍历7天
+        // 不用 firstDayOfWeek，保证今天的数据一定落在今天的桶里
         calendar.timeInMillis = startOfToday
         calendar.add(Calendar.DAY_OF_MONTH, -6)
         val weeklyBuckets = linkedMapOf<Long, Double>()
