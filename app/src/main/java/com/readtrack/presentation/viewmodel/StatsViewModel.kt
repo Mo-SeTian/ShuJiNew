@@ -7,6 +7,7 @@ import com.readtrack.data.local.StatsUnit
 import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.data.local.entity.ReadingRecordEntity
 import com.readtrack.data.local.entity.RecordType
+import com.readtrack.domain.model.BookSnapshot
 import com.readtrack.domain.model.BookStatus
 import com.readtrack.domain.repository.BookRepository
 import com.readtrack.domain.repository.ReadingRecordRepository
@@ -49,7 +50,7 @@ data class DailyReading(
 
 data class RecordWithBook(
     val record: ReadingRecordEntity,
-    val book: BookEntity?
+    val bookSnapshot: BookSnapshot?
 )
 
 @HiltViewModel
@@ -144,10 +145,21 @@ class StatsViewModel @Inject constructor(
         // 单次遍历获取 booksByStatus
         val booksByStatus = books.groupBy { it.status }.mapValues { it.value.size }
 
-        // recentRecords 取最近10条
+        // recentRecords 取最近10条，优先用快照，旧的 null 快照用 live book 补全
         val recentRecords = records.sortedByDescending { it.date }.take(10)
         val recordsWithBooks = recentRecords.map { record ->
-            RecordWithBook(record = record, book = booksMap[record.bookId])
+            val snapshot: BookSnapshot? = record.bookSnapshot
+                ?: record.bookId?.let { booksMap[it] }?.let { book ->
+                    BookSnapshot(
+                        id = book.id,
+                        title = book.title,
+                        author = book.author,
+                        coverPath = book.coverPath,
+                        progressType = book.progressType,
+                        status = book.status
+                    )
+                }
+            RecordWithBook(record = record, bookSnapshot = snapshot)
         }
 
         return StatsUiState(
