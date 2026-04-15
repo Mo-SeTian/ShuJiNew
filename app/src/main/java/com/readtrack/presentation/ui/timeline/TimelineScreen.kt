@@ -7,6 +7,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -14,11 +19,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.readtrack.data.local.entity.RecordType
+import com.readtrack.domain.model.BookStatus
 import com.readtrack.presentation.ui.components.BookCover
 import com.readtrack.presentation.ui.components.BookCoverQuality
 import com.readtrack.presentation.viewmodel.ProgressType
@@ -195,6 +203,37 @@ private fun TimelineRecordItem(
     val record = item.record
     val book = item.book
     val isChapterBased = book.progressType == ProgressType.CHAPTER
+    val isStatusRecord = record.recordType != RecordType.NORMAL
+
+    // 状态记录的颜色和标签
+    val statusLabel: String = when (record.recordType) {
+        RecordType.STATUS_ADDED -> book.status.displayName
+        RecordType.STATUS_READING -> "在读"
+        RecordType.STATUS_FINISHED -> "已读"
+        RecordType.STATUS_DROPPED -> "放弃"
+        else -> ""
+    }
+    val statusColor: Color = when (record.recordType) {
+        RecordType.STATUS_ADDED -> when (book.status) {
+            BookStatus.WANT_TO_READ -> Color(0xFF4CAF50)
+            BookStatus.READING -> Color(0xFFFF9800)
+            BookStatus.FINISHED -> Color(0xFF2196F3)
+            BookStatus.ON_HOLD -> Color(0xFF9E9E9E)
+            BookStatus.ABANDONED -> Color(0xFFF44336)
+            else -> Color(0xFF2196F3)
+        }
+        RecordType.STATUS_READING -> Color(0xFFFF9800)
+        RecordType.STATUS_FINISHED -> Color(0xFF2196F3)
+        RecordType.STATUS_DROPPED -> Color(0xFFF44336)
+        else -> Color(0xFF2196F3)
+    }
+    val statusIcon = when (record.recordType) {
+        RecordType.STATUS_ADDED -> Icons.Default.Add
+        RecordType.STATUS_READING -> Icons.Default.PlayArrow
+        RecordType.STATUS_FINISHED -> Icons.Default.CheckCircle
+        RecordType.STATUS_DROPPED -> Icons.Default.Delete
+        else -> Icons.Default.Add
+    }
 
     Card(
         modifier = Modifier
@@ -226,12 +265,12 @@ private fun TimelineRecordItem(
                 )
             }
 
-            // 时间线圆点
+            // 时间线圆点（状态记录用状态色）
             Box(
                 modifier = Modifier
                     .size(8.dp)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary)
+                    .background(if (isStatusRecord) statusColor else MaterialTheme.colorScheme.primary)
                     .align(Alignment.Top)
             )
 
@@ -271,33 +310,71 @@ private fun TimelineRecordItem(
 
                 Spacer(modifier = Modifier.height(6.dp))
 
-                // 阅读量标签
-                val pagesText = remember(record.pagesRead, isChapterBased) {
-                    if (isChapterBased) "${record.pagesRead.toInt()} 章" else "${record.pagesRead.toInt()} 页"
-                }
+                if (isStatusRecord) {
+                    // 状态记录：显示彩色标签
+                    Surface(
+                        shape = RoundedCornerShape(20.dp),
+                        color = statusColor.copy(alpha = 0.15f)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                imageVector = statusIcon,
+                                contentDescription = null,
+                                tint = statusColor,
+                                modifier = Modifier.size(12.dp)
+                            )
+                            Text(
+                                text = statusLabel,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = statusColor,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                    // 备注
+                    if (!record.note.isNullOrBlank()) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = record.note,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                } else {
+                    // 普通阅读记录：显示阅读量
+                    val pagesText = remember(record.pagesRead, isChapterBased) {
+                        if (isChapterBased) "${record.pagesRead.toInt()} 章" else "${record.pagesRead.toInt()} 页"
+                    }
 
-                Surface(
-                    shape = RoundedCornerShape(20.dp),
-                    color = MaterialTheme.colorScheme.primaryContainer
-                ) {
-                    Text(
-                        text = pagesText,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                    )
-                }
+                    Surface(
+                        shape = RoundedCornerShape(20.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer
+                    ) {
+                        Text(
+                            text = pagesText,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                        )
+                    }
 
-                // 备注
-                if (!record.note.isNullOrBlank()) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = record.note,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                    // 备注
+                    if (!record.note.isNullOrBlank()) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = record.note,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
                 }
             }
         }

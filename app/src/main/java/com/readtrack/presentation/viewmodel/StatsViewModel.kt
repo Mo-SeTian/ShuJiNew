@@ -6,6 +6,7 @@ import com.readtrack.data.local.PreferencesManager
 import com.readtrack.data.local.StatsUnit
 import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.data.local.entity.ReadingRecordEntity
+import com.readtrack.data.local.entity.RecordType
 import com.readtrack.domain.model.BookStatus
 import com.readtrack.domain.repository.BookRepository
 import com.readtrack.domain.repository.ReadingRecordRepository
@@ -106,7 +107,7 @@ class StatsViewModel @Inject constructor(
             }
         }
 
-        records.forEach { record ->
+        records.filter { it.recordType == RecordType.NORMAL }.forEach { record ->
             val isChapterBook = booksMap[record.bookId]?.progressType == ProgressType.CHAPTER
             val value = record.pagesRead
 
@@ -123,10 +124,12 @@ class StatsViewModel @Inject constructor(
             }
         }
 
-        // weekly 桶累加
+        // weekly 桶只统计普通阅读记录（状态变更记录 pagesRead=0，不影响结果但避免无谓计算）
         recordsByDay.forEach { (dayStart, dayRecords) ->
             if (dayStart != null) {
-                weeklyBuckets[dayStart] = dayRecords.sumOf { it.pagesRead }
+                weeklyBuckets[dayStart] = dayRecords
+                    .filter { it.recordType == RecordType.NORMAL }
+                    .sumOf { it.pagesRead }
             }
         }
 
