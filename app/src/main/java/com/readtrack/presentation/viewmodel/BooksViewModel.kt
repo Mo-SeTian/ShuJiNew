@@ -27,6 +27,7 @@ data class BooksUiState(
     val filteredBooks: List<BookEntity> = emptyList(),
     val selectedStatus: BookStatus? = null,
     val searchQuery: String = "",
+    val sortOrder: BookSortOrder = BookSortOrder.default(),
     val isLoading: Boolean = true,
     val errorMessage: String? = null
 )
@@ -42,6 +43,7 @@ class BooksViewModel @Inject constructor(
 
     private val selectedStatusFlow = MutableStateFlow<BookStatus?>(null)
     private val searchQueryFlow = MutableStateFlow("")
+    private val sortOrderFlow = MutableStateFlow(BookSortOrder.default())
 
     init {
         loadBooks()
@@ -54,14 +56,16 @@ class BooksViewModel @Inject constructor(
                 selectedStatusFlow,
                 searchQueryFlow
                     .debounce(250)
-                    .distinctUntilChanged()
-            ) { books, selectedStatus, rawQuery ->
+                    .distinctUntilChanged(),
+                sortOrderFlow
+            ) { books, selectedStatus, rawQuery, sortOrder ->
                 PerformanceTrace.measure("books.filter") {
                     val filteredBooks = filterBooks(
                         BooksFilterInput(
                             books = books,
                             status = selectedStatus,
-                            query = rawQuery
+                            query = rawQuery,
+                            sortOrder = sortOrder
                         )
                     )
                     BooksUiState(
@@ -69,6 +73,7 @@ class BooksViewModel @Inject constructor(
                         filteredBooks = filteredBooks,
                         selectedStatus = selectedStatus,
                         searchQuery = rawQuery,
+                        sortOrder = sortOrder,
                         isLoading = false,
                         errorMessage = null
                     )
@@ -84,7 +89,7 @@ class BooksViewModel @Inject constructor(
                 .collect { state ->
                     _uiState.value = state
                     PerformanceTrace.mark(
-                        "books.render ready total=${state.books.size} filtered=${state.filteredBooks.size} query='${state.searchQuery}'"
+                        "books.render ready total=${state.books.size} filtered=${state.filteredBooks.size} query='${state.searchQuery}' sort=${state.sortOrder.name}"
                     )
                 }
         }
@@ -98,6 +103,11 @@ class BooksViewModel @Inject constructor(
     fun setSearchQuery(query: String) {
         searchQueryFlow.value = normalizeSearchQuery(query)
         _uiState.update { it.copy(searchQuery = query) }
+    }
+
+    fun setSortOrder(sortOrder: BookSortOrder) {
+        sortOrderFlow.value = sortOrder
+        _uiState.update { it.copy(sortOrder = sortOrder) }
     }
 
     fun deleteBook(bookId: Long) {

@@ -8,9 +8,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -20,6 +24,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.readtrack.domain.model.BookStatus
 import com.readtrack.presentation.ui.components.BookCard
 import com.readtrack.presentation.ui.components.getStatusColor
+import com.readtrack.presentation.viewmodel.BookSortOrder
 import com.readtrack.presentation.viewmodel.BooksViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -30,6 +35,7 @@ fun BooksScreen(
     viewModel: BooksViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var showSortMenu by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -40,6 +46,41 @@ fun BooksScreen(
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
+                },
+                actions = {
+                    Box {
+                        TextButton(onClick = { showSortMenu = true }) {
+                            Icon(
+                                Icons.Default.Sort,
+                                contentDescription = "排序",
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(uiState.sortOrder.displayName)
+                        }
+                        DropdownMenu(
+                            expanded = showSortMenu,
+                            onDismissRequest = { showSortMenu = false }
+                        ) {
+                            BookSortOrder.entries.forEach { sortOrder ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Text(sortOrder.displayName)
+                                            if (uiState.sortOrder == sortOrder) {
+                                                Spacer(modifier = Modifier.width(8.dp))
+                                                Text("✓", color = MaterialTheme.colorScheme.primary)
+                                            }
+                                        }
+                                    },
+                                    onClick = {
+                                        viewModel.setSortOrder(sortOrder)
+                                        showSortMenu = false
+                                    }
+                                )
+                            }
+                        }
+                    }
                 },
                 colors = TopAppBarDefaults.smallTopAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface
