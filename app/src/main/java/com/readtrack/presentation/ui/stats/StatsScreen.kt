@@ -84,16 +84,16 @@ fun StatsScreen(
                     ) {
                         StatsCardModern(
                             title = "今日阅读",
-                            value = "${uiState.todayValue.toInt()}${uiState.statsUnit.label()}",
-                            subtitle = "累计${uiState.totalValue.toInt()}${uiState.statsUnit.label()}",
+                            value = "${uiState.todayValue.toInt()}",
+                            subtitle = uiState.statsUnit.label(),
                             icon = Icons.Default.MenuBook,
                             color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.weight(1f)
                         )
                         StatsCardModern(
                             title = "本周阅读",
-                            value = "${uiState.weekValue.toInt()}${uiState.statsUnit.label()}",
-                            subtitle = "本月${uiState.monthValue.toInt()}${uiState.statsUnit.label()}",
+                            value = "${uiState.weekValue.toInt()}",
+                            subtitle = uiState.statsUnit.label(),
                             icon = Icons.Default.MenuBook,
                             color = FinishedBlue,
                             modifier = Modifier.weight(1f)
@@ -108,16 +108,16 @@ fun StatsScreen(
                     ) {
                         StatsCardModern(
                             title = "本月阅读",
-                            value = "${uiState.monthValue.toInt()}${uiState.statsUnit.label()}",
-                            subtitle = "本周${uiState.weekValue.toInt()}${uiState.statsUnit.label()}",
+                            value = "${uiState.monthValue.toInt()}",
+                            subtitle = uiState.statsUnit.label(),
                             icon = Icons.Default.MenuBook,
                             color = ReadingOrange,
                             modifier = Modifier.weight(1f)
                         )
                         StatsCardModern(
                             title = "累计阅读",
-                            value = "${uiState.totalValue.toInt()}${uiState.statsUnit.label()}",
-                            subtitle = "今日${uiState.todayValue.toInt()}${uiState.statsUnit.label()}",
+                            value = "${uiState.totalValue.toInt()}",
+                            subtitle = uiState.statsUnit.label(),
                             icon = Icons.Default.MenuBook,
                             color = WantToReadGreen,
                             modifier = Modifier.weight(1f)
