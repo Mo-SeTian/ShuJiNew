@@ -68,7 +68,7 @@ class BooksViewModel @Inject constructor(
                         books = books,
                         filteredBooks = filteredBooks,
                         selectedStatus = selectedStatus,
-                        searchQuery = _uiState.value.searchQuery,
+                        searchQuery = rawQuery,
                         isLoading = false,
                         errorMessage = null
                     )

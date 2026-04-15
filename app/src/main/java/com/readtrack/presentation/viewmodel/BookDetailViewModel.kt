@@ -80,6 +80,7 @@ class BookDetailViewModel @Inject constructor(
 
     /**
      * 添加阅读记录（更新进度）
+     * 使用原子操作 insertRecordAndUpdateBook 保证记录和书籍同步更新
      * @param pages 输入的页数
      * @param isIncrement true=增量模式（当前进度+输入值），false=直接模式（直接设置到输入值）
      */
@@ -95,7 +96,7 @@ class BookDetailViewModel @Inject constructor(
                     pages.coerceIn(0.0, currentBook.totalPages)
                 }
                 val pagesActuallyRead = if (isIncrement) pages else (toPage - fromPage).coerceAtLeast(0.0)
-                
+
                 val record = ReadingRecordEntity(
                     bookId = currentBook.id,
                     pagesRead = pagesActuallyRead,
@@ -103,15 +104,13 @@ class BookDetailViewModel @Inject constructor(
                     toPage = toPage,
                     date = currentTime
                 )
-                recordRepository.insertRecord(record)
-                
-                // Update book's current page and last read time
                 val updatedBook = currentBook.copy(
                     currentPage = toPage,
                     lastReadAt = currentTime,
                     updatedAt = currentTime
                 )
-                bookRepository.updateBook(updatedBook)
+                // 原子操作：记录插入 + 书籍更新在同一个事务中
+                bookRepository.insertRecordAndUpdateBook(record, updatedBook)
             } catch (e: Exception) {
                 _uiState.update { it.copy(errorMessage = "添加记录失败: ${e.message}") }
             }
@@ -120,13 +119,14 @@ class BookDetailViewModel @Inject constructor(
 
     /**
      * 添加章节进度
+     * 使用原子操作 insertRecordAndUpdateBook 保证记录和书籍同步更新
      * @param chapters 输入的章节数
      * @param isIncrement true=增量模式（当前章节+输入值），false=直接模式（直接设置到输入值）
      */
     fun addChapterProgress(chapters: Int, isIncrement: Boolean = true) {
         val currentBook = _uiState.value.book ?: return
         if (currentBook.progressType != ProgressType.CHAPTER) return
-        
+
         viewModelScope.launch {
             try {
                 val currentTime = System.currentTimeMillis()
@@ -138,7 +138,7 @@ class BookDetailViewModel @Inject constructor(
                     chapters.coerceIn(0, maxChapter)
                 }
                 val chaptersActuallyRead = if (isIncrement) chapters else (toChapter - fromChapter).coerceAtLeast(0)
-                
+
                 val record = ReadingRecordEntity(
                     bookId = currentBook.id,
                     pagesRead = chaptersActuallyRead.toDouble(),
@@ -146,15 +146,13 @@ class BookDetailViewModel @Inject constructor(
                     toPage = toChapter.toDouble(),
                     date = currentTime
                 )
-                recordRepository.insertRecord(record)
-                
-                // Update book's current chapter and last read time
                 val updatedBook = currentBook.copy(
                     currentChapter = toChapter,
-                    lastReadAt = currentTime,
+                    lastReadAt = currentTime,    // 修复：章节模式同样需要更新 lastReadAt
                     updatedAt = currentTime
                 )
-                bookRepository.updateBook(updatedBook)
+                // 原子操作：记录插入 + 书籍更新在同一个事务中
+                bookRepository.insertRecordAndUpdateBook(record, updatedBook)
             } catch (e: Exception) {
                 _uiState.update { it.copy(errorMessage = "添加记录失败: ${e.message}") }
             }

@@ -48,8 +48,12 @@ object DatabaseModule {
 
     @Provides
     @Singleton
-    fun provideBookRepository(bookDao: BookDao): BookRepository {
-        return BookRepositoryImpl(bookDao)
+    fun provideBookRepository(
+        bookDao: BookDao,
+        readingRecordDao: ReadingRecordDao,
+        database: ReadTrackDatabase
+    ): BookRepository {
+        return BookRepositoryImpl(bookDao, readingRecordDao, database)
     }
 
     @Provides
