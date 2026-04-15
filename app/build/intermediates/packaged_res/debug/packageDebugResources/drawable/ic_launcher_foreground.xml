@@ -4,10 +4,45 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Book icon -->
+    <!-- Open book with bookmark — elegant reading icon -->
     <group android:translateX="27" android:translateY="27">
+        <!-- Left page -->
         <path
             android:fillColor="#FFFFFF"
-            android:pathData="M27,4C25.9,4 25,4.9 25,6L25,48C25,49.1 25.9,50 27,50L51,50C52.1,50 53,49.1 53,48L53,6C53,4.9 52.1,4 51,4L27,4ZM29,8L49,8L49,46L29,46L29,8ZM31,12L47,12L47,16L31,16L31,12ZM31,20L47,20L47,24L31,24L31,20ZM31,28L47,28L47,32L31,32L31,28ZM31,36L47,36L47,40L31,40L31,36Z"/>
+            android:pathData="M4,8C4,6.34 5.34,5 7,5L23,5L23,45C23,46.66 21.66,48 20,48L7,48C5.34,48 4,46.66 4,45L4,8Z"/>
+        <!-- Right page -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M50,8C50,6.34 48.66,5 47,5L31,5L31,45C31,46.66 32.34,48 34,48L47,48C48.66,48 50,46.66 50,45L50,8Z"/>
+        <!-- Page lines — left -->
+        <path
+            android:fillColor="#1A6B7B"
+            android:pathData="M8,14L19,14L19,17L8,17Z"/>
+        <path
+            android:fillColor="#1A6B7B"
+            android:pathData="M8,21L19,21L19,24L8,24Z"/>
+        <path
+            android:fillColor="#1A6B7B"
+            android:pathData="M8,28L19,28L19,31L8,31Z"/>
+        <path
+            android:fillColor="#1A6B7B"
+            android:pathData="M8,35L16,35L16,38L8,38Z"/>
+        <!-- Page lines — right -->
+        <path
+            android:fillColor="#1A6B7B"
+            android:pathData="M35,14L46,14L46,17L35,17Z"/>
+        <path
+            android:fillColor="#1A6B7B"
+            android:pathData="M35,21L46,21L46,24L35,24Z"/>
+        <path
+            android:fillColor="#1A6B7B"
+            android:pathData="M35,28L46,28L46,31L35,31Z"/>
+        <path
+            android:fillColor="#1A6B7B"
+            android:pathData="M38,35L46,35L46,38L38,38Z"/>
+        <!-- Bookmark ribbon -->
+        <path
+            android:fillColor="#E85A4F"
+            android:pathData="M38,5L42,5L42,24L40,22L38,24Z"/>
     </group>
 </vector>
