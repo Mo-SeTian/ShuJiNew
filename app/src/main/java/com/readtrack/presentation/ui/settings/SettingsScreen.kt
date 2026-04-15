@@ -53,13 +53,14 @@ fun SettingsScreen(
     val exportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/json")
     ) { uri ->
-        uri?.let { savedUri ->
+        // 用户取消保存时（uri 为 null）或保存成功，都要清除导出状态
+        viewModel.clearExportSuccess()
+        if (uri != null) {
             uiState.exportJson?.let { json ->
-                context.contentResolver.openOutputStream(savedUri)?.bufferedWriter()?.use { writer ->
+                context.contentResolver.openOutputStream(uri)?.bufferedWriter()?.use { writer ->
                     writer.write(json)
                 }
             }
-            viewModel.clearExportSuccess()
         }
     }
     
@@ -74,10 +75,8 @@ fun SettingsScreen(
             text = { Text("是否清空现有数据后再导入？\n\n• 是：删除所有现有书籍和记录\n• 否：保留现有数据，追加导入") },
             confirmButton = {
                 TextButton(onClick = {
-                    pendingImportUri?.let { uri ->
-                        pendingImportContent?.let { content ->
-                            viewModel.importData(uri, content, true)
-                        }
+                    pendingImportContent?.let { content ->
+                        viewModel.importData(content, true)
                     }
                     pendingImportUri = null
                     pendingImportContent = null
@@ -91,10 +90,8 @@ fun SettingsScreen(
                         pendingImportContent = null
                     }) { Text("取消") }
                     TextButton(onClick = {
-                        pendingImportUri?.let { uri ->
-                            pendingImportContent?.let { content ->
-                                viewModel.importData(uri, content, false)
-                            }
+                        pendingImportContent?.let { content ->
+                            viewModel.importData(content, false)
                         }
                         pendingImportUri = null
                         pendingImportContent = null

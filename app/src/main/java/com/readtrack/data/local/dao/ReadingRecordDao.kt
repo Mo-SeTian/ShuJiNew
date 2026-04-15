@@ -29,4 +29,7 @@ interface ReadingRecordDao {
 
     @Query("DELETE FROM reading_records WHERE bookId = :bookId")
     suspend fun deleteRecordsByBookId(bookId: Long)
+
+    @Query("DELETE FROM reading_records")
+    suspend fun deleteAllRecords()
 }

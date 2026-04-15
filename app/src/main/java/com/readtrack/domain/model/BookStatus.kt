@@ -1,5 +1,8 @@
 package com.readtrack.domain.model
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 enum class BookStatus(val displayName: String) {
     WANT_TO_READ("想读"),     // 想读 - 绿色 #4CAF50
     READING("在读"),         // 阅读中 - 橙色 #FF9800

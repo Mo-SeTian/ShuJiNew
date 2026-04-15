@@ -36,4 +36,7 @@ interface BookDao {
 
     @Query("SELECT COUNT(*) FROM books")
     fun getTotalBookCount(): Flow<Int>
+
+    @Query("DELETE FROM books")
+    suspend fun deleteAllBooks()
 }
