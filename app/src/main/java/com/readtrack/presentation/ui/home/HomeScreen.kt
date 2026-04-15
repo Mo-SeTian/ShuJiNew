@@ -259,9 +259,6 @@ private fun StatCardModern(
     gradientColors: List<Color>,
     modifier: Modifier = Modifier
 ) {
-    val title_remembered = remember(title) { title }
-    val value_remembered = remember(value) { value }
-    val subtitle_remembered = remember(subtitle) { subtitle }
     val gradientBrush = remember(gradientColors) {
         Brush.horizontalGradient(colors = gradientColors.map { it.copy(alpha = 0.15f) })
     }
@@ -303,7 +300,7 @@ private fun StatCardModern(
                 verticalAlignment = Alignment.Bottom
             ) {
                 Text(
-                    text = value_remembered,
+                    text = value,
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
                     color = gradientColors[0],
@@ -311,7 +308,7 @@ private fun StatCardModern(
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    text = subtitle_remembered,
+                    text = subtitle,
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
                     color = gradientColors[0].copy(alpha = 0.7f),
@@ -320,7 +317,7 @@ private fun StatCardModern(
             }
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = title_remembered,
+                text = title,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

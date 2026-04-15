@@ -29,8 +29,9 @@ internal fun normalizeSearchQuery(query: String): String =
 internal fun filterBooks(input: BooksFilterInput): List<BookEntity> {
     val normalizedQuery = normalizeSearchQuery(input.query)
     val tokens = normalizedQuery.split(' ').filter { it.isNotBlank() }
+    val hasFilter = input.status != null || tokens.isNotEmpty()
 
-    val filtered = if (input.status == null && tokens.isEmpty()) {
+    val filtered = if (!hasFilter) {
         input.books
     } else {
         input.books.filter { book ->
@@ -40,7 +41,11 @@ internal fun filterBooks(input: BooksFilterInput): List<BookEntity> {
         }
     }
 
-    return sortBooks(filtered, input.sortOrder)
+    return if (hasFilter || input.sortOrder != BookSortOrder.LAST_READ) {
+        sortBooks(filtered, input.sortOrder)
+    } else {
+        filtered
+    }
 }
 
 private fun sortBooks(books: List<BookEntity>, sortOrder: BookSortOrder): List<BookEntity> {
@@ -67,6 +72,5 @@ private fun matchesAllTokens(book: BookEntity, tokens: List<String>): Boolean {
         append(' ')
         append(book.publisher.orEmpty())
     }.lowercase()
-
     return tokens.all(searchableText::contains)
 }

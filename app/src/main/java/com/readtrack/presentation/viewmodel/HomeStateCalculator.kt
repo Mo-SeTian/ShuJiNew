@@ -10,15 +10,31 @@ internal fun buildHomeUiState(
     records: List<ReadingRecordEntity>,
     now: Long = System.currentTimeMillis()
 ): HomeUiState {
-    val chapterBookIds = books.asSequence()
-        .filter { it.progressType == ProgressType.CHAPTER }
-        .map { it.id }
-        .toHashSet()
-
     val startOfToday = getStartOfDay(now)
     var todayPages = 0.0
     var todayChapters = 0.0
     var totalReadingTime = 0.0
+
+    // 合并遍历：一边构建 chapterBookIds，一边统计 statusCounts，一边找最近在读
+    val chapterBookIds = mutableSetOf<Long>()
+    val statusCounts = mutableMapOf<BookStatus, Int>()
+    var readingBooks = 0
+    var finishedBooks = 0
+    var latestReadingBook: BookEntity? = null
+
+    books.forEach { book ->
+        if (book.progressType == ProgressType.CHAPTER) chapterBookIds.add(book.id)
+        statusCounts[book.status] = (statusCounts[book.status] ?: 0) + 1
+        if (book.status == BookStatus.READING) readingBooks++
+        if (book.status == BookStatus.FINISHED) finishedBooks++
+        // 记录最近翻阅的在读书籍（用于 recentBooks 排序）
+        if (book.status == BookStatus.READING) {
+            val bookTime = book.lastReadAt ?: 0L
+            val latestTime = latestReadingBook?.lastReadAt ?: 0L
+            if (bookTime > latestTime) latestReadingBook = book
+        }
+    }
+    BookStatus.entries.forEach { status -> statusCounts.putIfAbsent(status, 0) }
 
     records.forEach { record ->
         totalReadingTime += record.pagesRead
@@ -31,16 +47,12 @@ internal fun buildHomeUiState(
         }
     }
 
-    val statusCounts = mutableMapOf<BookStatus, Int>()
-    var readingBooks = 0
-    var finishedBooks = 0
-
-    BookStatus.entries.forEach { status -> statusCounts[status] = 0 }
-    books.forEach { book ->
-        statusCounts[book.status] = (statusCounts[book.status] ?: 0) + 1
-        if (book.status == BookStatus.READING) readingBooks++
-        if (book.status == BookStatus.FINISHED) finishedBooks++
-    }
+    // 最近在读（最近翻阅的3本，固定小数量）
+    val recentBooks = books.asSequence()
+        .filter { it.status == BookStatus.READING }
+        .sortedWith(compareByDescending<BookEntity> { it.lastReadAt ?: 0L }.thenByDescending { it.updatedAt })
+        .take(3)
+        .toList()
 
     return HomeUiState(
         todayPages = todayPages,
@@ -50,11 +62,7 @@ internal fun buildHomeUiState(
         totalBooks = books.size,
         readingBooks = readingBooks,
         finishedBooks = finishedBooks,
-        recentBooks = books.asSequence()
-            .filter { it.status == BookStatus.READING }
-            .sortedWith(compareByDescending<BookEntity> { it.lastReadAt ?: 0L }.thenByDescending { it.updatedAt })
-            .take(3)
-            .toList(),
+        recentBooks = recentBooks,
         statusCounts = statusCounts,
         isLoading = false,
         errorMessage = null

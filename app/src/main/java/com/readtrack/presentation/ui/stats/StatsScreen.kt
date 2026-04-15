@@ -174,10 +174,6 @@ private fun StatsCardModern(
     color: Color,
     modifier: Modifier = Modifier
 ) {
-    val title_remembered = remember(title) { title }
-    val value_remembered = remember(value) { value }
-    val subtitle_remembered = remember(subtitle) { subtitle }
-
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(16.dp),
@@ -210,7 +206,7 @@ private fun StatsCardModern(
                 verticalAlignment = Alignment.Bottom
             ) {
                 Text(
-                    text = value_remembered,
+                    text = value,
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
                     color = color,
@@ -218,7 +214,7 @@ private fun StatsCardModern(
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    text = subtitle_remembered,
+                    text = subtitle,
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
                     color = color.copy(alpha = 0.7f),
@@ -227,7 +223,7 @@ private fun StatsCardModern(
             }
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = title_remembered,
+                text = title,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -267,15 +263,13 @@ fun WeeklyChartModern(weeklyData: List<DailyReading>) {
                         (day.pages / maxPages * 100).coerceIn(4.0, 100.0)
                     } else 4.0
 
-                    val day_remembered = remember(day) { day }
-
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.weight(1f)
                     ) {
-                        if (day_remembered.pages > 0) {
+                        if (day.pages > 0) {
                             Text(
-                                text = "${day_remembered.pages.toInt()}",
+                                text = "${day.pages.toInt()}",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.primary,
                                 fontWeight = FontWeight.Bold
@@ -289,7 +283,7 @@ fun WeeklyChartModern(weeklyData: List<DailyReading>) {
                                 .height(height.dp)
                                 .clip(RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp))
                                 .background(
-                                    if (day_remembered.pages > 0)
+                                    if (day.pages > 0)
                                         MaterialTheme.colorScheme.primary
                                     else
                                         MaterialTheme.colorScheme.surfaceVariant
@@ -298,7 +292,7 @@ fun WeeklyChartModern(weeklyData: List<DailyReading>) {
                         Spacer(modifier = Modifier.height(8.dp))
 
                         Text(
-                            text = day_remembered.dayOfWeek,
+                            text = day.dayOfWeek,
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
