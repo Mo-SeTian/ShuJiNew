@@ -5,6 +5,7 @@ import com.readtrack.data.local.dao.ReadingRecordDao
 import com.readtrack.data.local.database.ReadTrackDatabase
 import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.data.local.entity.ReadingRecordEntity
+import com.readtrack.data.local.entity.RecordType
 import com.readtrack.domain.model.BookStatus
 import com.readtrack.domain.repository.BookRepository
 import androidx.room.withTransaction
@@ -77,6 +78,41 @@ class BookRepositoryImpl @Inject constructor(
         } else {
             val updated = book.copy(currentChapter = latest.toPage.toInt(), lastReadAt = latest.date, updatedAt = updatedAt)
             bookDao.updateBook(updated)
+        }
+    }
+
+    override suspend fun updateBookStatus(bookId: Long, newStatus: BookStatus, recordType: RecordType) {
+        database.withTransaction {
+            // 写入状态变更记录（pagesRead/fromPage/toPage 均为 0）
+            val statusRecord = ReadingRecordEntity(
+                bookId = bookId,
+                pagesRead = 0.0,
+                fromPage = 0.0,
+                toPage = 0.0,
+                date = System.currentTimeMillis(),
+                recordType = recordType
+            )
+            readingRecordDao.insertRecord(statusRecord)
+            // 更新图书状态
+            val book = bookDao.getBookByIdOnce(bookId) ?: return@withTransaction
+            val updatedBook = book.copy(status = newStatus, updatedAt = System.currentTimeMillis())
+            bookDao.updateBook(updatedBook)
+        }
+    }
+
+    override suspend fun insertBookWithStatus(book: BookEntity) {
+        database.withTransaction {
+            val bookId = bookDao.insertBook(book)
+            // 写入添加图书记录
+            val statusRecord = ReadingRecordEntity(
+                bookId = bookId,
+                pagesRead = 0.0,
+                fromPage = 0.0,
+                toPage = 0.0,
+                date = System.currentTimeMillis(),
+                recordType = RecordType.STATUS_ADDED
+            )
+            readingRecordDao.insertRecord(statusRecord)
         }
     }
 }

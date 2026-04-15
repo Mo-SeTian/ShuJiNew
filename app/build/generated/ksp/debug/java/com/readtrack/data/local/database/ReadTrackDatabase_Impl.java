@@ -38,7 +38,7 @@ public final class ReadTrackDatabase_Impl extends ReadTrackDatabase {
   @Override
   @NonNull
   protected SupportSQLiteOpenHelper createOpenHelper(@NonNull final DatabaseConfiguration config) {
-    final SupportSQLiteOpenHelper.Callback _openCallback = new RoomOpenHelper(config, new RoomOpenHelper.Delegate(5) {
+    final SupportSQLiteOpenHelper.Callback _openCallback = new RoomOpenHelper(config, new RoomOpenHelper.Delegate(6) {
       @Override
       public void createAllTables(@NonNull final SupportSQLiteDatabase db) {
         db.execSQL("CREATE TABLE IF NOT EXISTS `books` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `title` TEXT NOT NULL, `author` TEXT, `publisher` TEXT, `description` TEXT, `progressType` TEXT NOT NULL, `totalPages` REAL NOT NULL, `currentPage` REAL NOT NULL, `totalChapters` INTEGER, `currentChapter` INTEGER NOT NULL, `coverPath` TEXT, `status` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `lastReadAt` INTEGER)");
@@ -47,12 +47,12 @@ public final class ReadTrackDatabase_Impl extends ReadTrackDatabase {
         db.execSQL("CREATE INDEX IF NOT EXISTS `index_books_lastReadAt` ON `books` (`lastReadAt`)");
         db.execSQL("CREATE INDEX IF NOT EXISTS `index_books_title` ON `books` (`title`)");
         db.execSQL("CREATE INDEX IF NOT EXISTS `index_books_author` ON `books` (`author`)");
-        db.execSQL("CREATE TABLE IF NOT EXISTS `reading_records` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `bookId` INTEGER NOT NULL, `pagesRead` REAL NOT NULL, `fromPage` REAL NOT NULL, `toPage` REAL NOT NULL, `date` INTEGER NOT NULL, `note` TEXT, FOREIGN KEY(`bookId`) REFERENCES `books`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )");
+        db.execSQL("CREATE TABLE IF NOT EXISTS `reading_records` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `bookId` INTEGER NOT NULL, `pagesRead` REAL NOT NULL, `fromPage` REAL NOT NULL, `toPage` REAL NOT NULL, `date` INTEGER NOT NULL, `note` TEXT, `recordType` TEXT NOT NULL, FOREIGN KEY(`bookId`) REFERENCES `books`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )");
         db.execSQL("CREATE INDEX IF NOT EXISTS `index_reading_records_bookId` ON `reading_records` (`bookId`)");
         db.execSQL("CREATE INDEX IF NOT EXISTS `index_reading_records_date` ON `reading_records` (`date`)");
         db.execSQL("CREATE INDEX IF NOT EXISTS `index_reading_records_bookId_date` ON `reading_records` (`bookId`, `date`)");
         db.execSQL("CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)");
-        db.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '0f34ccbaf84f58debfeb2a317512ff0e')");
+        db.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '7f2c850f79efaa5f6ab7654cc49dc187')");
       }
 
       @Override
@@ -133,7 +133,7 @@ public final class ReadTrackDatabase_Impl extends ReadTrackDatabase {
                   + " Expected:\n" + _infoBooks + "\n"
                   + " Found:\n" + _existingBooks);
         }
-        final HashMap<String, TableInfo.Column> _columnsReadingRecords = new HashMap<String, TableInfo.Column>(7);
+        final HashMap<String, TableInfo.Column> _columnsReadingRecords = new HashMap<String, TableInfo.Column>(8);
         _columnsReadingRecords.put("id", new TableInfo.Column("id", "INTEGER", true, 1, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsReadingRecords.put("bookId", new TableInfo.Column("bookId", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsReadingRecords.put("pagesRead", new TableInfo.Column("pagesRead", "REAL", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
@@ -141,6 +141,7 @@ public final class ReadTrackDatabase_Impl extends ReadTrackDatabase {
         _columnsReadingRecords.put("toPage", new TableInfo.Column("toPage", "REAL", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsReadingRecords.put("date", new TableInfo.Column("date", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsReadingRecords.put("note", new TableInfo.Column("note", "TEXT", false, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsReadingRecords.put("recordType", new TableInfo.Column("recordType", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
         final HashSet<TableInfo.ForeignKey> _foreignKeysReadingRecords = new HashSet<TableInfo.ForeignKey>(1);
         _foreignKeysReadingRecords.add(new TableInfo.ForeignKey("books", "CASCADE", "NO ACTION", Arrays.asList("bookId"), Arrays.asList("id")));
         final HashSet<TableInfo.Index> _indicesReadingRecords = new HashSet<TableInfo.Index>(3);
@@ -156,7 +157,7 @@ public final class ReadTrackDatabase_Impl extends ReadTrackDatabase {
         }
         return new RoomOpenHelper.ValidationResult(true, null);
       }
-    }, "0f34ccbaf84f58debfeb2a317512ff0e", "24b5b8a3e99e181936182b4cd76fd4d9");
+    }, "7f2c850f79efaa5f6ab7654cc49dc187", "66e53973cf7a5cfa0d14cf1e7258b649");
     final SupportSQLiteOpenHelper.Configuration _sqliteConfig = SupportSQLiteOpenHelper.Configuration.builder(config.context).name(config.name).callback(_openCallback).build();
     final SupportSQLiteOpenHelper _helper = config.sqliteOpenHelperFactory.create(_sqliteConfig);
     return _helper;
