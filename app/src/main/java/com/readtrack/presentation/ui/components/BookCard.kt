@@ -21,7 +21,7 @@ fun BookCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val statusColor = getStatusColor(book.status)
+    val statusColor = statusColorOf(book.status)
     val progressModel = remember(book) { book.toBookProgressUiModel() }
 
     Card(
