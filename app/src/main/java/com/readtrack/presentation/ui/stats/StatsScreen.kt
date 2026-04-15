@@ -23,8 +23,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.readtrack.domain.model.BookStatus
-import com.readtrack.presentation.ui.components.getStatusColor
-import com.readtrack.presentation.ui.components.getStatusLabel
+import com.readtrack.presentation.ui.components.statusColorOf
+import com.readtrack.presentation.ui.components.statusLabelOf
 import com.readtrack.presentation.ui.theme.*
 import com.readtrack.presentation.viewmodel.DailyReading
 import com.readtrack.presentation.viewmodel.StatsViewModel
@@ -166,7 +166,7 @@ fun StatsScreen(
 }
 
 @Composable
-fun StatsCardModern(
+private fun StatsCardModern(
     title: String,
     value: String,
     subtitle: String,
@@ -174,6 +174,10 @@ fun StatsCardModern(
     color: Color,
     modifier: Modifier = Modifier
 ) {
+    val title_remembered = remember(title) { title }
+    val value_remembered = remember(value) { value }
+    val subtitle_remembered = remember(subtitle) { subtitle }
+
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(16.dp),
@@ -206,7 +210,7 @@ fun StatsCardModern(
                 verticalAlignment = Alignment.Bottom
             ) {
                 Text(
-                    text = value,
+                    text = value_remembered,
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
                     color = color,
@@ -214,7 +218,7 @@ fun StatsCardModern(
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    text = subtitle,
+                    text = subtitle_remembered,
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
                     color = color.copy(alpha = 0.7f),
@@ -223,7 +227,7 @@ fun StatsCardModern(
             }
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = title,
+                text = title_remembered,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -233,6 +237,10 @@ fun StatsCardModern(
 
 @Composable
 fun WeeklyChartModern(weeklyData: List<DailyReading>) {
+    val maxPages = remember(weeklyData) {
+        weeklyData.maxOfOrNull { it.pages }?.coerceAtLeast(1.0) ?: 1.0
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp)
@@ -246,8 +254,6 @@ fun WeeklyChartModern(weeklyData: List<DailyReading>) {
                 fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(16.dp))
-            
-            val maxPages = weeklyData.maxOfOrNull { it.pages }?.coerceAtLeast(1.0) ?: 1.0
 
             Row(
                 modifier = Modifier
@@ -256,44 +262,43 @@ fun WeeklyChartModern(weeklyData: List<DailyReading>) {
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.Bottom
             ) {
-                weeklyData.forEachIndexed { index, day ->
+                weeklyData.forEachIndexed { _, day ->
                     val height = if (maxPages > 0) {
                         (day.pages / maxPages * 100).coerceIn(4.0, 100.0)
                     } else 4.0
-                    
+
+                    val day_remembered = remember(day) { day }
+
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.weight(1f)
                     ) {
-                        // Value label
-                        if (day.pages > 0) {
+                        if (day_remembered.pages > 0) {
                             Text(
-                                text = "${day.pages.toInt()}",
+                                text = "${day_remembered.pages.toInt()}",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.primary,
                                 fontWeight = FontWeight.Bold
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                         }
-                        
-                        // Bar
+
                         Box(
                             modifier = Modifier
                                 .width(28.dp)
                                 .height(height.dp)
                                 .clip(RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp))
                                 .background(
-                                    if (day.pages > 0) 
-                                        MaterialTheme.colorScheme.primary 
-                                    else 
+                                    if (day_remembered.pages > 0)
+                                        MaterialTheme.colorScheme.primary
+                                    else
                                         MaterialTheme.colorScheme.surfaceVariant
                                 )
                         )
                         Spacer(modifier = Modifier.height(8.dp))
-                        
-                        // Day label
+
                         Text(
-                            text = day.dayOfWeek,
+                            text = day_remembered.dayOfWeek,
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -309,6 +314,8 @@ fun StatusDistributionCard(
     totalBooks: Int,
     booksByStatus: Map<BookStatus, Int>
 ) {
+    val statuses = remember { BookStatus.entries.toList() }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp)
@@ -324,7 +331,7 @@ fun StatusDistributionCard(
                 Column {
                     Text(
                         text = "书籍状态分布",
-                       
+
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -336,12 +343,14 @@ fun StatusDistributionCard(
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             // Status distribution bars
-            BookStatus.entries.forEach { status ->
+            statuses.forEach { status ->
                 val count = booksByStatus[status] ?: 0
                 val percentage = if (totalBooks > 0) count.toFloat() / totalBooks else 0f
-                
+                val statusColor = remember(status) { statusColorOf(status) }
+                val statusLabel = remember(status) { statusLabelOf(status) }
+
                 Column(modifier = Modifier.padding(vertical = 4.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -350,12 +359,12 @@ fun StatusDistributionCard(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Surface(
                                 shape = RoundedCornerShape(4.dp),
-                                color = getStatusColor(status),
+                                color = statusColor,
                                 modifier = Modifier.size(10.dp)
                             ) {}
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = getStatusLabel(status),
+                                text = statusLabel,
                                 style = MaterialTheme.typography.bodyMedium
                             )
                         }
@@ -363,7 +372,7 @@ fun StatusDistributionCard(
                             text = "$count 本",
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Bold,
-                            color = getStatusColor(status)
+                            color = statusColor
                         )
                     }
                     Spacer(modifier = Modifier.height(4.dp))
@@ -373,8 +382,8 @@ fun StatusDistributionCard(
                             .fillMaxWidth()
                             .height(8.dp)
                             .clip(RoundedCornerShape(4.dp)),
-                        color = getStatusColor(status),
-                        trackColor = getStatusColor(status).copy(alpha = 0.2f)
+                        color = statusColor,
+                        trackColor = statusColor.copy(alpha = 0.2f)
                     )
                 }
             }
