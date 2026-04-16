@@ -42,4 +42,8 @@ interface BookDao {
 
     @Query("DELETE FROM books")
     suspend fun deleteAllBooks()
+
+    /** 统计：查询所有有评分的书籍，按评分降序 */
+    @Query("SELECT * FROM books WHERE rating IS NOT NULL ORDER BY rating DESC")
+    fun getBooksByRating(): Flow<List<BookEntity>>
 }

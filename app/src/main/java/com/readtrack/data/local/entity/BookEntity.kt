@@ -13,7 +13,8 @@ import com.readtrack.presentation.viewmodel.ProgressType
         Index(value = ["updatedAt"]),
         Index(value = ["lastReadAt"]),
         Index(value = ["title"]),
-        Index(value = ["author"])
+        Index(value = ["author"]),
+        Index(value = ["rating"])
     ]
 )
 data class BookEntity(
@@ -30,6 +31,7 @@ data class BookEntity(
     val currentChapter: Int = 0,
     val coverPath: String? = null,
     val status: BookStatus = BookStatus.WANT_TO_READ,
+    val rating: Float? = null,        // 0-5 星评分，null 表示未评分
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis(),
     val lastReadAt: Long? = null

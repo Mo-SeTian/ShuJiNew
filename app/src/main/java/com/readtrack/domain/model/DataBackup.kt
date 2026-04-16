@@ -25,9 +25,9 @@ data class BookListExport(
  */
 @Serializable
 data class DataBackup(
-    val version: Int = 2,
+    val version: Int = 3,
     val exportTime: Long = System.currentTimeMillis(),
-    val appVersion: String = "1.0.0",
+    val appVersion: String = "1.1.0",
     val books: List<BookExport> = emptyList(),
     val readingRecords: List<ReadingRecordExport> = emptyList(),
     val bookLists: List<BookListExport> = emptyList()
@@ -50,6 +50,7 @@ data class BookExport(
     val coverPath: String? = null,
     val description: String? = null,
     val status: String,
+    val rating: Float? = null,
     val createdAt: Long,
     val updatedAt: Long,
     val lastReadAt: Long? = null
@@ -68,6 +69,7 @@ data class BookExport(
             coverPath = book.coverPath,
             description = book.description,
             status = book.status.name,
+            rating = book.rating,
             createdAt = book.createdAt,
             updatedAt = book.updatedAt,
             lastReadAt = book.lastReadAt
@@ -87,9 +89,10 @@ data class BookExport(
         coverPath = coverPath,
         description = description,
         status = BookStatus.valueOf(status),
+        rating = rating,
         createdAt = createdAt,
         updatedAt = updatedAt,    // 保留原始时间，不覆盖
-        lastReadAt = lastReadAt    // 保留原始时间
+        lastReadAt = lastReadAt   // 保留原始时间
     )
 }
 

@@ -128,6 +128,14 @@ fun BookDetailScreen(
                     item {
                         StatusCard(book = book, onStatusChange = { viewModel.updateStatus(it) })
                     }
+
+                    // 评分
+                    item {
+                        RatingCard(
+                            rating = book.rating,
+                            onRatingChange = { viewModel.updateRating(it) }
+                        )
+                    }
                     
                     // 更新进度按钮
                     item {
@@ -803,6 +811,82 @@ private fun StatusCard(book: BookEntity, onStatusChange: (BookStatus) -> Unit) {
                         )
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RatingCard(
+    rating: Float?,
+    onRatingChange: (Float?) -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                "我的评分",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // 星级评分
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                for (star in 1..5) {
+                    val filled = rating != null && star <= rating
+                    val halfFilled = rating != null && star - 0.5f <= rating && star > rating
+
+                    IconButton(
+                        onClick = {
+                            // 点击同一颗星则清除评分
+                            onRatingChange(if (rating == star.toFloat()) null else star.toFloat())
+                        },
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (filled || halfFilled) Icons.Filled.Star else Icons.Filled.Star,
+                            contentDescription = "$star 星",
+                            tint = if (filled || halfFilled) Color(0xFFFFB400) else MaterialTheme.colorScheme.outlineVariant,
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                if (rating != null) {
+                    Text(
+                        text = String.format("%.1f", rating),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFFFB400),
+                        modifier = Modifier.align(Alignment.CenterVertically)
+                    )
+                }
+            }
+
+            if (rating == null) {
+                Text(
+                    "点击星星打分",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            } else {
+                Text(
+                    "点击已选星级可清除评分",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
             }
         }
     }
