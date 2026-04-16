@@ -2,11 +2,12 @@ package com.readtrack.presentation.ui.components
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
@@ -16,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpSize
@@ -32,7 +34,11 @@ fun BookCard(
     /** 是否显示选中态（用于批量选择模式） */
     selected: Boolean = false,
     /** 长按回调（用于进入选择模式），传入 null 则不响应长按 */
-    onLongClick: (() -> Unit)? = null
+    onLongClick: (() -> Unit)? = null,
+    /** 快速记录阅读进度回调，参数为 bookId */
+    onQuickRecord: ((Long) -> Unit)? = null,
+    /** 标记读完回调，参数为 bookId */
+    onQuickFinish: ((Long) -> Unit)? = null
 ) {
     val statusColor = statusColorOf(book.status)
     val progressModel = remember(book) { book.toBookProgressUiModel() }
@@ -204,7 +210,6 @@ fun BookCard(
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        // Last read info
                         if (book.lastReadAt != null) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
@@ -226,6 +231,71 @@ fun BookCard(
                     }
                 }
             }
+
+            // Right side quick action buttons
+            if (onQuickRecord != null || onQuickFinish != null) {
+                Spacer(modifier = Modifier.width(8.dp))
+                Column(
+                    modifier = Modifier.height(105.dp),
+                    verticalArrangement = Arrangement.SpaceEvenly,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    if (onQuickRecord != null && book.status == com.readtrack.domain.model.BookStatus.READING) {
+                        QuickActionButton(
+                            icon = Icons.Default.Add,
+                            label = "记录",
+                            containerColor = statusColor.copy(alpha = 0.1f),
+                            contentColor = statusColor,
+                            onClick = { onQuickRecord(book.id) }
+                        )
+                    }
+                    if (onQuickFinish != null &&
+                        (book.status == com.readtrack.domain.model.BookStatus.READING || book.status == com.readtrack.domain.model.BookStatus.WANT_TO_READ)) {
+                        QuickActionButton(
+                            icon = Icons.Default.Done,
+                            label = "读完",
+                            containerColor = Color(0xFF4CAF50).copy(alpha = 0.1f),
+                            contentColor = Color(0xFF4CAF50),
+                            onClick = { onQuickFinish(book.id) }
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun QuickActionButton(
+    icon: ImageVector,
+    label: String,
+    containerColor: Color,
+    contentColor: Color,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(10.dp),
+        color = containerColor,
+        modifier = Modifier.size(width = 52.dp, height = 40.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = label,
+                modifier = Modifier.size(18.dp),
+                tint = contentColor
+            )
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = contentColor,
+                fontWeight = FontWeight.Medium
+            )
         }
     }
 }
