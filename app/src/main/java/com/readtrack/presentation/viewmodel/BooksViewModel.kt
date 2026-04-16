@@ -3,7 +3,11 @@ package com.readtrack.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.readtrack.data.local.entity.BookEntity
+import com.readtrack.domain.model.BookSnapshot
+import com.readtrack.data.local.entity.ReadingRecordEntity
+import com.readtrack.data.local.entity.RecordType
 import com.readtrack.domain.model.BookStatus
+import com.readtrack.presentation.viewmodel.ProgressType
 import com.readtrack.domain.repository.BookRepository
 import com.readtrack.util.PerformanceTrace
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -119,5 +123,67 @@ class BooksViewModel @Inject constructor(
                 _uiState.update { it.copy(errorMessage = "删除失败: ${e.message}") }
             }
         }
+    }
+
+    /**
+     * 快速记录阅读进度（从书籍列表直接记录）
+     */
+    fun quickRecord(bookId: Long, newPage: Double, newChapter: Int) {
+        viewModelScope.launch {
+            try {
+                val book = _uiState.value.books.find { it.id == bookId } ?: return@launch
+                val isChapterBased = book.progressType == ProgressType.CHAPTER
+                val (fromPage, fromChapter) = if (isChapterBased) {
+                    book.currentChapter.toDouble() to book.currentChapter
+                } else {
+                    book.currentPage to 0
+                }
+                val record = ReadingRecordEntity(
+                    bookId = bookId,
+                    bookSnapshot = BookSnapshot(
+                        id = book.id,
+                        title = book.title,
+                        author = book.author,
+                        coverPath = book.coverPath,
+                        progressType = book.progressType,
+                        status = book.status
+                    ),
+                    pagesRead = if (isChapterBased) 0.0 else (newPage - book.currentPage).coerceAtLeast(0.0),
+                    fromPage = book.currentPage,
+                    toPage = if (isChapterBased) 0.0 else newPage.coerceAtMost(book.totalPages),
+                    recordType = RecordType.NORMAL,
+                    date = System.currentTimeMillis()
+                )
+                val updatedBook = book.copy(
+                    currentPage = if (isChapterBased) book.currentPage else newPage,
+                    currentChapter = if (isChapterBased) newChapter else book.currentChapter,
+                    lastReadAt = System.currentTimeMillis(),
+                    updatedAt = System.currentTimeMillis()
+                )
+                bookRepository.insertRecordAndUpdateBook(record, updatedBook)
+            } catch (e: Exception) {
+                _uiState.update { it.copy(errorMessage = "记录失败: ${e.message}") }
+            }
+        }
+    }
+
+    /**
+     * 快速标记书籍为读完
+     */
+    fun quickFinish(bookId: Long) {
+        viewModelScope.launch {
+            try {
+                bookRepository.updateBookStatus(bookId, BookStatus.FINISHED, RecordType.STATUS_FINISHED)
+            } catch (e: Exception) {
+                _uiState.update { it.copy(errorMessage = "标记失败: ${e.message}") }
+            }
+        }
+    }
+
+    /**
+     * 根据 ID 获取书籍（用于弹窗显示书籍信息）
+     */
+    fun getBookById(bookId: Long): BookEntity? {
+        return _uiState.value.books.find { it.id == bookId }
     }
 }
