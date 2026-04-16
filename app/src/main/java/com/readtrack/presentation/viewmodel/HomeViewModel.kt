@@ -5,7 +5,11 @@ import androidx.lifecycle.viewModelScope
 import com.readtrack.data.local.PreferencesManager
 import com.readtrack.data.local.StatsUnit
 import com.readtrack.data.local.entity.BookEntity
+import com.readtrack.data.local.entity.ReadingRecordEntity
+import com.readtrack.data.local.entity.RecordType
+import com.readtrack.domain.model.BookSnapshot
 import com.readtrack.domain.model.BookStatus
+import com.readtrack.presentation.viewmodel.ProgressType
 import com.readtrack.domain.repository.BookRepository
 import com.readtrack.domain.repository.ReadingRecordRepository
 import com.readtrack.util.PerformanceTrace
@@ -66,6 +70,41 @@ class HomeViewModel @Inject constructor(
                 PerformanceTrace.mark(
                     "home.ready total=${state.totalBooks} recent=${state.recentBooks.size} streak=${state.streakDays}"
                 )
+            }
+        }
+    }
+
+    fun quickRecord(bookId: Long, newPage: Double, newChapter: Int) {
+        viewModelScope.launch {
+            try {
+                val book = _uiState.value.recentBooks.find { it.id == bookId } ?: return@launch
+                val isChapterBased = book.progressType == ProgressType.CHAPTER
+                val fromPage = if (isChapterBased) book.currentChapter.toDouble() else book.currentPage
+                val record = ReadingRecordEntity(
+                    bookId = bookId,
+                    bookSnapshot = BookSnapshot(
+                        id = book.id,
+                        title = book.title,
+                        author = book.author,
+                        coverPath = book.coverPath,
+                        progressType = book.progressType,
+                        status = book.status
+                    ),
+                    pagesRead = if (isChapterBased) 0.0 else (newPage - book.currentPage).coerceAtLeast(0.0),
+                    fromPage = book.currentPage,
+                    toPage = if (isChapterBased) 0.0 else newPage.coerceAtMost(book.totalPages),
+                    recordType = RecordType.NORMAL,
+                    date = System.currentTimeMillis()
+                )
+                val updatedBook = book.copy(
+                    currentPage = if (isChapterBased) book.currentPage else newPage,
+                    currentChapter = if (isChapterBased) newChapter else book.currentChapter,
+                    lastReadAt = System.currentTimeMillis(),
+                    updatedAt = System.currentTimeMillis()
+                )
+                bookRepository.insertRecordAndUpdateBook(record, updatedBook)
+            } catch (_: Exception) {
+                // 静默失败，最近阅读卡片不需要显示错误
             }
         }
     }
