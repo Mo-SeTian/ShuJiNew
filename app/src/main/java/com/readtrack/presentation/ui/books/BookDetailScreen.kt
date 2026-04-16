@@ -207,7 +207,7 @@ fun BookDetailScreen(
     if (showAddToBookListDialog) {
         uiState.book?.let { book ->
             AddToBookListDialog(
-                bookId = book.id,
+                bookIds = listOf(book.id),
                 onDismiss = { showAddToBookListDialog = false }
             )
         }
