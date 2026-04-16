@@ -21,6 +21,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.readtrack.presentation.ui.addbook.AddBookScreen
+import com.readtrack.presentation.ui.booklist.BookListDetailScreen
+import com.readtrack.presentation.ui.booklist.BookListScreen
 import com.readtrack.presentation.ui.books.BookDetailScreen
 import com.readtrack.presentation.ui.books.BooksScreen
 import com.readtrack.presentation.ui.home.HomeScreen
@@ -46,6 +48,10 @@ sealed class Screen(
     data object AddBook : Screen("add_book", "添加书籍", Icons.Filled.Add, Icons.Outlined.Add)
     data object EditBook : Screen("edit_book/{bookId}", "编辑书籍", Icons.Filled.Edit, Icons.Outlined.Edit) {
         fun createRoute(bookId: Long) = "edit_book/$bookId"
+    }
+    data object BookList : Screen("book_lists", "书单收藏夹", Icons.Filled.CollectionsBookmark, Icons.Outlined.CollectionsBookmark)
+    data object BookListDetail : Screen("book_list/{bookListId}", "书单详情", Icons.Filled.CollectionsBookmark, Icons.Outlined.CollectionsBookmark) {
+        fun createRoute(bookListId: Long) = "book_list/$bookListId"
     }
 }
 
@@ -115,6 +121,9 @@ fun MainNavigation() {
                     },
                     onAddBookClick = {
                         navController.navigate(Screen.AddBook.route)
+                    },
+                    onBookListClick = {
+                        navController.navigate(Screen.BookList.route)
                     }
                 )
             }
@@ -134,7 +143,30 @@ fun MainNavigation() {
             composable(Screen.Settings.route) {
                 SettingsScreen()
             }
-            
+
+            composable(Screen.BookList.route) {
+                BookListScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    onBookListClick = { bookListId ->
+                        navController.navigate(Screen.BookListDetail.createRoute(bookListId))
+                    }
+                )
+            }
+
+            composable(
+                route = Screen.BookListDetail.route,
+                arguments = listOf(navArgument("bookListId") { type = NavType.LongType })
+            ) { backStackEntry ->
+                val bookListId = backStackEntry.arguments?.getLong("bookListId") ?: return@composable
+                BookListDetailScreen(
+                    bookListId = bookListId,
+                    onNavigateBack = { navController.popBackStack() },
+                    onBookClick = { bookId ->
+                        navController.navigate(Screen.BookDetail.createRoute(bookId))
+                    }
+                )
+            }
+
             composable(
                 route = Screen.BookDetail.route,
                 arguments = listOf(navArgument("bookId") { type = NavType.LongType })
@@ -143,7 +175,7 @@ fun MainNavigation() {
                 BookDetailScreen(
                     bookId = bookId,
                     onNavigateBack = { navController.popBackStack() },
-                    onEditBook = { 
+                    onEditBook = {
                         navController.navigate(Screen.EditBook.createRoute(bookId))
                     }
                 )

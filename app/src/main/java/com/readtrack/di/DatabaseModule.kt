@@ -3,11 +3,14 @@ package com.readtrack.di
 import android.content.Context
 import androidx.room.Room
 import com.readtrack.data.local.dao.BookDao
+import com.readtrack.data.local.dao.BookListDao
 import com.readtrack.data.local.dao.ReadingRecordDao
 import com.readtrack.data.local.database.ReadTrackDatabase
+import com.readtrack.data.repository.BookListRepositoryImpl
 import com.readtrack.data.repository.BookRepositoryImpl
 import com.readtrack.data.repository.DataBackupRepositoryImpl
 import com.readtrack.data.repository.ReadingRecordRepositoryImpl
+import com.readtrack.domain.repository.BookListRepository
 import com.readtrack.domain.repository.BookRepository
 import com.readtrack.domain.repository.DataBackupRepository
 import com.readtrack.domain.repository.ReadingRecordRepository
@@ -48,12 +51,27 @@ object DatabaseModule {
 
     @Provides
     @Singleton
+    fun provideBookListDao(database: ReadTrackDatabase): BookListDao {
+        return database.bookListDao()
+    }
+
+    @Provides
+    @Singleton
     fun provideBookRepository(
         bookDao: BookDao,
         readingRecordDao: ReadingRecordDao,
         database: ReadTrackDatabase
     ): BookRepository {
         return BookRepositoryImpl(bookDao, readingRecordDao, database)
+    }
+
+    @Provides
+    @Singleton
+    fun provideBookListRepository(
+        bookListDao: BookListDao,
+        bookDao: BookDao
+    ): BookListRepository {
+        return BookListRepositoryImpl(bookListDao, bookDao)
     }
 
     @Provides
