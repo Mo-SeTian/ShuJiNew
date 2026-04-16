@@ -9,7 +9,8 @@ enum class BookSortOrder(val displayName: String) {
     UPDATED("最近更新"),
     TITLE("书名"),
     ADDED("添加时间"),
-    PROGRESS("阅读进度");
+    PROGRESS("阅读进度"),
+    RATING("评分");
 
     companion object {
         fun default(): BookSortOrder = LAST_READ
@@ -61,6 +62,10 @@ private fun sortBooks(books: List<BookEntity>, sortOrder: BookSortOrder): List<B
                 else -> 0.0
             }
         }
+        BookSortOrder.RATING -> books.sortedWith(
+            compareByDescending<BookEntity> { it.rating != null }
+                .thenByDescending { it.rating ?: 0f }
+        )
     }
 }
 

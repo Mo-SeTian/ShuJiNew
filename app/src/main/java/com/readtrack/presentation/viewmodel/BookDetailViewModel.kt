@@ -285,4 +285,23 @@ class BookDetailViewModel @Inject constructor(
     fun clearError() {
         _uiState.update { it.copy(errorMessage = null) }
     }
+
+    /**
+     * 更新书籍评分
+     * @param rating 0-5 星，传入 null 表示清除评分
+     */
+    fun updateRating(rating: Float?) {
+        val currentBook = _uiState.value.book ?: return
+        viewModelScope.launch {
+            try {
+                val updatedBook = currentBook.copy(
+                    rating = rating,
+                    updatedAt = System.currentTimeMillis()
+                )
+                bookRepository.updateBook(updatedBook)
+            } catch (e: Exception) {
+                _uiState.update { it.copy(errorMessage = "更新评分失败: ${e.message}") }
+            }
+        }
+    }
 }
