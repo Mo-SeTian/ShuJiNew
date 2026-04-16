@@ -23,13 +23,24 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("readtrack.keystore")
+            storePassword = "ReadTrack2024!"
+            keyAlias = "readtrack"
+            keyPassword = "ReadTrack2024!"
+        }
+    }
+
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {
