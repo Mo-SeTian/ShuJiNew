@@ -24,7 +24,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.readtrack.domain.model.BookStatus
 import com.readtrack.presentation.ui.components.BookCard
-import com.readtrack.presentation.ui.components.QuickRecordDialog
 import com.readtrack.presentation.ui.components.getStatusColor
 import com.readtrack.presentation.viewmodel.BookSortOrder
 import com.readtrack.presentation.viewmodel.BooksViewModel
@@ -42,7 +41,6 @@ fun BooksScreen(
     var showSortMenu by remember { mutableStateOf(false) }
     var selectedBookIds by remember { mutableStateOf(setOf<Long>()) }
     var showAddToBookListDialog by remember { mutableStateOf(false) }
-    var quickRecordBookId by remember { mutableStateOf<Long?>(null) }
 
     val isSelectionMode = selectedBookIds.isNotEmpty()
 
@@ -290,9 +288,7 @@ fun BooksScreen(
                                 },
                                 onLongClick = if (!isSelectionMode && book.id !in selectedBookIds) {
                                     { selectedBookIds = selectedBookIds + book.id }
-                                } else null,
-                                onQuickRecord = { id -> quickRecordBookId = id },
-                                onQuickFinish = { id -> viewModel.quickFinish(id) }
+                                } else null
                             )
                         }
                         // Bottom spacing for FAB
@@ -313,19 +309,5 @@ fun BooksScreen(
                 selectedBookIds = emptySet()
             }
         )
-    }
-
-    // 快速记录弹窗
-    quickRecordBookId?.let { bookId ->
-        viewModel.getBookById(bookId)?.let { book ->
-            QuickRecordDialog(
-                book = book,
-                onDismiss = { quickRecordBookId = null },
-                onConfirm = { newPage, newChapter ->
-                    viewModel.quickRecord(bookId, newPage, newChapter)
-                    quickRecordBookId = null
-                }
-            )
-        }
     }
 }
