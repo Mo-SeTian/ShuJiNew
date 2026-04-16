@@ -9,6 +9,8 @@ jobs:
   release:
     name: 构建并发布 Release APK
     runs-on: macos-latest
+    permissions:
+      contents: write
 
     steps:
       - name: 检出代码
