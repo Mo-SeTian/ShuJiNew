@@ -6,15 +6,31 @@ import com.readtrack.presentation.viewmodel.ProgressType
 import kotlinx.serialization.Serializable
 
 /**
+ * 书单导出模型
+ */
+@Serializable
+data class BookListExport(
+    val id: Long,
+    val name: String,
+    val description: String? = null,
+    val coverPath: String? = null,
+    val coverBookId: Long? = null,
+    val bookIds: List<Long> = emptyList(),
+    val createdAt: Long,
+    val updatedAt: Long
+)
+
+/**
  * 数据备份模型 - 用于导入导出
  */
 @Serializable
 data class DataBackup(
-    val version: Int = 1,
+    val version: Int = 2,
     val exportTime: Long = System.currentTimeMillis(),
     val appVersion: String = "1.0.0",
     val books: List<BookExport> = emptyList(),
-    val readingRecords: List<ReadingRecordExport> = emptyList()
+    val readingRecords: List<ReadingRecordExport> = emptyList(),
+    val bookLists: List<BookListExport> = emptyList()
 )
 
 /**
@@ -112,5 +128,6 @@ data class ReadingRecordExport(
 data class ImportResult(
     val booksImported: Int,
     val recordsImported: Int,
+    val bookListsImported: Int = 0,
     val errors: List<String> = emptyList()
 )

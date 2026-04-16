@@ -84,8 +84,9 @@ object DatabaseModule {
     @Singleton
     fun provideDataBackupRepository(
         bookDao: BookDao,
-        readingRecordDao: ReadingRecordDao
+        readingRecordDao: ReadingRecordDao,
+        bookListDao: BookListDao
     ): DataBackupRepository {
-        return DataBackupRepositoryImpl(bookDao, readingRecordDao)
+        return DataBackupRepositoryImpl(bookDao, readingRecordDao, bookListDao)
     }
 }
