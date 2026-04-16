@@ -148,7 +148,11 @@ class BooksViewModel @Inject constructor(
                         progressType = book.progressType,
                         status = book.status
                     ),
-                    pagesRead = if (isChapterBased) 0.0 else (newPage - book.currentPage).coerceAtLeast(0.0),
+                    pagesRead = if (isChapterBased) {
+                        (newChapter - book.currentChapter).toDouble().coerceAtLeast(0.0)
+                    } else {
+                        (newPage - book.currentPage).coerceAtLeast(0.0)
+                    },
                     fromPage = book.currentPage,
                     toPage = if (isChapterBased) 0.0 else newPage.coerceAtMost(book.totalPages),
                     recordType = RecordType.NORMAL,
