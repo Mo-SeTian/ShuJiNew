@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Background -->
+    <path
+        android:fillColor="#1A5F7A"
+        android:pathData="M0,0h108v108h-108z"/>
+    <!-- Centered elegant open book with bookmark -->
+    <group android:translateX="27" android:translateY="27">
+        <!-- Left page -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M4,8C4,6.34 5.34,5 7,5L23,5L23,46C23,47.66 21.66,49 20,49L7,49C5.34,49 4,47.66 4,46L4,8Z"/>
+        <!-- Right page -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M50,8C50,6.34 48.66,5 47,5L31,5L31,46C31,47.66 32.34,49 34,49L47,49C48.66,49 50,47.66 50,46L50,8Z"/>
+        <!-- Book spine -->
+        <path
+            android:fillColor="#E8E8E8"
+            android:pathData="M23,5L27,5L27,46L23,46Z"/>
+        <!-- Page lines — left -->
+        <path
+            android:fillColor="#1A5F7A"
+            android:fillAlpha="0.4"
+            android:pathData="M8,14L19,14L19,16L8,16Z"/>
+        <path
+            android:fillColor="#1A5F7A"
+            android:fillAlpha="0.4"
+            android:pathData="M8,21L19,21L19,23L8,23Z"/>
+        <path
+            android:fillColor="#1A5F7A"
+            android:fillAlpha="0.4"
+            android:pathData="M8,28L19,28L19,30L8,30Z"/>
+        <!-- Page lines — right -->
+        <path
+            android:fillColor="#1A5F7A"
+            android:fillAlpha="0.4"
+            android:pathData="M35,14L46,14L46,16L35,16Z"/>
+        <path
+            android:fillColor="#1A5F7A"
+            android:fillAlpha="0.4"
+            android:pathData="M35,21L46,21L46,23L35,23Z"/>
+        <path
+            android:fillColor="#1A5F7A"
+            android:fillAlpha="0.4"
+            android:pathData="M35,28L46,28L46,30L35,30Z"/>
+        <!-- Bookmark ribbon -->
+        <path
+            android:fillColor="#E8846B"
+            android:pathData="M37,4L44,4L44,24L40.5,21L37,24Z"/>
+        <path
+            android:fillColor="#F5A893"
+            android:fillAlpha="0.6"
+            android:pathData="M37,4L40.5,4L40.5,7L37,7Z"/>
+    </group>
+</vector>

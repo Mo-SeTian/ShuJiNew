@@ -16,7 +16,37 @@
     <color name="md_theme_light_onBackground">#1C1B1F</color>
     <color name="md_theme_light_surface">#FAFAFA</color>
     <color name="md_theme_light_onSurface">#1C1B1F</color>
-    
+
+    <!-- Dark Theme Colors (mirrors values-night/colors.xml) -->
+    <color name="md_theme_dark_primary">#B8C8FF</color>
+    <color name="md_theme_dark_onPrimary">#002B75</color>
+    <color name="md_theme_dark_primaryContainer">#003FA3</color>
+    <color name="md_theme_dark_onPrimaryContainer">#D9E2FF</color>
+    <color name="md_theme_dark_secondary">#C6C3DD</color>
+    <color name="md_theme_dark_onSecondary">#353349</color>
+    <color name="md_theme_dark_secondaryContainer">#4C4A63</color>
+    <color name="md_theme_dark_onSecondaryContainer">#E2DFFF</color>
+    <color name="md_theme_dark_tertiary">#F0Bfa7</color>
+    <color name="md_theme_dark_onTertiary">#462A1C</color>
+    <color name="md_theme_dark_tertiaryContainer">#614033</color>
+    <color name="md_theme_dark_onTertiaryContainer">#FFDAD0</color>
+    <color name="md_theme_dark_error">#FFB4AB</color>
+    <color name="md_theme_dark_onError">#690005</color>
+    <color name="md_theme_dark_errorContainer">#93000A</color>
+    <color name="md_theme_dark_onErrorContainer">#FFDAD6</color>
+    <color name="md_theme_dark_background">#1B1B1F</color>
+    <color name="md_theme_dark_onBackground">#E4E1E6</color>
+    <color name="md_theme_dark_surface">#1B1B1F</color>
+    <color name="md_theme_dark_onSurface">#E4E1E6</color>
+    <color name="md_theme_dark_surfaceVariant">#49454F</color>
+    <color name="md_theme_dark_onSurfaceVariant">#CAC4D0</color>
+    <color name="md_theme_dark_outline">#938F99</color>
+    <color name="md_theme_dark_outlineVariant">#49454F</color>
+    <color name="md_theme_dark_inverseSurface">#E6E1E6</color>
+    <color name="md_theme_dark_inverseOnSurface">#313033</color>
+    <color name="md_theme_dark_inversePrimary">#4A6FA5</color>
+    <color name="md_theme_dark_surfaceTint">#B8C8FF</color>
+
     <!-- Book Status Colors -->
     <color name="WantToReadGreen">#4CAF50</color>
     <color name="ReadingOrange">#FF9800</color>
