@@ -7,6 +7,7 @@ import com.readtrack.data.local.entity.BookListCrossRef
 import com.readtrack.data.local.entity.BookListEntity
 import com.readtrack.domain.repository.BookListRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -52,26 +53,16 @@ class BookListRepositoryImpl @Inject constructor(
     override suspend fun addBookToList(bookListId: Long, bookId: Long) {
         bookListDao.addBookToList(BookListCrossRef(bookListId, bookId))
         bookListDao.updateBookCount(bookListId)
-        // 如果书单还没有封面，取第一本书的封面作为书单封面
-        val bookList = bookListDao.getBookListByIdOnce(bookListId)
-        if (bookList != null && bookList.coverPath == null) {
-            val book = bookDao.getBookByIdOnce(bookId)
-            if (book?.coverPath != null) {
-                bookListDao.updateBookList(
-                    bookList.copy(coverPath = book.coverPath, updatedAt = System.currentTimeMillis())
-                )
-            }
-        }
+        refreshCoverIfNeeded(bookListId)
     }
 
     override suspend fun removeBookFromList(bookListId: Long, bookId: Long) {
         bookListDao.removeBookFromList(bookListId, bookId)
         bookListDao.updateBookCount(bookListId)
-        // 如果移除后书单空了，清除封面
+        // 如果被移除的是封面来源书籍，重新自动更新封面
         val bookList = bookListDao.getBookListByIdOnce(bookListId)
-        if (bookList != null) {
-            val books = bookListDao.getBooksInBookList(bookListId)
-            // 书单封面逻辑在 Flow 收集时更新
+        if (bookList != null && bookList.coverBookId == bookId) {
+            refreshCoverAuto(bookListId)
         }
     }
 
@@ -82,10 +73,46 @@ class BookListRepositoryImpl @Inject constructor(
         val crossRefs = bookIds.map { BookListCrossRef(bookListId, it) }
         bookListDao.addBooksToList(crossRefs)
         bookListDao.updateBookCount(bookListId)
+        refreshCoverIfNeeded(bookListId)
     }
 
     override suspend fun clearBookList(bookListId: Long) {
         bookListDao.clearBookList(bookListId)
         bookListDao.updateBookCount(bookListId)
+        // 清空书单后也清除封面
+        val bookList = bookListDao.getBookListByIdOnce(bookListId)
+        if (bookList != null && bookList.coverBookId != null) {
+            bookListDao.updateBookList(
+                bookList.copy(coverPath = null, coverBookId = null, updatedAt = System.currentTimeMillis())
+            )
+        }
+    }
+
+    /**
+     * 如果书单还没有封面，自动设置为第一本有封面的书的封面
+     */
+    private suspend fun refreshCoverIfNeeded(bookListId: Long) {
+        val bookList = bookListDao.getBookListByIdOnce(bookListId) ?: return
+        // 只在用户未自定义封面的情况下自动更新
+        if (bookList.coverPath != null) return
+        refreshCoverAuto(bookListId)
+    }
+
+    /**
+     * 自动刷新封面：取书单中第一本有封面的书
+     */
+    private suspend fun refreshCoverAuto(bookListId: Long) {
+        val bookList = bookListDao.getBookListByIdOnce(bookListId) ?: return
+        val books = bookListDao.getBooksInBookList(bookListId).first()
+        val coverBook = books.firstOrNull { !it.coverPath.isNullOrBlank() }
+        if (coverBook != null) {
+            bookListDao.updateBookList(
+                bookList.copy(
+                    coverPath = coverBook.coverPath,
+                    coverBookId = coverBook.id,
+                    updatedAt = System.currentTimeMillis()
+                )
+            )
+        }
     }
 }

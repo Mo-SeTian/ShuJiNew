@@ -26,20 +26,26 @@ import com.readtrack.presentation.viewmodel.AddToBookListViewModel
 
 /**
  * 显示书籍添加到书单的对话框。
+ * 支持单书模式和批量模式（传入多个 bookIds）。
  * 支持查看当前书籍所属的所有书单，以及创建新书单。
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddToBookListDialog(
-    bookId: Long,
+    bookIds: List<Long>,
     onDismiss: () -> Unit,
     viewModel: AddToBookListViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showCreateDialog by remember { mutableStateOf(false) }
+    val isBatch = bookIds.size > 1
 
-    LaunchedEffect(bookId) {
-        viewModel.loadBookListsForBook(bookId)
+    LaunchedEffect(bookIds) {
+        if (isBatch) {
+            viewModel.loadBookListsForBooks(bookIds)
+        } else {
+            viewModel.loadBookListsForBook(bookIds.first())
+        }
     }
 
     AlertDialog(
@@ -48,11 +54,20 @@ fun AddToBookListDialog(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.PlaylistAdd, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("加入书单")
+                Text(if (isBatch) "批量加入书单" else "加入书单")
             }
         },
         text = {
             Column(modifier = Modifier.heightIn(max = 400.dp)) {
+                if (isBatch) {
+                    Text(
+                        "已选择 ${bookIds.size} 本书",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                }
+
                 if (uiState.isLoading) {
                     Box(
                         modifier = Modifier.fillMaxWidth().padding(32.dp),
@@ -118,7 +133,13 @@ fun AddToBookListDialog(
                                 Surface(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .clickable { viewModel.toggleBookListMembership(bookId, bookList.id) },
+                                        .clickable {
+                                            if (isBatch) {
+                                                viewModel.toggleBookListMembership(bookList.id)
+                                            } else {
+                                                viewModel.toggleBookListMembership(bookIds.first(), bookList.id)
+                                            }
+                                        },
                                     shape = RoundedCornerShape(12.dp),
                                     color = if (isInList)
                                         MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
@@ -198,7 +219,11 @@ fun AddToBookListDialog(
         CreateBookListDialog(
             onDismiss = { showCreateDialog = false },
             onConfirm = { name, description ->
-                viewModel.createBookListAndAddBook(bookId, name, description)
+                if (isBatch) {
+                    viewModel.createBookListAndAddBooks(name, description)
+                } else {
+                    viewModel.createBookListAndAddBook(bookIds.first(), name, description)
+                }
                 showCreateDialog = false
             }
         )

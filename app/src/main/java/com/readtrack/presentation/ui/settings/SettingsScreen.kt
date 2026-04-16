@@ -132,6 +132,9 @@ fun SettingsScreen(
                     Text("成功导入：")
                     Text("• 书籍：${result.booksImported} 本")
                     Text("• 阅读记录：${result.recordsImported} 条")
+                    if (result.bookListsImported > 0) {
+                        Text("• 书单：${result.bookListsImported} 个")
+                    }
                     if (result.errors.isNotEmpty()) {
                         Spacer(Modifier.height(8.dp))
                         Text("警告：", color = MaterialTheme.colorScheme.error)

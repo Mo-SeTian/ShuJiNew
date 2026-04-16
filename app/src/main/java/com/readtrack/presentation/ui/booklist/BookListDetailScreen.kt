@@ -1,21 +1,27 @@
 package com.readtrack.presentation.ui.booklist
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.PlaylistRemove
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil.compose.AsyncImage
+import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.presentation.ui.components.BookCard
 import com.readtrack.presentation.viewmodel.BookListDetailViewModel
 
@@ -30,6 +36,7 @@ fun BookListDetailScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showClearDialog by remember { mutableStateOf(false) }
     var showRemoveDialog by remember { mutableStateOf(false) }
+    var showEditCoverDialog by remember { mutableStateOf(false) }
     var bookIdToRemove by remember { mutableStateOf<Long?>(null) }
 
     LaunchedEffect(bookListId) {
@@ -52,6 +59,12 @@ fun BookListDetailScreen(
                 },
                 actions = {
                     if (uiState.books.isNotEmpty()) {
+                        IconButton(onClick = { showEditCoverDialog = true }) {
+                            Icon(
+                                Icons.Default.Image,
+                                contentDescription = "更换封面"
+                            )
+                        }
                         IconButton(onClick = { showClearDialog = true }) {
                             Icon(
                                 Icons.Default.PlaylistRemove,
@@ -104,11 +117,11 @@ fun BookListDetailScreen(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                uiState.bookList?.description?.let { desc ->
-                    if (desc.isNotBlank()) {
+                uiState.bookList?.let { bookList ->
+                    if (!bookList.description.isNullOrBlank()) {
                         item {
                             Text(
-                                text = desc,
+                                text = bookList.description,
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(bottom = 4.dp)
@@ -221,4 +234,155 @@ fun BookListDetailScreen(
             )
         }
     }
+
+    // Edit cover dialog
+    if (showEditCoverDialog) {
+        EditBookListCoverDialog(
+            bookList = uiState.bookList,
+            books = uiState.books,
+            onDismiss = { showEditCoverDialog = false },
+            onSelectCover = { bookId ->
+                viewModel.updateCover(bookId)
+                showEditCoverDialog = false
+            },
+            onAutoUpdate = {
+                viewModel.updateCoverAuto()
+                showEditCoverDialog = false
+            },
+            onRemoveCover = {
+                viewModel.removeCover()
+                showEditCoverDialog = false
+            }
+        )
+    }
+}
+
+@Composable
+fun EditBookListCoverDialog(
+    bookList: com.readtrack.data.local.entity.BookListEntity?,
+    books: List<BookEntity>,
+    onDismiss: () -> Unit,
+    onSelectCover: (bookId: Long) -> Unit,
+    onAutoUpdate: () -> Unit,
+    onRemoveCover: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("更换封面") },
+        text = {
+            Column {
+                if (bookList?.coverPath != null) {
+                    // Show current cover
+                    AsyncImage(
+                        model = bookList.coverPath,
+                        contentDescription = "当前封面",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(120.dp)
+                            .clip(RoundedCornerShape(12.dp)),
+                        contentScale = ContentScale.Crop
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+
+                // Auto update option
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onAutoUpdate() },
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.AutoAwesome,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text("自动封面", fontWeight = FontWeight.Medium)
+                            Text(
+                                "自动选择第一本的封面",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Remove cover option
+                if (bookList?.coverPath != null) {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onRemoveCover() },
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.Delete,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                "移除封面",
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+
+                // Pick from books
+                if (books.isNotEmpty()) {
+                    Text(
+                        "从书单中选择：",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(vertical = 4.dp)
+                    )
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(books.filter { !it.coverPath.isNullOrBlank() }) { book ->
+                            Surface(
+                                modifier = Modifier
+                                    .size(60.dp, 85.dp)
+                                    .clickable { onSelectCover(book.id) },
+                                shape = RoundedCornerShape(8.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                border = if (bookList?.coverBookId == book.id) {
+                                    BorderStroke(
+                                        2.dp,
+                                        MaterialTheme.colorScheme.primary
+                                    )
+                                } else null
+                            ) {
+                                AsyncImage(
+                                    model = book.coverPath,
+                                    contentDescription = book.title,
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("关闭") }
+        }
+    )
 }

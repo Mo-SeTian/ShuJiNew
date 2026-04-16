@@ -7,15 +7,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CollectionsBookmark
+import androidx.compose.material.icons.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -35,78 +34,125 @@ fun BooksScreen(
     onBookClick: (Long) -> Unit,
     onAddBookClick: () -> Unit,
     onBookListClick: () -> Unit = {},
+    onBatchAddToBookList: (List<Long>) -> Unit = {},
     viewModel: BooksViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showSortMenu by remember { mutableStateOf(false) }
+    var selectedBookIds by remember { mutableStateOf(setOf<Long>()) }
+    var showAddToBookListDialog by remember { mutableStateOf(false) }
+
+    val isSelectionMode = selectedBookIds.isNotEmpty()
 
     Scaffold(
         topBar = {
-            SmallTopAppBar(
-                modifier = Modifier.statusBarsPadding(),
-                title = {
-                    Text(
-                        "我的书籍",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
-                    )
-                },
-                actions = {
-                    Box {
-                        TextButton(onClick = { showSortMenu = true }) {
-                            Icon(
-                                Icons.Default.Sort,
-                                contentDescription = "排序",
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(uiState.sortOrder.displayName)
+            if (isSelectionMode) {
+                // Selection mode top bar
+                TopAppBar(
+                    modifier = Modifier.statusBarsPadding(),
+                    title = {
+                        Text("${selectedBookIds.size} 本已选择")
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = { selectedBookIds = emptySet() }) {
+                            Icon(Icons.Default.Close, contentDescription = "取消选择")
                         }
-                        DropdownMenu(
-                            expanded = showSortMenu,
-                            onDismissRequest = { showSortMenu = false }
-                        ) {
-                            BookSortOrder.entries.forEach { sortOrder ->
-                                DropdownMenuItem(
-                                    text = {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Text(sortOrder.displayName)
-                                            if (uiState.sortOrder == sortOrder) {
-                                                Spacer(modifier = Modifier.width(8.dp))
-                                                Text("✓", color = MaterialTheme.colorScheme.primary)
-                                            }
-                                        }
-                                    },
-                                    onClick = {
-                                        viewModel.setSortOrder(sortOrder)
-                                        showSortMenu = false
-                                    }
+                    },
+                    actions = {
+                        IconButton(onClick = {
+                            showAddToBookListDialog = true
+                        }) {
+                            Icon(
+                                Icons.Default.PlaylistAdd,
+                                contentDescription = "添加到书单"
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                )
+            } else {
+                // Normal top bar
+                SmallTopAppBar(
+                    modifier = Modifier.statusBarsPadding(),
+                    title = {
+                        Text(
+                            "我的书籍",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                    },
+                    actions = {
+                        Box {
+                            TextButton(onClick = { showSortMenu = true }) {
+                                Icon(
+                                    Icons.Default.Sort,
+                                    contentDescription = "排序",
+                                    modifier = Modifier.size(18.dp)
                                 )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(uiState.sortOrder.displayName)
+                            }
+                            DropdownMenu(
+                                expanded = showSortMenu,
+                                onDismissRequest = { showSortMenu = false }
+                            ) {
+                                BookSortOrder.entries.forEach { sortOrder ->
+                                    DropdownMenuItem(
+                                        text = {
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Text(sortOrder.displayName)
+                                                if (uiState.sortOrder == sortOrder) {
+                                                    Spacer(modifier = Modifier.width(8.dp))
+                                                    Text("✓", color = MaterialTheme.colorScheme.primary)
+                                                }
+                                            }
+                                        },
+                                        onClick = {
+                                            viewModel.setSortOrder(sortOrder)
+                                            showSortMenu = false
+                                        }
+                                    )
+                                }
                             }
                         }
-                    }
-                    IconButton(onClick = onBookListClick) {
-                        Icon(
-                            Icons.Default.CollectionsBookmark,
-                            contentDescription = "书单收藏夹",
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.smallTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
+                        IconButton(onClick = onBookListClick) {
+                            Icon(
+                                Icons.Default.CollectionsBookmark,
+                                contentDescription = "书单收藏夹",
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.smallTopAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
                 )
-            )
+            }
         },
         floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = onAddBookClick,
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
-            ) {
-                Icon(Icons.Default.Add, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("添加书籍")
+            if (isSelectionMode) {
+                ExtendedFloatingActionButton(
+                    onClick = { showAddToBookListDialog = true },
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                ) {
+                    Icon(Icons.Default.PlaylistAdd, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("加入书单")
+                }
+            } else {
+                ExtendedFloatingActionButton(
+                    onClick = onAddBookClick,
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("添加书籍")
+                }
             }
         }
     ) { padding ->
@@ -225,9 +271,24 @@ fun BooksScreen(
                             items = uiState.filteredBooks,
                             key = { it.id }
                         ) { book ->
+                            val isSelected = book.id in selectedBookIds
                             BookCard(
                                 book = book,
-                                onClick = { onBookClick(book.id) }
+                                selected = isSelected,
+                                onClick = {
+                                    if (isSelectionMode) {
+                                        selectedBookIds = if (isSelected) {
+                                            selectedBookIds - book.id
+                                        } else {
+                                            selectedBookIds + book.id
+                                        }
+                                    } else {
+                                        onBookClick(book.id)
+                                    }
+                                },
+                                onLongClick = if (!isSelectionMode && book.id !in selectedBookIds) {
+                                    { selectedBookIds = selectedBookIds + book.id }
+                                } else null
                             )
                         }
                         // Bottom spacing for FAB
@@ -238,5 +299,15 @@ fun BooksScreen(
                 }
             }
         }
+    }
+
+    if (showAddToBookListDialog && selectedBookIds.isNotEmpty()) {
+        com.readtrack.presentation.ui.booklist.AddToBookListDialog(
+            bookIds = selectedBookIds.toList(),
+            onDismiss = {
+                showAddToBookListDialog = false
+                selectedBookIds = emptySet()
+            }
+        )
     }
 }

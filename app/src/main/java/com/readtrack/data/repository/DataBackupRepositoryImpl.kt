@@ -1,9 +1,13 @@
 package com.readtrack.data.repository
 
 import com.readtrack.data.local.dao.BookDao
+import com.readtrack.data.local.dao.BookListDao
 import com.readtrack.data.local.dao.ReadingRecordDao
+import com.readtrack.data.local.entity.BookListCrossRef
+import com.readtrack.data.local.entity.BookListEntity
 import com.readtrack.data.local.entity.ReadingRecordEntity
 import com.readtrack.domain.model.BookExport
+import com.readtrack.domain.model.BookListExport
 import com.readtrack.domain.model.DataBackup
 import com.readtrack.domain.model.ImportResult
 import com.readtrack.domain.model.ReadingRecordExport
@@ -19,7 +23,8 @@ import javax.inject.Singleton
 @Singleton
 class DataBackupRepositoryImpl @Inject constructor(
     private val bookDao: BookDao,
-    private val recordDao: ReadingRecordDao
+    private val recordDao: ReadingRecordDao,
+    private val bookListDao: BookListDao
 ) : DataBackupRepository {
 
     private val json = Json {
@@ -39,9 +44,27 @@ class DataBackupRepositoryImpl @Inject constructor(
 
             val bookExports = books.map { BookExport.fromEntity(it) }
 
+            // 导出书单
+            val allBookLists = bookListDao.getAllBookLists().first()
+            val bookListExports = allBookLists.map { bookList ->
+                // 获取书单内的书籍ID
+                val booksInList = bookListDao.getBooksInBookList(bookList.id).first()
+                BookListExport(
+                    id = bookList.id,
+                    name = bookList.name,
+                    description = bookList.description,
+                    coverPath = bookList.coverPath,
+                    coverBookId = bookList.coverBookId,
+                    bookIds = booksInList.map { it.id },
+                    createdAt = bookList.createdAt,
+                    updatedAt = bookList.updatedAt
+                )
+            }
+
             val backup = DataBackup(
                 books = bookExports,
-                readingRecords = records
+                readingRecords = records,
+                bookLists = bookListExports
             )
 
             Result.success(backup)
@@ -55,6 +78,7 @@ class DataBackupRepositoryImpl @Inject constructor(
             val errors = mutableListOf<String>()
             var booksImported = 0
             var recordsImported = 0
+            var bookListsImported = 0
 
             // 创建旧书ID -> 新书ID 的映射
             val oldIdToNewId = mutableMapOf<Long, Long>()
@@ -63,6 +87,8 @@ class DataBackupRepositoryImpl @Inject constructor(
                 // 整表清空，阅读记录外键级联删除
                 recordDao.deleteAllRecords()
                 bookDao.deleteAllBooks()
+                // 清空书单（书单内的 cross_ref 由外键级联删除）
+                bookListDao.deleteAllBookLists()
             }
 
             // 追加导入时：查询现有书籍用于去重（按 title + author 匹配）
@@ -132,7 +158,37 @@ class DataBackupRepositoryImpl @Inject constructor(
                 }
             }
 
-            Result.success(ImportResult(booksImported, recordsImported, errors))
+            // 导入书单
+            backup.bookLists.forEach { bookListExport ->
+                try {
+                    val bookList = BookListEntity(
+                        id = 0,
+                        name = bookListExport.name,
+                        description = bookListExport.description,
+                        coverPath = bookListExport.coverPath,
+                        coverBookId = bookListExport.coverBookId,
+                        bookCount = 0,
+                        createdAt = bookListExport.createdAt,
+                        updatedAt = bookListExport.updatedAt
+                    )
+                    val newBookListId = bookListDao.insertBookList(bookList)
+                    bookListsImported++
+
+                    // 添加书单内书籍的关联
+                    val validBookIds = bookListExport.bookIds.mapNotNull { oldBookId ->
+                        oldIdToNewId[oldBookId]
+                    }
+                    if (validBookIds.isNotEmpty()) {
+                        val crossRefs = validBookIds.map { BookListCrossRef(newBookListId, it) }
+                        bookListDao.addBooksToList(crossRefs)
+                        bookListDao.updateBookCount(newBookListId)
+                    }
+                } catch (e: Exception) {
+                    errors.add("导入书单「${bookListExport.name}」失败: ${e.message}")
+                }
+            }
+
+            Result.success(ImportResult(booksImported, recordsImported, bookListsImported, errors))
         } catch (e: Exception) {
             Result.failure(e)
         }

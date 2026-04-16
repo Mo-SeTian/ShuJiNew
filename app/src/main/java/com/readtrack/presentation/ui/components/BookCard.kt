@@ -1,8 +1,11 @@
 package com.readtrack.presentation.ui.components
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -15,11 +18,16 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import com.readtrack.data.local.entity.BookEntity
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun BookCard(
     book: BookEntity,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    /** 是否显示选中态（用于批量选择模式） */
+    selected: Boolean = false,
+    /** 长按回调（用于进入选择模式），传入 null 则不响应长按 */
+    onLongClick: (() -> Unit)? = null
 ) {
     val statusColor = statusColorOf(book.status)
     val progressModel = remember(book) { book.toBookProgressUiModel() }
@@ -27,11 +35,23 @@ fun BookCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .then(
+                if (onLongClick != null) {
+                    Modifier.combinedClickable(
+                        onClick = onClick,
+                        onLongClick = onLongClick
+                    )
+                } else {
+                    Modifier
+                }
+            ),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = if (selected)
+                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+            else
+                MaterialTheme.colorScheme.surface
         )
     ) {
         Row(
@@ -40,6 +60,24 @@ fun BookCard(
                 .padding(12.dp),
             verticalAlignment = Alignment.Top
         ) {
+            // Selection indicator (batch mode)
+            if (selected) {
+                Box(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .padding(end = 4.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Default.CheckCircle,
+                        contentDescription = "已选择",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(4.dp))
+            }
+
             // Book Cover
             BookCover(
                 coverPath = book.coverPath,

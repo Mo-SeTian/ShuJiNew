@@ -34,6 +34,9 @@ interface BookListDao {
     @Query("DELETE FROM book_lists WHERE id = :id")
     suspend fun deleteBookListById(id: Long)
 
+    @Query("DELETE FROM book_lists")
+    suspend fun deleteAllBookLists()
+
     // ========== 书单内书籍 ==========
 
     /**
