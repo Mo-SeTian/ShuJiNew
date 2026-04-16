@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CollectionsBookmark
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material3.*
@@ -33,6 +34,7 @@ import com.readtrack.presentation.viewmodel.BooksViewModel
 fun BooksScreen(
     onBookClick: (Long) -> Unit,
     onAddBookClick: () -> Unit,
+    onBookListClick: () -> Unit = {},
     viewModel: BooksViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -82,6 +84,13 @@ fun BooksScreen(
                                 )
                             }
                         }
+                    }
+                    IconButton(onClick = onBookListClick) {
+                        Icon(
+                            Icons.Default.CollectionsBookmark,
+                            contentDescription = "书单收藏夹",
+                            modifier = Modifier.size(22.dp)
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.smallTopAppBarColors(
