@@ -210,7 +210,7 @@ fun SettingsScreen(
                 }) { showStatsUnitDialog = true }
             }
 
-            item { Spacer(Modifier.height(8.dp)); SettingsSectionCard("关于") }
+            item { Spacer(Modifier.height(8.dp)); SettingsSectionCard("其他") }
             item { SettingsClickableCard(Icons.Outlined.Info, "应用信息", "版本 1.0.0") { } }
         }
     }

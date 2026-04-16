@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.PlaylistAdd
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -44,6 +45,7 @@ import com.readtrack.presentation.ui.components.statusColorOf
 import com.readtrack.presentation.ui.components.statusLabelOf
 import com.readtrack.presentation.viewmodel.BookDetailViewModel
 import com.readtrack.presentation.viewmodel.ProgressType
+import com.readtrack.presentation.ui.booklist.AddToBookListDialog
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -59,6 +61,7 @@ fun BookDetailScreen(
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showAddRecordDialog by remember { mutableStateOf(false) }
     var showEditRecordDialog by remember { mutableStateOf(false) }
+    var showAddToBookListDialog by remember { mutableStateOf(false) }
     var recordToEdit by remember { mutableStateOf<ReadingRecordEntity?>(null) }
     var recordToDelete by remember { mutableStateOf<ReadingRecordEntity?>(null) }
 
@@ -77,6 +80,9 @@ fun BookDetailScreen(
                     }
                     IconButton(onClick = { showDeleteDialog = true }) {
                         Icon(Icons.Default.Delete, contentDescription = "删除", tint = MaterialTheme.colorScheme.error)
+                    }
+                    IconButton(onClick = { showAddToBookListDialog = true }) {
+                        Icon(Icons.Default.PlaylistAdd, contentDescription = "加入书单")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
@@ -194,6 +200,16 @@ fun BookDetailScreen(
                     item { Spacer(modifier = Modifier.height(16.dp)) }
                 }
             }
+        }
+    }
+
+    // 加入书单
+    if (showAddToBookListDialog) {
+        uiState.book?.let { book ->
+            AddToBookListDialog(
+                bookId = book.id,
+                onDismiss = { showAddToBookListDialog = false }
+            )
         }
     }
 
