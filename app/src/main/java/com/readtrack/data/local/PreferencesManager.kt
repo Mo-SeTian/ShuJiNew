@@ -2,7 +2,11 @@ package com.readtrack.data.local
 
 import android.content.Context
 import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.*
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
@@ -23,6 +27,12 @@ enum class StatsUnit {
     PAGE
 }
 
+enum class AutoBackupFrequency(val intervalDays: Long) {
+    OFF(0),
+    DAILY(1),
+    WEEKLY(7)
+}
+
 @Singleton
 class PreferencesManager @Inject constructor(
     @ApplicationContext private val context: Context
@@ -35,24 +45,23 @@ class PreferencesManager @Inject constructor(
         val LAST_READ_BOOK_ID = longPreferencesKey("last_read_book_id")
         val DOUBAN_COOKIE = stringPreferencesKey("douban_cookie")
         val STATS_UNIT = stringPreferencesKey("stats_unit")
+        val WEBDAV_SERVER_URL = stringPreferencesKey("webdav_server_url")
+        val WEBDAV_USERNAME = stringPreferencesKey("webdav_username")
+        val WEBDAV_PASSWORD = stringPreferencesKey("webdav_password")
+        val WEBDAV_REMOTE_PATH = stringPreferencesKey("webdav_remote_path")
+        val WEBDAV_AUTO_BACKUP_FREQUENCY = stringPreferencesKey("webdav_auto_backup_frequency")
+        val WEBDAV_LAST_BACKUP_AT = longPreferencesKey("webdav_last_backup_at")
+        val WEBDAV_LAST_ERROR = stringPreferencesKey("webdav_last_error")
     }
 
     val themeMode: Flow<ThemeMode> = dataStore.data.map { preferences ->
         val themeName = preferences[THEME_MODE] ?: ThemeMode.SYSTEM.name
-        try {
-            ThemeMode.valueOf(themeName)
-        } catch (e: Exception) {
-            ThemeMode.SYSTEM
-        }
+        runCatching { ThemeMode.valueOf(themeName) }.getOrDefault(ThemeMode.SYSTEM)
     }
 
     val statsUnit: Flow<StatsUnit> = dataStore.data.map { preferences ->
         val unitName = preferences[STATS_UNIT] ?: StatsUnit.CHAPTER.name
-        try {
-            StatsUnit.valueOf(unitName)
-        } catch (e: Exception) {
-            StatsUnit.CHAPTER
-        }
+        runCatching { StatsUnit.valueOf(unitName) }.getOrDefault(StatsUnit.CHAPTER)
     }
 
     val isFirstLaunch: Flow<Boolean> = dataStore.data.map { preferences ->
@@ -65,6 +74,35 @@ class PreferencesManager @Inject constructor(
 
     val doubanCookie: Flow<String> = dataStore.data.map { preferences ->
         preferences[DOUBAN_COOKIE] ?: ""
+    }
+
+    val webDavServerUrl: Flow<String> = dataStore.data.map { preferences ->
+        preferences[WEBDAV_SERVER_URL] ?: ""
+    }
+
+    val webDavUsername: Flow<String> = dataStore.data.map { preferences ->
+        preferences[WEBDAV_USERNAME] ?: ""
+    }
+
+    val webDavPassword: Flow<String> = dataStore.data.map { preferences ->
+        preferences[WEBDAV_PASSWORD] ?: ""
+    }
+
+    val webDavRemotePath: Flow<String> = dataStore.data.map { preferences ->
+        preferences[WEBDAV_REMOTE_PATH] ?: "ReadTrack"
+    }
+
+    val autoBackupFrequency: Flow<AutoBackupFrequency> = dataStore.data.map { preferences ->
+        val frequencyName = preferences[WEBDAV_AUTO_BACKUP_FREQUENCY] ?: AutoBackupFrequency.OFF.name
+        runCatching { AutoBackupFrequency.valueOf(frequencyName) }.getOrDefault(AutoBackupFrequency.OFF)
+    }
+
+    val lastWebDavBackupAt: Flow<Long?> = dataStore.data.map { preferences ->
+        preferences[WEBDAV_LAST_BACKUP_AT]
+    }
+
+    val lastWebDavError: Flow<String?> = dataStore.data.map { preferences ->
+        preferences[WEBDAV_LAST_ERROR]
     }
 
     suspend fun setThemeMode(mode: ThemeMode) {
@@ -94,6 +132,46 @@ class PreferencesManager @Inject constructor(
     suspend fun setStatsUnit(unit: StatsUnit) {
         dataStore.edit { preferences ->
             preferences[STATS_UNIT] = unit.name
+        }
+    }
+
+    suspend fun setWebDavConfig(
+        serverUrl: String,
+        username: String,
+        password: String,
+        remotePath: String
+    ) {
+        dataStore.edit { preferences ->
+            preferences[WEBDAV_SERVER_URL] = serverUrl.trim()
+            preferences[WEBDAV_USERNAME] = username.trim()
+            preferences[WEBDAV_PASSWORD] = password
+            preferences[WEBDAV_REMOTE_PATH] = remotePath.trim().trim('/').ifBlank { "ReadTrack" }
+        }
+    }
+
+    suspend fun setAutoBackupFrequency(frequency: AutoBackupFrequency) {
+        dataStore.edit { preferences ->
+            preferences[WEBDAV_AUTO_BACKUP_FREQUENCY] = frequency.name
+        }
+    }
+
+    suspend fun setLastWebDavBackupAt(timestamp: Long?) {
+        dataStore.edit { preferences ->
+            if (timestamp == null) {
+                preferences.remove(WEBDAV_LAST_BACKUP_AT)
+            } else {
+                preferences[WEBDAV_LAST_BACKUP_AT] = timestamp
+            }
+        }
+    }
+
+    suspend fun setLastWebDavError(message: String?) {
+        dataStore.edit { preferences ->
+            if (message.isNullOrBlank()) {
+                preferences.remove(WEBDAV_LAST_ERROR)
+            } else {
+                preferences[WEBDAV_LAST_ERROR] = message
+            }
         }
     }
 

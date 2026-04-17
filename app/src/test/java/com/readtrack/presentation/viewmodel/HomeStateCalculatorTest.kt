@@ -1,5 +1,6 @@
 package com.readtrack.presentation.viewmodel
 
+import com.readtrack.data.local.StatsUnit
 import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.data.local.entity.ReadingRecordEntity
 import com.readtrack.domain.model.BookStatus
@@ -55,7 +56,12 @@ class HomeStateCalculatorTest {
             ReadingRecordEntity(id = 2, bookId = 2, pagesRead = 3.0, fromPage = 1.0, toPage = 4.0, date = now)
         )
 
-        val state = buildHomeUiState(books, records, now)
+        val state = buildHomeUiState(
+            books = books,
+            records = records,
+            statsUnit = StatsUnit.PAGE,
+            now = now
+        )
 
         assertEquals(12.0, state.todayPages, 0.001)
         assertEquals(3.0, state.todayChapters, 0.001)
