@@ -5,26 +5,72 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.CloudDone
+import androidx.compose.material.icons.filled.Cookie
+import androidx.compose.material.icons.outlined.Analytics
+import androidx.compose.material.icons.outlined.CloudDownload
+import androidx.compose.material.icons.outlined.CloudSync
+import androidx.compose.material.icons.outlined.CloudUpload
+import androidx.compose.material.icons.outlined.DarkMode
+import androidx.compose.material.icons.outlined.Download
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material.icons.outlined.SettingsEthernet
+import androidx.compose.material.icons.outlined.Upload
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LargeTopAppBar
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.readtrack.data.local.AutoBackupFrequency
 import com.readtrack.data.local.StatsUnit
 import com.readtrack.data.local.ThemeMode
+import com.readtrack.presentation.viewmodel.CookieTestResult
+import com.readtrack.presentation.viewmodel.SettingsUiState
 import com.readtrack.presentation.viewmodel.SettingsViewModel
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,17 +78,18 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
     var showThemeDialog by remember { mutableStateOf(false) }
     var showStatsUnitDialog by remember { mutableStateOf(false) }
-    val context = LocalContext.current
-    
+    var showWebDavConfigDialog by remember { mutableStateOf(false) }
+    var showAutoBackupDialog by remember { mutableStateOf(false) }
     var pendingImportUri by remember { mutableStateOf<Uri?>(null) }
     var pendingImportContent by remember { mutableStateOf<String?>(null) }
-    
+
     val importLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
-        uri?.let { 
+        uri?.let {
             val content = context.contentResolver.openInputStream(it)?.bufferedReader()?.readText()
             if (content != null) {
                 viewModel.showClearConfirmDialog()
@@ -51,11 +98,10 @@ fun SettingsScreen(
             }
         }
     }
-    
+
     val exportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/json")
     ) { uri ->
-        // 用户取消保存时（uri 为 null）或保存成功，都要清除导出状态
         viewModel.clearExportSuccess()
         if (uri != null) {
             uiState.exportJson?.let { json ->
@@ -65,10 +111,10 @@ fun SettingsScreen(
             }
         }
     }
-    
+
     if (uiState.showClearConfirmDialog && pendingImportUri != null && pendingImportContent != null) {
         AlertDialog(
-            onDismissRequest = { 
+            onDismissRequest = {
                 viewModel.dismissClearConfirmDialog()
                 pendingImportUri = null
                 pendingImportContent = null
@@ -77,24 +123,20 @@ fun SettingsScreen(
             text = { Text("是否清空现有数据后再导入？\n\n• 是：删除所有现有书籍和记录\n• 否：保留现有数据，追加导入") },
             confirmButton = {
                 TextButton(onClick = {
-                    pendingImportContent?.let { content ->
-                        viewModel.importData(content, true)
-                    }
+                    pendingImportContent?.let { content -> viewModel.importData(content, true) }
                     pendingImportUri = null
                     pendingImportContent = null
                 }) { Text("清空并导入") }
             },
             dismissButton = {
                 Row {
-                    TextButton(onClick = { 
+                    TextButton(onClick = {
                         viewModel.dismissClearConfirmDialog()
                         pendingImportUri = null
                         pendingImportContent = null
                     }) { Text("取消") }
                     TextButton(onClick = {
-                        pendingImportContent?.let { content ->
-                            viewModel.importData(content, false)
-                        }
+                        pendingImportContent?.let { content -> viewModel.importData(content, false) }
                         pendingImportUri = null
                         pendingImportContent = null
                     }) { Text("追加导入") }
@@ -102,10 +144,33 @@ fun SettingsScreen(
             }
         )
     }
-    
+
+    if (uiState.showWebDavRestoreDialog) {
+        AlertDialog(
+            onDismissRequest = viewModel::dismissWebDavRestoreDialog,
+            title = { Text("从 WebDAV 恢复") },
+            text = { Text("将使用远端 latest 备份恢复数据。\n\n• 清空恢复：先删除本地数据再恢复\n• 追加恢复：保留本地数据并追加导入") },
+            confirmButton = {
+                TextButton(onClick = { viewModel.restoreBackupFromWebDav(true) }) {
+                    Text("清空恢复")
+                }
+            },
+            dismissButton = {
+                Row {
+                    TextButton(onClick = viewModel::dismissWebDavRestoreDialog) {
+                        Text("取消")
+                    }
+                    TextButton(onClick = { viewModel.restoreBackupFromWebDav(false) }) {
+                        Text("追加恢复")
+                    }
+                }
+            }
+        )
+    }
+
     if (uiState.exportSuccess && uiState.exportJson != null) {
         AlertDialog(
-            onDismissRequest = { viewModel.clearExportSuccess() },
+            onDismissRequest = viewModel::clearExportSuccess,
             icon = { Icon(Icons.Default.CheckCircle, null) },
             title = { Text("导出成功") },
             text = { Text("数据已准备好，是否保存到文件？") },
@@ -116,15 +181,15 @@ fun SettingsScreen(
                 }) { Text("保存文件") }
             },
             dismissButton = {
-                TextButton(onClick = { viewModel.clearExportSuccess() }) { Text("稍后保存") }
+                TextButton(onClick = viewModel::clearExportSuccess) { Text("稍后保存") }
             }
         )
     }
-    
+
     if (uiState.importSuccess && uiState.lastImportResult != null) {
         val result = uiState.lastImportResult!!
         AlertDialog(
-            onDismissRequest = { viewModel.clearImportSuccess() },
+            onDismissRequest = viewModel::clearImportSuccess,
             icon = { Icon(Icons.Default.CheckCircle, null) },
             title = { Text("导入成功") },
             text = {
@@ -138,12 +203,14 @@ fun SettingsScreen(
                     if (result.errors.isNotEmpty()) {
                         Spacer(Modifier.height(8.dp))
                         Text("警告：", color = MaterialTheme.colorScheme.error)
-                        result.errors.take(3).forEach { Text(it, style = MaterialTheme.typography.bodySmall) }
+                        result.errors.take(3).forEach {
+                            Text(it, style = MaterialTheme.typography.bodySmall)
+                        }
                     }
                 }
             },
             confirmButton = {
-                TextButton(onClick = { viewModel.clearImportSuccess() }) { Text("确定") }
+                TextButton(onClick = viewModel::clearImportSuccess) { Text("确定") }
             }
         )
     }
@@ -157,47 +224,89 @@ fun SettingsScreen(
                         Text("个性化你的阅读体验", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 },
-                colors = TopAppBarDefaults.largeTopAppBarColors(containerColor = MaterialTheme.colorScheme.surface, scrolledContainerColor = MaterialTheme.colorScheme.surface)
+                colors = TopAppBarDefaults.largeTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    scrolledContainerColor = MaterialTheme.colorScheme.surface
+                )
             )
         }
     ) { padding ->
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item { Spacer(Modifier.height(8.dp)); SettingsSectionCard("书籍搜索") }
-            
             item { DoubanCookieCard(viewModel, uiState) }
-            
+
             item { Spacer(Modifier.height(8.dp)); SettingsSectionCard("数据管理") }
-            item { SettingsClickableCard(Icons.Outlined.Upload, "导出数据", "将数据导出为JSON文件") { viewModel.exportData() } }
-            item { SettingsClickableCard(Icons.Outlined.Download, "导入数据", "从JSON文件恢复数据") { importLauncher.launch(arrayOf("application/json", "*/*")) } }
-            
+            item { SettingsClickableCard(Icons.Outlined.Upload, "导出数据", "将数据导出为 JSON 文件") { viewModel.exportData() } }
+            item { SettingsClickableCard(Icons.Outlined.Download, "导入数据", "从 JSON 文件恢复数据") { importLauncher.launch(arrayOf("application/json", "*/*")) } }
+
+            item { Spacer(Modifier.height(8.dp)); SettingsSectionCard("WebDAV 云备份") }
+            item {
+                SettingsClickableCard(
+                    icon = Icons.Outlined.SettingsEthernet,
+                    title = "配置 WebDAV",
+                    subtitle = if (uiState.isWebDavConfigured) {
+                        "${uiState.webDavUsername} · ${uiState.webDavRemotePath}"
+                    } else {
+                        "填写服务器地址、账号、密码和目录"
+                    }
+                ) {
+                    showWebDavConfigDialog = true
+                }
+            }
+            item {
+                SettingsClickableCard(
+                    icon = Icons.Outlined.CloudUpload,
+                    title = "上传到 WebDAV",
+                    subtitle = "手动执行一次云端备份"
+                ) {
+                    viewModel.uploadBackupToWebDav()
+                }
+            }
+            item {
+                SettingsClickableCard(
+                    icon = Icons.Outlined.CloudDownload,
+                    title = "从 WebDAV 恢复",
+                    subtitle = "恢复远端 latest 备份"
+                ) {
+                    viewModel.showWebDavRestoreDialog()
+                }
+            }
+            item {
+                SettingsClickableCard(
+                    icon = Icons.Outlined.Schedule,
+                    title = "自动备份",
+                    subtitle = when (uiState.autoBackupFrequency) {
+                        AutoBackupFrequency.OFF -> "关闭"
+                        AutoBackupFrequency.DAILY -> "每天自动上传一次"
+                        AutoBackupFrequency.WEEKLY -> "每周自动上传一次"
+                    }
+                ) {
+                    showAutoBackupDialog = true
+                }
+            }
+            item {
+                WebDavStatusCard(uiState)
+            }
+
             if (uiState.isExporting) {
-                item {
-                    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
-                        Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                            CircularProgressIndicator(Modifier.size(20.dp))
-                            Spacer(Modifier.width(12.dp))
-                            Text("正在导出数据...")
-                        }
-                    }
-                }
+                item { LoadingCard("正在导出数据...") }
             }
-            
             if (uiState.isImporting) {
-                item {
-                    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
-                        Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                            CircularProgressIndicator(Modifier.size(20.dp))
-                            Spacer(Modifier.width(12.dp))
-                            Text("正在导入数据...")
-                        }
-                    }
-                }
+                item { LoadingCard("正在导入数据...") }
             }
-            
+            if (uiState.isTestingWebDav) {
+                item { LoadingCard("正在测试 WebDAV 连接...") }
+            }
+            if (uiState.isSyncingWebDav) {
+                item { LoadingCard("正在与 WebDAV 同步数据...") }
+            }
+
             item { Spacer(Modifier.height(8.dp)); SettingsSectionCard("外观") }
             item {
                 SettingsClickableCard(Icons.Outlined.DarkMode, "主题模式", when (uiState.themeMode) {
@@ -225,15 +334,36 @@ fun SettingsScreen(
             text = {
                 Column {
                     ThemeMode.entries.forEach { mode ->
-                        Row(Modifier.fillMaxWidth().clickable { viewModel.setThemeMode(mode); showThemeDialog = false }.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                            RadioButton(selected = uiState.themeMode == mode, onClick = { viewModel.setThemeMode(mode); showThemeDialog = false })
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    viewModel.setThemeMode(mode)
+                                    showThemeDialog = false
+                                }
+                                .padding(vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = uiState.themeMode == mode,
+                                onClick = {
+                                    viewModel.setThemeMode(mode)
+                                    showThemeDialog = false
+                                }
+                            )
                             Spacer(Modifier.width(12.dp))
-                            Text(when (mode) { ThemeMode.SYSTEM -> "跟随系统"; ThemeMode.LIGHT -> "浅色模式"; ThemeMode.DARK -> "深色模式" })
+                            Text(when (mode) {
+                                ThemeMode.SYSTEM -> "跟随系统"
+                                ThemeMode.LIGHT -> "浅色模式"
+                                ThemeMode.DARK -> "深色模式"
+                            })
                         }
                     }
                 }
             },
-            confirmButton = { TextButton(onClick = { showThemeDialog = false }) { Text("取消") } }
+            confirmButton = {
+                TextButton(onClick = { showThemeDialog = false }) { Text("取消") }
+            }
         )
     }
 
@@ -244,16 +374,155 @@ fun SettingsScreen(
             text = {
                 Column {
                     StatsUnit.entries.forEach { unit ->
-                        Row(Modifier.fillMaxWidth().clickable { viewModel.setStatsUnit(unit); showStatsUnitDialog = false }.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                            RadioButton(selected = uiState.statsUnit == unit, onClick = { viewModel.setStatsUnit(unit); showStatsUnitDialog = false })
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    viewModel.setStatsUnit(unit)
+                                    showStatsUnitDialog = false
+                                }
+                                .padding(vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = uiState.statsUnit == unit,
+                                onClick = {
+                                    viewModel.setStatsUnit(unit)
+                                    showStatsUnitDialog = false
+                                }
+                            )
                             Spacer(Modifier.width(12.dp))
-                            Text(when (unit) { StatsUnit.CHAPTER -> "章节数"; StatsUnit.PAGE -> "页数" })
+                            Text(when (unit) {
+                                StatsUnit.CHAPTER -> "章节数"
+                                StatsUnit.PAGE -> "页数"
+                            })
                         }
                     }
                 }
             },
-            confirmButton = { TextButton(onClick = { showStatsUnitDialog = false }) { Text("取消") } }
+            confirmButton = {
+                TextButton(onClick = { showStatsUnitDialog = false }) { Text("取消") }
+            }
         )
+    }
+
+    if (showWebDavConfigDialog) {
+        WebDavConfigDialog(
+            uiState = uiState,
+            onDismiss = { showWebDavConfigDialog = false },
+            onSave = { serverUrl, username, password, remotePath ->
+                viewModel.saveWebDavConfig(serverUrl, username, password, remotePath)
+                showWebDavConfigDialog = false
+            },
+            onTest = viewModel::testWebDavConnection
+        )
+    }
+
+    if (showAutoBackupDialog) {
+        AlertDialog(
+            onDismissRequest = { showAutoBackupDialog = false },
+            title = { Text("自动备份频率") },
+            text = {
+                Column {
+                    AutoBackupFrequency.entries.forEach { frequency ->
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    viewModel.setAutoBackupFrequency(frequency)
+                                    showAutoBackupDialog = false
+                                }
+                                .padding(vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = uiState.autoBackupFrequency == frequency,
+                                onClick = {
+                                    viewModel.setAutoBackupFrequency(frequency)
+                                    showAutoBackupDialog = false
+                                }
+                            )
+                            Spacer(Modifier.width(12.dp))
+                            Text(when (frequency) {
+                                AutoBackupFrequency.OFF -> "关闭"
+                                AutoBackupFrequency.DAILY -> "每天"
+                                AutoBackupFrequency.WEEKLY -> "每周"
+                            })
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showAutoBackupDialog = false }) { Text("取消") }
+            }
+        )
+    }
+}
+
+@Composable
+private fun LoadingCard(text: String) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+            Spacer(Modifier.width(12.dp))
+            Text(text)
+        }
+    }
+}
+
+@Composable
+private fun WebDavStatusCard(uiState: SettingsUiState) {
+    val formatter = remember { SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()) }
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+    ) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.CloudDone, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Spacer(Modifier.width(12.dp))
+                Text("云备份状态", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            }
+            Text(
+                text = if (uiState.isWebDavConfigured) "已配置远端目录：${uiState.webDavRemotePath}" else "尚未完成 WebDAV 配置",
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Text(
+                text = "最近成功备份：${uiState.lastWebDavBackupAt?.let(formatter::format) ?: "暂无"}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            uiState.webDavStatusMessage?.let { message ->
+                Text(
+                    text = message,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            uiState.lastWebDavError?.takeIf { it.isNotBlank() }?.let { error ->
+                Text(
+                    text = "最近错误：$error",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+            uiState.errorMessage?.takeIf { it.isNotBlank() }?.let { error ->
+                Text(
+                    text = error,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+        }
     }
 }
 
@@ -282,13 +551,17 @@ fun SettingsClickableCard(
     onClick: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
         shape = RoundedCornerShape(12.dp),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(imageVector = icon, contentDescription = null, modifier = Modifier.size(24.dp), tint = MaterialTheme.colorScheme.primary)
@@ -303,49 +576,132 @@ fun SettingsClickableCard(
 }
 
 @Composable
+private fun WebDavConfigDialog(
+    uiState: SettingsUiState,
+    onDismiss: () -> Unit,
+    onSave: (String, String, String, String) -> Unit,
+    onTest: (String, String, String, String) -> Unit
+) {
+    var serverUrl by remember(uiState.webDavServerUrl) { mutableStateOf(uiState.webDavServerUrl) }
+    var username by remember(uiState.webDavUsername) { mutableStateOf(uiState.webDavUsername) }
+    var password by remember(uiState.webDavPassword) { mutableStateOf(uiState.webDavPassword) }
+    var remotePath by remember(uiState.webDavRemotePath) { mutableStateOf(uiState.webDavRemotePath) }
+    var passwordVisible by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("配置 WebDAV", fontWeight = FontWeight.Bold) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    text = "手动备份会上传 latest 文件，并额外保留一个时间戳历史快照。",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                OutlinedTextField(
+                    value = serverUrl,
+                    onValueChange = { serverUrl = it },
+                    label = { Text("服务器地址") },
+                    placeholder = { Text("https://dav.example.com/webdav") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp)
+                )
+                OutlinedTextField(
+                    value = username,
+                    onValueChange = { username = it },
+                    label = { Text("用户名") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp)
+                )
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text("密码") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        TextButton(onClick = { passwordVisible = !passwordVisible }) {
+                            Text(if (passwordVisible) "隐藏" else "显示")
+                        }
+                    },
+                    shape = RoundedCornerShape(12.dp)
+                )
+                OutlinedTextField(
+                    value = remotePath,
+                    onValueChange = { remotePath = it },
+                    label = { Text("远程目录") },
+                    placeholder = { Text("ReadTrack/backups") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp)
+                )
+            }
+        },
+        confirmButton = {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextButton(
+                    onClick = { onTest(serverUrl, username, password, remotePath) },
+                    enabled = !uiState.isTestingWebDav
+                ) {
+                    if (uiState.isTestingWebDav) {
+                        CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
+                    } else {
+                        Text("测试")
+                    }
+                }
+                TextButton(onClick = { onSave(serverUrl, username, password, remotePath) }) {
+                    Text("保存")
+                }
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("取消") }
+        }
+    )
+}
+
+@Composable
 private fun DoubanCookieCard(
     viewModel: SettingsViewModel,
-    uiState: com.readtrack.presentation.viewmodel.SettingsUiState
+    uiState: SettingsUiState
 ) {
     var showCookieDialog by remember { mutableStateOf(false) }
     var cookieInput by remember { mutableStateOf(uiState.doubanCookie) }
-    
-    // 更新输入框当外部cookie变化时
+
     LaunchedEffect(uiState.doubanCookie) {
         cookieInput = uiState.doubanCookie
     }
-    
+
     Card(
-        modifier = Modifier.fillMaxWidth().clickable { showCookieDialog = true },
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { showCookieDialog = true },
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = Icons.Default.Cookie,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary
-            )
+            Icon(imageVector = Icons.Default.Cookie, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
             Spacer(Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text("豆瓣 Cookie（可选）", style = MaterialTheme.typography.bodyLarge)
                 Text(
                     if (uiState.doubanCookie.isNotBlank()) "已配置，可提升兼容性" else "未配置，搜索也可直接使用",
                     style = MaterialTheme.typography.bodySmall,
-                    color = if (uiState.doubanCookie.isNotBlank()) 
-                        MaterialTheme.colorScheme.primary 
-                    else 
-                        MaterialTheme.colorScheme.onSurfaceVariant
+                    color = if (uiState.doubanCookie.isNotBlank()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             Icon(Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
         }
     }
-    
-    // Cookie配置弹窗
+
     if (showCookieDialog) {
         AlertDialog(
             onDismissRequest = { showCookieDialog = false },
@@ -367,21 +723,15 @@ private fun DoubanCookieCard(
                         maxLines = 3,
                         shape = RoundedCornerShape(12.dp)
                     )
-                    
-                    // 测试结果提示
                     uiState.cookieTestResult?.let { result ->
                         Spacer(Modifier.height(8.dp))
                         val (text, color) = when (result) {
-                            com.readtrack.presentation.viewmodel.CookieTestResult.SUCCESS -> 
-                                "✓ Cookie有效" to MaterialTheme.colorScheme.primary
-                            com.readtrack.presentation.viewmodel.CookieTestResult.INVALID -> 
-                                "✗ Cookie无效" to MaterialTheme.colorScheme.error
-                            com.readtrack.presentation.viewmodel.CookieTestResult.NETWORK_ERROR -> 
-                                "✗ 网络错误" to MaterialTheme.colorScheme.error
+                            CookieTestResult.SUCCESS -> "✓ Cookie有效" to MaterialTheme.colorScheme.primary
+                            CookieTestResult.INVALID -> "✗ Cookie无效" to MaterialTheme.colorScheme.error
+                            CookieTestResult.NETWORK_ERROR -> "✗ 网络错误" to MaterialTheme.colorScheme.error
                         }
                         Text(text, color = color, style = MaterialTheme.typography.bodySmall)
                     }
-                    
                     uiState.errorMessage?.let { error ->
                         Spacer(Modifier.height(4.dp))
                         Text(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
@@ -390,11 +740,8 @@ private fun DoubanCookieCard(
             },
             confirmButton = {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    // 测试按钮
                     TextButton(
-                        onClick = { 
-                            viewModel.testDoubanCookie(cookieInput)
-                        },
+                        onClick = { viewModel.testDoubanCookie(cookieInput) },
                         enabled = !uiState.isTestingCookie && cookieInput.isNotBlank()
                     ) {
                         if (uiState.isTestingCookie) {
@@ -403,21 +750,16 @@ private fun DoubanCookieCard(
                             Text("测试")
                         }
                     }
-                    // 保存按钮
-                    TextButton(
-                        onClick = { 
-                            viewModel.updateDoubanCookie(cookieInput)
-                            showCookieDialog = false
-                        }
-                    ) {
+                    TextButton(onClick = {
+                        viewModel.updateDoubanCookie(cookieInput)
+                        showCookieDialog = false
+                    }) {
                         Text("保存")
                     }
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showCookieDialog = false }) {
-                    Text("取消")
-                }
+                TextButton(onClick = { showCookieDialog = false }) { Text("取消") }
             }
         )
     }
