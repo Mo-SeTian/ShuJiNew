@@ -4,8 +4,10 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -17,6 +19,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Search
@@ -38,6 +41,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
+import com.readtrack.data.remote.BingImageResult
 import com.readtrack.presentation.ui.components.BookCover
 import com.readtrack.presentation.ui.components.BookCoverQuality
 import com.readtrack.presentation.ui.components.buildBookImageRequest
@@ -64,7 +68,8 @@ fun AddBookScreen(
         viewModel.updateCoverUri(uri?.toString())
     }
 
-    // URL输入弹窗状态
+    // 网络图片搜索弹窗（替代原 URL 输入弹窗）
+    // URL输入弹窗状态（保留，作为直接URL输入的备选）
     var showUrlDialog by remember { mutableStateOf(false) }
     var urlInput by remember { mutableStateOf("") }
     var urlError by remember { mutableStateOf<String?>(null) }
@@ -286,15 +291,33 @@ fun AddBookScreen(
                             Spacer(modifier = Modifier.width(6.dp))
                             Text("本地添加")
                         }
-                        OutlinedButton(
-                            onClick = { showUrlDialog = true },
+                        FilledTonalButton(
+                            onClick = { viewModel.showImageSearchDialog(uiState.title) },
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(12.dp)
                         ) {
-                            Icon(Icons.Default.Link, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Default.Search, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("网络导入")
+                            Text("网络搜索")
                         }
+                    }
+                    // 小提示：也支持直接输入URL
+                    TextButton(
+                        onClick = { showUrlDialog = true },
+                        modifier = Modifier.padding(top = 4.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Link,
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            "或直接输入图片URL",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
             }
@@ -547,6 +570,22 @@ fun AddBookScreen(
             onSelectBook = { viewModel.fillFromSearchResult(it) }
         )
     }
+
+    // 网络图片搜索 Bottom Sheet
+    if (uiState.showImageSearchDialog) {
+        ImageSearchBottomSheet(
+            searchQuery = uiState.imageSearchQuery,
+            imageResults = uiState.imageSearchResults,
+            isSearching = uiState.isImageSearching,
+            searchError = uiState.imageSearchError,
+            selectedImageUrl = uiState.selectedImageUrl,
+            onQueryChange = { viewModel.updateImageSearchQuery(it) },
+            onDismiss = { viewModel.hideImageSearchDialog() },
+            onSelectImage = { viewModel.selectImage(it) },
+            onPreviewImage = { viewModel.previewImage(it) },
+            onClearPreview = { viewModel.clearPreview() }
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -764,5 +803,210 @@ private fun BookSearchResultItem(
                 .graphicsLayer { this.rotationZ = 180f }
                 .size(20.dp)
         )
+    }
+}
+
+// ─── Bing 图片搜索 Bottom Sheet ───
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@Composable
+private fun ImageSearchBottomSheet(
+    searchQuery: String,
+    imageResults: List<BingImageResult>,
+    isSearching: Boolean,
+    searchError: String?,
+    selectedImageUrl: String?,
+    onQueryChange: (String) -> Unit,
+    onDismiss: () -> Unit,
+    onSelectImage: (BingImageResult) -> Unit,
+    onPreviewImage: (String) -> Unit,
+    onClearPreview: () -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    // 图片预览 Dialog
+    if (selectedImageUrl != null) {
+        AlertDialog(
+            onDismissRequest = onClearPreview,
+            confirmButton = {
+                TextButton(onClick = onClearPreview) {
+                    Text("关闭预览")
+                }
+            },
+            text = {
+                AsyncImage(
+                    model = selectedImageUrl,
+                    contentDescription = "封面预览",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(0.75f)
+                        .clip(RoundedCornerShape(8.dp))
+                )
+            }
+        )
+    }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.surface
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 32.dp)
+        ) {
+            // 标题
+            Text(
+                text = "搜索封面图片",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            // 搜索输入框
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = onQueryChange,
+                label = { Text("输入书名搜索封面") },
+                placeholder = { Text("例如：活着 三体") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp),
+                leadingIcon = {
+                    Icon(Icons.Default.Search, contentDescription = null)
+                },
+                trailingIcon = {
+                    if (isSearching) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { onQueryChange("") }) {
+                            Icon(Icons.Default.Clear, contentDescription = "清空")
+                        }
+                    }
+                }
+            )
+
+            // 数据来源提示
+            Text(
+                text = "图片来源：Bing 图片搜索",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp, bottom = 16.dp)
+            )
+
+            // 错误提示
+            searchError?.let { error ->
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp)
+                ) {
+                    Text(
+                        text = error,
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        modifier = Modifier.padding(12.dp)
+                    )
+                }
+            }
+
+            // 搜索结果网格
+            if (imageResults.isNotEmpty()) {
+                Text(
+                    text = "找到 ${imageResults.size} 张图片，长按可预览",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                // 使用 Grid 方式展示（3列）
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 450.dp)
+                ) {
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        // 将结果按 3 列排列
+                        val chunkedResults = imageResults.chunked(3)
+                        items(chunkedResults.size) { rowIndex ->
+                            val row = chunkedResults[rowIndex]
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                row.forEach { image ->
+                                    val loadUrl = image.getLoadUrl()
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .aspectRatio(0.75f)
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                                            .combinedClickable(
+                                                onClick = { onSelectImage(image) },
+                                                onLongClick = { onPreviewImage(image.fullUrl.ifBlank { loadUrl }) }
+                                            ),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        AsyncImage(
+                                            model = loadUrl,
+                                            contentDescription = image.title,
+                                            modifier = Modifier.fillMaxSize(),
+                                            onError = {
+                                                // 图片加载失败时不做处理
+                                            }
+                                        )
+                                        // 长按提示
+                                        Box(
+                                            modifier = Modifier
+                                                .align(Alignment.BottomEnd)
+                                                .padding(4.dp)
+                                                .background(
+                                                    MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                                                    RoundedCornerShape(4.dp)
+                                                )
+                                                .padding(horizontal = 4.dp, vertical = 2.dp)
+                                        ) {
+                                            Text(
+                                                "长按预览",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                        }
+                                    }
+                                }
+                                // 补齐空白（如果该行不足3个）
+                                repeat(3 - row.size) {
+                                    Spacer(modifier = Modifier.weight(1f))
+                                }
+                            }
+                        }
+                    }
+                }
+            } else if (!isSearching && searchQuery.length >= 2 && searchError == null) {
+                Text(
+                    text = "未找到相关图片，试试其他关键词",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(vertical = 16.dp)
+                )
+            } else if (searchQuery.isEmpty()) {
+                Text(
+                    text = "输入书名开始搜索封面图片",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(vertical = 16.dp)
+                )
+            }
+        }
     }
 }
