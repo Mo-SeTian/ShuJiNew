@@ -2,19 +2,21 @@ package com.readtrack.data.remote
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.net.HttpURLConnection
-import java.net.URL
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import java.net.URLEncoder
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
  * Bing 图片搜索服务
- * 通过解析 Bing 图片搜索结果页 HTML 提取图片 URL
- * 支持分页加载（每页 ~12 张，可通过 first 参数翻页）
+ * 使用 OkHttp（配合 Conscrypt TLS）访问 Bing 图片搜索页，解析 HTML 提取图片 URL
+ * 支持分页加载（每页 ~35 张，可通过 first 参数翻页）
  */
 @Singleton
-class BingImageSearchService @Inject constructor() {
+class BingImageSearchService @Inject constructor(
+    private val okHttpClient: OkHttpClient
+) {
 
     companion object {
         private const val BING_SEARCH_URL = "https://www.bing.com/images/search"
@@ -54,11 +56,10 @@ class BingImageSearchService @Inject constructor() {
     }
 
     /**
-     * 通过抓取 Bing 图片搜索结果页获取图片
+     * 通过 OkHttp + Conscrypt 抓取 Bing 图片搜索结果页
      * first=1 为第一页，每翻一页 +35
      */
     private fun searchViaScraping(query: String, page: Int): List<BingImageResult> {
-        // 构造搜索 URL，书名 + book cover 关键词提高命中率
         val encodedQuery = URLEncoder.encode(query + " book cover", "UTF-8")
         val first = page * PAGE_SIZE + 1
         val url = "$BING_SEARCH_URL?q=$encodedQuery&first=$first"
@@ -66,29 +67,28 @@ class BingImageSearchService @Inject constructor() {
         // 随机选一个 User-Agent
         val userAgent = USER_AGENTS.random()
 
-        val connection = (URL(url).openConnection() as HttpURLConnection).apply {
-            requestMethod = "GET"
-            setRequestProperty("User-Agent", userAgent)
-            setRequestProperty("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
-            setRequestProperty("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8")
-            setRequestProperty("Referer", "https://www.bing.com/")
-            setRequestProperty("DNT", "1")
-            setRequestProperty("Upgrade-Insecure-Requests", "1")
-            setRequestProperty("Sec-Fetch-Dest", "document")
-            setRequestProperty("Sec-Fetch-Mode", "navigate")
-            setRequestProperty("Sec-Fetch-Site", "none")
-            setRequestProperty("Sec-Fetch-User", "?1")
-            connectTimeout = 15000
-            readTimeout = 15000
-            instanceFollowRedirects = true
-        }
+        val request = Request.Builder()
+            .url(url)
+            .header("User-Agent", userAgent)
+            .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+            .header("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8")
+            .header("Referer", "https://www.bing.com/")
+            .header("DNT", "1")
+            .header("Upgrade-Insecure-Requests", "1")
+            .header("Sec-Fetch-Dest", "document")
+            .header("Sec-Fetch-Mode", "navigate")
+            .header("Sec-Fetch-Site", "none")
+            .header("Sec-Fetch-User", "?1")
+            .build()
 
-        val responseCode = connection.responseCode
+        val response = okHttpClient.newCall(request).execute()
+
+        val responseCode = response.code
         if (responseCode !in 200..299) {
             throw IllegalStateException("Bing 图片搜索请求失败: HTTP $responseCode")
         }
 
-        val html = connection.inputStream.bufferedReader().use { it.readText() }
+        val html = response.body?.string().orEmpty()
         return parseMimgTags(html)
     }
 
