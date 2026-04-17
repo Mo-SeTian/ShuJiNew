@@ -2,8 +2,6 @@ package com.readtrack.data.remote
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.json.JSONArray
-import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
@@ -12,22 +10,20 @@ import javax.inject.Singleton
 
 /**
  * Bing 图片搜索服务
- * 使用 Bing 官方 API（非官方爬取方式，稳定可靠）
+ * 通过解析 Bing 图片搜索结果页 HTML 提取图片 URL
  */
 @Singleton
 class BingImageSearchService @Inject constructor() {
 
     companion object {
-        // 使用 Bing Images search API (免费层每月1000次)
-        private const val BING_SEARCH_API = "https://api.bing.microsoft.com/v7.0/images/search"
-        // 如果没有 API Key，使用非官方方式抓取 Bing 图片搜索结果页
-        private const val BING_FALLBACK_URL = "https://www.bing.com/images/search"
+        private const val BING_SEARCH_URL = "https://www.bing.com/images/search"
+        private const val USER_AGENT = "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36"
     }
 
     /**
      * 搜索图片
      * @param query 搜索关键词（通常是书名）
-     * @param apiKey Bing API Key（可选，有则优先用官方 API）
+     * @param apiKey Bing API Key（暂未实现，保留接口）
      * @param limit 返回结果数量
      */
     suspend fun searchImages(
@@ -41,12 +37,7 @@ class BingImageSearchService @Inject constructor() {
                     return@withContext Result.success(emptyList())
                 }
 
-                val results = if (apiKey.isNotBlank()) {
-                    searchViaApi(query, apiKey, limit)
-                } else {
-                    searchViaScraping(query, limit)
-                }
-
+                val results = searchViaScraping(query.trim(), limit)
                 Result.success(results)
             } catch (e: Exception) {
                 Result.failure(e)
@@ -55,49 +46,18 @@ class BingImageSearchService @Inject constructor() {
     }
 
     /**
-     * 使用 Bing 官方 API 搜索图片
-     */
-    private fun searchViaApi(query: String, apiKey: String, limit: Int): List<BingImageResult> {
-        val encodedQuery = URLEncoder.encode(query.trim(), "UTF-8")
-        val url = "$BING_SEARCH_API?q=$encodedQuery&count=$limit&safeSearch=Moderate&imageType=Photo"
-
-        val connection = (URL(url).openConnection() as HttpURLConnection).apply {
-            requestMethod = "GET"
-            setRequestProperty("Ocp-Apim-Subscription-Key", apiKey)
-            setRequestProperty(
-                "User-Agent",
-                "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36"
-            )
-            connectTimeout = 15000
-            readTimeout = 15000
-        }
-
-        val responseCode = connection.responseCode
-        if (responseCode !in 200..299) {
-            throw IllegalStateException("Bing API 请求失败: HTTP $responseCode")
-        }
-
-        val response = connection.inputStream.bufferedReader().use { it.readText() }
-        return parseApiResponse(response, limit)
-    }
-
-    /**
-     * 通过抓取 Bing 图片搜索结果页获取图片（无需 API Key）
-     * 解析 Bing 搜索结果中的缩略图 URL
+     * 通过抓取 Bing 图片搜索结果页获取图片
      */
     private fun searchViaScraping(query: String, limit: Int): List<BingImageResult> {
-        val encodedQuery = URLEncoder.encode(query.trim() + " book cover", "UTF-8")
-        val url = "$BING_FALLBACK_URL?q=$encodedQuery"
+        val encodedQuery = URLEncoder.encode(query + " book cover", "UTF-8")
+        val url = "$BING_SEARCH_URL?q=$encodedQuery"
 
         val connection = (URL(url).openConnection() as HttpURLConnection).apply {
             requestMethod = "GET"
-            setRequestProperty(
-                "User-Agent",
-                "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36"
-            )
-            setRequestProperty("Accept", "text/html,application/xhtml+xml")
+            setRequestProperty("User-Agent", USER_AGENT)
+            setRequestProperty("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
             setRequestProperty("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8")
-            setRequestProperty("Cookie", "MUIDB= dummy") // 简化爬虫检测
+            setRequestProperty("Referer", "https://www.bing.com/")
             connectTimeout = 15000
             readTimeout = 15000
             instanceFollowRedirects = true
@@ -109,100 +69,81 @@ class BingImageSearchService @Inject constructor() {
         }
 
         val html = connection.inputStream.bufferedReader().use { it.readText() }
-        return parseScrapingResponse(html, limit)
+        return parseMimgTags(html, limit)
     }
 
     /**
-     * 解析 Bing 官方 API 响应
+     * 解析 HTML 中的 <img class="mimg"> 标签
+     * Bing 图片搜索结果页中，所有缩略图都带有 "mimg" class
      */
-    private fun parseApiResponse(response: String, limit: Int): List<BingImageResult> {
+    private fun parseMimgTags(html: String, limit: Int): List<BingImageResult> {
         val results = mutableListOf<BingImageResult>()
-        val json = JSONObject(response)
-        val value = json.optJSONArray("value") ?: return emptyList()
 
-        for (i in 0 until minOf(value.length(), limit)) {
-            val item = value.optJSONObject(i) ?: continue
-            val thumbnailUrl = item.optString("thumbnailUrl", "")
-            val fullUrl = item.optString("contentUrl", "")
-            val sourceUrl = item.optString("hostPageUrl", "")
-            val title = item.optString("name", "")
+        // 正则匹配所有包含 mimg class 的 <img> 标签
+        val mimgPattern = Regex("""<img[^>]+class="[^"]*mimg[^"]*"[^>]*>""", RegexOption.IGNORE_CASE)
 
-            if (thumbnailUrl.isBlank() && fullUrl.isBlank()) continue
+        var index = 0
+        for (tag in mimgPattern.findAll(html)) {
+            if (results.size >= limit) break
 
-            results.add(
-                BingImageResult(
-                    id = "img_$i",
-                    thumbnailUrl = thumbnailUrl,
-                    fullUrl = fullUrl,
-                    sourceUrl = sourceUrl,
-                    title = title,
-                    width = item.optInt("width", 0),
-                    height = item.optInt("height", 0)
+            val tagStr = tag.value
+
+            // 提取 src 属性（优先），其次 data-src（懒加载图）
+            val url = extractAttr(tagStr, "src") ?: extractAttr(tagStr, "data-src")
+            if (url.isNullOrBlank()) continue
+
+            // 解码 HTML 实体
+            val cleanUrl = url.replace("&amp;", "&")
+
+            // 提取 alt 属性作为标题
+            val alt = extractAttr(tagStr, "alt")
+                ?.replace(" 的图像结果", "")
+                ?.replace(" image result", "")
+                ?.trim()
+                ?: ""
+
+            // 提取图片 ID 并构造较大尺寸的 URL
+            val largeUrl = deriveLargeUrl(cleanUrl)
+
+            if (cleanUrl.contains("/th/id/")) {
+                results.add(
+                    BingImageResult(
+                        id = "img_$index",
+                        thumbnailUrl = cleanUrl,
+                        fullUrl = largeUrl,
+                        sourceUrl = "",
+                        title = alt,
+                        width = 0,
+                        height = 0
+                    )
                 )
-            )
+                index++
+            }
         }
 
         return results
     }
 
     /**
-     * 解析 Bing 搜索结果页 HTML
-     * 提取 JSON 数据中的图片信息
+     * 从 HTML 标签字符串中提取指定属性的值
+     * 使用原始字符串避免正则转义问题
      */
-    private fun parseScrapingResponse(html: String, limit: Int): List<BingImageResult> {
-        val results = mutableListOf<BingImageResult>()
-
-        // 方式1：尝试提取 JSON 数据
-        val jsonResults = extractJsonFromHtml(html, limit)
-        if (jsonResults.isNotEmpty()) {
-            return jsonResults.take(limit)
-        }
-
-        // 方式2：尝试解析 BING 图片结果中的缩略图 URL
-        // Bing 使用 base64 缩略图，格式为：data-type="image" data-thumbnail-key="..." data-bicep流量...
-        // 这种方式不太可靠，所以我们返回空列表
-        return results
+    private fun extractAttr(tag: String, attrName: String): String? {
+        // 构造模式：attrName="..."，忽略大小写
+        val regexStr = """(?i)\s+""" + attrName + """="([^"]*)" """
+        val pattern = Regex(regexStr.trimEnd())
+        val match = pattern.find(tag)
+        return match?.groupValues?.get(1)
     }
 
     /**
-     * 从 HTML 中提取 Bing 内嵌的 JSON 数据
+     * 根据缩略图 URL 构造更大尺寸的 URL
      */
-    private fun extractJsonFromHtml(html: String, limit: Int): List<BingImageResult> {
-        val results = mutableListOf<BingImageResult>()
-
-        // 尝试找到 "m" 数组中的图片数据
-        // 格式: ,"murl":"https://...","turl":"https://..."... 
-        val murlPattern = Regex("\"murl\":\"(https?://[^\"]+)\"")
-        val turlPattern = Regex("\"turl\":\"(https?://[^\"]+)\"")
-        val titlePattern = Regex("\"mtitle\":\"([^\"]+)\"")
-
-        val murls = murlPattern.findAll(html).map { it.groupValues[1] }.toList()
-        val turls = turlPattern.findAll(html).map { it.groupValues[1] }.toList()
-        val titles = titlePattern.findAll(html).map { it.groupValues[1] }.toList()
-
-        val count = minOf(murls.size, limit)
-
-        for (i in 0 until count) {
-            val fullUrl = murls.getOrElse(i) { "" }
-            val thumbnailUrl = turls.getOrElse(i) { fullUrl }
-            val title = titles.getOrElse(i) { "" }
-
-            if (fullUrl.isBlank()) continue
-
-            results.add(
-                BingImageResult(
-                    id = "img_$i",
-                    thumbnailUrl = thumbnailUrl,
-                    fullUrl = fullUrl,
-                    sourceUrl = "",
-                    title = title,
-                    width = 0,
-                    height = 0
-                )
-            )
-        }
-
-        return results
+    private fun deriveLargeUrl(thumbnailUrl: String): String {
+        val idPattern = Regex("""/th/id/([^?&]+)""")
+        val idMatch = idPattern.find(thumbnailUrl) ?: return thumbnailUrl
+        val id = idMatch.groupValues[1]
+        return "https://th.bing.com/th/id/$id?w=500&c=7&r=0&o=5&pid=1.7"
     }
 }
 
@@ -211,20 +152,13 @@ class BingImageSearchService @Inject constructor() {
  */
 data class BingImageResult(
     val id: String,
-    val thumbnailUrl: String,  // 缩略图 URL
-    val fullUrl: String,       // 高清大图 URL
-    val sourceUrl: String,     // 来源页面 URL
-    val title: String,         // 图片标题/描述
+    val thumbnailUrl: String,
+    val fullUrl: String,
+    val sourceUrl: String,
+    val title: String,
     val width: Int,
     val height: Int
 ) {
-    /**
-     * 获取用于加载的 URL（优先用缩略图，缩略图为空时用大图）
-     */
-    fun getLoadUrl(): String = thumbnailUrl.ifBlank { fullUrl }
-
-    /**
-     * 判断是否为可用的图片 URL
-     */
-    fun isValid(): Boolean = thumbnailUrl.isNotBlank() || fullUrl.isNotBlank()
+    fun getLoadUrl(): String = fullUrl.ifBlank { thumbnailUrl }
+    fun isValid(): Boolean = thumbnailUrl.isNotBlank()
 }
