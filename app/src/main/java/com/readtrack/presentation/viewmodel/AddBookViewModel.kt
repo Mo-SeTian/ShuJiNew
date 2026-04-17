@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.readtrack.data.local.PreferencesManager
 import com.readtrack.data.local.entity.BookEntity
+import com.readtrack.data.remote.BingImageResult
+import com.readtrack.data.remote.BingImageSearchService
 import com.readtrack.data.remote.BookSearchResult
 import com.readtrack.data.remote.DoubanSearchService
 import com.readtrack.domain.model.BookStatus
@@ -49,13 +51,21 @@ data class AddBookUiState(
     val searchResults: List<BookSearchResult> = emptyList(),
     val searchError: String? = null,
     val showSearchDialog: Boolean = false,
-    val doubanCookie: String = ""
+    val doubanCookie: String = "",
+    // 网络图片搜索状态
+    val showImageSearchDialog: Boolean = false,
+    val imageSearchQuery: String = "",
+    val imageSearchResults: List<BingImageResult> = emptyList(),
+    val isImageSearching: Boolean = false,
+    val imageSearchError: String? = null,
+    val selectedImageUrl: String? = null  // 长按预览时用的 URL
 )
 
 @HiltViewModel
 class AddBookViewModel @Inject constructor(
     private val bookRepository: BookRepository,
     private val doubanSearchService: DoubanSearchService,
+    private val bingImageSearchService: BingImageSearchService,
     private val preferencesManager: PreferencesManager
 ) : ViewModel() {
 
@@ -64,6 +74,7 @@ class AddBookViewModel @Inject constructor(
 
     private var loadedBook: BookEntity? = null
     private var searchJob: Job? = null
+    private var imageSearchJob: Job? = null
     private var lastSearchQuery: String = ""
 
     init {
@@ -142,6 +153,110 @@ class AddBookViewModel @Inject constructor(
                 isSearching = false
             )
         }
+    }
+
+    // ─── 网络图片搜索（替代原网络导入URL输入） ───
+
+    fun showImageSearchDialog(initialQuery: String = "") {
+        imageSearchJob?.cancel()
+        _uiState.update {
+            it.copy(
+                showImageSearchDialog = true,
+                imageSearchQuery = initialQuery,
+                imageSearchResults = emptyList(),
+                imageSearchError = null,
+                isImageSearching = false,
+                selectedImageUrl = null
+            )
+        }
+        // 如果已有初始搜索词（如书名），自动搜索
+        if (initialQuery.isNotBlank()) {
+            searchImages(initialQuery)
+        }
+    }
+
+    fun hideImageSearchDialog() {
+        imageSearchJob?.cancel()
+        _uiState.update {
+            it.copy(
+                showImageSearchDialog = false,
+                imageSearchQuery = "",
+                imageSearchResults = emptyList(),
+                imageSearchError = null,
+                isImageSearching = false,
+                selectedImageUrl = null
+            )
+        }
+    }
+
+    fun updateImageSearchQuery(query: String) {
+        _uiState.update { it.copy(imageSearchQuery = query) }
+        imageSearchJob?.cancel()
+
+        if (query.length >= 2) {
+            imageSearchJob = viewModelScope.launch {
+                delay(400)
+                searchImages(query)
+            }
+        } else {
+            _uiState.update {
+                it.copy(
+                    imageSearchResults = emptyList(),
+                    imageSearchError = null,
+                    isImageSearching = false
+                )
+            }
+        }
+    }
+
+    private fun searchImages(query: String) {
+        if (query.isBlank()) return
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isImageSearching = true, imageSearchError = null) }
+
+            bingImageSearchService.searchImages(query)
+                .onSuccess { results ->
+                    _uiState.update {
+                        it.copy(
+                            isImageSearching = false,
+                            imageSearchResults = results.filter { img -> img.isValid() }
+                        )
+                    }
+                }
+                .onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            isImageSearching = false,
+                            imageSearchError = "图片搜索失败: ${error.message}"
+                        )
+                    }
+                }
+        }
+    }
+
+    /**
+     * 长按预览图片
+     */
+    fun previewImage(imageUrl: String) {
+        _uiState.update { it.copy(selectedImageUrl = imageUrl) }
+    }
+
+    /**
+     * 关闭图片预览
+     */
+    fun clearPreview() {
+        _uiState.update { it.copy(selectedImageUrl = null) }
+    }
+
+    /**
+     * 选择图片作为封面（从搜索结果中选择）
+     */
+    fun selectImage(result: BingImageResult) {
+        // 优先用高清大图，其次缩略图
+        val url = result.fullUrl.ifBlank { result.thumbnailUrl }
+        updateCoverUri(url)
+        hideImageSearchDialog()
     }
 
     fun updateSearchQuery(query: String) {
