@@ -161,12 +161,16 @@ class DataBackupRepositoryImpl @Inject constructor(
             // 导入书单
             backup.bookLists.forEach { bookListExport ->
                 try {
+                    val mappedCoverBookId = bookListExport.coverBookId?.let { oldId ->
+                        oldIdToNewId[oldId]
+                    }
+
                     val bookList = BookListEntity(
                         id = 0,
                         name = bookListExport.name,
                         description = bookListExport.description,
                         coverPath = bookListExport.coverPath,
-                        coverBookId = bookListExport.coverBookId,
+                        coverBookId = mappedCoverBookId,
                         bookCount = 0,
                         createdAt = bookListExport.createdAt,
                         updatedAt = bookListExport.updatedAt
@@ -201,9 +205,9 @@ class DataBackupRepositoryImpl @Inject constructor(
         }
     }
 
-    override fun parseBackupFromJson(jsonString: String): DataBackup? {
+    override fun parseBackupFromJson(json: String): DataBackup? {
         return try {
-            json.decodeFromString<DataBackup>(jsonString)
+            this.json.decodeFromString<DataBackup>(json)
         } catch (e: Exception) {
             null
         }
