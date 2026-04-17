@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpSize
@@ -98,26 +99,26 @@ fun BookCard(
             Column(
                 modifier = Modifier.weight(1f)
             ) {
-                // Title
+                // Title + Author in one line
                 Text(
-                    text = book.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 2,
+                    text = buildAnnotatedString {
+                        pushStyle(MaterialTheme.typography.titleMedium.toSpanStyle())
+                        append(book.title)
+                        if (!book.author.isNullOrBlank()) {
+                            pop()
+                            append("  ")
+                            pushStyle(
+                                MaterialTheme.typography.bodySmall
+                                    .copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    .toSpanStyle()
+                            )
+                            append(book.author)
+                        }
+                    },
+                    maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     color = MaterialTheme.colorScheme.onSurface
                 )
-
-                // Author
-                if (!book.author.isNullOrBlank()) {
-                    Text(
-                        text = book.author,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
