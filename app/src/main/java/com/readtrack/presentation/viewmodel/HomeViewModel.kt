@@ -37,9 +37,10 @@ class HomeViewModel @Inject constructor(
             combine(
                 bookRepository.getAllBooks().catch { emit(emptyList()) },
                 recordRepository.getAllRecords().catch { emit(emptyList()) },
-                preferencesManager.statsUnit
-            ) { books, records, statsUnit ->
-                buildHomeUiState(books, records, statsUnit)
+                preferencesManager.statsUnit,
+                preferencesManager.homeComponentOrder
+            ) { books, records, statsUnit, componentOrder ->
+                buildHomeUiState(books, records, statsUnit, componentOrder)
             }.collect { state ->
                 _uiState.value = state
                 PerformanceTrace.mark(
@@ -84,6 +85,12 @@ class HomeViewModel @Inject constructor(
             } catch (_: Exception) {
                 // 快速记录失败时静默忽略，避免打断首页使用
             }
+        }
+    }
+
+    fun updateComponentOrder(order: List<String>) {
+        viewModelScope.launch {
+            preferencesManager.setHomeComponentOrder(order)
         }
     }
 }

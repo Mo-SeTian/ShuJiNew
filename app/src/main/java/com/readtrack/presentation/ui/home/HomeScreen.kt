@@ -1,6 +1,8 @@
 package com.readtrack.presentation.ui.home
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,29 +18,42 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.AutoGraph
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.DragHandle
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.LocalFireDepartment
-import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SmallTopAppBar
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,12 +65,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.readtrack.data.local.HomeComponent
 import com.readtrack.data.local.StatsUnit
 import com.readtrack.domain.model.BookStatus
 import com.readtrack.presentation.ui.components.BookCard
 import com.readtrack.presentation.ui.components.QuickRecordDialog
 import com.readtrack.presentation.viewmodel.HomeUiState
 import com.readtrack.presentation.viewmodel.HomeViewModel
+import kotlinx.coroutines.launch
 
 private fun StatsUnit.label(): String = if (this == StatsUnit.CHAPTER) "章" else "页"
 
@@ -67,6 +84,10 @@ fun HomeScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var quickRecordBookId by remember { mutableStateOf<Long?>(null) }
+    var isEditMode by remember { mutableStateOf(false) }
+
+    val sheetState = rememberModalBottomSheetState()
+    val scope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
@@ -78,6 +99,11 @@ fun HomeScreen(
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
+                },
+                actions = {
+                    IconButton(onClick = { isEditMode = true }) {
+                        Icon(Icons.Default.Edit, contentDescription = "编辑首页组件")
+                    }
                 },
                 colors = TopAppBarDefaults.smallTopAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface
@@ -104,39 +130,148 @@ fun HomeScreen(
                     }
                 }
             } else {
-                item { HeroSummaryCard(uiState) }
-                item { OverviewCardsRow(uiState) }
-                item { ReadingInsightCard(uiState) }
-                item { StatusOverviewCard(uiState) }
+                // 根据 componentOrder 渲染组件
+                val order = if (uiState.componentOrder.isEmpty()) {
+                    HomeComponent.entries.map { it.id }
+                } else {
+                    uiState.componentOrder
+                }
 
-                if (uiState.recentBooks.isNotEmpty()) {
-                    item {
-                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                order.forEach { componentId ->
+                    when (componentId) {
+                        HomeComponent.HERO.id -> item(key = "hero") { HeroSummaryCard(uiState) }
+                        HomeComponent.OVERVIEW.id -> item(key = "overview") { OverviewCardsRow(uiState) }
+                        HomeComponent.INSIGHT.id -> item(key = "insight") { ReadingInsightCard(uiState) }
+                        HomeComponent.STATUS.id -> item(key = "status") { StatusOverviewCard(uiState) }
+                        HomeComponent.RECENT.id -> {
+                            if (uiState.recentBooks.isNotEmpty()) {
+                                item(key = "recent-header") {
+                                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        Text(
+                                            text = "最近阅读",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        Text(
+                                            text = uiState.latestReadingBookTitle?.let { "最近翻阅：$it" }
+                                                ?: "继续你的阅读节奏",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                                items(
+                                    items = uiState.recentBooks,
+                                    key = { "recent-${it.id}" }
+                                ) { book ->
+                                    BookCard(
+                                        book = book,
+                                        onClick = { onBookClick(book.id) },
+                                        onQuickRecord = { id -> quickRecordBookId = id }
+                                    )
+                                }
+                            } else if (uiState.totalBooks == 0) {
+                                item(key = "recent-empty") { EmptyHomeState() }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // 编辑底部弹窗
+    if (isEditMode) {
+        val currentOrder = uiState.componentOrder.ifEmpty { HomeComponent.entries.map { it.id } }
+        val editableList = remember(currentOrder) {
+            mutableStateListOf<HomeComponentItem>().apply {
+                currentOrder.forEach { id ->
+                    val component = HomeComponent.entries.find { it.id == id } ?: return@forEach
+                    add(HomeComponentItem(component, true))
+                }
+                // 补充未在列表中的组件（默认隐藏）
+                HomeComponent.entries.filter { c -> currentOrder.none { it == c.id } }.forEach { c ->
+                    add(HomeComponentItem(c, false))
+                }
+            }
+        }
+
+        ModalBottomSheet(
+            onDismissRequest = { isEditMode = false },
+            sheetState = sheetState
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .padding(bottom = 32.dp)
+            ) {
+                Text(
+                    text = "编辑首页组件",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+
+                Text(
+                    text = "选择要在首页显示的组件，并拖动排序",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+
+                editableList.forEachIndexed { index, item ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.DragHandle,
+                            contentDescription = "拖动",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "最近阅读",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
+                                text = item.component.title,
+                                style = MaterialTheme.typography.bodyLarge
                             )
                             Text(
-                                text = uiState.latestReadingBookTitle?.let { "最近翻阅：$it" } ?: "继续你的阅读节奏",
+                                text = componentDescription(item.component),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                    }
-
-                    items(
-                        items = uiState.recentBooks,
-                        key = { it.id }
-                    ) { book ->
-                        BookCard(
-                            book = book,
-                            onClick = { onBookClick(book.id) },
-                            onQuickRecord = { id -> quickRecordBookId = id }
+                        Switch(
+                            checked = item.enabled,
+                            onCheckedChange = { enabled ->
+                                editableList[index] = item.copy(enabled = enabled)
+                            }
                         )
                     }
-                } else if (uiState.totalBooks == 0) {
-                    item { EmptyHomeState() }
+                    if (index < editableList.lastIndex) {
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    }
+                }
+
+                androidx.compose.material3.Button(
+                    onClick = {
+                        // 保存顺序：仅保留 enabled 的，按当前顺序
+                        val newOrder = editableList.filter { it.enabled }.map { it.component.id }
+                        viewModel.updateComponentOrder(newOrder)
+                        scope.launch {
+                            sheetState.hide()
+                            isEditMode = false
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp)
+                ) {
+                    Text("保存")
                 }
             }
         }
@@ -155,6 +290,19 @@ fun HomeScreen(
             )
         }
     }
+}
+
+private data class HomeComponentItem(
+    val component: HomeComponent,
+    val enabled: Boolean
+)
+
+private fun componentDescription(component: HomeComponent): String = when (component) {
+    HomeComponent.HERO -> "完读率总览和书架摘要"
+    HomeComponent.OVERVIEW -> "今日阅读和连续阅读天数"
+    HomeComponent.INSIGHT -> "月度阅读统计和阅读洞察"
+    HomeComponent.STATUS -> "书架书籍状态分布"
+    HomeComponent.RECENT -> "最近阅读的书籍列表"
 }
 
 @Composable
@@ -222,7 +370,7 @@ private fun OverviewCardsRow(uiState: HomeUiState) {
             title = "今日阅读",
             value = remember(uiState.todayValue, unitLabel) { "${uiState.todayValue.toInt()}$unitLabel" },
             subtitle = remember(uiState.weeklyValue, unitLabel) { "近 7 天 ${uiState.weeklyValue.toInt()}$unitLabel" },
-            icon = Icons.Default.MenuBook,
+            icon = Icons.AutoMirrored.Filled.MenuBook,
             gradientColors = listOf(
                 MaterialTheme.colorScheme.primary,
                 MaterialTheme.colorScheme.primaryContainer
@@ -393,7 +541,7 @@ private fun EmptyHomeState() {
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(
-                Icons.Default.MenuBook,
+                Icons.AutoMirrored.Filled.MenuBook,
                 contentDescription = null,
                 modifier = Modifier
                     .size(64.dp)
@@ -517,4 +665,10 @@ private fun statusColor(status: BookStatus): Color = when (status) {
     BookStatus.ABANDONED -> Color(0xFFF44336)
 }
 
-private fun statusLabel(status: BookStatus): String = status.displayName
+private fun statusLabel(status: BookStatus): String = when (status) {
+    BookStatus.WANT_TO_READ -> "想读"
+    BookStatus.READING -> "在读"
+    BookStatus.FINISHED -> "已读"
+    BookStatus.ON_HOLD -> "暂停"
+    BookStatus.ABANDONED -> "放弃"
+}
