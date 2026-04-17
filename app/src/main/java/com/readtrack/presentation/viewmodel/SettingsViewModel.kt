@@ -8,6 +8,8 @@ import com.readtrack.data.local.StatsUnit
 import com.readtrack.data.local.ThemeMode
 import com.readtrack.domain.model.ImportResult
 import com.readtrack.domain.repository.DataBackupRepository
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -39,7 +41,8 @@ enum class CookieTestResult {
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val dataBackupRepository: DataBackupRepository,
-    private val preferencesManager: PreferencesManager
+    private val preferencesManager: PreferencesManager,
+    private val okHttpClient: OkHttpClient
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingsUiState())
@@ -186,19 +189,19 @@ class SettingsViewModel @Inject constructor(
 
             try {
                 val url = "https://search.douban.com/book/subject_search?search_text=test&cat=1001"
-                val connection = java.net.URL(url).openConnection()
-                connection.setRequestProperty("Cookie", cookie)
-                connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-                connection.setRequestProperty("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
-                connection.setRequestProperty("Referer", "https://book.douban.com/")
-                connection.connectTimeout = 15000
-                connection.readTimeout = 15000
+                val request = Request.Builder()
+                    .url(url)
+                    .header("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+                    .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+                    .header("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8")
+                    .header("Referer", "https://book.douban.com/")
+                    .header("Cookie", cookie)
+                    .build()
+                val response = okHttpClient.newCall(request).execute()
+                val responseCode = response.code
+                val responseBody = response.body?.string().orEmpty()
 
-                val responseCode = (connection as java.net.HttpURLConnection).responseCode
-
-                val response = connection.inputStream.bufferedReader().use { it.readText() }
-
-                if (response.contains("window.__DATA__")) {
+                if (responseBody.contains("window.__DATA__")) {
                     _uiState.update { it.copy(isTestingCookie = false, cookieTestResult = CookieTestResult.SUCCESS) }
                 } else if (responseCode == 401 || responseCode == 403) {
                     _uiState.update { it.copy(isTestingCookie = false, cookieTestResult = CookieTestResult.INVALID, errorMessage = "Cookie无效或已过期 (HTTP $responseCode)") }
