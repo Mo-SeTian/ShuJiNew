@@ -11,7 +11,7 @@ import javax.inject.Singleton
 /**
  * 豆瓣图书搜索服务
  *
- * 使用 OkHttp（配合 Conscrypt TLS）访问豆瓣搜索页。
+ * 使用 OkHttp 访问豆瓣搜索页。
  * 搜索页数据藏在 `window.__DATA__` JSON 中。
  */
 @Singleton

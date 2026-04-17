@@ -10,7 +10,7 @@ import javax.inject.Singleton
 
 /**
  * Bing 图片搜索服务
- * 使用 OkHttp（配合 Conscrypt TLS）访问 Bing 图片搜索页，解析 HTML 提取图片 URL
+ * 使用 OkHttp 访问 Bing 图片搜索页，解析 HTML 提取图片 URL
  * 支持分页加载（每页 ~35 张，可通过 first 参数翻页）
  */
 @Singleton
@@ -56,7 +56,7 @@ class BingImageSearchService @Inject constructor(
     }
 
     /**
-     * 通过 OkHttp + Conscrypt 抓取 Bing 图片搜索结果页
+     * 通过 OkHttp 抓取 Bing 图片搜索结果页
      * first=1 为第一页，每翻一页 +35
      */
     private fun searchViaScraping(query: String, page: Int): List<BingImageResult> {
