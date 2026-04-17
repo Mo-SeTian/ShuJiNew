@@ -2,7 +2,7 @@ package com.readtrack.presentation.ui.home
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,7 +19,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MenuBook
@@ -225,17 +227,13 @@ fun HomeScreen(
 
                 var draggingIndex by remember { mutableStateOf<Int?>(null) }
 
-                androidx.compose.foundation.lazy.LazyColumn(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f, fill = false),
-                    verticalArrangement = Arrangement.spacedBy(0.dp)
+                        .weight(1f, fill = false)
+                        .verticalScroll(rememberScrollState())
                 ) {
-                    items(
-                        count = editableList.size,
-                        key = { index -> editableList[index].component.id }
-                    ) { index ->
-                        val item = editableList[index]
+                    editableList.forEachIndexed { index, item ->
                         val isDragging = draggingIndex == index
 
                         Row(
@@ -258,7 +256,7 @@ fun HomeScreen(
                                     }
                                 }
                                 .pointerInput(Unit) {
-                                    detectDragGesturesAfterLongPress(
+                                    detectDragGestures(
                                         onDragStart = {
                                             draggingIndex = index
                                         },
