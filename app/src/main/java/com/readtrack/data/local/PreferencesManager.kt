@@ -33,6 +33,15 @@ enum class AutoBackupFrequency(val intervalDays: Long) {
     WEEKLY(7)
 }
 
+// 首页自定义组件
+enum class HomeComponent(val id: String, val title: String) {
+    HERO("hero", "阅读总览"),
+    OVERVIEW("overview", "今日阅读"),
+    INSIGHT("insight", "阅读洞察"),
+    STATUS("status", "书架状态"),
+    RECENT("recent", "最近阅读")
+}
+
 @Singleton
 class PreferencesManager @Inject constructor(
     @ApplicationContext private val context: Context
@@ -52,6 +61,7 @@ class PreferencesManager @Inject constructor(
         val WEBDAV_AUTO_BACKUP_FREQUENCY = stringPreferencesKey("webdav_auto_backup_frequency")
         val WEBDAV_LAST_BACKUP_AT = longPreferencesKey("webdav_last_backup_at")
         val WEBDAV_LAST_ERROR = stringPreferencesKey("webdav_last_error")
+        val HOME_COMPONENT_ORDER = stringPreferencesKey("home_component_order")
     }
 
     val themeMode: Flow<ThemeMode> = dataStore.data.map { preferences ->
@@ -103,6 +113,17 @@ class PreferencesManager @Inject constructor(
 
     val lastWebDavError: Flow<String?> = dataStore.data.map { preferences ->
         preferences[WEBDAV_LAST_ERROR]
+    }
+
+    val homeComponentOrder: Flow<List<String>> = dataStore.data.map { preferences ->
+        val stored = preferences[HOME_COMPONENT_ORDER]
+        if (stored.isNullOrBlank()) {
+            // 默认顺序
+            HomeComponent.entries.map { it.id }
+        } else {
+            stored.split(",").filter { id -> HomeComponent.entries.any { it.id == id } }
+                .ifEmpty { HomeComponent.entries.map { it.id } }
+        }
     }
 
     suspend fun setThemeMode(mode: ThemeMode) {
@@ -172,6 +193,12 @@ class PreferencesManager @Inject constructor(
             } else {
                 preferences[WEBDAV_LAST_ERROR] = message
             }
+        }
+    }
+
+    suspend fun setHomeComponentOrder(order: List<String>) {
+        dataStore.edit { preferences ->
+            preferences[HOME_COMPONENT_ORDER] = order.joinToString(",")
         }
     }
 

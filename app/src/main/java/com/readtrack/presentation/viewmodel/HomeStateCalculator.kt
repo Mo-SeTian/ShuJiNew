@@ -9,6 +9,7 @@ import com.readtrack.util.getStartOfDay
 
 data class HomeUiState(
     val statsUnit: StatsUnit = StatsUnit.CHAPTER,
+    val componentOrder: List<String> = emptyList(),
     val todayValue: Double = 0.0,
     val todayPages: Double = 0.0,
     val todayChapters: Double = 0.0,
@@ -33,6 +34,7 @@ internal fun buildHomeUiState(
     books: List<BookEntity>,
     records: List<ReadingRecordEntity>,
     statsUnit: StatsUnit = StatsUnit.CHAPTER,
+    componentOrder: List<String> = emptyList(),
     now: Long = System.currentTimeMillis()
 ): HomeUiState {
     val startOfToday = getStartOfDay(now)
@@ -116,6 +118,7 @@ internal fun buildHomeUiState(
 
     return HomeUiState(
         statsUnit = statsUnit,
+        componentOrder = componentOrder,
         todayValue = todayValue,
         todayPages = todayPages,
         todayChapters = todayChapters,
