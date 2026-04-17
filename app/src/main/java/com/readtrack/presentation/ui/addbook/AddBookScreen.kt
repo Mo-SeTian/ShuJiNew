@@ -20,6 +20,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Search
@@ -577,13 +578,16 @@ fun AddBookScreen(
             searchQuery = uiState.imageSearchQuery,
             imageResults = uiState.imageSearchResults,
             isSearching = uiState.isImageSearching,
+            isLoadingMore = uiState.isLoadingMoreImages,
+            hasMore = uiState.hasMoreImages,
             searchError = uiState.imageSearchError,
             selectedImageUrl = uiState.selectedImageUrl,
             onQueryChange = { viewModel.updateImageSearchQuery(it) },
             onDismiss = { viewModel.hideImageSearchDialog() },
             onSelectImage = { viewModel.selectImage(it) },
             onPreviewImage = { viewModel.previewImage(it) },
-            onClearPreview = { viewModel.clearPreview() }
+            onClearPreview = { viewModel.clearPreview() },
+            onLoadMore = { viewModel.loadMoreImages() }
         )
     }
 }
@@ -814,13 +818,16 @@ private fun ImageSearchBottomSheet(
     searchQuery: String,
     imageResults: List<BingImageResult>,
     isSearching: Boolean,
+    isLoadingMore: Boolean,
+    hasMore: Boolean,
     searchError: String?,
     selectedImageUrl: String?,
     onQueryChange: (String) -> Unit,
     onDismiss: () -> Unit,
     onSelectImage: (BingImageResult) -> Unit,
     onPreviewImage: (String) -> Unit,
-    onClearPreview: () -> Unit
+    onClearPreview: () -> Unit,
+    onLoadMore: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
@@ -920,7 +927,7 @@ private fun ImageSearchBottomSheet(
             // 搜索结果网格
             if (imageResults.isNotEmpty()) {
                 Text(
-                    text = "找到 ${imageResults.size} 张图片，长按可预览",
+                    text = "找到 ${imageResults.size} 张图片，点击选为封面，长按预览",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(bottom = 8.dp)
@@ -987,6 +994,45 @@ private fun ImageSearchBottomSheet(
                                 // 补齐空白（如果该行不足3个）
                                 repeat(3 - row.size) {
                                     Spacer(modifier = Modifier.weight(1f))
+                                }
+                            }
+                        }
+
+                        // 加载更多按钮
+                        if (hasMore) {
+                            item {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 12.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    if (isLoadingMore) {
+                                        Row(
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            CircularProgressIndicator(
+                                                modifier = Modifier.size(20.dp),
+                                                strokeWidth = 2.dp
+                                            )
+                                            Text(
+                                                "加载更多图片...",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    } else {
+                                        TextButton(onClick = onLoadMore) {
+                                            Icon(
+                                                Icons.Default.KeyboardArrowDown,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text("加载更多图片")
+                                        }
+                                    }
                                 }
                             }
                         }
