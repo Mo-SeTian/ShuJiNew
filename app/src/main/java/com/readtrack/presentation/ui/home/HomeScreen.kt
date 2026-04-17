@@ -274,16 +274,26 @@ private fun ReadingInsightCard(uiState: HomeUiState) {
                 }
             }
 
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            if (uiState.statsUnit == StatsUnit.PAGE) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    InsightMetricCard(
+                        modifier = Modifier.weight(1f),
+                        label = "总阅读时长",
+                        value = uiState.totalReadingTimeLabel,
+                        icon = Icons.Default.Schedule,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                    InsightMetricCard(
+                        modifier = Modifier.weight(1f),
+                        label = "当前在读",
+                        value = "${uiState.readingBooks} 本",
+                        icon = Icons.Default.CheckCircle,
+                        color = MaterialTheme.colorScheme.tertiary
+                    )
+                }
+            } else {
                 InsightMetricCard(
-                    modifier = Modifier.weight(1f),
-                    label = "页数模式总时长",
-                    value = if (uiState.totalReadingTimeLabel.isNotBlank()) uiState.totalReadingTimeLabel else "仅页数模式显示",
-                    icon = Icons.Default.Schedule,
-                    color = MaterialTheme.colorScheme.secondary
-                )
-                InsightMetricCard(
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.fillMaxWidth(),
                     label = "当前在读",
                     value = "${uiState.readingBooks} 本",
                     icon = Icons.Default.CheckCircle,
