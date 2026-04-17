@@ -2,7 +2,7 @@ package com.readtrack.presentation.ui.home
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -58,9 +58,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -220,40 +223,98 @@ fun HomeScreen(
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
 
-                editableList.forEachIndexed { index, item ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            Icons.Default.DragHandle,
-                            contentDescription = "拖动",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Spacer(Modifier.width(12.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = item.component.title,
-                                style = MaterialTheme.typography.bodyLarge
+                var draggingIndex by remember { mutableStateOf<Int?>(null) }
+
+                androidx.compose.foundation.lazy.LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f, fill = false),
+                    verticalArrangement = Arrangement.spacedBy(0.dp)
+                ) {
+                    items(
+                        count = editableList.size,
+                        key = { index -> editableList[index].component.id }
+                    ) { index ->
+                        val item = editableList[index]
+                        val isDragging = draggingIndex == index
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp)
+                                .then(
+                                    if (isDragging) {
+                                        Modifier.background(
+                                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f),
+                                            RoundedCornerShape(8.dp)
+                                        )
+                                    } else Modifier
+                                )
+                                .padding(horizontal = 4.dp)
+                                .graphicsLayer {
+                                    if (isDragging) {
+                                        scaleX = 1.03f
+                                        scaleY = 1.03f
+                                    }
+                                }
+                                .pointerInput(Unit) {
+                                    detectDragGesturesAfterLongPress(
+                                        onDragStart = {
+                                            draggingIndex = index
+                                        },
+                                        onDrag = { change, dragAmount ->
+                                            change.consume()
+                                            draggingIndex?.let { from ->
+                                                val offsetY = dragAmount.y
+                                                val targetIndex = (from + (offsetY / 72.dp.toPx()).toInt())
+                                                    .coerceIn(0, editableList.lastIndex)
+                                                if (targetIndex != from) {
+                                                    editableList.apply {
+                                                        add(targetIndex, removeAt(from))
+                                                    }
+                                                    draggingIndex = targetIndex
+                                                }
+                                            }
+                                        },
+                                        onDragEnd = {
+                                            draggingIndex = null
+                                        },
+                                        onDragCancel = {
+                                            draggingIndex = null
+                                        }
+                                    )
+                                },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.DragHandle,
+                                contentDescription = "长按拖动",
+                                tint = if (isDragging) MaterialTheme.colorScheme.primary
+                                       else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(24.dp)
                             )
-                            Text(
-                                text = componentDescription(item.component),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            Spacer(Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = item.component.title,
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                                Text(
+                                    text = componentDescription(item.component),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Switch(
+                                checked = item.enabled,
+                                onCheckedChange = { enabled ->
+                                    editableList[index] = item.copy(enabled = enabled)
+                                }
                             )
                         }
-                        Switch(
-                            checked = item.enabled,
-                            onCheckedChange = { enabled ->
-                                editableList[index] = item.copy(enabled = enabled)
-                            }
-                        )
-                    }
-                    if (index < editableList.lastIndex) {
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        if (index < editableList.lastIndex) {
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        }
                     }
                 }
 
