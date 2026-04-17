@@ -12,21 +12,35 @@ import javax.inject.Singleton
 /**
  * 豆瓣图书搜索服务
  *
- * 说明：旧版 `api.douban.com/v2/book/search` 现已不稳定，
- * 会直接返回 400，导致应用搜索结果始终为空。
- * 这里改为抓取豆瓣搜索页内嵌的 `window.__DATA__` 数据。
+ * 旧版 `api.douban.com/v2/book/search` 已不稳定，改用抓取豆瓣搜索页。
+ * 搜索页数据藏在 `window.__DATA__` JSON 中。
+ * 备选域名：search.douban.com / book.douban.com
  */
 @Singleton
 class DoubanSearchService @Inject constructor() {
 
     companion object {
-        private const val SEARCH_URL = "https://search.douban.com/book/subject_search"
+        // 豆瓣搜索页 URL（可改用 www.douban.com 或 m.douban.com 作为备选）
+        private val SEARCH_URLS = listOf(
+            "https://search.douban.com/book/subject_search",
+            "https://www.douban.com/search",
+            "https://m.douban.com/search/"
+        )
+        // 随机选一个 User-Agent
+        private val USER_AGENTS = listOf(
+            "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+        )
+        // 最大重试次数
+        private const val MAX_RETRIES = 2
     }
 
     /**
      * 搜索书籍
      * @param query 搜索关键词
-     * @param cookie 豆瓣Cookie（可选，保留兼容旧设置）
+     * @param cookie 豆瓣Cookie（可选）
      * @param limit 返回结果数量
      */
     suspend fun searchBooks(query: String, cookie: String, limit: Int = 10): Result<List<BookSearchResult>> {
@@ -37,26 +51,68 @@ class DoubanSearchService @Inject constructor() {
                 }
 
                 val encodedQuery = URLEncoder.encode(query.trim(), "UTF-8")
-                val url = "$SEARCH_URL?search_text=$encodedQuery&cat=1001"
-                val response = fetchSearchPage(url, cookie)
-                val results = parseSearchResponse(response, limit)
+                var lastError: Exception? = null
 
-                Result.success(results)
+                // 尝试每个搜索 URL
+                for ((urlIndex, baseUrl) in SEARCH_URLS.withIndex()) {
+                    val isPrimary = urlIndex == 0
+
+                    for (retry in 0..MAX_RETRIES) {
+                        try {
+                            val url = buildSearchUrl(baseUrl, encodedQuery, urlIndex)
+                            val response = fetchSearchPage(url, cookie, retry > 0)
+                            val results = parseSearchResponse(response, limit)
+                            return@withContext Result.success(results)
+                        } catch (e: Exception) {
+                            lastError = e
+                            // 如果是 403/429/503 错误，换 User-Agent 重试
+                            if (e.message?.contains("HTTP 403") == true ||
+                                e.message?.contains("HTTP 429") == true ||
+                                e.message?.contains("HTTP 503") == true) {
+                                // 换个 URL 再试
+                                break
+                            }
+                            // 其他错误直接重试一次
+                        }
+                    }
+                }
+
+                return@withContext Result.failure(
+                    lastError ?: IllegalStateException("豆瓣搜索请求失败（所有域名均失败）")
+                )
             } catch (e: Exception) {
                 Result.failure(e)
             }
         }
     }
 
-    private fun fetchSearchPage(url: String, cookie: String): String {
+    /**
+     * 根据不同域名构造搜索 URL
+     */
+    private fun buildSearchUrl(baseUrl: String, encodedQuery: String, urlIndex: Int): String {
+        return when (urlIndex) {
+            0 -> "$baseUrl?search_text=$encodedQuery&cat=1001"        // search.douban.com
+            1 -> "$baseUrl?header=book&q=$encodedQuery"              // www.douban.com
+            2 -> "$baseUrl?query=$encodedQuery&type=book"             // m.douban.com
+            else -> "$baseUrl?search_text=$encodedQuery&cat=1001"
+        }
+    }
+
+    private fun fetchSearchPage(url: String, cookie: String, isRetry: Boolean): String {
+        val userAgent = if (isRetry) USER_AGENTS.random() else USER_AGENTS.first()
+
         val connection = (URL(url).openConnection() as HttpURLConnection).apply {
             requestMethod = "GET"
-            setRequestProperty(
-                "User-Agent",
-                "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36"
-            )
+            setRequestProperty("User-Agent", userAgent)
             setRequestProperty("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+            setRequestProperty("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8")
             setRequestProperty("Referer", "https://book.douban.com/")
+            setRequestProperty("DNT", "1")
+            setRequestProperty("Upgrade-Insecure-Requests", "1")
+            setRequestProperty("Sec-Fetch-Dest", "document")
+            setRequestProperty("Sec-Fetch-Mode", "navigate")
+            setRequestProperty("Sec-Fetch-Site", "none")
+            setRequestProperty("Sec-Fetch-User", "?1")
             if (cookie.isNotBlank()) {
                 setRequestProperty("Cookie", cookie)
             }
@@ -120,7 +176,7 @@ class DoubanSearchService @Inject constructor() {
         val scriptSegment = html.substring(startIndex + startMarker.length, endIndex)
         val jsonText = scriptSegment.substringBeforeLast(';').trim()
 
-        if (!jsonText.startsWith("{") || !jsonText.endsWith("}")) {
+        if (!jsonText.startsWith("{")) {
             throw IllegalStateException("豆瓣搜索数据格式异常")
         }
 

@@ -57,6 +57,9 @@ data class AddBookUiState(
     val imageSearchQuery: String = "",
     val imageSearchResults: List<BingImageResult> = emptyList(),
     val isImageSearching: Boolean = false,
+    val isLoadingMoreImages: Boolean = false,
+    val imageSearchPage: Int = 0,
+    val hasMoreImages: Boolean = true,
     val imageSearchError: String? = null,
     val selectedImageUrl: String? = null  // 长按预览时用的 URL
 )
@@ -184,6 +187,9 @@ class AddBookViewModel @Inject constructor(
                 imageSearchResults = emptyList(),
                 imageSearchError = null,
                 isImageSearching = false,
+                isLoadingMoreImages = false,
+                imageSearchPage = 0,
+                hasMoreImages = true,
                 selectedImageUrl = null
             )
         }
@@ -213,14 +219,15 @@ class AddBookViewModel @Inject constructor(
         if (query.isBlank()) return
 
         viewModelScope.launch {
-            _uiState.update { it.copy(isImageSearching = true, imageSearchError = null) }
+            _uiState.update { it.copy(isImageSearching = true, imageSearchError = null, imageSearchPage = 0, hasMoreImages = true) }
 
-            bingImageSearchService.searchImages(query)
+            bingImageSearchService.searchImages(query, page = 0)
                 .onSuccess { results ->
                     _uiState.update {
                         it.copy(
                             isImageSearching = false,
-                            imageSearchResults = results.filter { img -> img.isValid() }
+                            imageSearchResults = results.filter { img -> img.isValid() },
+                            hasMoreImages = results.isNotEmpty()
                         )
                     }
                 }
@@ -229,6 +236,40 @@ class AddBookViewModel @Inject constructor(
                         it.copy(
                             isImageSearching = false,
                             imageSearchError = "图片搜索失败: ${error.message}"
+                        )
+                    }
+                }
+        }
+    }
+
+    /**
+     * 加载更多图片（分页）
+     */
+    fun loadMoreImages() {
+        val state = _uiState.value
+        if (state.isLoadingMoreImages || !state.hasMoreImages || state.imageSearchQuery.isBlank()) return
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoadingMoreImages = true) }
+
+            val nextPage = state.imageSearchPage + 1
+            bingImageSearchService.searchImages(state.imageSearchQuery, page = nextPage)
+                .onSuccess { results ->
+                    val validResults = results.filter { img -> img.isValid() }
+                    _uiState.update {
+                        it.copy(
+                            isLoadingMoreImages = false,
+                            imageSearchResults = it.imageSearchResults + validResults,
+                            imageSearchPage = nextPage,
+                            hasMoreImages = validResults.isNotEmpty()
+                        )
+                    }
+                }
+                .onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            isLoadingMoreImages = false,
+                            imageSearchError = "加载更多失败: ${error.message}"
                         )
                     }
                 }
