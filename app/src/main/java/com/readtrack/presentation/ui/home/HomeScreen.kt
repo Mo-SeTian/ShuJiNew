@@ -182,15 +182,15 @@ fun HomeScreen(
 
     // 编辑底部弹窗
     if (isEditMode) {
-        val currentOrder = uiState.componentOrder.ifEmpty { HomeComponent.entries.map { it.id } }
-        val editableList = remember(currentOrder) {
+        // 关键：直接用 uiState.componentOrder 作为 remember key，而非局部 val
+        val editableList = remember(uiState.componentOrder) {
             mutableStateListOf<HomeComponentItem>().apply {
-                currentOrder.forEach { id ->
+                val order = uiState.componentOrder.ifEmpty { HomeComponent.entries.map { it.id } }
+                order.forEach { id ->
                     val component = HomeComponent.entries.find { it.id == id } ?: return@forEach
                     add(HomeComponentItem(component, true))
                 }
-                // 补充未在列表中的组件（默认隐藏）
-                HomeComponent.entries.filter { c -> currentOrder.none { it == c.id } }.forEach { c ->
+                HomeComponent.entries.filter { c -> order.none { it == c.id } }.forEach { c ->
                     add(HomeComponentItem(c, false))
                 }
             }
