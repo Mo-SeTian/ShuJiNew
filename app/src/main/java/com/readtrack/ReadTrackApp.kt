@@ -8,13 +8,18 @@ import coil.disk.DiskCache
 import coil.memory.MemoryCache
 import coil.request.CachePolicy
 import dagger.hilt.android.HiltAndroidApp
+import org.conscrypt.Conscrypt
+import java.security.Security
 
 @HiltAndroidApp
 class ReadTrackApp : Application(), ImageLoaderFactory {
-    
+
     override fun onCreate() {
         super.onCreate()
-        Log.d("ReadTrackApp", "Application started")
+        // 将 Conscrypt（Chrome/BoringSSL）注册为默认 TLS/SSL Provider
+        // 修复豆瓣等网站对 Java HttpURLConnection 默认 JSSE 指纹的拦截（HTTP 403）
+        Security.insertProviderAt(Conscrypt.newProvider(), 1)
+        Log.d("ReadTrackApp", "Application started with Conscrypt TLS provider")
     }
     
     override fun newImageLoader(): ImageLoader {
