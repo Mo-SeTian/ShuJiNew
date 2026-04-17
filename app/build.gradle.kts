@@ -107,9 +107,8 @@ dependencies {
     // DataStore
     implementation("androidx.datastore:datastore-preferences:1.0.0")
 
-    // Conscrypt — 修复 TLS 指纹，使 HttpURLConnection 发出与 Chrome 一致的 TLS 握手
-    // 豆瓣/部分网站会拦截 Java 默认 JSSE 指纹的请求
-    implementation("org.conscrypt:conscrypt-android:2.5.2")
+    // OkHttp — 网络请求客户端（豆瓣 Cookie 搜索 / Bing 封面搜索）
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
     
     // Testing
     testImplementation("junit:junit:4.13.2")
