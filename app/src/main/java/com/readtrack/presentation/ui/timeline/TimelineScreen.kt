@@ -556,8 +556,11 @@ private fun TimelineRecordItem(
                     }
                 } else {
                     // 普通阅读记录：显示阅读量
-                    val pagesText = remember(record.pagesRead, isChapterBased) {
-                        if (isChapterBased) "${record.pagesRead.toInt()} 章" else "${record.pagesRead.toInt()} 页"
+                    val pagesText = remember(record.pagesRead, record.chaptersRead, isChapterBased) {
+                        if (isChapterBased) {
+                            val chapters = record.chaptersRead ?: 0
+                            if (chapters > 0) "+${chapters} 章" else "在读"
+                        } else "${record.pagesRead.toInt()} 页"
                     }
 
                     Surface(

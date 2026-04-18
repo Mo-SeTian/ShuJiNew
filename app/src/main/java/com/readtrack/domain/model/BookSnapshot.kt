@@ -1,5 +1,6 @@
 package com.readtrack.domain.model
 
+import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.presentation.viewmodel.ProgressType
 
 /**
@@ -13,5 +14,20 @@ data class BookSnapshot(
     val author: String? = null,
     val coverPath: String? = null,
     val progressType: ProgressType = ProgressType.PAGE,
-    val status: BookStatus = BookStatus.WANT_TO_READ
-)
+    val status: BookStatus = BookStatus.WANT_TO_READ,
+    val totalChapters: Int? = null,
+    val currentChapter: Int? = null
+) {
+    companion object {
+        fun from(book: BookEntity, status: BookStatus): BookSnapshot = BookSnapshot(
+            id = book.id,
+            title = book.title,
+            author = book.author,
+            coverPath = book.coverPath,
+            progressType = book.progressType,
+            status = status,
+            totalChapters = book.totalChapters,
+            currentChapter = book.currentChapter
+        )
+    }
+}
