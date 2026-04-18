@@ -109,8 +109,12 @@ class StatsViewModel @Inject constructor(
         }
 
         records.filter { it.recordType == RecordType.NORMAL }.forEach { record ->
-            val isChapterBook = booksMap[record.bookId]?.progressType == ProgressType.CHAPTER
-            val value = record.pagesRead
+            // 优先用 bookSnapshot 的 progressType（导入记录可能有），其次用 booksMap
+            val progressType = record.bookSnapshot?.progressType
+                ?: booksMap[record.bookId]?.progressType
+            val isChapterBook = progressType == ProgressType.CHAPTER
+            // 章节书从 chaptersRead 取值（Int 转 Double），页码书从 pagesRead 取
+            val value = if (isChapterBook) (record.chaptersRead ?: 0).toDouble() else record.pagesRead
 
             if (isChapterBook) {
                 totalChapters += value
@@ -130,16 +134,28 @@ class StatsViewModel @Inject constructor(
             if (dayStart != null) {
                 weeklyBuckets[dayStart] = dayRecords
                     .filter { it.recordType == RecordType.NORMAL }
-                    .sumOf { it.pagesRead }
+                    .sumOf { record ->
+                        val progressType = record.bookSnapshot?.progressType
+                            ?: booksMap[record.bookId]?.progressType
+                        if (progressType == ProgressType.CHAPTER) (record.chaptersRead ?: 0).toDouble() else record.pagesRead
+                    }
             }
         }
 
         // 按偏好计算今天的 value（章节桶也需要按书籍类型分别累加）
         val recordsByDayChapter = recordsByDay.mapValues { (_, recs) ->
-            recs.filter { booksMap[it.bookId]?.progressType == ProgressType.CHAPTER }.sumOf { it.pagesRead }
+            recs.filter { record ->
+                val progressType = record.bookSnapshot?.progressType
+                    ?: booksMap[record.bookId]?.progressType
+                progressType == ProgressType.CHAPTER
+            }.sumOf { (it.chaptersRead ?: 0).toDouble() }
         }
         val recordsByDayPage = recordsByDay.mapValues { (_, recs) ->
-            recs.filter { booksMap[it.bookId]?.progressType != ProgressType.CHAPTER }.sumOf { it.pagesRead }
+            recs.filter { record ->
+                val progressType = record.bookSnapshot?.progressType
+                    ?: booksMap[record.bookId]?.progressType
+                progressType != ProgressType.CHAPTER
+            }.sumOf { it.pagesRead }
         }
 
         // 单次遍历获取 booksByStatus
