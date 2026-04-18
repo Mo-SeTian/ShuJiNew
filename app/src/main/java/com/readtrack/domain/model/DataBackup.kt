@@ -86,7 +86,10 @@ data class BookExport(
         totalPages = totalPages,
         currentPage = currentPage,
         totalChapters = totalChapters,
-        currentChapter = totalChapters?.let { if (currentChapter != null && currentChapter > 0) currentChapter else 0 } ?: 0,
+        // 当 totalChapters > 0 时用 currentChapter，否则保持 currentChapter 原值（可能为 null，旧备份兼容）
+        currentChapter = totalChapters?.let { tc ->
+            if (tc > 0) currentChapter ?: 0 else currentChapter
+        } ?: 0,
         coverPath = coverPath,
         description = description,
         status = BookStatus.valueOf(status),
