@@ -110,8 +110,10 @@ data class ReadingRecordExport(
     val pagesRead: Double,
     val fromPage: Double,
     val toPage: Double,
+    val chaptersRead: Int? = null,  // 章节模式阅读量
     val date: Long,
-    val note: String? = null
+    val note: String? = null,
+    val recordType: String = "NORMAL"  // 记录类型
 ) {
     companion object {
         fun fromEntity(record: ReadingRecordEntity, bookTitle: String): ReadingRecordExport =
@@ -122,8 +124,10 @@ data class ReadingRecordExport(
                 pagesRead = record.pagesRead,
                 fromPage = record.fromPage,
                 toPage = record.toPage,
+                chaptersRead = record.chaptersRead,
                 date = record.date,
-                note = record.note
+                note = record.note,
+                recordType = record.recordType.name
             )
     }
 }
