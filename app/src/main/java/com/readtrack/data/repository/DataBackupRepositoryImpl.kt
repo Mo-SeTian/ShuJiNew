@@ -11,6 +11,7 @@ import com.readtrack.domain.model.BookListExport
 import com.readtrack.domain.model.DataBackup
 import com.readtrack.domain.model.ImportResult
 import com.readtrack.domain.model.ReadingRecordExport
+import com.readtrack.domain.model.buildImportPreview
 import com.readtrack.domain.repository.DataBackupRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -196,6 +197,15 @@ class DataBackupRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    override suspend fun previewImport(backup: DataBackup) = runCatching {
+        buildImportPreview(
+            backup = backup,
+            existingBooks = bookDao.getAllBooks().first(),
+            existingRecords = recordDao.getAllRecords().first(),
+            existingBookLists = bookListDao.getAllBookLists().first()
+        )
     }
 
     override fun getExportJson(): Flow<String> = flow {
