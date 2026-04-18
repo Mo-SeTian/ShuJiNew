@@ -161,26 +161,145 @@ fun SettingsScreen(
     }
 
     if (uiState.showWebDavRestoreDialog) {
-        AlertDialog(
-            onDismissRequest = viewModel::dismissWebDavRestoreDialog,
-            title = { Text("从 WebDAV 恢复") },
-            text = { Text("将使用远端 latest 备份恢复数据。\n\n• 清空恢复：先删除本地数据再恢复\n• 追加恢复：保留本地数据并追加导入") },
-            confirmButton = {
-                TextButton(onClick = { viewModel.restoreBackupFromWebDav(true) }) {
-                    Text("清空恢复")
-                }
-            },
-            dismissButton = {
-                Row {
+        if (uiState.isLoadingWebDavBackups) {
+            AlertDialog(
+                onDismissRequest = { },
+                title = { Text("加载备份列表...") },
+                text = {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Text("正在从 WebDAV 获取备份文件列表")
+                    }
+                },
+                confirmButton = { }
+            )
+        } else if (uiState.webDavBackupFiles.isEmpty()) {
+            AlertDialog(
+                onDismissRequest = viewModel::dismissWebDavRestoreDialog,
+                title = { Text("从 WebDAV 恢复") },
+                text = { Text("远端未找到任何备份文件。") },
+                confirmButton = {
                     TextButton(onClick = viewModel::dismissWebDavRestoreDialog) {
-                        Text("取消")
-                    }
-                    TextButton(onClick = { viewModel.restoreBackupFromWebDav(false) }) {
-                        Text("追加恢复")
+                        Text("关闭")
                     }
                 }
-            }
-        )
+            )
+        } else {
+            val selectedFile = uiState.selectedWebDavBackupFile
+            AlertDialog(
+                onDismissRequest = viewModel::dismissWebDavRestoreDialog,
+                title = { Text("选择要恢复的备份") },
+                text = {
+                    Column {
+                        Text(
+                            "共 ${uiState.webDavBackupFiles.size} 个备份文件，请选择：",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        LazyColumn(
+                            modifier = Modifier.height(240.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            items(uiState.webDavBackupFiles.size) { index ->
+                                val file = uiState.webDavBackupFiles[index]
+                                val isSelected = file.fileName == selectedFile
+                                val dateStr = if (file.lastModified > 0) {
+                                    SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+                                        .format(Date(file.lastModified))
+                                } else { "未知时间" }
+                                val sizeStr = if (file.size > 0) {
+                                    if (file.size > 1024 * 1024) "%.1f MB".format(file.size / 1024.0 / 1024.0)
+                                    else "%.0f KB".format(file.size / 1024.0)
+                                } else { "" }
+
+                                Card(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { viewModel.selectWebDavBackupFile(file.fileName) },
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = if (isSelected)
+                                            MaterialTheme.colorScheme.primaryContainer
+                                        else MaterialTheme.colorScheme.surfaceVariant
+                                    ),
+                                    shape = RoundedCornerShape(8.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(12.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        RadioButton(
+                                            selected = isSelected,
+                                            onClick = { viewModel.selectWebDavBackupFile(file.fileName) }
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                file.fileName,
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                            )
+                                            Text(
+                                                "$dateStr${if (sizeStr.isNotBlank()) " · $sizeStr" else ""}",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                        if (file.fileName == "readtrack_backup_latest.json") {
+                                            Card(
+                                                colors = CardDefaults.cardColors(
+                                                    containerColor = MaterialTheme.colorScheme.primary
+                                                ),
+                                                shape = RoundedCornerShape(4.dp)
+                                            ) {
+                                                Text(
+                                                    "最新",
+                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = MaterialTheme.colorScheme.onPrimary
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            viewModel.restoreBackupFromWebDav(true, selectedFile)
+                        },
+                        enabled = selectedFile != null
+                    ) {
+                        Text("清空并恢复")
+                    }
+                },
+                dismissButton = {
+                    Row {
+                        TextButton(onClick = viewModel::dismissWebDavRestoreDialog) {
+                            Text("取消")
+                        }
+                        TextButton(
+                            onClick = {
+                                viewModel.restoreBackupFromWebDav(false, selectedFile)
+                            },
+                            enabled = selectedFile != null
+                        ) {
+                            Text("追加恢复")
+                        }
+                    }
+                }
+            )
+        }
     }
 
     if (uiState.exportSuccess && uiState.exportJson != null) {
@@ -287,7 +406,7 @@ fun SettingsScreen(
                 SettingsClickableCard(
                     icon = Icons.Outlined.CloudDownload,
                     title = "从 WebDAV 恢复",
-                    subtitle = "恢复远端 latest 备份"
+                    subtitle = "从远端选择一个备份文件恢复"
                 ) {
                     viewModel.showWebDavRestoreDialog()
                 }

@@ -50,7 +50,10 @@ data class SettingsUiState(
     val autoBackupFrequency: AutoBackupFrequency = AutoBackupFrequency.OFF,
     val lastWebDavBackupAt: Long? = null,
     val lastWebDavError: String? = null,
-    val webDavStatusMessage: String? = null
+    val webDavStatusMessage: String? = null,
+    val webDavBackupFiles: List<WebDavService.BackupFileInfo> = emptyList(),
+    val isLoadingWebDavBackups: Boolean = false,
+    val selectedWebDavBackupFile: String? = null
 ) {
     val isWebDavConfigured: Boolean
         get() =
@@ -377,14 +380,57 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun showWebDavRestoreDialog() {
-        _uiState.update { it.copy(showWebDavRestoreDialog = true) }
+        val config = currentWebDavConfig()
+        if (!config.isValid()) {
+            _uiState.update { it.copy(errorMessage = "请先完成 WebDAV 配置") }
+            return
+        }
+        _uiState.update {
+            it.copy(
+                showWebDavRestoreDialog = true,
+                isLoadingWebDavBackups = true,
+                webDavBackupFiles = emptyList(),
+                selectedWebDavBackupFile = null,
+                errorMessage = null
+            )
+        }
+        viewModelScope.launch {
+            webDavService.listBackups(config)
+                .onSuccess { files ->
+                    _uiState.update {
+                        it.copy(
+                            isLoadingWebDavBackups = false,
+                            webDavBackupFiles = files
+                        )
+                    }
+                }
+                .onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            isLoadingWebDavBackups = false,
+                            errorMessage = "加载备份列表失败: ${error.message}"
+                        )
+                    }
+                }
+        }
     }
 
     fun dismissWebDavRestoreDialog() {
-        _uiState.update { it.copy(showWebDavRestoreDialog = false) }
+        _uiState.update {
+            it.copy(
+                showWebDavRestoreDialog = false,
+                webDavBackupFiles = emptyList(),
+                selectedWebDavBackupFile = null,
+                isLoadingWebDavBackups = false
+            )
+        }
     }
 
-    fun restoreBackupFromWebDav(clearExisting: Boolean) {
+    fun selectWebDavBackupFile(fileName: String) {
+        _uiState.update { it.copy(selectedWebDavBackupFile = fileName) }
+    }
+
+    fun restoreBackupFromWebDav(clearExisting: Boolean, fileName: String? = null) {
         val config = currentWebDavConfig()
         if (!config.isValid()) {
             _uiState.update { it.copy(errorMessage = "请先完成 WebDAV 配置") }
@@ -400,7 +446,7 @@ class SettingsViewModel @Inject constructor(
                     webDavStatusMessage = null
                 )
             }
-            webDavService.downloadBackup(config)
+            webDavService.downloadBackup(config, fileName)
                 .mapCatching { json ->
                     dataBackupRepository.parseBackupFromJson(json)
                         ?: throw IllegalStateException("远端备份格式无效")
@@ -415,7 +461,7 @@ class SettingsViewModel @Inject constructor(
                                         isSyncingWebDav = false,
                                         importSuccess = true,
                                         lastImportResult = result,
-                                        webDavStatusMessage = "已从 WebDAV 恢复最新备份"
+                                        webDavStatusMessage = if (fileName != null) "已从 WebDAV 恢复 $fileName" else "已从 WebDAV 恢复最新备份"
                                     )
                                 }
                             }

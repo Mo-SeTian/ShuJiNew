@@ -52,10 +52,11 @@ class WebDavService @Inject constructor(
         }
     }
 
-    suspend fun downloadBackup(config: WebDavConfig): Result<String> = withContext(Dispatchers.IO) {
+    suspend fun downloadBackup(config: WebDavConfig, fileName: String? = null): Result<String> = withContext(Dispatchers.IO) {
         runCatching {
             validateConfig(config)
-            val latestUrl = buildUrl(config, LATEST_BACKUP_FILE)
+            val targetFile = fileName ?: LATEST_BACKUP_FILE
+            val latestUrl = buildUrl(config, targetFile)
             val request = requestBuilder(config, latestUrl).get().build()
             okHttpClient.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) {
@@ -66,6 +67,61 @@ class WebDavService @Inject constructor(
                 }
             }
         }
+    }
+
+    data class BackupFileInfo(
+        val fileName: String,
+        val lastModified: Long,
+        val size: Long
+    )
+
+    suspend fun listBackups(config: WebDavConfig): Result<List<BackupFileInfo>> = withContext(Dispatchers.IO) {
+        runCatching {
+            validateConfig(config)
+            val propfindUrl = buildUrl(config, null)
+            val request = requestBuilder(config, propfindUrl)
+                .header("Depth", "1")
+                .method("PROPFIND", PROPFIND_BODY)
+                .build()
+            okHttpClient.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) {
+                    throw IllegalStateException("列出备份失败（HTTP ${response.code}）")
+                }
+                val body = response.body?.string().orEmpty()
+                parseBackupFileList(body)
+            }
+        }
+    }
+
+    private fun parseBackupFileList(xml: String): List<BackupFileInfo> {
+        val result = mutableListOf<BackupFileInfo>()
+        val fileNameRegex = "<d:href>([^<]*(?:readtrack_backup|backup)[^<]*)</d:href>".toRegex()
+        val lastModifiedRegex = "<d:getlastmodified>([^<]+)</d:getlastmodified>".toRegex()
+        val sizeRegex = "<d:getcontentlength>([^<]+)</d:getcontentlength>".toRegex()
+
+        val hrefMatches = fileNameRegex.findAll(xml).toList()
+        val lastModifiedMatches = lastModifiedRegex.findAll(xml).toList()
+        val sizeMatches = sizeRegex.findAll(xml).toList()
+
+        for (i in hrefMatches.indices) {
+            val fileName = hrefMatches[i].groupValues[1]
+                .substringAfterLast("/")
+                .substringAfterLast("%2F")
+            if (!fileName.endsWith(".json")) continue
+
+            val lastModified = lastModifiedMatches.getOrNull(i)?.groupValues?.get(1)
+                ?.let { parseHttpDate(it) } ?: 0L
+            val size = sizeMatches.getOrNull(i)?.groupValues?.get(1)?.toLongOrNull() ?: 0L
+
+            result.add(BackupFileInfo(fileName, lastModified, size))
+        }
+
+        return result.sortedByDescending { it.lastModified }
+    }
+
+    private fun parseHttpDate(dateStr: String): Long {
+        val formatter = SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.ENGLISH)
+        return try { formatter.parse(dateStr)?.time ?: 0L } catch (e: Exception) { 0L }
     }
 
     private fun validateConfig(config: WebDavConfig) {
@@ -151,6 +207,16 @@ class WebDavService @Inject constructor(
     companion object {
         private val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
         private val EMPTY_BODY = ByteArray(0).toRequestBody(null)
+        private val PROPFIND_BODY = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <d:propfind xmlns:d="DAV:">
+                <d:prop>
+                    <d:displayname/>
+                    <d:getlastmodified/>
+                    <d:getcontentlength/>
+                </d:prop>
+            </d:propfind>
+        """.trimIndent().toRequestBody("application/xml".toMediaType())
         const val LATEST_BACKUP_FILE = "readtrack_backup_latest.json"
     }
 }
