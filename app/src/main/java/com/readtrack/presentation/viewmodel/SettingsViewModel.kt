@@ -9,6 +9,7 @@ import com.readtrack.data.local.ThemeMode
 import com.readtrack.data.remote.WebDavConfig
 import com.readtrack.data.remote.WebDavService
 import com.readtrack.domain.model.DataBackup
+import com.readtrack.domain.model.ImportPreview
 import com.readtrack.domain.model.ImportResult
 import com.readtrack.domain.repository.DataBackupRepository
 import com.readtrack.worker.WebDavBackupScheduler
@@ -37,6 +38,7 @@ data class SettingsUiState(
     val errorMessage: String? = null,
     val exportJson: String? = null,
     val showClearConfirmDialog: Boolean = false,
+    val importPreview: ImportPreview? = null,
     val showWebDavRestoreDialog: Boolean = false,
     val doubanCookie: String = "",
     val isTestingCookie: Boolean = false,
@@ -183,12 +185,68 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun importData(jsonContent: String, clearExisting: Boolean) {
+    fun prepareImportPreview(jsonContent: String) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isImporting = true, errorMessage = null, showClearConfirmDialog = false) }
+            _uiState.update {
+                it.copy(
+                    isImporting = true,
+                    errorMessage = null,
+                    showClearConfirmDialog = false,
+                    importPreview = null
+                )
+            }
             val backup = dataBackupRepository.parseBackupFromJson(jsonContent)
             if (backup == null) {
-                _uiState.update { it.copy(isImporting = false, errorMessage = "文件格式无效") }
+                _uiState.update {
+                    it.copy(
+                        isImporting = false,
+                        errorMessage = "文件格式无效",
+                        importPreview = null
+                    )
+                }
+                return@launch
+            }
+
+            dataBackupRepository.previewImport(backup)
+                .onSuccess { preview ->
+                    _uiState.update {
+                        it.copy(
+                            isImporting = false,
+                            showClearConfirmDialog = true,
+                            importPreview = preview
+                        )
+                    }
+                }
+                .onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            isImporting = false,
+                            errorMessage = "导入预览失败: ${error.message}",
+                            importPreview = null
+                        )
+                    }
+                }
+        }
+    }
+
+    fun importData(jsonContent: String, clearExisting: Boolean) {
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(
+                    isImporting = true,
+                    errorMessage = null,
+                    showClearConfirmDialog = false
+                )
+            }
+            val backup = dataBackupRepository.parseBackupFromJson(jsonContent)
+            if (backup == null) {
+                _uiState.update {
+                    it.copy(
+                        isImporting = false,
+                        errorMessage = "文件格式无效",
+                        importPreview = null
+                    )
+                }
                 return@launch
             }
 
@@ -198,7 +256,8 @@ class SettingsViewModel @Inject constructor(
                         it.copy(
                             isImporting = false,
                             importSuccess = true,
-                            lastImportResult = result
+                            lastImportResult = result,
+                            importPreview = null
                         )
                     }
                 }
@@ -407,11 +466,11 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun showClearConfirmDialog() {
-        _uiState.update { it.copy(showClearConfirmDialog = true) }
+        _uiState.update { it.copy(showClearConfirmDialog = true, importPreview = null) }
     }
 
     fun dismissClearConfirmDialog() {
-        _uiState.update { it.copy(showClearConfirmDialog = false) }
+        _uiState.update { it.copy(showClearConfirmDialog = false, importPreview = null) }
     }
 
     fun clearExportSuccess() {

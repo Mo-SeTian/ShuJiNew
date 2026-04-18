@@ -1,6 +1,7 @@
 package com.readtrack.domain.model
 
 import com.readtrack.data.local.entity.BookEntity
+import com.readtrack.data.local.entity.BookListEntity
 import com.readtrack.data.local.entity.ReadingRecordEntity
 import com.readtrack.presentation.viewmodel.ProgressType
 import kotlinx.serialization.Serializable
@@ -124,6 +125,92 @@ data class ReadingRecordExport(
             )
     }
 }
+
+/**
+ * 导入前安全预览
+ */
+data class ImportPreview(
+    val exportTime: Long,
+    val appVersion: String,
+    val backupBookCount: Int,
+    val backupRecordCount: Int,
+    val backupBookListCount: Int,
+    val existingBookCount: Int,
+    val existingRecordCount: Int,
+    val existingBookListCount: Int,
+    val duplicateBookCount: Int,
+    val duplicateRecordCount: Int,
+    val skippedOrphanRecordCount: Int,
+    val appendBookCount: Int,
+    val appendRecordCount: Int,
+    val appendBookListCount: Int
+)
+
+fun buildImportPreview(
+    backup: DataBackup,
+    existingBooks: List<BookEntity>,
+    existingRecords: List<ReadingRecordEntity>,
+    existingBookLists: List<BookListEntity>
+): ImportPreview {
+    val existingBookByKey = existingBooks.associateBy { it.importIdentityKey() }
+    val oldIdToResolvedBookId = mutableMapOf<Long, Long>()
+    var duplicateBookCount = 0
+
+    backup.books.forEach { bookExport ->
+        val matched = existingBookByKey[bookExport.importIdentityKey()]
+        if (matched != null) {
+            duplicateBookCount++
+            oldIdToResolvedBookId[bookExport.id] = matched.id
+        } else {
+            oldIdToResolvedBookId[bookExport.id] = bookExport.id
+        }
+    }
+
+    val existingRecordKeys = existingRecords.mapNotNull { record ->
+        record.bookId?.let { bookId -> recordIdentityKey(bookId, record.date) }
+    }.toSet()
+
+    var duplicateRecordCount = 0
+    var skippedOrphanRecordCount = 0
+
+    backup.readingRecords.forEach { recordExport ->
+        val resolvedBookId = recordExport.bookId?.let(oldIdToResolvedBookId::get)
+        if (resolvedBookId == null) {
+            skippedOrphanRecordCount++
+            return@forEach
+        }
+
+        if (recordIdentityKey(resolvedBookId, recordExport.date) in existingRecordKeys) {
+            duplicateRecordCount++
+        }
+    }
+
+    val appendBookCount = backup.books.size - duplicateBookCount
+    val appendRecordCount = backup.readingRecords.size - duplicateRecordCount - skippedOrphanRecordCount
+
+    return ImportPreview(
+        exportTime = backup.exportTime,
+        appVersion = backup.appVersion,
+        backupBookCount = backup.books.size,
+        backupRecordCount = backup.readingRecords.size,
+        backupBookListCount = backup.bookLists.size,
+        existingBookCount = existingBooks.size,
+        existingRecordCount = existingRecords.size,
+        existingBookListCount = existingBookLists.size,
+        duplicateBookCount = duplicateBookCount,
+        duplicateRecordCount = duplicateRecordCount,
+        skippedOrphanRecordCount = skippedOrphanRecordCount,
+        appendBookCount = appendBookCount.coerceAtLeast(0),
+        appendRecordCount = appendRecordCount.coerceAtLeast(0),
+        appendBookListCount = backup.bookLists.size
+    )
+}
+
+private fun BookEntity.importIdentityKey(): String = "${title.trim()}::${author?.trim().orEmpty()}"
+
+private fun BookExport.importIdentityKey(): String = "${title.trim()}::${author?.trim().orEmpty()}"
+
+private fun recordIdentityKey(bookId: Long, date: Long): String = "$bookId::$date"
 
 /**
  * 导入结果

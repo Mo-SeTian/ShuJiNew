@@ -1,6 +1,7 @@
 package com.readtrack.domain.repository
 
 import com.readtrack.domain.model.DataBackup
+import com.readtrack.domain.model.ImportPreview
 import com.readtrack.domain.model.ImportResult
 import kotlinx.coroutines.flow.Flow
 
@@ -19,6 +20,11 @@ interface DataBackupRepository {
      * @param clearExisting 是否清空现有数据
      */
     suspend fun importData(backup: DataBackup, clearExisting: Boolean): Result<ImportResult>
+
+    /**
+     * 导入前预览数据，评估追加导入会新增/跳过多少内容
+     */
+    suspend fun previewImport(backup: DataBackup): Result<ImportPreview>
 
     /**
      * 从 JSON 字符串解析备份数据
