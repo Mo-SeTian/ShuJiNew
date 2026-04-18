@@ -140,21 +140,11 @@ class BooksViewModel @Inject constructor(
                 }
                 val record = ReadingRecordEntity(
                     bookId = bookId,
-                    bookSnapshot = BookSnapshot(
-                        id = book.id,
-                        title = book.title,
-                        author = book.author,
-                        coverPath = book.coverPath,
-                        progressType = book.progressType,
-                        status = book.status
-                    ),
-                    pagesRead = if (isChapterBased) {
-                        (newChapter - book.currentChapter).toDouble().coerceAtLeast(0.0)
-                    } else {
-                        (newPage - book.currentPage).coerceAtLeast(0.0)
-                    },
+                    bookSnapshot = BookSnapshot.from(book, book.status),
+                    pagesRead = if (isChapterBased) 0.0 else (newPage - book.currentPage).coerceAtLeast(0.0),
                     fromPage = book.currentPage,
                     toPage = if (isChapterBased) 0.0 else newPage.coerceAtMost(book.totalPages),
+                    chaptersRead = if (isChapterBased) (newChapter - book.currentChapter).coerceAtLeast(0) else null,
                     recordType = RecordType.NORMAL,
                     date = System.currentTimeMillis()
                 )

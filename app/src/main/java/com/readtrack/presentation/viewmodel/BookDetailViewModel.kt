@@ -168,14 +168,7 @@ class BookDetailViewModel @Inject constructor(
 
                 val record = ReadingRecordEntity(
                     bookId = currentBook.id,
-                    bookSnapshot = BookSnapshot(
-                        id = currentBook.id,
-                        title = currentBook.title,
-                        author = currentBook.author,
-                        coverPath = currentBook.coverPath,
-                        progressType = currentBook.progressType,
-                        status = currentBook.status
-                    ),
+                    bookSnapshot = BookSnapshot.from(currentBook, currentBook.status),
                     pagesRead = pagesActuallyRead,
                     fromPage = fromPage,
                     toPage = toPage,
@@ -218,17 +211,11 @@ class BookDetailViewModel @Inject constructor(
 
                 val record = ReadingRecordEntity(
                     bookId = currentBook.id,
-                    bookSnapshot = BookSnapshot(
-                        id = currentBook.id,
-                        title = currentBook.title,
-                        author = currentBook.author,
-                        coverPath = currentBook.coverPath,
-                        progressType = currentBook.progressType,
-                        status = currentBook.status
-                    ),
-                    pagesRead = chaptersActuallyRead.toDouble(),
+                    bookSnapshot = BookSnapshot.from(currentBook, currentBook.status),
+                    pagesRead = 0.0,
                     fromPage = fromChapter.toDouble(),
                     toPage = toChapter.toDouble(),
+                    chaptersRead = chaptersActuallyRead,
                     date = currentTime
                 )
                 val updatedBook = currentBook.copy(

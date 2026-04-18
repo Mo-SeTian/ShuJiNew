@@ -543,8 +543,9 @@ fun ReadingRecordItem(recordWithBook: RecordWithBook) {
                 }
             } else {
                 // 普通阅读记录：显示进度
-                val progressText = remember(record.pagesRead, isChapterBased) {
-                    "+${record.pagesRead.toInt()} ${if (isChapterBased) "章" else "页"}"
+                val progressText = remember(record.pagesRead, record.chaptersRead, isChapterBased) {
+                    val value = if (isChapterBased) record.chaptersRead ?: 0 else record.pagesRead.toInt()
+                    "+${value} ${if (isChapterBased) "章" else "页"}"
                 }
                 Surface(
                     shape = RoundedCornerShape(8.dp),

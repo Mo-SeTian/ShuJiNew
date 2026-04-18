@@ -270,7 +270,7 @@ fun BookDetailScreen(
                 Column {
                     Row(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
                         Text(
-                            "原始记录：${record.pagesRead.toInt()} ${if (isChapterBased) "章" else "页"}",
+                            "原始记录：${if (isChapterBased) record.chaptersRead ?: 0 else record.pagesRead.toInt()} ${if (isChapterBased) "章" else "页"}",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -983,7 +983,7 @@ private fun ReadingRecordRow(
                         color = MaterialTheme.colorScheme.primaryContainer
                     ) {
                         Text(
-                            "+${record.pagesRead.toInt()} ${if (isChapterBased) "章" else "页"}",
+                            "+${if (isChapterBased) record.chaptersRead ?: 0 else record.pagesRead.toInt()} ${if (isChapterBased) "章" else "页"}",
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onPrimaryContainer,
