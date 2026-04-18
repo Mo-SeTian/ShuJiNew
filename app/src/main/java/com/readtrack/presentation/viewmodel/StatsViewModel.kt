@@ -150,14 +150,7 @@ class StatsViewModel @Inject constructor(
         val recordsWithBooks = recentRecords.map { record ->
             val snapshot: BookSnapshot? = record.bookSnapshot
                 ?: record.bookId?.let { booksMap[it] }?.let { book ->
-                    BookSnapshot(
-                        id = book.id,
-                        title = book.title,
-                        author = book.author,
-                        coverPath = book.coverPath,
-                        progressType = book.progressType,
-                        status = book.status
-                    )
+                    BookSnapshot.from(book, book.status)
                 }
             RecordWithBook(record = record, bookSnapshot = snapshot)
         }

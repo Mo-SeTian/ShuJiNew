@@ -86,10 +86,9 @@ data class BookExport(
         totalPages = totalPages,
         currentPage = currentPage,
         totalChapters = totalChapters,
-        // 当 totalChapters > 0 时用 currentChapter，否则保持 currentChapter 原值（可能为 null，旧备份兼容）
-        currentChapter = totalChapters?.let { tc ->
-            if (tc > 0) currentChapter ?: 0 else currentChapter
-        } ?: 0,
+        // 只有当章节模式启用（totalChapters > 0）时才使用 currentChapter，否则保持原值（默认 0）
+        // 注意：totalChapters = null 表示从未启用章节模式，currentChapter 应保持数据库默认值 0
+        currentChapter = currentChapter?.takeIf { totalChapters != null && totalChapters > 0 } ?: 0,
         coverPath = coverPath,
         description = description,
         status = BookStatus.valueOf(status),

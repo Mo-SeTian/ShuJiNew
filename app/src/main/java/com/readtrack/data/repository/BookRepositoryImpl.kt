@@ -85,14 +85,7 @@ class BookRepositoryImpl @Inject constructor(
     override suspend fun updateBookStatus(bookId: Long, newStatus: BookStatus, recordType: RecordType) {
         database.withTransaction {
             val book = bookDao.getBookByIdOnce(bookId) ?: return@withTransaction
-            val snapshot = BookSnapshot(
-                id = book.id,
-                title = book.title,
-                author = book.author,
-                coverPath = book.coverPath,
-                progressType = book.progressType,
-                status = newStatus  // 快照里用新状态（因为这是状态变更记录）
-            )
+            val snapshot = BookSnapshot.from(book, newStatus)
             // 写入状态变更记录（pagesRead/fromPage/toPage 均为 0）
             val statusRecord = ReadingRecordEntity(
                 bookId = bookId,
@@ -113,14 +106,7 @@ class BookRepositoryImpl @Inject constructor(
     override suspend fun insertBookWithStatus(book: BookEntity) {
         database.withTransaction {
             val bookId = bookDao.insertBook(book)
-            val snapshot = BookSnapshot(
-                id = bookId,
-                title = book.title,
-                author = book.author,
-                coverPath = book.coverPath,
-                progressType = book.progressType,
-                status = book.status
-            )
+            val snapshot = BookSnapshot.from(book, book.status)
             // 写入添加图书记录
             val statusRecord = ReadingRecordEntity(
                 bookId = bookId,

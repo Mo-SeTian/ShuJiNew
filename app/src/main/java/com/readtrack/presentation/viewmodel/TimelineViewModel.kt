@@ -119,14 +119,7 @@ class TimelineViewModel @Inject constructor(
                         // 优先用写入时冻结的快照；旧数据（snapshot=null）用 live book 补全
                         val snapshot: BookSnapshot? = record.bookSnapshot
                             ?: record.bookId?.let { liveBookMap[it] }?.let { book ->
-                                BookSnapshot(
-                                    id = book.id,
-                                    title = book.title,
-                                    author = book.author,
-                                    coverPath = book.coverPath,
-                                    progressType = book.progressType,
-                                    status = book.status
-                                )
+                                BookSnapshot.from(book, book.status)
                             }
 
                         calendar.timeInMillis = record.date
