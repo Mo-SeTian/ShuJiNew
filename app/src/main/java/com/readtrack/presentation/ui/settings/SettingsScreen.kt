@@ -92,9 +92,9 @@ fun SettingsScreen(
         uri?.let {
             val content = context.contentResolver.openInputStream(it)?.bufferedReader()?.readText()
             if (content != null) {
-                viewModel.showClearConfirmDialog()
                 pendingImportUri = uri
                 pendingImportContent = content
+                viewModel.prepareImportPreview(content)
             }
         }
     }
@@ -112,15 +112,30 @@ fun SettingsScreen(
         }
     }
 
-    if (uiState.showClearConfirmDialog && pendingImportUri != null && pendingImportContent != null) {
+    if (uiState.showClearConfirmDialog && pendingImportContent != null) {
+        val importPreview = uiState.importPreview
         AlertDialog(
             onDismissRequest = {
                 viewModel.dismissClearConfirmDialog()
                 pendingImportUri = null
                 pendingImportContent = null
             },
-            title = { Text("导入选项") },
-            text = { Text("是否清空现有数据后再导入？\n\n• 是：删除所有现有书籍和记录\n• 否：保留现有数据，追加导入") },
+            title = { Text("导入前安全预览") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (importPreview != null) {
+                        Text("即将导入：${importPreview.backupBookCount} 本书、${importPreview.backupRecordCount} 条记录、${importPreview.backupBookListCount} 个书单")
+                        Text("追加导入预计新增：${importPreview.appendBookCount} 本书、${importPreview.appendRecordCount} 条记录、${importPreview.appendBookListCount} 个书单")
+                        if (importPreview.duplicateBookCount > 0 || importPreview.duplicateRecordCount > 0) {
+                            Text("将跳过重复内容：${importPreview.duplicateBookCount} 本重复书籍、${importPreview.duplicateRecordCount} 条重复记录")
+                        }
+                        if (importPreview.skippedOrphanRecordCount > 0) {
+                            Text("警告：有 ${importPreview.skippedOrphanRecordCount} 条记录因缺少对应书籍而会被跳过")
+                        }
+                    }
+                    Text("是否清空现有数据后再导入？\n\n• 清空并导入：删除当前书籍、记录和书单后恢复备份\n• 追加导入：保留当前数据，只导入新增内容")
+                }
+            },
             confirmButton = {
                 TextButton(onClick = {
                     pendingImportContent?.let { content -> viewModel.importData(content, true) }
