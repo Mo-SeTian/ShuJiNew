@@ -3,11 +3,14 @@ package com.readtrack.data.repository
 import com.readtrack.data.local.dao.BookDao
 import com.readtrack.data.local.dao.BookListDao
 import com.readtrack.data.local.dao.ReadingRecordDao
+import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.data.local.entity.BookListCrossRef
 import com.readtrack.data.local.entity.BookListEntity
 import com.readtrack.data.local.entity.ReadingRecordEntity
+import com.readtrack.data.local.entity.RecordType
 import com.readtrack.domain.model.BookExport
 import com.readtrack.domain.model.BookListExport
+import com.readtrack.domain.model.BookSnapshot
 import com.readtrack.domain.model.DataBackup
 import com.readtrack.domain.model.ImportResult
 import com.readtrack.domain.model.ReadingRecordExport
@@ -83,6 +86,8 @@ class DataBackupRepositoryImpl @Inject constructor(
 
             // 创建旧书ID -> 新书ID 的映射
             val oldIdToNewId = mutableMapOf<Long, Long>()
+            // 创建旧书ID -> 新书Entity 的映射（用于重建阅读记录的 bookSnapshot）
+            val oldIdToNewBook = mutableMapOf<Long, BookEntity>()
 
             if (clearExisting) {
                 // 整表清空，阅读记录外键级联删除
@@ -109,12 +114,15 @@ class DataBackupRepositoryImpl @Inject constructor(
                         // 匹配到已有书籍，建立旧ID到新ID的映射（指向已有书籍）
                         val matched = existingBooks.first { "${it.title}::${it.author ?: ""}" == key }
                         oldIdToNewId[bookExport.id] = matched.id
+                        oldIdToNewBook[bookExport.id] = matched
                         return@forEach
                     }
 
                     val newBook = bookExport.toEntity()
                     val newId = bookDao.insertBook(newBook)
                     oldIdToNewId[bookExport.id] = newId
+                    // 保存新书的完整 Entity，用于后续重建阅读记录的 bookSnapshot
+                    oldIdToNewBook[bookExport.id] = newBook.copy(id = newId)
                     booksImported++
                 } catch (e: Exception) {
                     errors.add("导入书籍《${bookExport.title}》失败: ${e.message}")
@@ -143,11 +151,14 @@ class DataBackupRepositoryImpl @Inject constructor(
                         val newRecord = ReadingRecordEntity(
                             id = 0,
                             bookId = newBookId,
+                            bookSnapshot = oldIdToNewBook[recordExport.bookId]?.let { BookSnapshot.from(it, it.status) },
                             pagesRead = recordExport.pagesRead,
                             fromPage = recordExport.fromPage,
                             toPage = recordExport.toPage,
+                            chaptersRead = recordExport.chaptersRead,
                             date = recordExport.date,
-                            note = recordExport.note
+                            note = recordExport.note,
+                            recordType = try { RecordType.valueOf(recordExport.recordType) } catch (e: Exception) { RecordType.NORMAL }
                         )
                         recordDao.insertRecord(newRecord)
                         recordsImported++
