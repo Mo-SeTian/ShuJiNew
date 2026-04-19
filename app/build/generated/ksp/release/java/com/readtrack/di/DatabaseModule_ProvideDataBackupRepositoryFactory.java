@@ -1,6 +1,7 @@
 package com.readtrack.di;
 
 import com.readtrack.data.local.dao.BookDao;
+import com.readtrack.data.local.dao.BookListDao;
 import com.readtrack.data.local.dao.ReadingRecordDao;
 import com.readtrack.domain.repository.DataBackupRepository;
 import dagger.internal.DaggerGenerated;
@@ -30,24 +31,29 @@ public final class DatabaseModule_ProvideDataBackupRepositoryFactory implements 
 
   private final Provider<ReadingRecordDao> readingRecordDaoProvider;
 
+  private final Provider<BookListDao> bookListDaoProvider;
+
   public DatabaseModule_ProvideDataBackupRepositoryFactory(Provider<BookDao> bookDaoProvider,
-      Provider<ReadingRecordDao> readingRecordDaoProvider) {
+      Provider<ReadingRecordDao> readingRecordDaoProvider,
+      Provider<BookListDao> bookListDaoProvider) {
     this.bookDaoProvider = bookDaoProvider;
     this.readingRecordDaoProvider = readingRecordDaoProvider;
+    this.bookListDaoProvider = bookListDaoProvider;
   }
 
   @Override
   public DataBackupRepository get() {
-    return provideDataBackupRepository(bookDaoProvider.get(), readingRecordDaoProvider.get());
+    return provideDataBackupRepository(bookDaoProvider.get(), readingRecordDaoProvider.get(), bookListDaoProvider.get());
   }
 
   public static DatabaseModule_ProvideDataBackupRepositoryFactory create(
-      Provider<BookDao> bookDaoProvider, Provider<ReadingRecordDao> readingRecordDaoProvider) {
-    return new DatabaseModule_ProvideDataBackupRepositoryFactory(bookDaoProvider, readingRecordDaoProvider);
+      Provider<BookDao> bookDaoProvider, Provider<ReadingRecordDao> readingRecordDaoProvider,
+      Provider<BookListDao> bookListDaoProvider) {
+    return new DatabaseModule_ProvideDataBackupRepositoryFactory(bookDaoProvider, readingRecordDaoProvider, bookListDaoProvider);
   }
 
   public static DataBackupRepository provideDataBackupRepository(BookDao bookDao,
-      ReadingRecordDao readingRecordDao) {
-    return Preconditions.checkNotNullFromProvides(DatabaseModule.INSTANCE.provideDataBackupRepository(bookDao, readingRecordDao));
+      ReadingRecordDao readingRecordDao, BookListDao bookListDao) {
+    return Preconditions.checkNotNullFromProvides(DatabaseModule.INSTANCE.provideDataBackupRepository(bookDao, readingRecordDao, bookListDao));
   }
 }

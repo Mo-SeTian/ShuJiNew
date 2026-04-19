@@ -4,7 +4,7 @@ import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.readtrack.domain.model.BookStatus
-import com.readtrack.presentation.viewmodel.ProgressType
+import com.readtrack.domain.model.ProgressType
 
 @Entity(
     tableName = "books",

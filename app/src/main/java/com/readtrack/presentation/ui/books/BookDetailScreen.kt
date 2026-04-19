@@ -44,7 +44,7 @@ import com.readtrack.domain.model.BookStatus
 import com.readtrack.presentation.ui.components.statusColorOf
 import com.readtrack.presentation.ui.components.statusLabelOf
 import com.readtrack.presentation.viewmodel.BookDetailViewModel
-import com.readtrack.presentation.viewmodel.ProgressType
+import com.readtrack.domain.model.ProgressType
 import com.readtrack.presentation.ui.booklist.AddToBookListDialog
 import java.text.SimpleDateFormat
 import java.util.*

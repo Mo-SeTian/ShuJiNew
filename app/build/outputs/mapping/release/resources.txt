@@ -1,119 +1,130 @@
-Marking id:androidx_compose_ui_view_composition_context:2131165222 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:hide_in_inspector_tag:2131165234 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:view_tree_on_back_pressed_dispatcher_owner:2131165271 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking string:m3c_date_input_invalid_for_pattern:2131427372 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking string:m3c_date_input_invalid_year_range:2131427374 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking string:m3c_date_input_invalid_not_allowed:2131427373 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking string:m3c_date_input_label:2131427375 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:compose_view_saveable_id_tag:2131165227 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking string:default_popup_window_title:2131427353 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking string:m3c_date_picker_no_selection_description:2131427381 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking string:m3c_date_input_no_input_description:2131427376 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking string:m3c_date_picker_headline:2131427378 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking string:m3c_date_input_headline:2131427370 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking string:m3c_date_picker_headline_description:2131427379 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking string:m3c_date_input_headline_description:2131427371 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking string:m3c_date_picker_title:2131427390 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking string:m3c_date_input_title:2131427377 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking string:m3c_date_picker_switch_to_day_selection:2131427385 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking string:m3c_date_picker_switch_to_year_selection:2131427389 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking string:m3c_bottom_sheet_drag_handle_description:2131427367 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking string:m3c_bottom_sheet_pane_title:2131427369 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:wrapped_composition_tag:2131165275 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking string:m3c_date_picker_year_picker_pane_title:2131427392 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking string:androidx_startup:2131427331 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking string:m3c_dialog:2131427401 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking style:DialogWindowTheme:2131492864 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:view_tree_lifecycle_owner:2131165270 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:view_tree_view_model_store_owner:2131165273 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:view_tree_saved_state_registry_owner:2131165272 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking string:tab:2131427453 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking string:switch_role:2131427452 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:tag_window_insets_animation_callback:2131165265 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking string:m3c_date_picker_navigate_to_year_description:2131427380 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking string:m3c_bottom_sheet_collapse_description:2131427365 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking string:m3c_bottom_sheet_dismiss_description:2131427366 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking string:m3c_bottom_sheet_expand_description:2131427368 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:pooling_container_listener_holder_tag:2131165248 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:report_drawn:2131165249 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:consume_window_insets_tag:2131165228 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:is_pooling_container_tag:2131165239 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking string:m3c_date_picker_today_description:2131427391 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking string:m3c_date_picker_scroll_to_earlier_years:2131427382 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking string:m3c_date_picker_scroll_to_later_years:2131427383 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking string:default_error_message:2131427352 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:tag_unhandled_key_listeners:2131165264 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:tag_screen_reader_focusable:2131165260 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:tag_accessibility_heading:2131165255 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:tag_accessibility_pane_title:2131165256 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:tag_state_description:2131165261 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:tag_accessibility_actions:2131165253 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:accessibility_action_clickable_span:2131165184 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:tag_accessibility_clickable_spans:2131165254 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:accessibility_custom_action_0:2131165185 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:accessibility_custom_action_1:2131165186 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:accessibility_custom_action_2:2131165197 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:accessibility_custom_action_3:2131165208 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:accessibility_custom_action_4:2131165211 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:accessibility_custom_action_5:2131165212 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:accessibility_custom_action_6:2131165213 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:accessibility_custom_action_7:2131165214 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:accessibility_custom_action_8:2131165215 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:accessibility_custom_action_9:2131165216 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:accessibility_custom_action_10:2131165187 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:accessibility_custom_action_11:2131165188 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:accessibility_custom_action_12:2131165189 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:accessibility_custom_action_13:2131165190 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:accessibility_custom_action_14:2131165191 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:accessibility_custom_action_15:2131165192 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:accessibility_custom_action_16:2131165193 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:accessibility_custom_action_17:2131165194 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:accessibility_custom_action_18:2131165195 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:accessibility_custom_action_19:2131165196 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:accessibility_custom_action_20:2131165198 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:accessibility_custom_action_21:2131165199 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:accessibility_custom_action_22:2131165200 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:accessibility_custom_action_23:2131165201 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:accessibility_custom_action_24:2131165202 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:accessibility_custom_action_25:2131165203 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:accessibility_custom_action_26:2131165204 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:accessibility_custom_action_27:2131165205 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:accessibility_custom_action_28:2131165206 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:accessibility_custom_action_29:2131165207 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:accessibility_custom_action_30:2131165209 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:accessibility_custom_action_31:2131165210 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking string:indeterminate:2131427364 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking string:off:2131427429 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking string:on:2131427430 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking string:selected:2131427441 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking string:not_selected:2131427428 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking string:template_percent:2131427454 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking string:in_progress:2131427363 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking id:inspection_slot_table_set:2131165238 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking drawable:abc_vector_test:2131099648 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking string:m3c_snackbar_dismiss:2131427405 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking string:m3c_date_picker_switch_to_next_month:2131427387 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking string:m3c_date_picker_switch_to_previous_month:2131427388 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking string:m3c_date_picker_switch_to_calendar_mode:2131427384 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
-Marking string:m3c_date_picker_switch_to_input_mode:2131427386 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:inspection_slot_table_set:2131230774 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:view_tree_on_back_pressed_dispatcher_owner:2131230807 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:view_tree_view_model_store_owner:2131230809 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:view_tree_lifecycle_owner:2131230806 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking string:m3c_snackbar_dismiss:2131492941 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking string:m3c_date_picker_switch_to_next_month:2131492923 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking string:m3c_date_picker_switch_to_previous_month:2131492924 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking string:m3c_date_picker_switch_to_calendar_mode:2131492920 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking string:m3c_date_picker_switch_to_input_mode:2131492922 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:consume_window_insets_tag:2131230764 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking string:default_popup_window_title:2131492889 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:compose_view_saveable_id_tag:2131230763 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:tag_window_insets_animation_callback:2131230801 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:wrapped_composition_tag:2131230811 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking string:m3c_dialog:2131492937 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking string:m3c_date_picker_switch_to_day_selection:2131492921 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking string:m3c_date_picker_switch_to_year_selection:2131492925 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking string:m3c_bottom_sheet_drag_handle_description:2131492903 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking string:m3c_date_picker_scroll_to_earlier_years:2131492918 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking string:m3c_date_picker_scroll_to_later_years:2131492919 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking style:DialogWindowTheme:2131558400 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking string:default_error_message:2131492888 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:hide_in_inspector_tag:2131230770 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking string:tab:2131492989 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking string:switch_role:2131492988 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:pooling_container_listener_holder_tag:2131230784 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:view_tree_saved_state_registry_owner:2131230808 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking bool:workmanager_test_configuration:2130968579 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking string:m3c_date_input_invalid_for_pattern:2131492908 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking string:m3c_date_input_invalid_year_range:2131492910 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking string:m3c_date_input_invalid_not_allowed:2131492909 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking string:m3c_date_input_label:2131492911 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking string:m3c_date_picker_navigate_to_year_description:2131492916 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:tag_screen_reader_focusable:2131230796 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:tag_accessibility_heading:2131230791 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:tag_accessibility_pane_title:2131230792 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:tag_state_description:2131230797 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:tag_accessibility_actions:2131230789 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:accessibility_action_clickable_span:2131230720 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:tag_accessibility_clickable_spans:2131230790 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:report_drawn:2131230785 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:tag_unhandled_key_listeners:2131230800 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking string:androidx_startup:2131492867 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:androidx_compose_ui_view_composition_context:2131230758 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:is_pooling_container_tag:2131230775 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking string:m3c_date_picker_no_selection_description:2131492917 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking string:m3c_date_input_no_input_description:2131492912 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking string:m3c_date_picker_headline:2131492914 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking string:m3c_date_input_headline:2131492906 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking string:m3c_date_picker_headline_description:2131492915 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking string:m3c_date_input_headline_description:2131492907 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking string:m3c_date_picker_title:2131492926 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking string:m3c_date_input_title:2131492913 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking string:m3c_date_picker_today_description:2131492927 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:accessibility_custom_action_0:2131230721 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:accessibility_custom_action_1:2131230722 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:accessibility_custom_action_2:2131230733 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:accessibility_custom_action_3:2131230744 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:accessibility_custom_action_4:2131230747 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:accessibility_custom_action_5:2131230748 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:accessibility_custom_action_6:2131230749 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:accessibility_custom_action_7:2131230750 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:accessibility_custom_action_8:2131230751 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:accessibility_custom_action_9:2131230752 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:accessibility_custom_action_10:2131230723 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:accessibility_custom_action_11:2131230724 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:accessibility_custom_action_12:2131230725 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:accessibility_custom_action_13:2131230726 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:accessibility_custom_action_14:2131230727 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:accessibility_custom_action_15:2131230728 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:accessibility_custom_action_16:2131230729 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:accessibility_custom_action_17:2131230730 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:accessibility_custom_action_18:2131230731 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:accessibility_custom_action_19:2131230732 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:accessibility_custom_action_20:2131230734 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:accessibility_custom_action_21:2131230735 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:accessibility_custom_action_22:2131230736 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:accessibility_custom_action_23:2131230737 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:accessibility_custom_action_24:2131230738 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:accessibility_custom_action_25:2131230739 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:accessibility_custom_action_26:2131230740 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:accessibility_custom_action_27:2131230741 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:accessibility_custom_action_28:2131230742 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:accessibility_custom_action_29:2131230743 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:accessibility_custom_action_30:2131230745 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking id:accessibility_custom_action_31:2131230746 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking string:indeterminate:2131492900 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking string:off:2131492965 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking string:on:2131492966 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking string:selected:2131492977 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking string:not_selected:2131492964 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking string:template_percent:2131492990 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking string:in_progress:2131492899 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking string:m3c_bottom_sheet_pane_title:2131492905 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking string:m3c_bottom_sheet_collapse_description:2131492901 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking string:m3c_bottom_sheet_dismiss_description:2131492902 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking string:m3c_bottom_sheet_expand_description:2131492904 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking string:m3c_date_picker_year_picker_pane_title:2131492928 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+Marking drawable:abc_vector_test:2131165184 reachable: referenced from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
 android.content.res.Resources#getIdentifier present: true
 Web content present: false
 Referenced Strings:
 trustRootIndex
+UTF_16LE
 http://
+t2.G0
 callerContext
+搜索封面图片
 开始阅读一本书来创建你的时间线
+输入书名开始搜索封面图片
 TransactionDispatcher
 valueCase_
+继续你的阅读节奏
 descriptor
 ​
+$tags
 java.lang.Integer
 BrightnessValue
+schedulers
+work_spec_id
 header_
+ACTION_STOP_FOREGROUND
 TAKEN
 layoutDirection
 preferences_pb
 $this$item
+加载更多图片
 $this$ModalBottomSheet
 com.android.contacts
 Compose:abandons
@@ -122,38 +133,45 @@ java.lang.CharSequence
 $
 STOP
 text/xml
+imageSearchResults
+requires_device_idle
 cookieToTest
 Orientation
 backgroundHex
+requires_battery_not_low
 0
 1
 textSelectionRange
-AspectFrame
 ACTION_PRESS_AND_HOLD
-left
+AspectFrame
 kotlinx.coroutines.DefaultExecutor
+left
+创建
 notnull
 JvmSystemFileSystem
+webdav_auto_backup_frequency
 object
 Strategy.HighQuality
 STATUS_READING
-S_RESUMING_BY_RCV
+WorkForegroundRunnable
 role
-emoji2.text.DefaultEmojiConfig
-总阅读时长
+S_RESUMING_BY_RCV
 Selection
+总阅读时长
+emoji2.text.DefaultEmojiConfig
 H
 UPDATED
 ImageLength
-Prefix
 record.loggerName
+Prefix
 L
 PKIX
 targetVersion
-Filled.Cookie
 result
+Filled.Cookie
 DeferredAnimation
 Q
+https://dav.example.com/webdav
 S
 NumberPassword
 image/heif
@@ -161,192 +179,238 @@ constructor.parameterTypes
 image/heic
 EXTRA_BENCHMARK_OPERATION
 _
+policy
 a
 b
 Center
 address
+ACTION_CLEAR_ACCESSIBILITY_FOCUS
 c
 SUCCESS
-ACTION_CLEAR_ACCESSIBILITY_FOCUS
 Infinity
 d
 e
 Compose:unobserve
+t2.D0
 truncated
 effectiveDirectAddress
 j
-RESUMING_BY_EB
 kotlin.String
+RESUMING_BY_EB
 OnClick
-m
 cookieJar
+m
 bookId
 r
 Timeline
+component
 s
-java.lang.Module
 SUSPEND
-cipherSuites
+java.lang.Module
+pathSegment
+编辑首页组件
 v
+cipherSuites
 x
 timeline
+appContext
 ProgressBarRangeInfo
-1.0.0
 search_subject
+$newWorkSpec
+workSpec
 POST
 Start
 ColorSpace
 PRIORITY
 image/webp
 isTagEnabled
+contentUriTriggers
+KEY_FOREGROUND_SERVICE_TYPE
 RIGHT_WORD
 Checkbox
 removeMethod
 Multiply
+componentOrder
 ACTION_SCROLL_FORWARD
 bufferEndSegment
 Expanded
 H2_PRIOR_KNOWLEDGE
+更多
 preferencesProto.preferencesMap
 TLS_PSK_WITH_AES_128_CBC_SHA
 list
 Rgb
 dagger.hilt.android.components.ViewCo...
+$operation
 indicatorRipple
 DateTimeDigitized
 Stats
+移除封面
 Bottom
 End
-cid
+IGNORE_CASE
+读到第几章
 child
+cid
 androidx.view.accessibility.Accessibi...
 UNDO
 Outlined.Book
+书单收藏夹
 COMPLETING_WAITING_CHILDREN
 RESULT_BASELINE_PROFILE_NOT_FOUND
-编辑书籍
 _invoked
+编辑书籍
+img_
 remove
-PAGE_DOWN
 RESULT_DELETE_SKIP_FILE_SUCCESS
+PAGE_DOWN
 SDK_INT
 WordBreak.None
 unsupported
 provider
 OBJ
 PROGRESS
+追加恢复
 追加导入
 kotlinx.coroutines.main.delay
 _delayed
 FIXED32_LIST_PACKED
-Age
 navigationBars
+Age
+jobscheduler
 headers
 确定
+onDismiss
 kotlin.collections.List
 deqIdx
 ReadTrackPerf
-GPSImgDirection
 compose:lazylist:prefetch:measure
-0e01e94eb88e05a145e929830316aea8
+GPSImgDirection
 org.bouncycastle.jsse.provider.Bouncy...
+ForceStopRunnable$Rcvr
+service
 确认
+BatteryChrgTracker
+点击星星打分
+Filled.AutoAwesome
 ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE
 android.view.View$AttachInfo
-GPSDifferential
 java.lang.Float
+GPSDifferential
 Dispatchers.IO
 InactivePendingWork
 fixups
 SharingStarted.Eagerly
 TransformOriginInterruptionHandling
+书架书籍状态分布
 autoMigrationSpecs
-androidx.profileinstaller.action.SAVE...
 LookaheadLayingOut
+androidx.profileinstaller.action.SAVE...
 android.os.Build$VERSION
-ImageWidth
 executor
-okhttp3.mockwebserver.MockWebServer
+ImageWidth
 HTTP/1.0
+okhttp3.mockwebserver.MockWebServer
 HTTP/1.1
 block
+自动备份
 /m/public/
 fullPackage
-spdy/3.1
+Filled.Check
 write
+spdy/3.1
 StateDescription
 SensorLeftBorder
 GPSDestLatitudeRef
-TLS_KRB5_WITH_DES_CBC_SHA
 serverProviderClass
+TLS_KRB5_WITH_DES_CBC_SHA
+拖动把手
 toggleableState
 EmojiSupportMatch.Default
-byte
 $this$Button
+byte
 TextSubstitution
 EXACT
 GPSStatus
 Square
-NEW_LINE
+隐藏
 connectionSpecs
+NEW_LINE
 Modulate
 SSL_DHE_RSA_WITH_DES_CBC_SHA
+onBackInvoked
 XResolution
 YCbCrCoefficients
-onBackInvoked
 %2B
+点击已选星级可清除评分
+%2F
 orders
 WANT_TO_READ
 taskRunner
-TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SH...
+SystemJobScheduler
+long_value
+$this$SwipeToDismissBox
+hash
 NothingSerialDescriptor
-foreignKeys
+TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SH...
+index_WorkSpec_schedule_requested_at
 Warning
+foreignKeys
 ACTION_SCROLL_IN_DIRECTION
 sslSocket.enabledProtocols
 com.readtrack
+prerequisite_id
 MaxApertureValue
 INADEQUATE_SECURITY
 pins
 LINE_RIGHT
 IGNORE
 ReadTrack
+未知时间
+OFF
 豆瓣搜索数据格式异常
-HEADERS
+关闭预览
 ACTION_PAGE_UP
+HEADERS
 FloatAnimation
 %2e
-ExifIFDPointer
+coverBookId
 java.lang.String
+ExifIFDPointer
 Books
 READING
 kotlinx.serialization.json.JsonUnquot...
 %40
 HorizontalScrollAxisRange
 SSL_RSA_WITH_RC4_128_MD5
+$context
 Unspecified
+flex_duration
 Default
 BCJSSE
 Filled.Search
 LookaheadMeasuring
 comparator
+index_book_list_cross_ref_bookId
 $this$DropdownMenu
+CONNECTED
 doubanCookie
-TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
 Lighten
+TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
 entity
-ExifVersion
 All
+ExifVersion
 New
 putMethod
 放弃
 add_book
-cipherSuite
 首页
+cipherSuite
 Copyright
+STATUS
 $this_asFactory
-getApplicationProtocol
 android.widget.CheckBox
+getApplicationProtocol
 okhttp.OkHttpClient
 返回
 android.view.accessibility.extra.DATA...
@@ -354,26 +418,28 @@ Plus
 yMMMd
 void
 index_books_title
+书单
+Outlined.CloudDownload
 supportedCipherSuites
 导入数据
 Filled.Link
 statusBarStyle
-mStableInsets
 _cur
+mStableInsets
 READ
 200
 SELECT_PAGE_UP
 204
 REAL
-StructuralEqualityPolicy
 206
-SensitivityType
+StructuralEqualityPolicy
 BYTES_LIST
+SensitivityType
 _id
 kotlin.Throwable
 RequestFocus
-parkedWorkersStack
 bookSnapshot
+parkedWorkersStack
 上一步
 Horizontal
 displayCutout
@@ -385,8 +451,10 @@ SFIXED64_LIST_PACKED
 SSLv3
 kotlin.Annotation
 SkipSubtreeAndContinueTraversal
+input_merger_class_name
 GPSTrackRef
 REDO
+trigger_max_content_delay
 currentChapter
 Invalid
 TLS_PSK_WITH_AES_256_CBC_SHA
@@ -396,22 +464,25 @@ Strictness.None
 SubjectLocation
 BITMAP
 mandatorySystemGestures
-jsonString
 ENHANCE_YOUR_CALM
-DigitalZoomRatio
+onAutoUpdate
 Array
+DigitalZoomRatio
 intrface
+输入书名搜索封面
 yMMMM
 valueDesc
-TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA
 jvmVersion
+TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA
 dagger.hilt.android.internal.builders...
 kotlinx.serialization.json.JsonPrimitive
 UNKNOWN
 initialExtras
 DstOut
+加入书单
 fileName
 getByte
+ACTION_STOP_WORK
 Bradford
 accessibility
 quic
@@ -421,10 +492,12 @@ onBackCancelled
 android.provider.action.PICK_IMAGES
 impl
 hostname
+password
 kotlinx.coroutines.scheduler.keep.ali...
 CONNECT_ERROR
-DELETE_NEXT_CHAR
 stats
+DELETE_NEXT_CHAR
+用户名
 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
 state
 CompanionObject
@@ -435,10 +508,12 @@ element
 booksByStatus
 ACTION_SCROLL_DOWN
 android.content.extra.SIZE
-SELECT_RIGHT_WORD
 SelectionHandleInfo
+SELECT_RIGHT_WORD
 $tmp0
+processor
 TextDecoration.
+StorageNotLowTracker
 .class
 GPSImgDirectionRef
 cacheResponse
@@ -448,44 +523,44 @@ FocalPlaneYResolution
 dalvik.system.CloseGuard
 items
 GPSDestDistanceRef
-c2.h
 LAST_READ
 copyMemory
 CollectionInfo
+document
 on_delete
 GetTextLayoutResult
 Rtl
 INVALID
-SELECT_LINE_END
 okhttp/4.12.0
+SELECT_LINE_END
 ToggleableState
 添加书籍
 ordersMap.values
+WorkConstraintsTracker
 ComposeInternal
-c2.y
 TLS_ECDHE_PSK_WITH_CHACHA20_POLY1305_...
 builder
-c2.s
+book_lists
 liveRegion
 com.readtrack.domain.model.BookExport
 DstIn
 setRemoveOnCancelPolicy
 receive
-WhitePoint
 getParent
+WhitePoint
 internalQueryExecutor
 Connection
 refresh
-c2.F
 Normal
 书名
 androidx.lifecycle.ViewModelProvider....
 选择开始日期
 runnable
 dflt_value
-c2.W
+每周
 GOAWAY
-c2.T
+index_book_lists_updatedAt
+https://www.bing.com/
 Assertive
 $this$composable
 Vary
@@ -497,13 +572,16 @@ klass.interfaces
 Hint
 source
 secure
+DOT_MATCHES_ALL
 $dbRef
 SelectionStart
+android.intent.action.BATTERY_CHANGED
+Filled.CloudDone
 Compose:Composer.dispose
 Container
 Compose
-文件格式无效
 java.lang.Short
+文件格式无效
 Search
 android.widget.Button
 _closeCause
@@ -511,15 +589,20 @@ Oklab
 androidx.view.accessibility.Accessibi...
 has
 ON_HOLD
+book_list/
 Eraser
 markState
-interceptors
 INTEGER
+interceptors
 UINT32_LIST_PACKED
+更换封面
+Filled.Clear
 STATUS_ADDED
 androidx.datastore.preferences.protob...
 DELETE_PREV_CHAR
+webdav_password
 本次读了
+worker_class_name
 tableIds
 UINT64
 DIAGNOSTIC_PROFILE_IS_COMPRESSED
@@ -529,13 +612,18 @@ peekByte
 Medium
 Enter
 TLS_CHACHA20_POLY1305_SHA256
+current.work
 INTERRUPTED_RCV
 MESSAGE_LIST
+addedAt
 请输入总页数
+com.readtrack.worker.WebDavAutoBackup...
 font_variation_settings
-未找到豆瓣搜索数据起始标记
+读到第几页
 DpAnimation
+未找到豆瓣搜索数据起始标记
 TLS_KRB5_EXPORT_WITH_RC4_40_SHA
+已开启每周自动备份
 yyyyMMdd_HHmmss
 cipherSuitesIntersection
 GPSDateStamp
@@ -545,51 +633,62 @@ libcore.io.Memory
 EmojiSupportMatch.None
 TextSelectionRange
 Stylus
+关闭
 SEALED
 https://
 CREATED
-NO_OWNER
 ContentOrRtl
+NO_OWNER
 输入本次阅读章节数
 TLSv1.3
+KEY_NOTIFICATION
 TLS_KRB5_WITH_RC4_128_MD5
 TLSv1.2
 TLSv1.1
+$workRequest
 androidx.content.action.LOAD_EMOJI_FONT
 Password
 theme_mode
+overview
 cover_url
 阅读页数
 TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384
 SubfileType
+Fab
 DNGVersion
 yes
-Fab
 EXTRA_SKIP_FILE_OPERATION
 Referer
 INTERNAL_ERROR
 captionBar
 导出数据
+autoBackupFrequency
 pair
 BOOL_LIST
 Paragraph
-PASTE
+KEY_BATTERY_NOT_LOW_PROXY_ENABLED
+UTF_16BE
 BOOL
+PASTE
+bookListId
+我的评分
 short
 Sentences
-TLS_DHE_DSS_WITH_AES_128_CBC_SHA
 MINUTES
-ApertureValue
+TLS_DHE_DSS_WITH_AES_128_CBC_SHA
 COMPLETING_RETRY
+ApertureValue
 Strategy.Unspecified
 OrBuilderList
 TLS_AES_128_CCM_SHA256
-TLS_DHE_RSA_WITH_AES_128_CBC_SHA256
 android.widget.RadioButton
 android.widget.ImageView
+TLS_DHE_RSA_WITH_AES_128_CBC_SHA256
 ACCESSIBILITY_CLICKABLE_SPAN_ID
+KEY_WORKSPEC_ID
 imeAction
 ACTION_PAGE_LEFT
+Filled.PlaylistAdd
 put
 modelClass.constructors
 YResolution
@@ -597,29 +696,35 @@ SSL_RSA_WITH_DES_CBC_SHA
 %2e%2e
 pokeLong
 FAILED
-POISONED
 TLS_DHE_RSA_WITH_AES_128_GCM_SHA256
-font_ttc_index
+POISONED
 跟随系统
+font_ttc_index
 searchQuery
+options
+每周自动上传一次
 保存文件
-7f68a49655196c9bea7203d6f30c446f
 $this$toBuilder
 ACTION_SHOW_ON_SCREEN
+testWebDavConnection
+569ad01f43848c28e7c79f2e2c231df8
 tlsVersion
-customActions
+last_enqueue_time
 PreEnter
-导入选项
+customActions
 closeHandler
+书架状态
+webDavPassword
 CustomActions
-BUFFERED
+index_WorkName_work_spec_id
 $callback
+BUFFERED
 编辑
 GET
 $this$SmallTopAppBar
 .apk
-CHANNEL_CLOSED
 unicodeDomain
+CHANNEL_CLOSED
 SharingStarted.Lazily
 CONTINUATION
 java.lang.Throwable
@@ -628,7 +733,9 @@ map.entries
 CREATION_CALLBACK_KEY
 effectiveNodeIndex
 简介
+OVERVIEW
 Outlined
+className
 migrationContainer
 kotlin.collections.ArrayList
 undefined
@@ -638,16 +745,20 @@ android.widget.SeekBar
 QueryDispatcher
 INITIALIZED
 awaiter
-REMOVE
+DelayedWorkTracker
 producerIndex
+REMOVE
 CFAPattern
 SSL_DH_anon_EXPORT_WITH_DES40_CBC_SHA
 GPSDestBearingRef
+WorkSpec
 还没有添加书籍
 LineHeightStyle.Alignment.Bottom
 chain
 value.stringSet.stringsList
+阅读仪表盘
 ACTION_DRAG_START
+onSelectCover
 $this$navigate
 peerSettings
 外观
@@ -665,7 +776,9 @@ char
 /index.html
 None
 tpl_name
+Filled.CollectionsBookmark
 android_asset
+remotePath
 PENTAX
 TLS_DHE_DSS_WITH_AES_128_CBC_SHA256
 errorCode
@@ -680,11 +793,16 @@ internalTransactionExecutor
 Bytes
 Input
 kotlinx.serialization.json.JsonLiteral
+ConstraintTracker
 CollectionItemInfo
 BoundReached
 今天
+klass
 KEY_COMPONENT_ACTIVITY_REGISTERED_KEYS
+workerParameters
 trailingIcon
+最近阅读的书籍列表
+自动备份频率
 ALIGN_RIGHT
 SubSecTime
 toPage
@@ -695,13 +813,19 @@ Compose:deactivate
 GPSLongitudeRef
 format
 requestLine
+ProcessUtils
 SELECT_LEFT_WORD
 peerCertificates
 targetUnit
+Filled.KeyboardArrowDown
 TLS_1_3
 TLS_1_2
+BookListDetail
+androidx.work.impl.workers.Constraint...
+ACTION_EXECUTION_COMPLETED
 SELECT_NEXT_PARAGRAPH
 request
+runnableScheduler
 CLOSED
 LocalImageVectorCache
 JsonPrimitive
@@ -730,24 +854,26 @@ ACTION_SHOW_TOOLTIP
 okhttp.MockWebServer
 TLS_DHE_RSA_WITH_AES_256_CBC_SHA256
 jClass
+Data
 value_
 Date
 LEFT_WORD
 DstOver
-mAttachInfo
 value.string
+mAttachInfo
 classes.dex
 TLS_FALLBACK_SCSV
 index_reading_records_date
+content_uri_triggers
 TLS_DH_anon_WITH_AES_256_CBC_SHA
 Left
 java.specification.version
-添加
 kotlin.Cloneable
+添加
 TLS_RSA_WITH_AES_256_CBC_SHA
 GPSDestBearing
 path
-网络导入
+EXTRA_WORK_SPEC_ID
 Decimal
 ExposureMode
 Button
@@ -755,9 +881,10 @@ record
 kotlin.reflect.jvm.internal.Reflectio...
 CutText
 COLLAPSED
+period_count
 tlsVersionsIntersection
-DEFAULT_TEST_TAG
 cleanedAndPointers
+DEFAULT_TEST_TAG
 addObserver
 modelClass
 PixelXDimension
@@ -768,23 +895,29 @@ ON_ANY
 onReceive
 guava.concurrent.generate_cancellatio...
 GMT
+tags
 SINT32
 route
 ON_PAUSE
 MeteringMode
-StripByteCounts
 domain
+StripByteCounts
+KEY_STORAGE_NOT_LOW_PROXY_ENABLED
+当前在读
 浅色模式
 Filled.LocalFireDepartment
 :path
 Canceled
 groupAnchor
+取消选择
 Week
-Recomposer:animation
+context.noBackupFilesDir
 DatePickerDisplayModeAnimation
+Recomposer:animation
 albums
-getEmojiConsistencySet
 Wrap
+getEmojiConsistencySet
+BLOCKED
 DROP_LATEST
 _exceptionsHolder
 onBookClick
@@ -792,16 +925,20 @@ ExitTransition.KeepUntilTransitionsFi...
 TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA
 startDestination
 onBackInvokedDispatcher
+$token
 dagger.hilt.android.internal.builders...
 journal
-TLS_KRB5_EXPORT_WITH_DES_CBC_40_SHA
 :scheme
 composition
+TLS_KRB5_EXPORT_WITH_DES_CBC_40_SHA
+自动选择第一本的封面
 StripOffsets
 .SSLParametersImpl
 kotlin.Nothing
-RESULT_DESIRED_FORMAT_UNSUPPORTED
+bookList
+ConstrntProxyUpdtRecvr
 Decal
+RESULT_DESIRED_FORMAT_UNSUPPORTED
 半年
 ISOSpeedRatings
 tail
@@ -819,6 +956,7 @@ CANCEL
 取消
 Dismissed
 SYSTEM
+自动备份失败
 missingDelimiterValue
 CancelTraversal
 listener
@@ -826,6 +964,7 @@ listener
 dir
 Upgrade
 BanParcelableUsage
+RescheduleReceiver
 taskQueue
 Filled.PlayArrow
 SubIFDPointer
@@ -841,32 +980,38 @@ OECF
 输入书名或作者
 parcel
 upstream
+existingRecords
 com.readtrack.domain.model.DataBackup
 count
 请输入图片地址
 SELECT_HOME
 自定义
 .json
+com.readtrack.domain.model.BookListEx...
 Weight
 graph
+%.1f
 DISABLED
 Role
 dagger.hilt.android.components.Activi...
 kotlin.time.Duration
 java.lang.annotation.Annotation
-sha256/
 org.eclipse.jetty.alpn.ALPN$ClientPro...
+sha256/
+1.1.0
 font_weight
 AndroidOwner:onMeasure
 TERMINATED
+bitField0_
 compositionLocalMap
 session
-bitField0_
 ACTION_SET_SELECTION
 isCtrlPressed
+远端备份格式无效
 $this$NavigationBar
 title
 %.2f
+WorkContinuationImpl
 SPDY_3
 kotlin.collections.Map
 RecordingIC
@@ -874,23 +1019,30 @@ columnNames
 SubjectArea
 ProfileInstaller
 java.lang.Boolean
-emoji://
 TLS
+emoji://
 FocalPlaneXResolution
-Leading
+continuation
 socketAddress
-strings_
+Leading
 owner
 classSimpleName
+strings_
+workManager.workDatabase
 SELECT_DOWN
 recordType
+bookIdsInList
 ExifInterface
 edit_book/
-阅读记录
+androidx.work.util.preferences
 TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA
-Filled
+阅读记录
 home
+Filled
+密码
+ACTION_NOTIFY
 nodes
+Expect
 on_update
 sQLiteOpenHelper
 SensingMethod
@@ -899,20 +1051,25 @@ SetText
 updateDisplayListIfDirty
 lastScheduledTask
 SFIXED64_LIST
-InsertTextAtCursor
+index_WorkTag_work_spec_id
 阅读进度
+InsertTextAtCursor
 androidx.activity.result.contract.ext...
 tables
 navigation
 未知书名
 yyyy年MM月dd日
 action
+book_list_cross_ref
 text
+EXTRA_WORK_SPEC_GENERATION
 Captured
+手动执行一次云端备份
 LocalFontFamilyResolver
 cookie
 正在导入数据...
 primary.prof
+last_force_stop_ms
 dns
 TLS_AES_256_GCM_SHA384
 encoder
@@ -921,6 +1078,7 @@ lexer
 dagger.hilt.android.internal.builders...
 $this$collectionSize
 requestHeaders
+ReadTrack/backups
 applicationContext
 ETag
 最近更新
@@ -930,60 +1088,72 @@ status
 arch_disk_io_
 readingRecordDao
 server
+Filled.MoreHoriz
 LocalClipboardManager
 SamplesPerPixel
+WorkTimer
 ACTION_CLEAR_SELECTION
 TestTagsAsResourceId
 record.message
 Right
 章节号
 RESPECT_PERFORMANCE
+bindArgs
 InvisibleToUser
 Off
 DpSize.Unspecified
 file
+allBookLists
+ABANDONED
+BYTE_STRING
 YCbCrSubSampling
 fileHandle
-BYTE_STRING
-ABANDONED
-kotlinx.serialization.json.JsonArray
 stream
+kotlinx.serialization.json.JsonArray
 typeConverters
 traversalIndex
 CancellableContinuation
-Filled.PhotoLibrary
-Final
 map
+Final
 $this$OutlinedButton
 TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA
 okhttp.Http2
 android.intent.extra.MIME_TYPES
 SSL_RSA_WITH_NULL_SHA
-COMPRESSED
-ACTION_PAGE_RIGHT
-max
 java.nio.file.Files
+ACTION_PAGE_RIGHT
+COMPRESSED
+max
 FlashEnergy
 TLS_DHE_DSS_WITH_CAMELLIA_128_CBC_SHA
+KEY_NOTIFICATION_ID
+required_network_type
 SaveableStateHolder_BackStackEntryKey
+uri
 url
 累计阅读
 sslSocket.enabledCipherSuites
 getLong
-focusManager
 Italic
+focusManager
+entities
 书籍状态
 304
-ACTION_HIDE_TOOLTIP
-viewParent
 统计单位
+viewParent
+ACTION_HIDE_TOOLTIP
+Filled.Image
 EmojiCompat.MetadataRepo.create
+WrkMgrInitializer
 columnName
+清除搜索
 RESUMED
 onClick
+RECENT
 $this$null
 emoji
 KEY_COMPONENT_ACTIVITY_PENDING_RESULT
+加载更多图片...
 Luminosity
 Mozilla/5.0
 integer
@@ -991,21 +1161,22 @@ LineHeightStyle.Trim.FirstLineTop
 feff
 ContinueTraversal
 host
+书单是空的
 onBackStarted
 下一步
 selected
 TopLeft
 HTTP_2
 preferencesManager
-RESPECT_ALL
 TLS_RSA_WITH_CAMELLIA_128_CBC_SHA
-com.readtrack.presentation.viewmodel....
+RESPECT_ALL
 Accept
 Unreached
 THUMBNAIL
 interrupted
 separator
 entries
+bookLists
 task
 null
 font_italic
@@ -1028,17 +1199,19 @@ CalendarModel
 peekLong
 sendersAndCloseStatus
 UINT32_LIST
+NOT_ROAMING
 Clear
 CustomRendered
+systemBarsIgnoringVisibility
 contentDescription
 TLS_KRB5_EXPORT_WITH_RC4_40_MD5
-systemBarsIgnoringVisibility
-android.permission.ACCESS_NETWORK_STATE
 STARTED
+android.permission.ACCESS_NETWORK_STATE
 Inactive
 Round
 NeverEqualPolicy
 timeUnit
+BrdcstRcvrCnstrntTrckr
 DONE_RCV
 Error
 Trace
@@ -1055,13 +1228,16 @@ ACTION_PASTE
 LightSource
 SINT32_LIST
 Vertical
+webDavServerUrl
 SELECT_LEFT_CHAR
 PUBLICATION
-argumentName
 navigationBarsIgnoringVisibility
+argumentName
 themeMode
-Dialog:
 FINISHED
+Dialog:
+constraints
+webdav_auto_backup
 observer
 Month
 Unknown
@@ -1070,10 +1246,11 @@ TRACE_TAG_APP
 PROTOCOL_ERROR
 released
 我的书籍
+imeAnimationSource
 TLS_KRB5_WITH_3DES_EDE_CBC_SHA
 TLS_RSA_WITH_AES_256_CBC_SHA256
-imeAnimationSource
 CUT
+DAILY
 dismissAction
 _decision
 module
@@ -1082,14 +1259,17 @@ Butt
 quality
 input_method
 wss:
+defaultCreationExtras
 PartiallyExpanded
 SSL_DH_anon_WITH_RC4_128_MD5
-defaultCreationExtras
 Expand
 unique
 TLS_ECDHE_ECDSA_WITH_NULL_SHA
-setCurrentState
 M月d日
+setCurrentState
+Retry
+next_schedule_time_override
+chaptersRead
 SSL_DH_anon_WITH_3DES_EDE_CBC_SHA
 TLS_PSK_WITH_RC4_128_SHA
 TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384
@@ -1106,11 +1286,11 @@ long
 时间线
 PlanarConfiguration
 min
-kotlinx.coroutines.channels.defaultBu...
-ACTION_PAGE_DOWN
 MEMORY
-tlsVersions
+ACTION_PAGE_DOWN
+kotlinx.coroutines.channels.defaultBu...
 classes_to_restore
+tlsVersions
 isTraversalGroup
 Exclusion
 supports
@@ -1118,15 +1298,20 @@ getBoolean
 index_books_author
 FIXED64_LIST
 RowsPerStrip
+WrkTimerRunnable
 kotlin.UInt
 SECONDS
 INEXACT
 p.second
 android.intent.action.CREATE_DOCUMENT
 :method
+webDavUsername
+METERED
+WorkProgress
 删除书籍
 yyyy
 STRING
+progress
 selectProtocol
 GPSDestDistance
 TLS_DH_anon_WITH_AES_128_GCM_SHA256
@@ -1137,43 +1322,54 @@ LocalFontLoader
 NO_DECISION
 JPEGInterchangeFormat
 OnLongClick
-ShuttingDown
 navigator
+ShuttingDown
 PasteText
 DESC
+home_component_order
+ACTION_CANCEL_WORK
 originalRequest
 FontFamily.Default
 TLS_DHE_RSA_WITH_AES_256_GCM_SHA384
+android.intent.action.BATTERY_OKAY
 周一
+webdav_server_url
 androidx.profileinstaller.action.INST...
+每天自动上传一次
 nativeCanvas
 ON_START
 KEY_COMPONENT_ACTIVITY_LAUNCHED_KEYS
+reschedule_needed
 kotlinx.coroutines.io.parallelism
+RUNNING
 TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
 PADDED
 android.resource
-collection
 周三
+collection
+SystemJobInfoConverter
 BOOLEAN
 immutable
 Outlined.DateRange
 profileInstalled
 GainControl
-稍后保存
 _next
+稍后保存
 androidx.lifecycle.internal.SavedStat...
 allow
 TLS_RSA_WITH_AES_128_CBC_SHA256
 expires
 添加时间
 TLS_
+android.intent.action.BATTERY_LOW
 Compose:applyChanges
 SELECT_LINE_START
 本次到
 keyDesc
 ColorBurn
+当前封面
 Empty
+androidx.work.util.id
 onBackPressedCallback
 TLS_RSA_WITH_AES_128_CBC_SHA
 TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA
@@ -1182,125 +1378,150 @@ TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA
 pokeByte
 SetProgress
 registry
+72e760349d2e1bf2049512566dc94559
 DELETE_NEXT_WORD
 OffsetTimeDigitized
 setCookie
 REPORT
 PUT
 $this$LazyRow
+repeatIntervalTimeUnit
 debug.layout
 trustManager.acceptedIssuers
 viewModelStoreOwner
+index_WorkSpec_last_enqueue_time
+AutoMirrored.Filled.MenuBook
 java.lang.Object
 comment
-Location
 dexopt/baseline.profm
+Location
+interval_duration
 kotlinx.coroutines.bufferedChannel.se...
 cover.search:
-CCCCCC
 setUseSessionTickets
+CCCCCC
+Outlined.CloudUpload
 Strictness.Normal
 prefix
 HTTP_1_1_REQUIRED
 ImageVector
 DELETE_TO_LINE_END
 getMethod
+Periodic
 LiveRegion
 state1
 保存
-delimiter
 superclass
+delimiter
+serverUrl
 NONE
-TLS_DH_anon_WITH_AES_128_CBC_SHA
 address.hostAddress
+TLS_DH_anon_WITH_AES_128_CBC_SHA
+last_cancel_all_time_ms
 M/d
 application/json
 kotlinx.coroutines.semaphore.maxSpinC...
 ShutDown
 周五
+taskExecutor
+java.util.Set
 LEFT_CHAR
 sslSocketSession
-java.util.Set
 SELECT_PAGE_DOWN
 window.__DATA__
-cacheControl
 周二
-readIfAbsent
+cacheControl
 TLS_ECDHE_ECDSA_WITH_RC4_128_SHA
+readIfAbsent
 index_books_lastReadAt
 books
+WorkProgressUpdater
 Suffix
 Switch
+Preference
 SensorRightBorder
 M/y
+每天
 TopBar
 result_code
 SSL_DHE_DSS_WITH_3DES_EDE_CBC_SHA
+7d73d21f1bd82c9e5268b6dcf9fde2cb
 DELETE_SKIP_FILE
 Heading
 SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA
-kotlin.collections.MutableMap
 androidx.compose.ui.semantics.id
+kotlin.collections.MutableMap
 TLS_ECDH_anon_WITH_RC4_128_SHA
 signature
 Outlined.Analytics
 ActivityResultRegistry
-CONNECT
-TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA
+COMMENTS
 readtrack_database
+TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA
+CONNECT
 Clip
 savedStateRegistry
+ConstraintTrkngWrkr
 NO_THREAD_ELEMENTS
 INTERRUPTED_SEND
+tracker
 Visible
 velocityVector
 DOUBLE
 event
-输入图片的网络链接地址
+书单详情
 _availablePermits
+输入图片的网络链接地址
 TLS_EMPTY_RENEGOTIATION_INFO_SCSV
 DARK
 COPY
 PENDING
 abstract
-kotlin.ULong
+WorkManagerImpl
 androidx.profileinstaller.action.BENC...
+kotlin.ULong
 $this$Canvas
 TransferFunction
 删除记录
 Tab
-输入目标页码
 outState
+输入目标页码
 kotlin.
+existingBooks
 SensorTopBorder
-ACTION_SET_TEXT
 java.lang.Comparable
+ACTION_SET_TEXT
 DstAtop
-UnfocusedEmpty
 caCerts
+UnfocusedEmpty
 msg
-Done
 BLOB
+Done
+minimum_retention_duration
 hostLifecycleState
 Characters
-float
+EndToStart
 Cursor
+float
 BitsPerSample
+spec
 reference
-Gamma
 SINT64
+Gamma
 java.lang.Enum
-GPSVersionID
 Outlined.Settings
+GPSVersionID
 progressBarRangeInfo
-TextField
 classDiscriminator
+TextField
 from
-caCert.subjectX500Principal
 Client
+caCert.subjectX500Principal
 localCertificates
+云备份状态
 offset
 Strategy.Balanced
+androidx.work.workdb
 connectionPool
 decoder
 StopInput
@@ -1316,12 +1537,14 @@ file_id
 publisher
 Software
 INSERT
+SystemFgService
 putObject
 replacement
 Filled.Edit
+ime
 AndroidOwner:measureAndLayout
 $onBackInvoked
-ime
+existingBookLists
 androidx.datastore.preferences.protob...
 android.text.EmojiConsistency
 configuration
@@ -1331,25 +1554,27 @@ Strictness.Unspecified
 DESELECT
 org.eclipse.jetty.alpn.ALPN$Provider
 kotlin.Byte
+network
 bufferEnd
 章节数
 public
 array
-journalMode
 SelectableGroup
+journalMode
+HERO
 postfix
 value
 TextMotion.Animated
 REUSABLE_CLAIMED
 0x%08x
-测试
 TestTag
+测试
 resources
-fontMetrics
 Filled.Settings
-GPSDestLongitudeRef
-command
+fontMetrics
 int
+command
+GPSDestLongitudeRef
 LensMake
 androidx.activity.result.contract.act...
 阅读统计
@@ -1358,38 +1583,46 @@ TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA
 requestedPathSegments
 providers
 book/
-exception
 STRING_LIST
+exception
 StandardOutputSensitivity
 effectiveNodeIndexOut
 IsTraversalGroup
-androidx.activity.result.contract.ext...
 AutoMirrored.Filled.ArrowBack
-SETTINGS
+androidx.activity.result.contract.ext...
 String
+SETTINGS
+CommandHandler
+INSIGHT
 ExitTransition.None
 昨天
 via
+完成
 CROSSED
 $this$LazyColumn
 Compose:sideeffects
 GPSSpeed
 display_photo
 WordBreak.Unspecified
+UNMETERED
 VerbatimTts
 AndroidOwner:onTouch
+navigate
+Filled.KeyboardArrowUp
 androidx.activity.result.contract.act...
 upgrade
 _handled
+outOfQuotaPolicy
 receiveCatching
+triggers
 version
 SetSelection
 onBackProgressed
 bookDao
 kotlin.jvm.functions.
 kotlinx.coroutines.scheduler.default....
-failedRoute
 index_books_status_updatedAt
+failedRoute
 Xor
 clientProviderClass
 BC
@@ -1399,15 +1632,15 @@ DAYS
 删除
 LayingOut
 MESSAGE
-http/1.1
 DIRTY
-http/1.0
+http/1.1
 ContentOrLtr
+http/1.0
 .OpenSSLSocketImpl
 TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
 LocalInputManager
-TLS_ECDH_anon_WITH_3DES_EDE_CBC_SHA
 close
+TLS_ECDH_anon_WITH_3DES_EDE_CBC_SHA
 EmojiCompat.EmojiCompatInitializer.run
 $tables
 RESULT_PARSE_EXCEPTION
@@ -1431,6 +1664,7 @@ ULONG
 acc
 GPSAltitude
 Email
+bookCount
 referent
 ImageUniqueID
 androidx.profileinstaller.action.SKIP...
@@ -1438,13 +1672,14 @@ Miter
 JsonNull
 TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY130...
 SFIXED32_LIST_PACKED
-okhttp.TaskRunner
 addSuppressed
+okhttp.TaskRunner
 ACTION_SET_PROGRESS
 ThumbnailImageWidth
 RESULT_OK
 protocols
 com.google.android.gms.org.conscrypt
+inputMergerClassName
 delegateFactory
 TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA
 index_
@@ -1452,20 +1687,23 @@ LIGHT
 RadioButton
 encoding
 统计
-本地添加
 reading_records
 warnIfOpen
 http
 exchange
 stateDescription
+$enqueueNew
 LIST
+SystemFgDispatcher
 private
 textSubstitution
+NOT_REQUIRED
 kotlin.collections.MutableCollection
 ACTION_CLEAR_FOCUS
-PixelYDimension
 Em
+PixelYDimension
 getDouble
+stop_reason
 ACTION_SCROLL_BACKWARD
 FIXED32
 Filled.MenuBook
@@ -1473,42 +1711,57 @@ FlashpixVersion
 WordBreak.Phrase
 WhiteBalance
 kotlinx.serialization.json.JsonNull
+androidx.compose.foundation.text.inli...
 android.graphics.drawable.VectorDrawable
 scope
-oldValue
+index_Dependency_work_spec_id
+next_job_scheduler_id
 recentBooks
+oldValue
 Home
+ACTION_SCHEDULE_WORK
 ACTION_SCROLL_UP
 :authority
 BITMAP_MASKABLE
 Down
+capabilities
 seqno
 http://ns.adobe.com/xap/1.0/
 UserInput
 label
 message
 WRITE_ONLY
+创建书单
 ACTION_DRAG_DROP
 Mouse
 Offset.Unspecified
 Measuring
 Previous
-START
+DirectExecutor
 ImeAction
+START
 PageDown
 NO_RESULT
 ROOM
 age
+webdav_last_backup_at
+username
 bookTitle
+backup
+月度阅读统计和阅读洞察
+onBookListClick
 UNDEFINED
-GPSTimeStamp
 Go
-将数据导出为JSON文件
+GPSTimeStamp
+$job
+DNT
 isShowingTextSubstitution
 PostExit
 ACTION_CONTEXT_CLICK
 TLS_ECDH_RSA_WITH_NULL_SHA
+$inputArguments
 dexopt/baseline.prof
+KEY_GENERATION
 $this$anim
 BYTE
 property
@@ -1517,18 +1770,22 @@ Hidden
 createSegment
 Settings
 UINT64_LIST_PACKED
+workDatabase
+LITERAL
+webDavBackupScheduler
 FileSource
 FocalLengthIn35mmFilm
-REFUSED_STREAM
 _rootCause
-天
+Filled.AutoGraph
+REFUSED_STREAM
 handle
-androidx.compose.ui.input.pointer.Poi...
 $this$graphicsLayer
+androidx.compose.ui.input.pointer.Poi...
+$workDatabase
 datastore/
 putFloat
-Top
 400
+Top
 subtitle
 insertIndex
 FLOA
@@ -1550,24 +1807,30 @@ other
 viewModelStore
 libcore.io.DiskLruCache
 putDouble
+CASCADE
 routeDatabase
 URI
 protocolSelected
+Depth
 valueVector
+今日阅读
 fffe
 androidx$room$IMultiInstanceInvalidat...
-今日阅读
-LocalViewConfiguration
 总书籍
+LocalViewConfiguration
+StartToEnd
 androidx.view.accessibility.Accessibi...
+本地导入
+android.intent.action.ACTION_POWER_DI...
 Strategy.Simple
 .em
 kotlin.Long
 PING
-CHARACTER_PALETTE
 androidx.view.accessibility.Accessibi...
-Completing
+CHARACTER_PALETTE
 Style
+Completing
+networkCallback
 UPDATE
 Width
 ALIGN_LEFT
@@ -1576,85 +1839,103 @@ TLS_AES_128_CCM_8_SHA256
 _resumed
 想读
 GPSHPositioningError
+Alarms
 Text
 gzip
 FIXED64
 Lab
-从JSON文件恢复数据
 Outlined.Upload
 selectedRange
 runningWorkers
+future
 anchor
 Xyz
 DESTROYED
 进度统计方式
 NORMAL
 last_read_book_id
-GPSLatitude
 missingFields
+GPSLatitude
 referer
 Compression
 SINGLE
 dagger.hilt.android.components.Fragme...
 ActionPerformed
-ExposureProgram
-UTC
 kotlin.collections.Collection
+UTC
+ExposureProgram
+rating
 getAlpnSelectedProtocol
 paneTitle
 body
+ACTION_RESCHEDULE
+schedule_requested_at
 mode
 STATUS_DROPPED
 resolvedState
 Filled.DateRange
 _isCompleting
-TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA
+InputMerger
 onSend
+TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA
 Hyphens.Auto
 buffer
 FNumber
-MM
 index_books_updatedAt
 all
+MM
 settings
 HTTP_1_0
+ACTION_START_FOREGROUND
 systemGestures
-read
 uriPathSegments
+read
 HTTP_1_1
+alt
 OpenSSLSocketImpl
 MagnifierPositionInRoot
 dataBackupRepository
+clock
 LocalAutofillTree
 AddBook
 unit
 java.util.List
+记录
 imeAnimationTarget
 kotlin.Int
 ImageDescription
 queryParam
 VOID
+$workSpecId
+requiredNetworkType
 okio.Okio
 FLOAT
+编辑书单
 ctx.baseContext
 handleLifecycleEvent
-COMPLETING_ALREADY
 %2e.
+COMPLETING_ALREADY
 Indeterminate
 serializer
 POLY_OBJ
 TLS_KRB5_WITH_RC4_128_SHA
 media
 My
-READ_ONLY
+WMFgUpdater
 java.lang.Iterable
+READ_ONLY
+Settled
+WakeLocks
+workerClassName
 MakerNote
 kotlinx.coroutines.DefaultExecutor.ke...
+长按预览
 OffsetTime
 Phone
 在读
 YCbCrPositioning
 Modifier
+wakeLock
 recordRepository
 Collapse
 androidx.activity.result.contract.ext...
@@ -1662,15 +1943,22 @@ Conscrypt
 PARAM_CLAUSE_0
 arrayBaseOffset
 Keyboard
+bingImageSearchService
+next_schedule_time_override_generation
 Host
 P:
+discriminator
 TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
 输入书名或作者名开始搜索
+android.intent.action.DEVICE_STORAGE_LOW
+backoffPolicy
 layout_inflater
-SLONG
 阅读趋势
+SLONG
+NetworkStateTracker
 Main
 On
+SystemAlarmService
 LineHeightStyle.Alignment.Proportional
 STATUS_FINISHED
 PT
@@ -1678,63 +1966,76 @@ weeklyReadingData
 sqLiteDatabase
 layoutResult
 AccessibilityNodeInfo.roleDescription
+NetworkMeteredCtrlr
 Filled.Close
+周六
 ANIM
 tableName
-周六
 SSL_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA
 TLS_KRB5_WITH_DES_CBC_MD5
 android.widget.HorizontalScrollView
 receiveSegment
 emojiCompat
+DelayMetCommandHandler
 NO_CLOSE_CAUSE
+暂停
 androidx.datastore.preferences.protob...
-编辑阅读记录
 dagger.hilt.android.components.Servic...
-QUIC
+编辑阅读记录
 androidx$room$IMultiInstanceInvalidat...
+QUIC
+KEY_NETWORK_STATE_PROXY_ENABLED
 kotlin.collections.LinkedHashMap
+index_books_rating
 maxState
 Trailers
 Make
+Dependency
 出版社
+RATING
 导入成功
 sortOrder
-verticalScrollAxisRange
 dbObj
+verticalScrollAxisRange
 targetVector
-进度
 _COROUTINE.
+进度
 Expires
 TaskStackBuilder
 REMOVE_FROZEN
 .tmp
 peekInt
+bookListRepository
 HH:mm
 _Impl
 SSL_RSA_WITH_3DES_EDE_CBC_SHA
+Processor
 S:
+选择要恢复的备份
 $this$buildSerialDescriptor
-SSL_RSA_EXPORT_WITH_DES40_CBC_SHA
 androidx.savedstate.Restarter
 kotlinx.coroutines.semaphore.segmentSize
+SSL_RSA_EXPORT_WITH_DES40_CBC_SHA
 android.view.accessibility.extra.DATA...
 Repeated
+context.applicationContext
 DROP_SHADER_CACHE
 kotlin.collections.ListIterator
 GROUP
 主题模式
+default
 GPSLatitudeRef
 putByte
 waterfall
 $this$popUpTo
 TLS_ECDH_RSA_WITH_AES_256_CBC_SHA
 添加备注...
+disabled
 objectFieldOffset
-SSL_RSA_WITH_RC4_128_SHA
 :status
-outBundle
+SSL_RSA_WITH_RC4_128_SHA
 TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256
+outBundle
 TLS_ECDH_RSA_WITH_RC4_128_SHA
 /l/public/
 ACTION_SELECT
@@ -1743,6 +2044,7 @@ ComponentsConfiguration
 本周阅读
 blockingTasksInBuffer
 dagger.hilt.android.internal.builders...
+9223372036854775807
 call
 TE
 按页数统计
@@ -1757,17 +2059,18 @@ navigationIcon
 $name
 rue
 TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA
-GPSAltitudeRef
 java.util.ListIterator
+GPSAltitudeRef
 Label
 DefaultDispatcher
 android.view.accessibility.extra.EXTR...
 kotlin.Double
+GreedyScheduler
 Outlined.Info
 GPSMapDatum
 lifecycle
-.OpenSSLSocketFactoryImpl
 view
+.OpenSSLSocketFactoryImpl
 ANMF
 UP
 Disabled
@@ -1776,23 +2079,30 @@ US
 testTag
 androidx.lifecycle.ViewModelCoroutine...
 unreachable
+WrkDbPathHelper
 org.eclipse.jetty.alpn.ALPN
+CANON_EQ
 PAGE
 ThreeMonths
-PreviewImageStart
 UINT64_LIST
+PreviewImageStart
 FULL
 finalException
+initial_delay
+显示
 responseHeaders
-byteString
 GPSDestLongitude
+byteString
 AccessibilityDelegate
 name
+$this_enqueueUniquelyNamedPeriodic
 TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256
 Up
 SceneCaptureType
+parameters
 TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA
 getDescriptor
+next
 recordWithBook
 string
 distance
@@ -1800,18 +2110,20 @@ IFD
 kotlin.coroutines.jvm.internal.BaseCo...
 book
 TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256
-java.lang.module.ModuleDescriptor
 description
+java.lang.module.ModuleDescriptor
+Filled.Cloud
 sQLiteDatabase
+从远端选择一个备份文件恢复
 SrcIn
 Justify
 LineThrough
 Picker
-statement
 Outlined.Home
+statement
+networkType
 navigationBarStyle
 章
-$queryInterceptorProgram
 SUSPEND_NO_WAITER
 Dispatchers.Main
 TraversalIndex
@@ -1819,19 +2131,22 @@ https://book.douban.com/
 collectionInfo
 chunked
 正在导出数据...
+workSpecId
 Cancelled
 readingRecords
 callbackName
 getEmptyRegistry
 target
-.lck
-Filled.Delete
+createSchedulers
 连续阅读
+Filled.Delete
+.lck
 PrimaryChromaticities
 what
 HOURS
 $command
 window.__USER__
+KEY_START_ID
 dataStore
 window
 $this$TextButton
@@ -1841,60 +2156,80 @@ MainContent
 书籍详情
 appVersion
 totalReadingTimeLabel
+workTaskExecutor.serialTaskExecutor
 _isCompleted
+readtrack_backup_latest.json
 .sp
 AutoMirrored.Filled.KeyboardArrowLeft
+webdav_username
+WorkerFactory
 peerName
 EmptyCoroutineContext
 ACTION_ARGUMENT_SELECTION_END_INT
-ExposureTime
+connectivity
 END_HEADERS
+ExposureTime
 SINT64_LIST
+generation
 SFIXED64
 kotlinx.coroutines.scheduler.core.poo...
 kotlinx.coroutines.scheduler.max.pool...
 com.readtrack.ReadTrackApp
 double
 TLS_KRB5_EXPORT_WITH_DES_CBC_40_MD5
+INSTANCE
 Darken
 RelatedSoundFile
+MM/dd
+从书籍详情页添加到书单
 kotlin.Short
 Low
 mRecreateDisplayList
+Outlined.CollectionsBookmark
+$sql
 org.openjsse.net.ssl.OpenJSSE
 GPSTrack
-SceneType
+ConstraintsCmdHandler
+Filled.PlaylistRemove
 BOOL_LIST_PACKED
+SceneType
+DiagnosticsRcvr
 Dispatchers.Unconfined
 tappableElementIgnoringVisibility
+pattern
 CHAR
-networkResponse
 captionBarIgnoringVisibility
+networkResponse
+Span
 DELETE_FROM_LINE_START
 TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256
-Span
+enabled
+workerFactory
 kotlinx.coroutines.bufferedChannel.ex...
+/th/id/
 okhttp3.
 Filled.Book
 ADDED
 UTF_8
-mContentInsets
 TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_...
+mContentInsets
 resuming_sender
 ENUM_LIST
 index_reading_records_bookId_date
-Filled.ChevronRight
 internalOpenHelper
-SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA
+Filled.ChevronRight
 设置
-FRAME_SIZE_ERROR
+SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA
 java.util.Map$Entry
+MKCOL
+FRAME_SIZE_ERROR
 VP8L
 LensModel
 navGraphNavigator
+UNIX_LINES
 输入目标章节号
 SELECT_UP
-关于
+KEY_NEEDS_RESCHEDULE
 VP8X
 journal.tmp
 Clamp
@@ -1904,29 +2239,37 @@ _parentHandle
 SFIXED32
 BYTES
 indicator
+ForceStopRunnable
 kotlinx.coroutines.fast.service.loader
+trackers
 ScrollToIndex
+已在书单中
+requires_storage_not_low
 EmojiCompatInitializer
 completedExpandBuffersAndPauseFlag
 kotlin.Any
+ACTION_DELAY_MET
 KEY_COMPONENT_ACTIVITY_REGISTERED_RCS
 页数
 backStackEntryId
 ISOSpeed
 elementDesc
 alse
+out_of_quota_policy
+lastReadAt
+notification
 AnimatedVisibility
 2
-lastReadAt
 protocol
-SSL_DH_anon_EXPORT_WITH_RC4_40_MD5
 LocalLayoutDirection
+SSL_DH_anon_EXPORT_WITH_RC4_40_MD5
 proxyAuthenticator
 _reusableCancellableContinuation
+远端备份为空
 Outlined.BarChart
 android.view.View
-keyboardActions
 java.lang.Byte
+keyboardActions
 导出成功
 android.view.accessibility.action.ARG...
 UnfocusedNotEmpty
@@ -1934,22 +2277,24 @@ DONE
 registerSelectForReceive
 putInt
 updateEnabledCallbacks
-FontFamily.SansSerif
 AutoMirrored.Filled.KeyboardArrowRight
+FontFamily.SansSerif
 actionIcons
 _consensus
 CANCELLED
 DropdownList
+android.intent.action.ACTION_POWER_CO...
 editableText
 effect
 PUSH_PROMISE
-CLOSED_EMPTY
 kotlin.collections.Iterator
+CLOSED_EMPTY
 SecureOn
 job
 SetTextSubstitution
 enumDescriptor
 Outlined.Download
+移除
 unexpected
 preferencesMap
 systemBars
@@ -1960,14 +2305,17 @@ END_STREAM
 Ltr
 Touch
 INT
+加载备份列表...
+服务器地址
 清空并导入
 AUTOMATIC
 database
 kotlin.Enum
 color://
 backEvent
-Trailing
 SSL_
+Trailing
+清空并恢复
 Dalvik
 TLS_DHE_DSS_WITH_CAMELLIA_256_CBC_SHA
 SensorBottomBorder
@@ -1975,8 +2323,8 @@ Flash
 $this$navOptions
 Size.Unspecified
 compose:lazylist:prefetch:compose
-getDeclaredField
 ACTION_PREVIOUS_HTML_ELEMENT
+getDeclaredField
 CLOB
 original
 Ellipsis
@@ -1987,13 +2335,15 @@ dateLabel
 INT32_LIST
 totalPages
 NETWORK_ERROR
-Filled.CheckCircle
 MEMORY_CACHE
+Filled.CheckCircle
 IsPopup
 DeviceSettingDescription
 getModule
-TLS_DHE_DSS_WITH_AES_256_GCM_SHA384
+已选择
 应用信息
+TLS_DHE_DSS_WITH_AES_256_GCM_SHA384
+TEMPORARILY_UNMETERED
 android.widget.ProgressBar
 Filled.Schedule
 TopMiddle
@@ -2001,23 +2351,27 @@ SETTINGS_TIMEOUT
 STATE_COMPLETED
 阅读历史
 popUpTo
+clearExportSuccess
 setAlpnProtocols
-RecommendedExposureIndex
 messageType
+RecommendedExposureIndex
+BookList
 GPSSpeedRef
-androidx.lifecycle.LifecycleDispatche...
 PerformImeAction
+androidx.lifecycle.LifecycleDispatche...
 getSuppressed
-com.readtrack.domain.model.ReadingRec...
 DOUBLE_LIST_PACKED
+com.readtrack.domain.model.ReadingRec...
 ACTION_UNKNOWN
 defaultLifecycleObserver
 作者
-kotlinx.serialization.json.JsonElement
 Outlined.Edit
+kotlinx.serialization.json.JsonElement
+Filled.Done
 httponly
-SHOULD_BUFFER
 publicSuffixListBytes
+其他
+SHOULD_BUFFER
 LineHeightStyle.Alignment.Center
 proxy
 canceled
@@ -2027,6 +2381,7 @@ kotlin.Unit
 TLS_DHE_RSA_WITH_AES_128_CBC_SHA
 FocalLength
 kotlin.jvm.internal.StringCompanionOb...
+SUCCEEDED
 当前阅读到
 DpOffset.Unspecified
 ContentDescription
@@ -2038,25 +2393,30 @@ $this$Card
 PageLeft
 :memory:
 icon
+阅读总览
 请输入书名
+批量加入书单
 TLSv1
 RIGHT_CHAR
 Selected
-seq
 androidx.compose.text.SpanStyle
+seq
 completion
-LINE_END
-androidx.view.accessibility.Accessibi...
 java.io.tmpdir
+androidx.view.accessibility.Accessibi...
+LINE_END
 set
 ISO
 COMPRESSION_ERROR
+Filled.DragHandle
 ACTION_IME_ENTER
 kotlinx.serialization.json.JsonObject
 Strictness.Strict
 ACK
 书籍状态分布
+webdav_remote_path
 Dp.Unspecified
+android.os.action.CHARGING
 DOUB
 ACTION_NEXT_AT_MOVEMENT_GRANULARITY
 room_fts_content_sync_
@@ -2070,9 +2430,12 @@ journal.bkp
 SELECT_PREV_PARAGRAPH
 INT64_LIST
 NavController
+WorkTag
 全部
 Difference
+t2.k
 TLS_DHE_DSS_WITH_AES_128_GCM_SHA256
+t2.U
 ACTION_DRAG_CANCEL
 composable
 androidx.view.accessibility.Accessibi...
@@ -2081,25 +2444,34 @@ Underline
 USHORT
 SSL_DH_anon_WITH_DES_CBC_SHA
 uriHost
-preferences_
+t2.F
 Failed
+preferences_
 Color
 NonDisposableHandle
+t2.N
 PAGE_UP
+EnqueueRunnable
 PATCH
 SELECT_END
 RectangleShape
 androidx.datastore.preferences.protob...
 ShowTextSubstitution
 Dismiss
-END
+本书
+WorkName
+网络搜索
 debugData
+END
 ACTION_ACCESSIBILITY_FOCUS
+导入前安全预览
 https:
 isDirectory
 frame
 ThumbnailImageLength
 ACTION_LONG_CLICK
+https://th.bing.com/th/id/
+$oldWorkSpec
 SRATIONAL
 origin
 三个月
@@ -2107,27 +2479,36 @@ h2
 getFloat
 paramName
 putLong
-content
 timeout
+content
+random
+bookListDao
 Number
+bookIds
 exportTime
 TLS_ECDH_ECDSA_WITH_RC4_128_SHA
+java.vm.name
 client
 json
-java.vm.name
 Hue
+PackageManagerHelper
 EOF
+dismissWebDavRestoreDialog
 ws:
+WEEKLY
 LINE_START
-false
 PROPFIND
+false
 getDeclaredMethod
+newArray
 SubSecTimeDigitized
 Sharpness
-workerCtl
+t2.i0
 Middle
+workerCtl
 PendingWork
 书籍搜索
+t2.u
 referenceColumnNames
 500
 Ascii
@@ -2137,40 +2518,52 @@ ACTION_MOVE_WINDOW
 HOME
 WINDOW_UPDATE
 android.support.text.emoji.emojiCompa...
+index_Dependency_prerequisite_id
 select
 dagger.hilt.android.internal.builders...
+$schedulers
 TEXT
 Image
 clipboard
 DateTime
+output
 authorization
-publicSuffixExceptionListBytes
 BottomBar
+publicSuffixExceptionListBytes
 yMMMMEEEEd
 java.lang.Character
 context
-https
+清空
+封面预览
+添加到书单
 id
-dispatcher
+https
 %07x
+dispatcher
 请输入总章节数
 Exit
 MILLISECONDS
 ENUM
 com.readtrack.domain.model.BookSnapshot
+$innerFuture
 it
+params
 UNDECIDED
 IndexForKey
 一个月
 getInt
 排序
-columnsMap.values
+Ready
+initialQuery
 NioSystemFileSystem
+columnsMap.values
+上移
 kotlin.jvm.internal.
 Cmyk
 Map
-charset
+imageSearchQuery
 Filled.Home
+charset
 http:
 SSL_DHE_DSS_WITH_DES_CBC_SHA
 Max
@@ -2178,8 +2571,13 @@ extras
 暂无阅读记录
 Uri
 Url
+BatteryNotLowTracker
 delegate
 Authorization
+下移
+workManagerImpl.trackers
+已关闭自动备份
+SystemIdInfo
 bundle
 table
 fileSystem
@@ -2187,6 +2585,7 @@ GROUP_LIST
 TLS_ECDHE_RSA_WITH_RC4_128_SHA
 composer
 kotlin.jvm.functions.Function
+index_book_list_cross_ref_bookListId
 GPSLongitude
 ReferenceBlackWhite
 android.widget.ScrollView
@@ -2196,15 +2595,20 @@ bookRepository
 /data/misc/profiles/ref/
 coverPath
 android:text
+androidx.work.impl.background.systema...
+ACTION_CONSTRAINTS_CHANGED
 backStackEntry
 未知错误
+workTaskExecutor
 suffix
+或直接输入图片URL
 _size
 that
+书单名称
 argName
 TLS_NULL_WITH_NULL_NULL
-TextFieldInputState
 android.resource://
+TextFieldInputState
 TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA
 coil.request.NullRequestData
 updatedAt
@@ -2217,13 +2621,15 @@ FILL
 spacer_
 NULL
 Dst
-ms
+level
 author
+ms
 PhotographicSensitivity
 TLS_DHE_DSS_WITH_AES_256_CBC_SHA
 .preferences_pb
 CompressedBitsPerPixel
 Range
+自动封面
 trailers
 entry
 TLS_ECDH_RSA_WITH_AES_128_CBC_SHA
@@ -2231,39 +2637,51 @@ focused
 Exif
 LINE_LEFT
 progressLabel
+ConstraintProxy
 androidx.datastore.preferences.protob...
 errors
 p0
 $this$NavHost
+p1
 progressType
+p2
 TLS_ECDH_anon_WITH_NULL_SHA
-SELECT_LINE_LEFT
+p3
+p4
 ns
+SELECT_LINE_LEFT
 keys
 peekByteArray
+KEY_WORKSPEC_GENERATION
 androidx.compose.ui.semantics.testTag
 sql
 head
 dialog
 SupportSQLiteLock
 kotlin.UShort
+android.intent.action.DEVICE_STORAGE_OK
 receivers
-inParcel
 ACTION_SCROLL_LEFT
+inParcel
 $this$ExtendedFloatingActionButton
-HTTP/1.
 kotlin.Comparable
+HTTP/1.
 groupSlotIndex
 Height
+阅读洞察
+今日阅读和连续阅读天数
 baseKey
 UserComment
+src
+fullUrl
 LensSpecification
 书籍封面
 pokeByteArray
 DOUBLE_LIST
-GPSDOP
 COROUTINE_SUSPENDED
+GPSDOP
 TLS_DH_anon_WITH_AES_128_CBC_SHA256
+okHttpClient
 GPSInfoIFDPointer
 android.widget.Spinner
 resolvedCompositionContext
@@ -2282,113 +2700,134 @@ Artist
 AnimatedContent
 EditableText
 handler
-TLS_DH_anon_WITH_AES_256_CBC_SHA256
 vary
 Filled.Sort
+TLS_DH_anon_WITH_AES_256_CBC_SHA256
 setHostname
 createAsync
 .Companion
 SubSecTimeOriginal
+完读率
 iterator
+webdav_last_error
 java.util.Map
 Painter
 /data/misc/profiles/cur/0
 proxyAddress
 Overlay
+recent
 Cookie
 TextDecoration.None
+ProcessCommand
 RSA
 getObject
 ACTION_NEXT_HTML_ELEMENT
 drawable
-BodySerialNumber
 最近阅读
-SpectralSensitivity
+BodySerialNumber
 enqIdx
+SpectralSensitivity
 invoker
 ACTION_COLLAPSE
 accept
+$this$items
 $this$Json
 node
 Min
+DiagnosticsWrkr
+$listenersList
 CONDITION_FALSE
 entryPoint
 totalChapters
 starting
 HideKeyboard
+Outlined.Schedule
 页码
 网络导入封面
 androidx.activity.result.contract.ext...
 hostName
 ExposureBiasValue
 RESULT_CANCELED
+webDavBackupFiles
+MICROSECONDS
 activity
 TLS_RSA_WITH_AES_128_GCM_SHA256
-MICROSECONDS
 primitive
 INT32
-h2_prior_knowledge
 LocalLifecycleOwner
+h2_prior_knowledge
+SystemAlarmDispatcher
+OneTime
 FHCRC
 ENUM_LIST_PACKED
 ASC
-DELETE
 current
+DELETE
+EXTRA_IS_PERIODIC
+com.readtrack.domain.model.ProgressType
 ACTION_SCROLL_TO_POSITION
 audio
+清空书单
 $this$$receiver
 NO_ERROR
 key
-animator_duration_scale
+kotlin.Enum.Companion
 LONG
 RESOURCE
-kotlin.Enum.Companion
+animator_duration_scale
 profileinstaller_profileWrittenFor_la...
+prerequisiteId
 GPSAreaInformation
+system_id
 ACTION_EXPAND
 dagger.hilt.android.EarlyEntryPoint
 window.decorView
 douban_cookie
 WRITE_SKIP_FILE
-kotlin.Float
 store
+kotlin.Float
 GPSMeasureMode
 SELECT_RIGHT_CHAR
 TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256
-te
 STATE_REG
+te
 SSL_RSA_WITH_NULL_MD5
 systemFileSystem
-Words
+t2.T0
 周日
+Words
 closed
 to
 compressed
+已开启每日自动备份
 _prev
 https://example.com/cover.jpg
 efbbbf
 SINT32_LIST_PACKED
 horizontalScrollAxisRange
+NetworkNotRoamingCtrlr
 dest
+clearImportSuccess
 pairs
+frequency
 createdAt
 statusCounts
 ReusedSlotId
+requires_charging
 putBoolean
 BROKEN
-us
 Hyphens.Unspecified
+us
 Dispatchers.Default
 kotlinx.coroutines.flow.defaultConcur...
-数据管理
 NETWORK
+数据管理
 TLS_AES_128_GCM_SHA256
 sink
 query
 java.util.Collection
 CLOSE_HANDLER_CLOSED
 prettyPrintIndent
-c2.j0
 PreventUserInput
 image_cache
 statsUnit
@@ -2396,40 +2835,51 @@ ffff0000
 failure
 hint
 NOT_IN_STACK
-filteredBooks
 viewModel
+filteredBooks
 OffsetTimeOriginal
+最新
 Mirror
 android.intent.extra.TITLE
 desc
+MULTILINE
 pagesRead
-Outlined.MenuBook
 records
+Outlined.MenuBook
+trigger_content_update_delay
 PREV_PARAGRAPH
 removeObserver
 destination
+NANOSECONDS
 changes
 ON_DESTROY
-NANOSECONDS
 TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384
+Outlined.SettingsEthernet
 FLOAT_LIST
 searchResults
 LocalContext
 ImageProcessingIFDPointer
 serialName
 RESULT_ALREADY_INSTALLED
+评分
 SSL_RSA_EXPORT_WITH_RC4_40_MD5
 backing
 imageUrl
 TLS_ECDH_anon_WITH_AES_128_CBC_SHA
 TLS_ECDH_ECDSA_WITH_NULL_SHA
+KEY_BATTERY_CHARGING_PROXY_ENABLED
+workerParams
+EMPTY
 text/plain
+读完
 INT64
+Schedulers
 Saturation
 TextLayout:initLayout
 DropDownMenu
 isRegularFile
 readtrack_backup_
+从书单移除
 DELETE_PREV_WORD
 Dispatchers.Main.immediate
 invalidatedTablesIds
@@ -2439,23 +2889,25 @@ CHAPTER
 Compose:onRemembered
 statusBarsIgnoringVisibility
 REMOVED_TASK
-TITLE
 location
+TITLE
 getInstance
-FLOW_CONTROL_ERROR
 SrcOut
-ACTION_PREVIOUS_AT_MOVEMENT_GRANULARITY
+FLOW_CONTROL_ERROR
 $this$TopAppBar
-INT64_LIST_PACKED
+ACTION_PREVIOUS_AT_MOVEMENT_GRANULARITY
 OpenJSSE
+INT64_LIST_PACKED
 GPSProcessingMethod
 triggerName
 Index:
+run_attempt_count
 没有找到匹配的书籍
 none
 type
 LocalView
 STREAM_CLOSED
+webDavService
 statusBars
 FocalPlaneResolutionUnit
 最近阅读记录
@@ -2474,133 +2926,166 @@ refHolder
 deserializer
 PreviewImageLength
 inetSocketAddress
+远程目录
+3071c8717539de5d5353f4c8cd59a032
 ShowKeyboard
 ACTION_ARGUMENT_SELECTION_START_INT
 android.support.text.emoji.emojiCompa...
 SpatialFrequencyResponse
-TLS_KRB5_WITH_3DES_EDE_CBC_MD5
+insight
 saveableStateHolderRef
-_state
+input.keyValueMap
+TLS_KRB5_WITH_3DES_EDE_CBC_MD5
 recentRecordsWithBooks
+_state
 Next
 NOT_CROSSED
 ACTION_FOCUS
-com.readtrack.domain.model.BookStatus
+application/xml
+完读率总览和书架摘要
 java.lang.Double
+com.readtrack.domain.model.BookStatus
 columns
 range
 ColorAnimation
 out
 get
 c.columnNames
+power
 java.lang.Number
 dagger.hilt.android.components.Activi...
+删除书单
+next_alarm_manager_id
 TLS_PSK_WITH_3DES_EDE_CBC_SHA
+token
 android.view.accessibility.extra.DATA...
 expect
 LocalTextToolbar
 dagger.hilt.android.internal.builders...
 ShutterSpeedValue
 未找到豆瓣搜索数据结束标记
+创建新书单
 elements
 Model
 周四
 first_launch
+backoff_delay_duration
 EditBook
 URI_MASKABLE
-ON_CREATE
 SelectionEnd
+ON_CREATE
 date
-weeklyData
 argument
+ENQUEUED
+weeklyData
 data
 ON_RESUME
 更新阅读进度
 TLS_ECDHE_RSA_WITH_NULL_SHA
 NEXT_PARAGRAPH
 org.eclipse.jetty.alpn.ALPN$ServerPro...
+android.os.action.DISCHARGING
 LocalConfiguration
 doubanio.com
 Filled.ArrowDropDown
+暂无
 JpgFromRaw
 InteroperabilityIFDPointer
 trendData
 IsDialog
 HalfYear
 LocalUriHandler
-NewSubfileType
+tag
 FIXED64_LIST_PACKED
+NewSubfileType
 onEditBook
 Inherit
 EmojiCompat.FontRequestEmojiCompatCon...
 PageUp
 0000ffff
 SYNCHRONIZED
+backoff_policy
 kotlinx.serialization.json.pool.size
 Outlined.Add
+NotReady
 LocalHapticFeedback
-TextMotion.Static
 kotlin.jvm.internal.EnumCompanionObject
-RESULT_UNSUPPORTED_ART_VERSION
+TextMotion.Static
 ACTION_COPY
+RESULT_UNSUPPORTED_ART_VERSION
 Pragma
+ACTION_FORCE_STOP_RESCHEDULE
 controlState
 LineHeightStyle.Trim.Both
 TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA
 Active
 android.widget.TextView
 kotlin.collections.Iterable
+onRemoveCover
+onConfirm
 navDeepLink
+WorkerWrapper
 开始阅读后会自动记录
-endVelocityVector
 Outlined.DarkMode
+endVelocityVector
 send
+webDavRemotePath
 note
 CameraSettingsIFDPointer
-ISOSpeedLatitudeyyy
 kotlin.collections.Map.Entry
 image/jpeg
+ISOSpeedLatitudeyyy
 ScrollBy
+StopWorkRunnable
 line
 Screen
 GPSSatellites
 link
+scale
+hero
 GPSDestLatitude
+CopyText
+阅读概览
 DateTimeOriginal
 ExposureIndex
-CopyText
 sqLiteQuery
-阅读概览
 onAddBookClick
 PhotometricInterpretation
 leadingIcon
+alarm
 kotlin.collections.Set
 TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384
 androidx.activity.result.contract.ext...
+index_reading_records_bookId
 factory
 ISIZE
-index_reading_records_bookId
 tappableElement
 JPEGInterchangeFormatLength
 LineHeightStyle.Trim.LastLineBottom
 java.util.Iterator
 focusProperties
+t2.a0
 org.robolectric.Robolectric
-groups
-Supporting
-removeIndex
 jar:file:
-ON_STOP
+removeIndex
+Supporting
+groups
+SystemJobService
 Parcelizer
+ON_STOP
 kotlin.CharSequence
 RESULT_IO_EXCEPTION
 intent
 .path
 findTrustAnchorByIssuerAndSignature
 FIT
+IN_PROGRESS
+Filled.Star
+快速记录
 fragment
 boolean
 migrations
+run_in_foreground
 FLOAT_LIST_PACKED
 SrcAtop
 选择结束日期
@@ -2608,160 +3093,218 @@ Popup:
 arguments
 emit
 LocalWindowInfo
-Marking id:blocking:2131165224 used because it matches string pool constant block
-Marking string:add_book:2131427329 used because it matches string pool constant add_book
-Marking id:accessibility_action_clickable_span:2131165184 used because it matches string pool constant accessibility
-Marking id:accessibility_custom_action_0:2131165185 used because it matches string pool constant accessibility
-Marking id:accessibility_custom_action_1:2131165186 used because it matches string pool constant accessibility
-Marking id:accessibility_custom_action_10:2131165187 used because it matches string pool constant accessibility
-Marking id:accessibility_custom_action_11:2131165188 used because it matches string pool constant accessibility
-Marking id:accessibility_custom_action_12:2131165189 used because it matches string pool constant accessibility
-Marking id:accessibility_custom_action_13:2131165190 used because it matches string pool constant accessibility
-Marking id:accessibility_custom_action_14:2131165191 used because it matches string pool constant accessibility
-Marking id:accessibility_custom_action_15:2131165192 used because it matches string pool constant accessibility
-Marking id:accessibility_custom_action_16:2131165193 used because it matches string pool constant accessibility
-Marking id:accessibility_custom_action_17:2131165194 used because it matches string pool constant accessibility
-Marking id:accessibility_custom_action_18:2131165195 used because it matches string pool constant accessibility
-Marking id:accessibility_custom_action_19:2131165196 used because it matches string pool constant accessibility
-Marking id:accessibility_custom_action_2:2131165197 used because it matches string pool constant accessibility
-Marking id:accessibility_custom_action_20:2131165198 used because it matches string pool constant accessibility
-Marking id:accessibility_custom_action_21:2131165199 used because it matches string pool constant accessibility
-Marking id:accessibility_custom_action_22:2131165200 used because it matches string pool constant accessibility
-Marking id:accessibility_custom_action_23:2131165201 used because it matches string pool constant accessibility
-Marking id:accessibility_custom_action_24:2131165202 used because it matches string pool constant accessibility
-Marking id:accessibility_custom_action_25:2131165203 used because it matches string pool constant accessibility
-Marking id:accessibility_custom_action_26:2131165204 used because it matches string pool constant accessibility
-Marking id:accessibility_custom_action_27:2131165205 used because it matches string pool constant accessibility
-Marking id:accessibility_custom_action_28:2131165206 used because it matches string pool constant accessibility
-Marking id:accessibility_custom_action_29:2131165207 used because it matches string pool constant accessibility
-Marking id:accessibility_custom_action_3:2131165208 used because it matches string pool constant accessibility
-Marking id:accessibility_custom_action_30:2131165209 used because it matches string pool constant accessibility
-Marking id:accessibility_custom_action_31:2131165210 used because it matches string pool constant accessibility
-Marking id:accessibility_custom_action_4:2131165211 used because it matches string pool constant accessibility
-Marking id:accessibility_custom_action_5:2131165212 used because it matches string pool constant accessibility
-Marking id:accessibility_custom_action_6:2131165213 used because it matches string pool constant accessibility
-Marking id:accessibility_custom_action_7:2131165214 used because it matches string pool constant accessibility
-Marking id:accessibility_custom_action_8:2131165215 used because it matches string pool constant accessibility
-Marking id:accessibility_custom_action_9:2131165216 used because it matches string pool constant accessibility
+还没有书单
+Marking id:blocking:2131230760 used because it matches string pool constant block
+Marking string:add_book:2131492865 used because it matches string pool constant add_book
+Marking id:accessibility_action_clickable_span:2131230720 used because it matches string pool constant accessibility
+Marking id:accessibility_custom_action_0:2131230721 used because it matches string pool constant accessibility
+Marking id:accessibility_custom_action_1:2131230722 used because it matches string pool constant accessibility
+Marking id:accessibility_custom_action_10:2131230723 used because it matches string pool constant accessibility
+Marking id:accessibility_custom_action_11:2131230724 used because it matches string pool constant accessibility
+Marking id:accessibility_custom_action_12:2131230725 used because it matches string pool constant accessibility
+Marking id:accessibility_custom_action_13:2131230726 used because it matches string pool constant accessibility
+Marking id:accessibility_custom_action_14:2131230727 used because it matches string pool constant accessibility
+Marking id:accessibility_custom_action_15:2131230728 used because it matches string pool constant accessibility
+Marking id:accessibility_custom_action_16:2131230729 used because it matches string pool constant accessibility
+Marking id:accessibility_custom_action_17:2131230730 used because it matches string pool constant accessibility
+Marking id:accessibility_custom_action_18:2131230731 used because it matches string pool constant accessibility
+Marking id:accessibility_custom_action_19:2131230732 used because it matches string pool constant accessibility
+Marking id:accessibility_custom_action_2:2131230733 used because it matches string pool constant accessibility
+Marking id:accessibility_custom_action_20:2131230734 used because it matches string pool constant accessibility
+Marking id:accessibility_custom_action_21:2131230735 used because it matches string pool constant accessibility
+Marking id:accessibility_custom_action_22:2131230736 used because it matches string pool constant accessibility
+Marking id:accessibility_custom_action_23:2131230737 used because it matches string pool constant accessibility
+Marking id:accessibility_custom_action_24:2131230738 used because it matches string pool constant accessibility
+Marking id:accessibility_custom_action_25:2131230739 used because it matches string pool constant accessibility
+Marking id:accessibility_custom_action_26:2131230740 used because it matches string pool constant accessibility
+Marking id:accessibility_custom_action_27:2131230741 used because it matches string pool constant accessibility
+Marking id:accessibility_custom_action_28:2131230742 used because it matches string pool constant accessibility
+Marking id:accessibility_custom_action_29:2131230743 used because it matches string pool constant accessibility
+Marking id:accessibility_custom_action_3:2131230744 used because it matches string pool constant accessibility
+Marking id:accessibility_custom_action_30:2131230745 used because it matches string pool constant accessibility
+Marking id:accessibility_custom_action_31:2131230746 used because it matches string pool constant accessibility
+Marking id:accessibility_custom_action_4:2131230747 used because it matches string pool constant accessibility
+Marking id:accessibility_custom_action_5:2131230748 used because it matches string pool constant accessibility
+Marking id:accessibility_custom_action_6:2131230749 used because it matches string pool constant accessibility
+Marking id:accessibility_custom_action_7:2131230750 used because it matches string pool constant accessibility
+Marking id:accessibility_custom_action_8:2131230751 used because it matches string pool constant accessibility
+Marking id:accessibility_custom_action_9:2131230752 used because it matches string pool constant accessibility
 Marking attr:shortcutMatchRequired:2130903074 used because it matches string pool constant short
 Marking attr:route:2130903073 used because it matches string pool constant route
 Marking attr:startDestination:2130903075 used because it matches string pool constant startDestination
 Marking attr:graph:2130903059 used because it matches string pool constant graph
-Marking id:title:2131165269 used because it matches string pool constant title
-Marking string:navigation_menu:2131427426 used because it matches string pool constant navigation
+Marking id:title:2131230805 used because it matches string pool constant title
+Marking string:navigation_menu:2131492962 used because it matches string pool constant navigation
 Marking attr:action:2130903040 used because it matches string pool constant action
-Marking id:action_container:2131165217 used because it matches string pool constant action
-Marking id:action_divider:2131165218 used because it matches string pool constant action
-Marking id:action_image:2131165219 used because it matches string pool constant action
-Marking id:action_text:2131165220 used because it matches string pool constant action
-Marking id:actions:2131165221 used because it matches string pool constant action
-Marking id:text:2131165266 used because it matches string pool constant text
-Marking id:text2:2131165267 used because it matches string pool constant text
-Marking integer:status_bar_notification_info_maxnum:2131230720 used because it matches string pool constant status
-Marking string:status_abandoned:2131427443 used because it matches string pool constant status
-Marking string:status_all:2131427444 used because it matches string pool constant status
-Marking string:status_bar_notification_info_overflow:2131427445 used because it matches string pool constant status
-Marking string:status_distribution:2131427446 used because it matches string pool constant status
-Marking string:status_finished:2131427447 used because it matches string pool constant status
-Marking string:status_on_hold:2131427448 used because it matches string pool constant status
-Marking string:status_reading:2131427449 used because it matches string pool constant status
-Marking string:status_want_to_read:2131427450 used because it matches string pool constant status
-Marking string:selected:2131427441 used because it matches string pool constant selected
+Marking id:action_container:2131230753 used because it matches string pool constant action
+Marking id:action_divider:2131230754 used because it matches string pool constant action
+Marking id:action_image:2131230755 used because it matches string pool constant action
+Marking id:action_text:2131230756 used because it matches string pool constant action
+Marking id:actions:2131230757 used because it matches string pool constant action
+Marking id:text:2131230802 used because it matches string pool constant text
+Marking id:text2:2131230803 used because it matches string pool constant text
+Marking integer:status_bar_notification_info_maxnum:2131296256 used because it matches string pool constant status
+Marking string:status_abandoned:2131492979 used because it matches string pool constant status
+Marking string:status_all:2131492980 used because it matches string pool constant status
+Marking string:status_bar_notification_info_overflow:2131492981 used because it matches string pool constant status
+Marking string:status_distribution:2131492982 used because it matches string pool constant status
+Marking string:status_finished:2131492983 used because it matches string pool constant status
+Marking string:status_on_hold:2131492984 used because it matches string pool constant status
+Marking string:status_reading:2131492985 used because it matches string pool constant status
+Marking string:status_want_to_read:2131492986 used because it matches string pool constant status
+Marking attr:uri:2130903078 used because it matches string pool constant uri
+Marking string:selected:2131492977 used because it matches string pool constant selected
 Marking attr:nullable:2130903065 used because it matches string pool constant null
-Marking string:open_source:2131427431 used because it matches string pool constant open
-Marking layout:ime_base_split_test_activity:2131296257 used because it matches string pool constant ime
-Marking layout:ime_secondary_split_test_activity:2131296258 used because it matches string pool constant ime
-Marking string:version:2131427463 used because it matches string pool constant version
-Marking string:close_drawer:2131427346 used because it matches string pool constant close
-Marking string:close_sheet:2131427347 used because it matches string pool constant close
-Marking id:accessibility_action_clickable_span:2131165184 used because it matches string pool constant acc
-Marking id:accessibility_custom_action_0:2131165185 used because it matches string pool constant acc
-Marking id:accessibility_custom_action_1:2131165186 used because it matches string pool constant acc
-Marking id:accessibility_custom_action_10:2131165187 used because it matches string pool constant acc
-Marking id:accessibility_custom_action_11:2131165188 used because it matches string pool constant acc
-Marking id:accessibility_custom_action_12:2131165189 used because it matches string pool constant acc
-Marking id:accessibility_custom_action_13:2131165190 used because it matches string pool constant acc
-Marking id:accessibility_custom_action_14:2131165191 used because it matches string pool constant acc
-Marking id:accessibility_custom_action_15:2131165192 used because it matches string pool constant acc
-Marking id:accessibility_custom_action_16:2131165193 used because it matches string pool constant acc
-Marking id:accessibility_custom_action_17:2131165194 used because it matches string pool constant acc
-Marking id:accessibility_custom_action_18:2131165195 used because it matches string pool constant acc
-Marking id:accessibility_custom_action_19:2131165196 used because it matches string pool constant acc
-Marking id:accessibility_custom_action_2:2131165197 used because it matches string pool constant acc
-Marking id:accessibility_custom_action_20:2131165198 used because it matches string pool constant acc
-Marking id:accessibility_custom_action_21:2131165199 used because it matches string pool constant acc
-Marking id:accessibility_custom_action_22:2131165200 used because it matches string pool constant acc
-Marking id:accessibility_custom_action_23:2131165201 used because it matches string pool constant acc
-Marking id:accessibility_custom_action_24:2131165202 used because it matches string pool constant acc
-Marking id:accessibility_custom_action_25:2131165203 used because it matches string pool constant acc
-Marking id:accessibility_custom_action_26:2131165204 used because it matches string pool constant acc
-Marking id:accessibility_custom_action_27:2131165205 used because it matches string pool constant acc
-Marking id:accessibility_custom_action_28:2131165206 used because it matches string pool constant acc
-Marking id:accessibility_custom_action_29:2131165207 used because it matches string pool constant acc
-Marking id:accessibility_custom_action_3:2131165208 used because it matches string pool constant acc
-Marking id:accessibility_custom_action_30:2131165209 used because it matches string pool constant acc
-Marking id:accessibility_custom_action_31:2131165210 used because it matches string pool constant acc
-Marking id:accessibility_custom_action_4:2131165211 used because it matches string pool constant acc
-Marking id:accessibility_custom_action_5:2131165212 used because it matches string pool constant acc
-Marking id:accessibility_custom_action_6:2131165213 used because it matches string pool constant acc
-Marking id:accessibility_custom_action_7:2131165214 used because it matches string pool constant acc
-Marking id:accessibility_custom_action_8:2131165215 used because it matches string pool constant acc
-Marking id:accessibility_custom_action_9:2131165216 used because it matches string pool constant acc
-Marking style:TextAppearance_Compat_Notification:2131492867 used because it matches string pool constant Text
-Marking style:TextAppearance_Compat_Notification_Info:2131492868 used because it matches string pool constant Text
-Marking style:TextAppearance_Compat_Notification_Line2:2131492869 used because it matches string pool constant Text
-Marking style:TextAppearance_Compat_Notification_Time:2131492870 used because it matches string pool constant Text
-Marking style:TextAppearance_Compat_Notification_Title:2131492871 used because it matches string pool constant Text
-Marking string:reading_progress:2131427435 used because it matches string pool constant read
-Marking color:OnHoldGray:2130968578 used because it matches string pool constant On
-Marking color:call_notification_answer_color:2130968587 used because it matches string pool constant call
-Marking color:call_notification_decline_color:2130968588 used because it matches string pool constant call
-Marking string:call_notification_answer_action:2131427337 used because it matches string pool constant call
-Marking string:call_notification_answer_video_action:2131427338 used because it matches string pool constant call
-Marking string:call_notification_decline_action:2131427339 used because it matches string pool constant call
-Marking string:call_notification_hang_up_action:2131427340 used because it matches string pool constant call
-Marking string:call_notification_incoming_text:2131427341 used because it matches string pool constant call
-Marking string:call_notification_ongoing_text:2131427342 used because it matches string pool constant call
-Marking string:call_notification_screening_text:2131427343 used because it matches string pool constant call
-Marking id:view_tree_lifecycle_owner:2131165270 used because it matches string pool constant view
-Marking id:view_tree_on_back_pressed_dispatcher_owner:2131165271 used because it matches string pool constant view
-Marking id:view_tree_saved_state_registry_owner:2131165272 used because it matches string pool constant view
-Marking id:view_tree_view_model_store_owner:2131165273 used because it matches string pool constant view
-Marking string:view_details:2131427464 used because it matches string pool constant view
-Marking string:book_author:2131427334 used because it matches string pool constant book
-Marking string:book_pages:2131427335 used because it matches string pool constant book
-Marking string:book_title:2131427336 used because it matches string pool constant book
+Marking string:open_source:2131492967 used because it matches string pool constant open
+Marking id:special_effects_controller_view_tag:2131230788 used because it matches string pool constant spec
+Marking layout:ime_base_split_test_activity:2131361793 used because it matches string pool constant ime
+Marking layout:ime_secondary_split_test_activity:2131361794 used because it matches string pool constant ime
+Marking string:version:2131492999 used because it matches string pool constant version
+Marking string:close_drawer:2131492882 used because it matches string pool constant close
+Marking string:close_sheet:2131492883 used because it matches string pool constant close
+Marking id:accessibility_action_clickable_span:2131230720 used because it matches string pool constant acc
+Marking id:accessibility_custom_action_0:2131230721 used because it matches string pool constant acc
+Marking id:accessibility_custom_action_1:2131230722 used because it matches string pool constant acc
+Marking id:accessibility_custom_action_10:2131230723 used because it matches string pool constant acc
+Marking id:accessibility_custom_action_11:2131230724 used because it matches string pool constant acc
+Marking id:accessibility_custom_action_12:2131230725 used because it matches string pool constant acc
+Marking id:accessibility_custom_action_13:2131230726 used because it matches string pool constant acc
+Marking id:accessibility_custom_action_14:2131230727 used because it matches string pool constant acc
+Marking id:accessibility_custom_action_15:2131230728 used because it matches string pool constant acc
+Marking id:accessibility_custom_action_16:2131230729 used because it matches string pool constant acc
+Marking id:accessibility_custom_action_17:2131230730 used because it matches string pool constant acc
+Marking id:accessibility_custom_action_18:2131230731 used because it matches string pool constant acc
+Marking id:accessibility_custom_action_19:2131230732 used because it matches string pool constant acc
+Marking id:accessibility_custom_action_2:2131230733 used because it matches string pool constant acc
+Marking id:accessibility_custom_action_20:2131230734 used because it matches string pool constant acc
+Marking id:accessibility_custom_action_21:2131230735 used because it matches string pool constant acc
+Marking id:accessibility_custom_action_22:2131230736 used because it matches string pool constant acc
+Marking id:accessibility_custom_action_23:2131230737 used because it matches string pool constant acc
+Marking id:accessibility_custom_action_24:2131230738 used because it matches string pool constant acc
+Marking id:accessibility_custom_action_25:2131230739 used because it matches string pool constant acc
+Marking id:accessibility_custom_action_26:2131230740 used because it matches string pool constant acc
+Marking id:accessibility_custom_action_27:2131230741 used because it matches string pool constant acc
+Marking id:accessibility_custom_action_28:2131230742 used because it matches string pool constant acc
+Marking id:accessibility_custom_action_29:2131230743 used because it matches string pool constant acc
+Marking id:accessibility_custom_action_3:2131230744 used because it matches string pool constant acc
+Marking id:accessibility_custom_action_30:2131230745 used because it matches string pool constant acc
+Marking id:accessibility_custom_action_31:2131230746 used because it matches string pool constant acc
+Marking id:accessibility_custom_action_4:2131230747 used because it matches string pool constant acc
+Marking id:accessibility_custom_action_5:2131230748 used because it matches string pool constant acc
+Marking id:accessibility_custom_action_6:2131230749 used because it matches string pool constant acc
+Marking id:accessibility_custom_action_7:2131230750 used because it matches string pool constant acc
+Marking id:accessibility_custom_action_8:2131230751 used because it matches string pool constant acc
+Marking id:accessibility_custom_action_9:2131230752 used because it matches string pool constant acc
+Marking xml:backup_rules:2131689472 used because it matches string pool constant backup
+Marking style:TextAppearance_Compat_Notification:2131558403 used because it matches string pool constant Text
+Marking style:TextAppearance_Compat_Notification_Info:2131558404 used because it matches string pool constant Text
+Marking style:TextAppearance_Compat_Notification_Line2:2131558405 used because it matches string pool constant Text
+Marking style:TextAppearance_Compat_Notification_Time:2131558406 used because it matches string pool constant Text
+Marking style:TextAppearance_Compat_Notification_Title:2131558407 used because it matches string pool constant Text
+Marking string:reading_progress:2131492971 used because it matches string pool constant read
+Marking color:OnHoldGray:2131034114 used because it matches string pool constant On
+Marking string:default_error_message:2131492888 used because it matches string pool constant default
+Marking string:default_popup_window_title:2131492889 used because it matches string pool constant default
+Marking color:call_notification_answer_color:2131034123 used because it matches string pool constant call
+Marking color:call_notification_decline_color:2131034124 used because it matches string pool constant call
+Marking string:call_notification_answer_action:2131492873 used because it matches string pool constant call
+Marking string:call_notification_answer_video_action:2131492874 used because it matches string pool constant call
+Marking string:call_notification_decline_action:2131492875 used because it matches string pool constant call
+Marking string:call_notification_hang_up_action:2131492876 used because it matches string pool constant call
+Marking string:call_notification_incoming_text:2131492877 used because it matches string pool constant call
+Marking string:call_notification_ongoing_text:2131492878 used because it matches string pool constant call
+Marking string:call_notification_screening_text:2131492879 used because it matches string pool constant call
+Marking id:view_tree_lifecycle_owner:2131230806 used because it matches string pool constant view
+Marking id:view_tree_on_back_pressed_dispatcher_owner:2131230807 used because it matches string pool constant view
+Marking id:view_tree_saved_state_registry_owner:2131230808 used because it matches string pool constant view
+Marking id:view_tree_view_model_store_owner:2131230809 used because it matches string pool constant view
+Marking string:view_details:2131493000 used because it matches string pool constant view
+Marking string:book_author:2131492870 used because it matches string pool constant book
+Marking string:book_pages:2131492871 used because it matches string pool constant book
+Marking string:book_title:2131492872 used because it matches string pool constant book
 Marking attr:targetPackage:2130903076 used because it matches string pool constant target
+Marking color:notification_action_color_filter:2131034164 used because it matches string pool constant notification
+Marking color:notification_icon_bg_color:2131034165 used because it matches string pool constant notification
+Marking dimen:notification_action_icon_size:2131099655 used because it matches string pool constant notification
+Marking dimen:notification_action_text_size:2131099656 used because it matches string pool constant notification
+Marking dimen:notification_big_circle_margin:2131099657 used because it matches string pool constant notification
+Marking dimen:notification_content_margin_start:2131099658 used because it matches string pool constant notification
+Marking dimen:notification_large_icon_height:2131099659 used because it matches string pool constant notification
+Marking dimen:notification_large_icon_width:2131099660 used because it matches string pool constant notification
+Marking dimen:notification_main_column_padding_top:2131099661 used because it matches string pool constant notification
+Marking dimen:notification_media_narrow_margin:2131099662 used because it matches string pool constant notification
+Marking dimen:notification_right_icon_size:2131099663 used because it matches string pool constant notification
+Marking dimen:notification_right_side_padding_top:2131099664 used because it matches string pool constant notification
+Marking dimen:notification_small_icon_background_padding:2131099665 used because it matches string pool constant notification
+Marking dimen:notification_small_icon_size_as_large:2131099666 used because it matches string pool constant notification
+Marking dimen:notification_subtext_size:2131099667 used because it matches string pool constant notification
+Marking dimen:notification_top_pad:2131099668 used because it matches string pool constant notification
+Marking dimen:notification_top_pad_large_text:2131099669 used because it matches string pool constant notification
+Marking drawable:notification_action_background:2131165193 used because it matches string pool constant notification
+Marking drawable:notification_bg:2131165194 used because it matches string pool constant notification
+Marking drawable:notification_bg_low:2131165195 used because it matches string pool constant notification
+Marking drawable:notification_bg_low_normal:2131165196 used because it matches string pool constant notification
+Marking drawable:notification_bg_low_pressed:2131165197 used because it matches string pool constant notification
+Marking drawable:notification_bg_normal:2131165198 used because it matches string pool constant notification
+Marking drawable:notification_bg_normal_pressed:2131165199 used because it matches string pool constant notification
+Marking drawable:notification_icon_background:2131165200 used because it matches string pool constant notification
+Marking drawable:notification_oversize_large_icon_bg:2131165201 used because it matches string pool constant notification
+Marking drawable:notification_template_icon_bg:2131165202 used because it matches string pool constant notification
+Marking drawable:notification_template_icon_low_bg:2131165203 used because it matches string pool constant notification
+Marking drawable:notification_tile_bg:2131165204 used because it matches string pool constant notification
+Marking id:notification_background:2131230781 used because it matches string pool constant notification
+Marking id:notification_main_column:2131230782 used because it matches string pool constant notification
+Marking id:notification_main_column_container:2131230783 used because it matches string pool constant notification
+Marking layout:notification_action:2131361795 used because it matches string pool constant notification
+Marking layout:notification_action_tombstone:2131361796 used because it matches string pool constant notification
+Marking layout:notification_template_custom_big:2131361797 used because it matches string pool constant notification
+Marking layout:notification_template_icon_group:2131361798 used because it matches string pool constant notification
+Marking layout:notification_template_part_chronometer:2131361799 used because it matches string pool constant notification
+Marking layout:notification_template_part_time:2131361800 used because it matches string pool constant notification
 Marking attr:popUpTo:2130903068 used because it matches string pool constant popUpTo
 Marking attr:popUpToInclusive:2130903069 used because it matches string pool constant popUpTo
 Marking attr:popUpToSaveState:2130903070 used because it matches string pool constant popUpTo
-Marking id:icon:2131165235 used because it matches string pool constant icon
-Marking id:icon_group:2131165236 used because it matches string pool constant icon
-Marking string:select_cover:2131427440 used because it matches string pool constant select
-Marking string:selected:2131427441 used because it matches string pool constant select
-Marking id:italic:2131165240 used because it matches string pool constant it
-Marking id:dialog_button:2131165229 used because it matches string pool constant dialog
-Marking string:current_page:2131427351 used because it matches string pool constant current
-Marking color:teal_200:2130968633 used because it matches string pool constant te
-Marking color:teal_700:2130968634 used because it matches string pool constant te
-Marking id:text:2131165266 used because it matches string pool constant te
-Marking id:text2:2131165267 used because it matches string pool constant te
-Marking string:template_percent:2131427454 used because it matches string pool constant te
-Marking string:today_pages:2131427459 used because it matches string pool constant to
-Marking string:tooltip_description:2131427460 used because it matches string pool constant to
-Marking string:tooltip_label:2131427461 used because it matches string pool constant to
-Marking string:total_pages:2131427462 used because it matches string pool constant to
+Marking id:icon:2131230771 used because it matches string pool constant icon
+Marking id:icon_group:2131230772 used because it matches string pool constant icon
+Marking string:select_cover:2131492976 used because it matches string pool constant select
+Marking string:selected:2131492977 used because it matches string pool constant select
+Marking id:italic:2131230776 used because it matches string pool constant it
+Marking id:dialog_button:2131230765 used because it matches string pool constant dialog
+Marking string:recent_records:2131492972 used because it matches string pool constant recent
+Marking string:current_page:2131492887 used because it matches string pool constant current
+Marking color:teal_200:2131034169 used because it matches string pool constant te
+Marking color:teal_700:2131034170 used because it matches string pool constant te
+Marking id:text:2131230802 used because it matches string pool constant te
+Marking id:text2:2131230803 used because it matches string pool constant te
+Marking string:template_percent:2131492990 used because it matches string pool constant te
+Marking string:today_pages:2131492995 used because it matches string pool constant to
+Marking string:tooltip_description:2131492996 used because it matches string pool constant to
+Marking string:tooltip_label:2131492997 used because it matches string pool constant to
+Marking string:total_pages:2131492998 used because it matches string pool constant to
 Marking attr:destination:2130903045 used because it matches string pool constant dest
 Marking attr:queryPatterns:2130903071 used because it matches string pool constant query
 Marking attr:destination:2130903045 used because it matches string pool constant destination
-Marking color:FinishedBlue:2130968577 used because it matches string pool constant Finished
-Marking string:range_end:2131427433 used because it matches string pool constant range
-Marking string:range_start:2131427434 used because it matches string pool constant range
+Marking color:FinishedBlue:2131034113 used because it matches string pool constant Finished
+Marking string:range_end:2131492969 used because it matches string pool constant range
+Marking string:range_start:2131492970 used because it matches string pool constant range
 Marking attr:data:2130903043 used because it matches string pool constant data
 Marking attr:dataPattern:2130903044 used because it matches string pool constant data
-Marking xml:data_extraction_rules:2131623937 used because it matches string pool constant data
-Marking id:line1:2131165241 used because it matches string pool constant line
-Marking id:line3:2131165242 used because it matches string pool constant line
+Marking xml:data_extraction_rules:2131689473 used because it matches string pool constant data
+Marking id:tag_accessibility_actions:2131230789 used because it matches string pool constant tag
+Marking id:tag_accessibility_clickable_spans:2131230790 used because it matches string pool constant tag
+Marking id:tag_accessibility_heading:2131230791 used because it matches string pool constant tag
+Marking id:tag_accessibility_pane_title:2131230792 used because it matches string pool constant tag
+Marking id:tag_on_apply_window_listener:2131230793 used because it matches string pool constant tag
+Marking id:tag_on_receive_content_listener:2131230794 used because it matches string pool constant tag
+Marking id:tag_on_receive_content_mime_types:2131230795 used because it matches string pool constant tag
+Marking id:tag_screen_reader_focusable:2131230796 used because it matches string pool constant tag
+Marking id:tag_state_description:2131230797 used because it matches string pool constant tag
+Marking id:tag_transition_group:2131230798 used because it matches string pool constant tag
+Marking id:tag_unhandled_key_event_manager:2131230799 used because it matches string pool constant tag
+Marking id:tag_unhandled_key_listeners:2131230800 used because it matches string pool constant tag
+Marking id:tag_window_insets_animation_callback:2131230801 used because it matches string pool constant tag
+Marking id:line1:2131230777 used because it matches string pool constant line
+Marking id:line3:2131230778 used because it matches string pool constant line
 Marking anim:fragment_fast_out_extra_slow_in:2130771968 used because it matches string pool constant fragment
 Marking animator:fragment_close_enter:2130837504 used because it matches string pool constant fragment
 Marking animator:fragment_close_exit:2130837505 used because it matches string pool constant fragment
@@ -2769,7 +3312,7 @@ Marking animator:fragment_fade_enter:2130837506 used because it matches string p
 Marking animator:fragment_fade_exit:2130837507 used because it matches string pool constant fragment
 Marking animator:fragment_open_enter:2130837508 used because it matches string pool constant fragment
 Marking animator:fragment_open_exit:2130837509 used because it matches string pool constant fragment
-Marking id:fragment_container_view_tag:2131165232 used because it matches string pool constant fragment
+Marking id:fragment_container_view_tag:2131230768 used because it matches string pool constant fragment
 @anim/fragment_fast_out_extra_slow_in : reachable=true
 @animator/fragment_close_enter : reachable=true
     @anim/fragment_fast_out_extra_slow_in
@@ -2819,7 +3362,11 @@ Marking id:fragment_container_view_tag:2131165232 used because it matches string
 @attr/startDestination : reachable=true
 @attr/targetPackage : reachable=true
 @attr/ttcIndex : reachable=false
-@attr/uri : reachable=false
+@attr/uri : reachable=true
+@bool/enable_system_alarm_service_default : reachable=true
+@bool/enable_system_foreground_service_default : reachable=true
+@bool/enable_system_job_service_default : reachable=true
+@bool/workmanager_test_configuration : reachable=true
 @color/AbandonedRed : reachable=false
 @color/FinishedBlue : reachable=true
 @color/OnHoldGray : reachable=true
@@ -2872,9 +3419,9 @@ Marking id:fragment_container_view_tag:2131165232 used because it matches string
 @color/md_theme_light_primaryContainer : reachable=false
 @color/md_theme_light_secondary : reachable=false
 @color/md_theme_light_surface : reachable=false
-@color/notification_action_color_filter : reachable=false
+@color/notification_action_color_filter : reachable=true
     @color/androidx_core_secondary_text_default_material_light
-@color/notification_icon_bg_color : reachable=false
+@color/notification_icon_bg_color : reachable=true
 @color/purple_200 : reachable=false
 @color/purple_500 : reachable=false
 @color/purple_700 : reachable=false
@@ -2890,21 +3437,21 @@ Marking id:fragment_container_view_tag:2131165232 used because it matches string
 @dimen/compat_control_corner_material : reachable=false
 @dimen/compat_notification_large_icon_max_height : reachable=false
 @dimen/compat_notification_large_icon_max_width : reachable=false
-@dimen/notification_action_icon_size : reachable=false
-@dimen/notification_action_text_size : reachable=false
-@dimen/notification_big_circle_margin : reachable=false
-@dimen/notification_content_margin_start : reachable=false
-@dimen/notification_large_icon_height : reachable=false
-@dimen/notification_large_icon_width : reachable=false
-@dimen/notification_main_column_padding_top : reachable=false
-@dimen/notification_media_narrow_margin : reachable=false
-@dimen/notification_right_icon_size : reachable=false
-@dimen/notification_right_side_padding_top : reachable=false
-@dimen/notification_small_icon_background_padding : reachable=false
-@dimen/notification_small_icon_size_as_large : reachable=false
-@dimen/notification_subtext_size : reachable=false
-@dimen/notification_top_pad : reachable=false
-@dimen/notification_top_pad_large_text : reachable=false
+@dimen/notification_action_icon_size : reachable=true
+@dimen/notification_action_text_size : reachable=true
+@dimen/notification_big_circle_margin : reachable=true
+@dimen/notification_content_margin_start : reachable=true
+@dimen/notification_large_icon_height : reachable=true
+@dimen/notification_large_icon_width : reachable=true
+@dimen/notification_main_column_padding_top : reachable=true
+@dimen/notification_media_narrow_margin : reachable=true
+@dimen/notification_right_icon_size : reachable=true
+@dimen/notification_right_side_padding_top : reachable=true
+@dimen/notification_small_icon_background_padding : reachable=true
+@dimen/notification_small_icon_size_as_large : reachable=true
+@dimen/notification_subtext_size : reachable=true
+@dimen/notification_top_pad : reachable=true
+@dimen/notification_top_pad_large_text : reachable=true
 @drawable/abc_vector_test : reachable=true
 @drawable/ic_call_answer : reachable=false
 @drawable/ic_call_answer_low : reachable=false
@@ -2914,29 +3461,29 @@ Marking id:fragment_container_view_tag:2131165232 used because it matches string
 @drawable/ic_call_decline_low : reachable=false
 @drawable/ic_launcher_foreground : reachable=false
 @drawable/ic_launcher_legacy : reachable=true
-@drawable/notification_action_background : reachable=false
+@drawable/notification_action_background : reachable=true
     @color/androidx_core_ripple_material_light
     @dimen/compat_button_inset_horizontal_material
     @dimen/compat_button_inset_vertical_material
     @dimen/compat_control_corner_material
     @dimen/compat_button_padding_vertical_material
     @dimen/compat_button_padding_horizontal_material
-@drawable/notification_bg : reachable=false
+@drawable/notification_bg : reachable=true
     @drawable/notification_bg_normal_pressed
     @drawable/notification_bg_normal
-@drawable/notification_bg_low : reachable=false
+@drawable/notification_bg_low : reachable=true
     @drawable/notification_bg_low_pressed
     @drawable/notification_bg_low_normal
-@drawable/notification_bg_low_normal : reachable=false
-@drawable/notification_bg_low_pressed : reachable=false
-@drawable/notification_bg_normal : reachable=false
-@drawable/notification_bg_normal_pressed : reachable=false
-@drawable/notification_icon_background : reachable=false
+@drawable/notification_bg_low_normal : reachable=true
+@drawable/notification_bg_low_pressed : reachable=true
+@drawable/notification_bg_normal : reachable=true
+@drawable/notification_bg_normal_pressed : reachable=true
+@drawable/notification_icon_background : reachable=true
     @color/notification_icon_bg_color
-@drawable/notification_oversize_large_icon_bg : reachable=false
-@drawable/notification_template_icon_bg : reachable=false
-@drawable/notification_template_icon_low_bg : reachable=false
-@drawable/notification_tile_bg : reachable=false
+@drawable/notification_oversize_large_icon_bg : reachable=true
+@drawable/notification_template_icon_bg : reachable=true
+@drawable/notification_template_icon_low_bg : reachable=true
+@drawable/notification_tile_bg : reachable=true
     @drawable/notify_panel_notification_icon_bg
 @drawable/notify_panel_notification_icon_bg : reachable=false
 @id/accessibility_action_clickable_span : reachable=true
@@ -3000,25 +3547,25 @@ Marking id:fragment_container_view_tag:2131165232 used because it matches string
 @id/line3 : reachable=true
 @id/nav_controller_view_tag : reachable=false
 @id/normal : reachable=false
-@id/notification_background : reachable=false
-@id/notification_main_column : reachable=false
-@id/notification_main_column_container : reachable=false
+@id/notification_background : reachable=true
+@id/notification_main_column : reachable=true
+@id/notification_main_column_container : reachable=true
 @id/pooling_container_listener_holder_tag : reachable=true
 @id/report_drawn : reachable=true
 @id/right_icon : reachable=false
 @id/right_side : reachable=false
-@id/special_effects_controller_view_tag : reachable=false
+@id/special_effects_controller_view_tag : reachable=true
 @id/tag_accessibility_actions : reachable=true
 @id/tag_accessibility_clickable_spans : reachable=true
 @id/tag_accessibility_heading : reachable=true
 @id/tag_accessibility_pane_title : reachable=true
-@id/tag_on_apply_window_listener : reachable=false
-@id/tag_on_receive_content_listener : reachable=false
-@id/tag_on_receive_content_mime_types : reachable=false
+@id/tag_on_apply_window_listener : reachable=true
+@id/tag_on_receive_content_listener : reachable=true
+@id/tag_on_receive_content_mime_types : reachable=true
 @id/tag_screen_reader_focusable : reachable=true
 @id/tag_state_description : reachable=true
-@id/tag_transition_group : reachable=false
-@id/tag_unhandled_key_event_manager : reachable=false
+@id/tag_transition_group : reachable=true
+@id/tag_unhandled_key_event_manager : reachable=true
 @id/tag_unhandled_key_listeners : reachable=true
 @id/tag_window_insets_animation_callback : reachable=true
 @id/text : reachable=true
@@ -3035,15 +3582,15 @@ Marking id:fragment_container_view_tag:2131165232 used because it matches string
 @layout/custom_dialog : reachable=false
 @layout/ime_base_split_test_activity : reachable=true
 @layout/ime_secondary_split_test_activity : reachable=true
-@layout/notification_action : reachable=false
+@layout/notification_action : reachable=true
     @style/Widget_Compat_NotificationActionContainer
     @dimen/notification_action_icon_size
     @style/Widget_Compat_NotificationActionText
-@layout/notification_action_tombstone : reachable=false
+@layout/notification_action_tombstone : reachable=true
     @style/Widget_Compat_NotificationActionContainer
     @dimen/notification_action_icon_size
     @style/Widget_Compat_NotificationActionText
-@layout/notification_template_custom_big : reachable=false
+@layout/notification_template_custom_big : reachable=true
     @layout/notification_template_icon_group
     @dimen/notification_large_icon_width
     @dimen/notification_large_icon_height
@@ -3051,14 +3598,14 @@ Marking id:fragment_container_view_tag:2131165232 used because it matches string
     @layout/notification_template_part_time
     @layout/notification_template_part_chronometer
     @style/TextAppearance_Compat_Notification_Info
-@layout/notification_template_icon_group : reachable=false
+@layout/notification_template_icon_group : reachable=true
     @dimen/notification_large_icon_width
     @dimen/notification_large_icon_height
     @dimen/notification_big_circle_margin
     @dimen/notification_right_icon_size
-@layout/notification_template_part_chronometer : reachable=false
+@layout/notification_template_part_chronometer : reachable=true
     @style/TextAppearance_Compat_Notification_Time
-@layout/notification_template_part_time : reachable=false
+@layout/notification_template_part_time : reachable=true
     @style/TextAppearance_Compat_Notification_Time
 @mipmap/ic_launcher : reachable=false
     @color/ic_launcher_background
@@ -3174,7 +3721,7 @@ Marking id:fragment_container_view_tag:2131165232 used because it matches string
 @string/range_end : reachable=true
 @string/range_start : reachable=true
 @string/reading_progress : reachable=true
-@string/recent_records : reachable=false
+@string/recent_records : reachable=true
 @string/save : reachable=false
 @string/save_failed : reachable=false
 @string/search_hint : reachable=false
@@ -3246,366 +3793,361 @@ The root reachable resources are:
  attr:shortcutMatchRequired:2130903074
  attr:startDestination:2130903075
  attr:targetPackage:2130903076
- color:FinishedBlue:2130968577
- color:OnHoldGray:2130968578
- color:call_notification_answer_color:2130968587
- color:call_notification_decline_color:2130968588
- color:teal_200:2130968633
- color:teal_700:2130968634
- drawable:abc_vector_test:2131099648
- drawable:ic_launcher_legacy:2131099656
- id:accessibility_action_clickable_span:2131165184
- id:accessibility_custom_action_0:2131165185
- id:accessibility_custom_action_1:2131165186
- id:accessibility_custom_action_10:2131165187
- id:accessibility_custom_action_11:2131165188
- id:accessibility_custom_action_12:2131165189
- id:accessibility_custom_action_13:2131165190
- id:accessibility_custom_action_14:2131165191
- id:accessibility_custom_action_15:2131165192
- id:accessibility_custom_action_16:2131165193
- id:accessibility_custom_action_17:2131165194
- id:accessibility_custom_action_18:2131165195
- id:accessibility_custom_action_19:2131165196
- id:accessibility_custom_action_2:2131165197
- id:accessibility_custom_action_20:2131165198
- id:accessibility_custom_action_21:2131165199
- id:accessibility_custom_action_22:2131165200
- id:accessibility_custom_action_23:2131165201
- id:accessibility_custom_action_24:2131165202
- id:accessibility_custom_action_25:2131165203
- id:accessibility_custom_action_26:2131165204
- id:accessibility_custom_action_27:2131165205
- id:accessibility_custom_action_28:2131165206
- id:accessibility_custom_action_29:2131165207
- id:accessibility_custom_action_3:2131165208
- id:accessibility_custom_action_30:2131165209
- id:accessibility_custom_action_31:2131165210
- id:accessibility_custom_action_4:2131165211
- id:accessibility_custom_action_5:2131165212
- id:accessibility_custom_action_6:2131165213
- id:accessibility_custom_action_7:2131165214
- id:accessibility_custom_action_8:2131165215
- id:accessibility_custom_action_9:2131165216
- id:action_container:2131165217
- id:action_divider:2131165218
- id:action_image:2131165219
- id:action_text:2131165220
- id:actions:2131165221
- id:androidx_compose_ui_view_composition_context:2131165222
- id:blocking:2131165224
- id:compose_view_saveable_id_tag:2131165227
- id:consume_window_insets_tag:2131165228
- id:dialog_button:2131165229
- id:fragment_container_view_tag:2131165232
- id:hide_in_inspector_tag:2131165234
- id:icon:2131165235
- id:icon_group:2131165236
- id:inspection_slot_table_set:2131165238
- id:is_pooling_container_tag:2131165239
- id:italic:2131165240
- id:line1:2131165241
- id:line3:2131165242
- id:pooling_container_listener_holder_tag:2131165248
- id:report_drawn:2131165249
- id:tag_accessibility_actions:2131165253
- id:tag_accessibility_clickable_spans:2131165254
- id:tag_accessibility_heading:2131165255
- id:tag_accessibility_pane_title:2131165256
- id:tag_screen_reader_focusable:2131165260
- id:tag_state_description:2131165261
- id:tag_unhandled_key_listeners:2131165264
- id:tag_window_insets_animation_callback:2131165265
- id:text:2131165266
- id:text2:2131165267
- id:title:2131165269
- id:view_tree_lifecycle_owner:2131165270
- id:view_tree_on_back_pressed_dispatcher_owner:2131165271
- id:view_tree_saved_state_registry_owner:2131165272
- id:view_tree_view_model_store_owner:2131165273
- id:wrapped_composition_tag:2131165275
- integer:status_bar_notification_info_maxnum:2131230720
- layout:ime_base_split_test_activity:2131296257
- layout:ime_secondary_split_test_activity:2131296258
- string:add_book:2131427329
- string:androidx_startup:2131427331
- string:app_name:2131427332
- string:book_author:2131427334
- string:book_pages:2131427335
- string:book_title:2131427336
- string:call_notification_answer_action:2131427337
- string:call_notification_answer_video_action:2131427338
- string:call_notification_decline_action:2131427339
- string:call_notification_hang_up_action:2131427340
- string:call_notification_incoming_text:2131427341
- string:call_notification_ongoing_text:2131427342
- string:call_notification_screening_text:2131427343
- string:close_drawer:2131427346
- string:close_sheet:2131427347
- string:current_page:2131427351
- string:default_error_message:2131427352
- string:default_popup_window_title:2131427353
- string:in_progress:2131427363
- string:indeterminate:2131427364
- string:m3c_bottom_sheet_collapse_description:2131427365
- string:m3c_bottom_sheet_dismiss_description:2131427366
- string:m3c_bottom_sheet_drag_handle_description:2131427367
- string:m3c_bottom_sheet_expand_description:2131427368
- string:m3c_bottom_sheet_pane_title:2131427369
- string:m3c_date_input_headline:2131427370
- string:m3c_date_input_headline_description:2131427371
- string:m3c_date_input_invalid_for_pattern:2131427372
- string:m3c_date_input_invalid_not_allowed:2131427373
- string:m3c_date_input_invalid_year_range:2131427374
- string:m3c_date_input_label:2131427375
- string:m3c_date_input_no_input_description:2131427376
- string:m3c_date_input_title:2131427377
- string:m3c_date_picker_headline:2131427378
- string:m3c_date_picker_headline_description:2131427379
- string:m3c_date_picker_navigate_to_year_description:2131427380
- string:m3c_date_picker_no_selection_description:2131427381
- string:m3c_date_picker_scroll_to_earlier_years:2131427382
- string:m3c_date_picker_scroll_to_later_years:2131427383
- string:m3c_date_picker_switch_to_calendar_mode:2131427384
- string:m3c_date_picker_switch_to_day_selection:2131427385
- string:m3c_date_picker_switch_to_input_mode:2131427386
- string:m3c_date_picker_switch_to_next_month:2131427387
- string:m3c_date_picker_switch_to_previous_month:2131427388
- string:m3c_date_picker_switch_to_year_selection:2131427389
- string:m3c_date_picker_title:2131427390
- string:m3c_date_picker_today_description:2131427391
- string:m3c_date_picker_year_picker_pane_title:2131427392
- string:m3c_dialog:2131427401
- string:m3c_snackbar_dismiss:2131427405
- string:navigation_menu:2131427426
- string:not_selected:2131427428
- string:off:2131427429
- string:on:2131427430
- string:open_source:2131427431
- string:range_end:2131427433
- string:range_start:2131427434
- string:reading_progress:2131427435
- string:select_cover:2131427440
- string:selected:2131427441
- string:status_abandoned:2131427443
- string:status_all:2131427444
- string:status_bar_notification_info_overflow:2131427445
- string:status_distribution:2131427446
- string:status_finished:2131427447
- string:status_on_hold:2131427448
- string:status_reading:2131427449
- string:status_want_to_read:2131427450
- string:switch_role:2131427452
- string:tab:2131427453
- string:template_percent:2131427454
- string:today_pages:2131427459
- string:tooltip_description:2131427460
- string:tooltip_label:2131427461
- string:total_pages:2131427462
- string:version:2131427463
- string:view_details:2131427464
- style:DialogWindowTheme:2131492864
- style:TextAppearance_Compat_Notification:2131492867
- style:TextAppearance_Compat_Notification_Info:2131492868
- style:TextAppearance_Compat_Notification_Line2:2131492869
- style:TextAppearance_Compat_Notification_Time:2131492870
- style:TextAppearance_Compat_Notification_Title:2131492871
- style:Theme_ReadTrack:2131492872
- xml:backup_rules:2131623936
- xml:data_extraction_rules:2131623937
+ attr:uri:2130903078
+ bool:enable_system_alarm_service_default:2130968576
+ bool:enable_system_foreground_service_default:2130968577
+ bool:enable_system_job_service_default:2130968578
+ bool:workmanager_test_configuration:2130968579
+ color:FinishedBlue:2131034113
+ color:OnHoldGray:2131034114
+ color:call_notification_answer_color:2131034123
+ color:call_notification_decline_color:2131034124
+ color:notification_action_color_filter:2131034164
+ color:notification_icon_bg_color:2131034165
+ color:teal_200:2131034169
+ color:teal_700:2131034170
+ dimen:notification_action_icon_size:2131099655
+ dimen:notification_action_text_size:2131099656
+ dimen:notification_big_circle_margin:2131099657
+ dimen:notification_content_margin_start:2131099658
+ dimen:notification_large_icon_height:2131099659
+ dimen:notification_large_icon_width:2131099660
+ dimen:notification_main_column_padding_top:2131099661
+ dimen:notification_media_narrow_margin:2131099662
+ dimen:notification_right_icon_size:2131099663
+ dimen:notification_right_side_padding_top:2131099664
+ dimen:notification_small_icon_background_padding:2131099665
+ dimen:notification_small_icon_size_as_large:2131099666
+ dimen:notification_subtext_size:2131099667
+ dimen:notification_top_pad:2131099668
+ dimen:notification_top_pad_large_text:2131099669
+ drawable:abc_vector_test:2131165184
+ drawable:ic_launcher_legacy:2131165192
+ drawable:notification_action_background:2131165193
+ drawable:notification_bg:2131165194
+ drawable:notification_bg_low:2131165195
+ drawable:notification_bg_low_normal:2131165196
+ drawable:notification_bg_low_pressed:2131165197
+ drawable:notification_bg_normal:2131165198
+ drawable:notification_bg_normal_pressed:2131165199
+ drawable:notification_icon_background:2131165200
+ drawable:notification_oversize_large_icon_bg:2131165201
+ drawable:notification_template_icon_bg:2131165202
+ drawable:notification_template_icon_low_bg:2131165203
+ drawable:notification_tile_bg:2131165204
+ id:accessibility_action_clickable_span:2131230720
+ id:accessibility_custom_action_0:2131230721
+ id:accessibility_custom_action_1:2131230722
+ id:accessibility_custom_action_10:2131230723
+ id:accessibility_custom_action_11:2131230724
+ id:accessibility_custom_action_12:2131230725
+ id:accessibility_custom_action_13:2131230726
+ id:accessibility_custom_action_14:2131230727
+ id:accessibility_custom_action_15:2131230728
+ id:accessibility_custom_action_16:2131230729
+ id:accessibility_custom_action_17:2131230730
+ id:accessibility_custom_action_18:2131230731
+ id:accessibility_custom_action_19:2131230732
+ id:accessibility_custom_action_2:2131230733
+ id:accessibility_custom_action_20:2131230734
+ id:accessibility_custom_action_21:2131230735
+ id:accessibility_custom_action_22:2131230736
+ id:accessibility_custom_action_23:2131230737
+ id:accessibility_custom_action_24:2131230738
+ id:accessibility_custom_action_25:2131230739
+ id:accessibility_custom_action_26:2131230740
+ id:accessibility_custom_action_27:2131230741
+ id:accessibility_custom_action_28:2131230742
+ id:accessibility_custom_action_29:2131230743
+ id:accessibility_custom_action_3:2131230744
+ id:accessibility_custom_action_30:2131230745
+ id:accessibility_custom_action_31:2131230746
+ id:accessibility_custom_action_4:2131230747
+ id:accessibility_custom_action_5:2131230748
+ id:accessibility_custom_action_6:2131230749
+ id:accessibility_custom_action_7:2131230750
+ id:accessibility_custom_action_8:2131230751
+ id:accessibility_custom_action_9:2131230752
+ id:action_container:2131230753
+ id:action_divider:2131230754
+ id:action_image:2131230755
+ id:action_text:2131230756
+ id:actions:2131230757
+ id:androidx_compose_ui_view_composition_context:2131230758
+ id:blocking:2131230760
+ id:compose_view_saveable_id_tag:2131230763
+ id:consume_window_insets_tag:2131230764
+ id:dialog_button:2131230765
+ id:fragment_container_view_tag:2131230768
+ id:hide_in_inspector_tag:2131230770
+ id:icon:2131230771
+ id:icon_group:2131230772
+ id:inspection_slot_table_set:2131230774
+ id:is_pooling_container_tag:2131230775
+ id:italic:2131230776
+ id:line1:2131230777
+ id:line3:2131230778
+ id:notification_background:2131230781
+ id:notification_main_column:2131230782
+ id:notification_main_column_container:2131230783
+ id:pooling_container_listener_holder_tag:2131230784
+ id:report_drawn:2131230785
+ id:special_effects_controller_view_tag:2131230788
+ id:tag_accessibility_actions:2131230789
+ id:tag_accessibility_clickable_spans:2131230790
+ id:tag_accessibility_heading:2131230791
+ id:tag_accessibility_pane_title:2131230792
+ id:tag_on_apply_window_listener:2131230793
+ id:tag_on_receive_content_listener:2131230794
+ id:tag_on_receive_content_mime_types:2131230795
+ id:tag_screen_reader_focusable:2131230796
+ id:tag_state_description:2131230797
+ id:tag_transition_group:2131230798
+ id:tag_unhandled_key_event_manager:2131230799
+ id:tag_unhandled_key_listeners:2131230800
+ id:tag_window_insets_animation_callback:2131230801
+ id:text:2131230802
+ id:text2:2131230803
+ id:title:2131230805
+ id:view_tree_lifecycle_owner:2131230806
+ id:view_tree_on_back_pressed_dispatcher_owner:2131230807
+ id:view_tree_saved_state_registry_owner:2131230808
+ id:view_tree_view_model_store_owner:2131230809
+ id:wrapped_composition_tag:2131230811
+ integer:status_bar_notification_info_maxnum:2131296256
+ layout:ime_base_split_test_activity:2131361793
+ layout:ime_secondary_split_test_activity:2131361794
+ layout:notification_action:2131361795
+ layout:notification_action_tombstone:2131361796
+ layout:notification_template_custom_big:2131361797
+ layout:notification_template_icon_group:2131361798
+ layout:notification_template_part_chronometer:2131361799
+ layout:notification_template_part_time:2131361800
+ string:add_book:2131492865
+ string:androidx_startup:2131492867
+ string:app_name:2131492868
+ string:book_author:2131492870
+ string:book_pages:2131492871
+ string:book_title:2131492872
+ string:call_notification_answer_action:2131492873
+ string:call_notification_answer_video_action:2131492874
+ string:call_notification_decline_action:2131492875
+ string:call_notification_hang_up_action:2131492876
+ string:call_notification_incoming_text:2131492877
+ string:call_notification_ongoing_text:2131492878
+ string:call_notification_screening_text:2131492879
+ string:close_drawer:2131492882
+ string:close_sheet:2131492883
+ string:current_page:2131492887
+ string:default_error_message:2131492888
+ string:default_popup_window_title:2131492889
+ string:in_progress:2131492899
+ string:indeterminate:2131492900
+ string:m3c_bottom_sheet_collapse_description:2131492901
+ string:m3c_bottom_sheet_dismiss_description:2131492902
+ string:m3c_bottom_sheet_drag_handle_description:2131492903
+ string:m3c_bottom_sheet_expand_description:2131492904
+ string:m3c_bottom_sheet_pane_title:2131492905
+ string:m3c_date_input_headline:2131492906
+ string:m3c_date_input_headline_description:2131492907
+ string:m3c_date_input_invalid_for_pattern:2131492908
+ string:m3c_date_input_invalid_not_allowed:2131492909
+ string:m3c_date_input_invalid_year_range:2131492910
+ string:m3c_date_input_label:2131492911
+ string:m3c_date_input_no_input_description:2131492912
+ string:m3c_date_input_title:2131492913
+ string:m3c_date_picker_headline:2131492914
+ string:m3c_date_picker_headline_description:2131492915
+ string:m3c_date_picker_navigate_to_year_description:2131492916
+ string:m3c_date_picker_no_selection_description:2131492917
+ string:m3c_date_picker_scroll_to_earlier_years:2131492918
+ string:m3c_date_picker_scroll_to_later_years:2131492919
+ string:m3c_date_picker_switch_to_calendar_mode:2131492920
+ string:m3c_date_picker_switch_to_day_selection:2131492921
+ string:m3c_date_picker_switch_to_input_mode:2131492922
+ string:m3c_date_picker_switch_to_next_month:2131492923
+ string:m3c_date_picker_switch_to_previous_month:2131492924
+ string:m3c_date_picker_switch_to_year_selection:2131492925
+ string:m3c_date_picker_title:2131492926
+ string:m3c_date_picker_today_description:2131492927
+ string:m3c_date_picker_year_picker_pane_title:2131492928
+ string:m3c_dialog:2131492937
+ string:m3c_snackbar_dismiss:2131492941
+ string:navigation_menu:2131492962
+ string:not_selected:2131492964
+ string:off:2131492965
+ string:on:2131492966
+ string:open_source:2131492967
+ string:range_end:2131492969
+ string:range_start:2131492970
+ string:reading_progress:2131492971
+ string:recent_records:2131492972
+ string:select_cover:2131492976
+ string:selected:2131492977
+ string:status_abandoned:2131492979
+ string:status_all:2131492980
+ string:status_bar_notification_info_overflow:2131492981
+ string:status_distribution:2131492982
+ string:status_finished:2131492983
+ string:status_on_hold:2131492984
+ string:status_reading:2131492985
+ string:status_want_to_read:2131492986
+ string:switch_role:2131492988
+ string:tab:2131492989
+ string:template_percent:2131492990
+ string:today_pages:2131492995
+ string:tooltip_description:2131492996
+ string:tooltip_label:2131492997
+ string:total_pages:2131492998
+ string:version:2131492999
+ string:view_details:2131493000
+ style:DialogWindowTheme:2131558400
+ style:TextAppearance_Compat_Notification:2131558403
+ style:TextAppearance_Compat_Notification_Info:2131558404
+ style:TextAppearance_Compat_Notification_Line2:2131558405
+ style:TextAppearance_Compat_Notification_Time:2131558406
+ style:TextAppearance_Compat_Notification_Title:2131558407
+ style:Theme_ReadTrack:2131558408
+ xml:backup_rules:2131689472
+ xml:data_extraction_rules:2131689473
 Unused resources are: 
- color:AbandonedRed:2130968576
- color:PrimaryBlue:2130968579
- color:PrimaryBlueDark:2130968580
- color:ReadingOrange:2130968581
- color:SecondaryTeal:2130968582
- color:WantToReadGreen:2130968583
- color:androidx_core_ripple_material_light:2130968584
- color:androidx_core_secondary_text_default_material_light:2130968585
- color:black:2130968586
- color:ic_launcher_background:2130968589
- color:md_theme_dark_background:2130968590
- color:md_theme_dark_error:2130968591
- color:md_theme_dark_errorContainer:2130968592
- color:md_theme_dark_inverseOnSurface:2130968593
- color:md_theme_dark_inversePrimary:2130968594
- color:md_theme_dark_inverseSurface:2130968595
- color:md_theme_dark_onBackground:2130968596
- color:md_theme_dark_onError:2130968597
- color:md_theme_dark_onErrorContainer:2130968598
- color:md_theme_dark_onPrimary:2130968599
- color:md_theme_dark_onPrimaryContainer:2130968600
- color:md_theme_dark_onSecondary:2130968601
- color:md_theme_dark_onSecondaryContainer:2130968602
- color:md_theme_dark_onSurface:2130968603
- color:md_theme_dark_onSurfaceVariant:2130968604
- color:md_theme_dark_onTertiary:2130968605
- color:md_theme_dark_onTertiaryContainer:2130968606
- color:md_theme_dark_outline:2130968607
- color:md_theme_dark_outlineVariant:2130968608
- color:md_theme_dark_primary:2130968609
- color:md_theme_dark_primaryContainer:2130968610
- color:md_theme_dark_secondary:2130968611
- color:md_theme_dark_secondaryContainer:2130968612
- color:md_theme_dark_surface:2130968613
- color:md_theme_dark_surfaceTint:2130968614
- color:md_theme_dark_surfaceVariant:2130968615
- color:md_theme_dark_tertiary:2130968616
- color:md_theme_dark_tertiaryContainer:2130968617
- color:md_theme_light_background:2130968618
- color:md_theme_light_onBackground:2130968619
- color:md_theme_light_onPrimary:2130968620
- color:md_theme_light_onPrimaryContainer:2130968621
- color:md_theme_light_onSecondary:2130968622
- color:md_theme_light_onSurface:2130968623
- color:md_theme_light_primary:2130968624
- color:md_theme_light_primaryContainer:2130968625
- color:md_theme_light_secondary:2130968626
- color:md_theme_light_surface:2130968627
- color:notification_action_color_filter:2130968628
- color:notification_icon_bg_color:2130968629
- color:purple_200:2130968630
- color:purple_500:2130968631
- color:purple_700:2130968632
- color:vector_tint_color:2130968635
- color:vector_tint_theme_color:2130968636
- color:white:2130968637
- dimen:compat_button_inset_horizontal_material:2131034112
- dimen:compat_button_inset_vertical_material:2131034113
- dimen:compat_button_padding_horizontal_material:2131034114
- dimen:compat_button_padding_vertical_material:2131034115
- dimen:compat_control_corner_material:2131034116
- dimen:compat_notification_large_icon_max_height:2131034117
- dimen:compat_notification_large_icon_max_width:2131034118
- dimen:notification_action_icon_size:2131034119
- dimen:notification_action_text_size:2131034120
- dimen:notification_big_circle_margin:2131034121
- dimen:notification_content_margin_start:2131034122
- dimen:notification_large_icon_height:2131034123
- dimen:notification_large_icon_width:2131034124
- dimen:notification_main_column_padding_top:2131034125
- dimen:notification_media_narrow_margin:2131034126
- dimen:notification_right_icon_size:2131034127
- dimen:notification_right_side_padding_top:2131034128
- dimen:notification_small_icon_background_padding:2131034129
- dimen:notification_small_icon_size_as_large:2131034130
- dimen:notification_subtext_size:2131034131
- dimen:notification_top_pad:2131034132
- dimen:notification_top_pad_large_text:2131034133
- drawable:ic_call_answer:2131099649
- drawable:ic_call_answer_low:2131099650
- drawable:ic_call_answer_video:2131099651
- drawable:ic_call_answer_video_low:2131099652
- drawable:ic_call_decline:2131099653
- drawable:ic_call_decline_low:2131099654
- drawable:ic_launcher_foreground:2131099655
- drawable:notification_action_background:2131099657
- drawable:notification_bg:2131099658
- drawable:notification_bg_low:2131099659
- drawable:notification_bg_low_normal:2131099660
- drawable:notification_bg_low_pressed:2131099661
- drawable:notification_bg_normal:2131099662
- drawable:notification_bg_normal_pressed:2131099663
- drawable:notification_icon_background:2131099664
- drawable:notification_oversize_large_icon_bg:2131099665
- drawable:notification_template_icon_bg:2131099666
- drawable:notification_template_icon_low_bg:2131099667
- drawable:notification_tile_bg:2131099668
- drawable:notify_panel_notification_icon_bg:2131099669
- id:async:2131165223
- id:chronometer:2131165225
- id:coil_request_manager:2131165226
- id:edit_text_id:2131165230
- id:forever:2131165231
- id:hide_ime_id:2131165233
- id:info:2131165237
- id:nav_controller_view_tag:2131165243
- id:normal:2131165244
- id:notification_background:2131165245
- id:notification_main_column:2131165246
- id:notification_main_column_container:2131165247
- id:right_icon:2131165250
- id:right_side:2131165251
- id:special_effects_controller_view_tag:2131165252
- id:tag_on_apply_window_listener:2131165257
- id:tag_on_receive_content_listener:2131165258
- id:tag_on_receive_content_mime_types:2131165259
- id:tag_transition_group:2131165262
- id:tag_unhandled_key_event_manager:2131165263
- id:time:2131165268
- id:visible_removing_fragment_view_tag:2131165274
- layout:custom_dialog:2131296256
- layout:notification_action:2131296259
- layout:notification_action_tombstone:2131296260
- layout:notification_template_custom_big:2131296261
- layout:notification_template_icon_group:2131296262
- layout:notification_template_part_chronometer:2131296263
- layout:notification_template_part_time:2131296264
- mipmap:ic_launcher:2131361792
- mipmap:ic_launcher_round:2131361793
- string:about:2131427328
- string:add_reading_record:2131427330
- string:average_pages:2131427333
- string:cancel:2131427344
- string:change_status:2131427345
- string:confirm:2131427348
- string:confirm_delete:2131427349
- string:confirm_delete_message:2131427350
- string:delete:2131427354
- string:delete_book:2131427355
- string:dropdown_menu:2131427356
- string:edit_book:2131427357
- string:empty_books:2131427358
- string:enter_book_title:2131427359
- string:enter_pages_read:2131427360
- string:enter_valid_pages:2131427361
- string:github:2131427362
- string:m3c_date_range_input_invalid_range_input:2131427393
- string:m3c_date_range_input_title:2131427394
- string:m3c_date_range_picker_day_in_range:2131427395
- string:m3c_date_range_picker_end_headline:2131427396
- string:m3c_date_range_picker_scroll_to_next_month:2131427397
- string:m3c_date_range_picker_scroll_to_previous_month:2131427398
- string:m3c_date_range_picker_start_headline:2131427399
- string:m3c_date_range_picker_title:2131427400
- string:m3c_dropdown_menu_collapsed:2131427402
- string:m3c_dropdown_menu_expanded:2131427403
- string:m3c_search_bar_search:2131427404
- string:m3c_suggestions_available:2131427406
- string:m3c_time_picker_am:2131427407
- string:m3c_time_picker_hour:2131427408
- string:m3c_time_picker_hour_24h_suffix:2131427409
- string:m3c_time_picker_hour_selection:2131427410
- string:m3c_time_picker_hour_suffix:2131427411
- string:m3c_time_picker_hour_text_field:2131427412
- string:m3c_time_picker_minute:2131427413
- string:m3c_time_picker_minute_selection:2131427414
- string:m3c_time_picker_minute_suffix:2131427415
- string:m3c_time_picker_minute_text_field:2131427416
- string:m3c_time_picker_period_toggle_description:2131427417
- string:m3c_time_picker_pm:2131427418
- string:m3c_tooltip_long_press_label:2131427419
- string:m3c_tooltip_pane_description:2131427420
- string:month_pages:2131427421
- string:nav_books:2131427422
- string:nav_home:2131427423
- string:nav_settings:2131427424
- string:nav_stats:2131427425
- string:no_reading_records:2131427427
- string:pages_read_today:2131427432
- string:recent_records:2131427436
- string:save:2131427437
- string:save_failed:2131427438
- string:search_hint:2131427439
- string:start_reading:2131427442
- string:streak_days:2131427451
- string:theme:2131427455
- string:theme_dark:2131427456
- string:theme_light:2131427457
- string:theme_system:2131427458
- string:week_pages:2131427465
- string:weekly_trend:2131427466
- style:FloatingDialogTheme:2131492865
- style:FloatingDialogWindowTheme:2131492866
- style:Widget_Compat_NotificationActionContainer:2131492873
- style:Widget_Compat_NotificationActionText:2131492874
+ color:AbandonedRed:2131034112
+ color:PrimaryBlue:2131034115
+ color:PrimaryBlueDark:2131034116
+ color:ReadingOrange:2131034117
+ color:SecondaryTeal:2131034118
+ color:WantToReadGreen:2131034119
+ color:black:2131034122
+ color:ic_launcher_background:2131034125
+ color:md_theme_dark_background:2131034126
+ color:md_theme_dark_error:2131034127
+ color:md_theme_dark_errorContainer:2131034128
+ color:md_theme_dark_inverseOnSurface:2131034129
+ color:md_theme_dark_inversePrimary:2131034130
+ color:md_theme_dark_inverseSurface:2131034131
+ color:md_theme_dark_onBackground:2131034132
+ color:md_theme_dark_onError:2131034133
+ color:md_theme_dark_onErrorContainer:2131034134
+ color:md_theme_dark_onPrimary:2131034135
+ color:md_theme_dark_onPrimaryContainer:2131034136
+ color:md_theme_dark_onSecondary:2131034137
+ color:md_theme_dark_onSecondaryContainer:2131034138
+ color:md_theme_dark_onSurface:2131034139
+ color:md_theme_dark_onSurfaceVariant:2131034140
+ color:md_theme_dark_onTertiary:2131034141
+ color:md_theme_dark_onTertiaryContainer:2131034142
+ color:md_theme_dark_outline:2131034143
+ color:md_theme_dark_outlineVariant:2131034144
+ color:md_theme_dark_primary:2131034145
+ color:md_theme_dark_primaryContainer:2131034146
+ color:md_theme_dark_secondary:2131034147
+ color:md_theme_dark_secondaryContainer:2131034148
+ color:md_theme_dark_surface:2131034149
+ color:md_theme_dark_surfaceTint:2131034150
+ color:md_theme_dark_surfaceVariant:2131034151
+ color:md_theme_dark_tertiary:2131034152
+ color:md_theme_dark_tertiaryContainer:2131034153
+ color:md_theme_light_background:2131034154
+ color:md_theme_light_onBackground:2131034155
+ color:md_theme_light_onPrimary:2131034156
+ color:md_theme_light_onPrimaryContainer:2131034157
+ color:md_theme_light_onSecondary:2131034158
+ color:md_theme_light_onSurface:2131034159
+ color:md_theme_light_primary:2131034160
+ color:md_theme_light_primaryContainer:2131034161
+ color:md_theme_light_secondary:2131034162
+ color:md_theme_light_surface:2131034163
+ color:purple_200:2131034166
+ color:purple_500:2131034167
+ color:purple_700:2131034168
+ color:vector_tint_color:2131034171
+ color:vector_tint_theme_color:2131034172
+ color:white:2131034173
+ dimen:compat_notification_large_icon_max_height:2131099653
+ dimen:compat_notification_large_icon_max_width:2131099654
+ drawable:ic_call_answer:2131165185
+ drawable:ic_call_answer_low:2131165186
+ drawable:ic_call_answer_video:2131165187
+ drawable:ic_call_answer_video_low:2131165188
+ drawable:ic_call_decline:2131165189
+ drawable:ic_call_decline_low:2131165190
+ drawable:ic_launcher_foreground:2131165191
+ id:async:2131230759
+ id:chronometer:2131230761
+ id:coil_request_manager:2131230762
+ id:edit_text_id:2131230766
+ id:forever:2131230767
+ id:hide_ime_id:2131230769
+ id:info:2131230773
+ id:nav_controller_view_tag:2131230779
+ id:normal:2131230780
+ id:right_icon:2131230786
+ id:right_side:2131230787
+ id:time:2131230804
+ id:visible_removing_fragment_view_tag:2131230810
+ layout:custom_dialog:2131361792
+ mipmap:ic_launcher:2131427328
+ mipmap:ic_launcher_round:2131427329
+ string:about:2131492864
+ string:add_reading_record:2131492866
+ string:average_pages:2131492869
+ string:cancel:2131492880
+ string:change_status:2131492881
+ string:confirm:2131492884
+ string:confirm_delete:2131492885
+ string:confirm_delete_message:2131492886
+ string:delete:2131492890
+ string:delete_book:2131492891
+ string:dropdown_menu:2131492892
+ string:edit_book:2131492893
+ string:empty_books:2131492894
+ string:enter_book_title:2131492895
+ string:enter_pages_read:2131492896
+ string:enter_valid_pages:2131492897
+ string:github:2131492898
+ string:m3c_date_range_input_invalid_range_input:2131492929
+ string:m3c_date_range_input_title:2131492930
+ string:m3c_date_range_picker_day_in_range:2131492931
+ string:m3c_date_range_picker_end_headline:2131492932
+ string:m3c_date_range_picker_scroll_to_next_month:2131492933
+ string:m3c_date_range_picker_scroll_to_previous_month:2131492934
+ string:m3c_date_range_picker_start_headline:2131492935
+ string:m3c_date_range_picker_title:2131492936
+ string:m3c_dropdown_menu_collapsed:2131492938
+ string:m3c_dropdown_menu_expanded:2131492939
+ string:m3c_search_bar_search:2131492940
+ string:m3c_suggestions_available:2131492942
+ string:m3c_time_picker_am:2131492943
+ string:m3c_time_picker_hour:2131492944
+ string:m3c_time_picker_hour_24h_suffix:2131492945
+ string:m3c_time_picker_hour_selection:2131492946
+ string:m3c_time_picker_hour_suffix:2131492947
+ string:m3c_time_picker_hour_text_field:2131492948
+ string:m3c_time_picker_minute:2131492949
+ string:m3c_time_picker_minute_selection:2131492950
+ string:m3c_time_picker_minute_suffix:2131492951
+ string:m3c_time_picker_minute_text_field:2131492952
+ string:m3c_time_picker_period_toggle_description:2131492953
+ string:m3c_time_picker_pm:2131492954
+ string:m3c_tooltip_long_press_label:2131492955
+ string:m3c_tooltip_pane_description:2131492956
+ string:month_pages:2131492957
+ string:nav_books:2131492958
+ string:nav_home:2131492959
+ string:nav_settings:2131492960
+ string:nav_stats:2131492961
+ string:no_reading_records:2131492963
+ string:pages_read_today:2131492968
+ string:save:2131492973
+ string:save_failed:2131492974
+ string:search_hint:2131492975
+ string:start_reading:2131492978
+ string:streak_days:2131492987
+ string:theme:2131492991
+ string:theme_dark:2131492992
+ string:theme_light:2131492993
+ string:theme_system:2131492994
+ string:week_pages:2131493001
+ string:weekly_trend:2131493002
+ style:FloatingDialogTheme:2131558401
+ style:FloatingDialogWindowTheme:2131558402

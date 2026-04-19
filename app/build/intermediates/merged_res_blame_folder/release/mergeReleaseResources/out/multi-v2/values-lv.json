@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.readtrack.app-mergeReleaseResources-59:/values-lv/values-lv.xml",
+            "outputFile": "com.readtrack.app-mergeReleaseResources-63:/values-lv/values-lv.xml",
             "map": [
                 {
                     "source": "/root/.gradle/caches/transforms-4/bbbfa59834b640260b3a9340c7b1a1c9/transformed/core-1.12.0/res/values-lv/values-lv.xml",

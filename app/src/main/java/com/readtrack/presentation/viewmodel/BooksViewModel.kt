@@ -7,7 +7,7 @@ import com.readtrack.domain.model.BookSnapshot
 import com.readtrack.data.local.entity.ReadingRecordEntity
 import com.readtrack.data.local.entity.RecordType
 import com.readtrack.domain.model.BookStatus
-import com.readtrack.presentation.viewmodel.ProgressType
+import com.readtrack.domain.model.ProgressType
 import com.readtrack.domain.repository.BookRepository
 import com.readtrack.util.PerformanceTrace
 import dagger.hilt.android.lifecycle.HiltViewModel
