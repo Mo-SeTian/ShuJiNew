@@ -9,6 +9,7 @@ import com.readtrack.data.remote.BingImageSearchService
 import com.readtrack.data.remote.BookSearchResult
 import com.readtrack.data.remote.DoubanSearchService
 import com.readtrack.domain.model.BookStatus
+import com.readtrack.domain.model.ProgressType
 import com.readtrack.domain.repository.BookRepository
 import com.readtrack.util.PerformanceTrace
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -22,12 +23,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import javax.inject.Inject
-
-@Serializable
-enum class ProgressType {
-    PAGE,
-    CHAPTER
-}
 
 data class AddBookUiState(
     val title: String = "",

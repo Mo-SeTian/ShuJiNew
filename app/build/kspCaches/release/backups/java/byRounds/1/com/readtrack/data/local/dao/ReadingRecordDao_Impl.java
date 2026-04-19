@@ -20,6 +20,7 @@ import com.readtrack.domain.model.BookSnapshot;
 import java.lang.Class;
 import java.lang.Double;
 import java.lang.Exception;
+import java.lang.Integer;
 import java.lang.Long;
 import java.lang.Object;
 import java.lang.Override;
@@ -55,7 +56,7 @@ public final class ReadingRecordDao_Impl implements ReadingRecordDao {
       @Override
       @NonNull
       protected String createQuery() {
-        return "INSERT OR REPLACE INTO `reading_records` (`id`,`bookId`,`bookSnapshot`,`pagesRead`,`fromPage`,`toPage`,`date`,`note`,`recordType`) VALUES (nullif(?, 0),?,?,?,?,?,?,?,?)";
+        return "INSERT OR REPLACE INTO `reading_records` (`id`,`bookId`,`bookSnapshot`,`pagesRead`,`fromPage`,`toPage`,`chaptersRead`,`date`,`note`,`recordType`) VALUES (nullif(?, 0),?,?,?,?,?,?,?,?,?)";
       }
 
       @Override
@@ -76,14 +77,19 @@ public final class ReadingRecordDao_Impl implements ReadingRecordDao {
         statement.bindDouble(4, entity.getPagesRead());
         statement.bindDouble(5, entity.getFromPage());
         statement.bindDouble(6, entity.getToPage());
-        statement.bindLong(7, entity.getDate());
-        if (entity.getNote() == null) {
-          statement.bindNull(8);
+        if (entity.getChaptersRead() == null) {
+          statement.bindNull(7);
         } else {
-          statement.bindString(8, entity.getNote());
+          statement.bindLong(7, entity.getChaptersRead());
+        }
+        statement.bindLong(8, entity.getDate());
+        if (entity.getNote() == null) {
+          statement.bindNull(9);
+        } else {
+          statement.bindString(9, entity.getNote());
         }
         final String _tmp_1 = __converters.fromRecordType(entity.getRecordType());
-        statement.bindString(9, _tmp_1);
+        statement.bindString(10, _tmp_1);
       }
     };
     this.__deletionAdapterOfReadingRecordEntity = new EntityDeletionOrUpdateAdapter<ReadingRecordEntity>(__db) {
@@ -222,6 +228,7 @@ public final class ReadingRecordDao_Impl implements ReadingRecordDao {
           final int _cursorIndexOfPagesRead = CursorUtil.getColumnIndexOrThrow(_cursor, "pagesRead");
           final int _cursorIndexOfFromPage = CursorUtil.getColumnIndexOrThrow(_cursor, "fromPage");
           final int _cursorIndexOfToPage = CursorUtil.getColumnIndexOrThrow(_cursor, "toPage");
+          final int _cursorIndexOfChaptersRead = CursorUtil.getColumnIndexOrThrow(_cursor, "chaptersRead");
           final int _cursorIndexOfDate = CursorUtil.getColumnIndexOrThrow(_cursor, "date");
           final int _cursorIndexOfNote = CursorUtil.getColumnIndexOrThrow(_cursor, "note");
           final int _cursorIndexOfRecordType = CursorUtil.getColumnIndexOrThrow(_cursor, "recordType");
@@ -250,6 +257,12 @@ public final class ReadingRecordDao_Impl implements ReadingRecordDao {
             _tmpFromPage = _cursor.getDouble(_cursorIndexOfFromPage);
             final double _tmpToPage;
             _tmpToPage = _cursor.getDouble(_cursorIndexOfToPage);
+            final Integer _tmpChaptersRead;
+            if (_cursor.isNull(_cursorIndexOfChaptersRead)) {
+              _tmpChaptersRead = null;
+            } else {
+              _tmpChaptersRead = _cursor.getInt(_cursorIndexOfChaptersRead);
+            }
             final long _tmpDate;
             _tmpDate = _cursor.getLong(_cursorIndexOfDate);
             final String _tmpNote;
@@ -262,7 +275,7 @@ public final class ReadingRecordDao_Impl implements ReadingRecordDao {
             final String _tmp_1;
             _tmp_1 = _cursor.getString(_cursorIndexOfRecordType);
             _tmpRecordType = __converters.toRecordType(_tmp_1);
-            _item = new ReadingRecordEntity(_tmpId,_tmpBookId,_tmpBookSnapshot,_tmpPagesRead,_tmpFromPage,_tmpToPage,_tmpDate,_tmpNote,_tmpRecordType);
+            _item = new ReadingRecordEntity(_tmpId,_tmpBookId,_tmpBookSnapshot,_tmpPagesRead,_tmpFromPage,_tmpToPage,_tmpChaptersRead,_tmpDate,_tmpNote,_tmpRecordType);
             _result.add(_item);
           }
           return _result;
@@ -294,6 +307,7 @@ public final class ReadingRecordDao_Impl implements ReadingRecordDao {
           final int _cursorIndexOfPagesRead = CursorUtil.getColumnIndexOrThrow(_cursor, "pagesRead");
           final int _cursorIndexOfFromPage = CursorUtil.getColumnIndexOrThrow(_cursor, "fromPage");
           final int _cursorIndexOfToPage = CursorUtil.getColumnIndexOrThrow(_cursor, "toPage");
+          final int _cursorIndexOfChaptersRead = CursorUtil.getColumnIndexOrThrow(_cursor, "chaptersRead");
           final int _cursorIndexOfDate = CursorUtil.getColumnIndexOrThrow(_cursor, "date");
           final int _cursorIndexOfNote = CursorUtil.getColumnIndexOrThrow(_cursor, "note");
           final int _cursorIndexOfRecordType = CursorUtil.getColumnIndexOrThrow(_cursor, "recordType");
@@ -322,6 +336,12 @@ public final class ReadingRecordDao_Impl implements ReadingRecordDao {
             _tmpFromPage = _cursor.getDouble(_cursorIndexOfFromPage);
             final double _tmpToPage;
             _tmpToPage = _cursor.getDouble(_cursorIndexOfToPage);
+            final Integer _tmpChaptersRead;
+            if (_cursor.isNull(_cursorIndexOfChaptersRead)) {
+              _tmpChaptersRead = null;
+            } else {
+              _tmpChaptersRead = _cursor.getInt(_cursorIndexOfChaptersRead);
+            }
             final long _tmpDate;
             _tmpDate = _cursor.getLong(_cursorIndexOfDate);
             final String _tmpNote;
@@ -334,124 +354,8 @@ public final class ReadingRecordDao_Impl implements ReadingRecordDao {
             final String _tmp_1;
             _tmp_1 = _cursor.getString(_cursorIndexOfRecordType);
             _tmpRecordType = __converters.toRecordType(_tmp_1);
-            _item = new ReadingRecordEntity(_tmpId,_tmpBookId,_tmpBookSnapshot,_tmpPagesRead,_tmpFromPage,_tmpToPage,_tmpDate,_tmpNote,_tmpRecordType);
+            _item = new ReadingRecordEntity(_tmpId,_tmpBookId,_tmpBookSnapshot,_tmpPagesRead,_tmpFromPage,_tmpToPage,_tmpChaptersRead,_tmpDate,_tmpNote,_tmpRecordType);
             _result.add(_item);
-          }
-          return _result;
-        } finally {
-          _cursor.close();
-        }
-      }
-
-      @Override
-      protected void finalize() {
-        _statement.release();
-      }
-    });
-  }
-
-  @Override
-  public Flow<List<ReadingRecordEntity>> getRecordsByDate(final long startOfDay,
-      final long endOfDay) {
-    final String _sql = "SELECT * FROM reading_records WHERE date >= ? AND date < ?";
-    final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 2);
-    int _argIndex = 1;
-    _statement.bindLong(_argIndex, startOfDay);
-    _argIndex = 2;
-    _statement.bindLong(_argIndex, endOfDay);
-    return CoroutinesRoom.createFlow(__db, false, new String[] {"reading_records"}, new Callable<List<ReadingRecordEntity>>() {
-      @Override
-      @NonNull
-      public List<ReadingRecordEntity> call() throws Exception {
-        final Cursor _cursor = DBUtil.query(__db, _statement, false, null);
-        try {
-          final int _cursorIndexOfId = CursorUtil.getColumnIndexOrThrow(_cursor, "id");
-          final int _cursorIndexOfBookId = CursorUtil.getColumnIndexOrThrow(_cursor, "bookId");
-          final int _cursorIndexOfBookSnapshot = CursorUtil.getColumnIndexOrThrow(_cursor, "bookSnapshot");
-          final int _cursorIndexOfPagesRead = CursorUtil.getColumnIndexOrThrow(_cursor, "pagesRead");
-          final int _cursorIndexOfFromPage = CursorUtil.getColumnIndexOrThrow(_cursor, "fromPage");
-          final int _cursorIndexOfToPage = CursorUtil.getColumnIndexOrThrow(_cursor, "toPage");
-          final int _cursorIndexOfDate = CursorUtil.getColumnIndexOrThrow(_cursor, "date");
-          final int _cursorIndexOfNote = CursorUtil.getColumnIndexOrThrow(_cursor, "note");
-          final int _cursorIndexOfRecordType = CursorUtil.getColumnIndexOrThrow(_cursor, "recordType");
-          final List<ReadingRecordEntity> _result = new ArrayList<ReadingRecordEntity>(_cursor.getCount());
-          while (_cursor.moveToNext()) {
-            final ReadingRecordEntity _item;
-            final long _tmpId;
-            _tmpId = _cursor.getLong(_cursorIndexOfId);
-            final Long _tmpBookId;
-            if (_cursor.isNull(_cursorIndexOfBookId)) {
-              _tmpBookId = null;
-            } else {
-              _tmpBookId = _cursor.getLong(_cursorIndexOfBookId);
-            }
-            final BookSnapshot _tmpBookSnapshot;
-            final String _tmp;
-            if (_cursor.isNull(_cursorIndexOfBookSnapshot)) {
-              _tmp = null;
-            } else {
-              _tmp = _cursor.getString(_cursorIndexOfBookSnapshot);
-            }
-            _tmpBookSnapshot = __converters.toBookSnapshot(_tmp);
-            final double _tmpPagesRead;
-            _tmpPagesRead = _cursor.getDouble(_cursorIndexOfPagesRead);
-            final double _tmpFromPage;
-            _tmpFromPage = _cursor.getDouble(_cursorIndexOfFromPage);
-            final double _tmpToPage;
-            _tmpToPage = _cursor.getDouble(_cursorIndexOfToPage);
-            final long _tmpDate;
-            _tmpDate = _cursor.getLong(_cursorIndexOfDate);
-            final String _tmpNote;
-            if (_cursor.isNull(_cursorIndexOfNote)) {
-              _tmpNote = null;
-            } else {
-              _tmpNote = _cursor.getString(_cursorIndexOfNote);
-            }
-            final RecordType _tmpRecordType;
-            final String _tmp_1;
-            _tmp_1 = _cursor.getString(_cursorIndexOfRecordType);
-            _tmpRecordType = __converters.toRecordType(_tmp_1);
-            _item = new ReadingRecordEntity(_tmpId,_tmpBookId,_tmpBookSnapshot,_tmpPagesRead,_tmpFromPage,_tmpToPage,_tmpDate,_tmpNote,_tmpRecordType);
-            _result.add(_item);
-          }
-          return _result;
-        } finally {
-          _cursor.close();
-        }
-      }
-
-      @Override
-      protected void finalize() {
-        _statement.release();
-      }
-    });
-  }
-
-  @Override
-  public Flow<Double> getTotalPagesReadOnDate(final long startOfDay, final long endOfDay) {
-    final String _sql = "SELECT SUM(pagesRead) FROM reading_records WHERE date >= ? AND date < ?";
-    final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 2);
-    int _argIndex = 1;
-    _statement.bindLong(_argIndex, startOfDay);
-    _argIndex = 2;
-    _statement.bindLong(_argIndex, endOfDay);
-    return CoroutinesRoom.createFlow(__db, false, new String[] {"reading_records"}, new Callable<Double>() {
-      @Override
-      @Nullable
-      public Double call() throws Exception {
-        final Cursor _cursor = DBUtil.query(__db, _statement, false, null);
-        try {
-          final Double _result;
-          if (_cursor.moveToFirst()) {
-            final Double _tmp;
-            if (_cursor.isNull(0)) {
-              _tmp = null;
-            } else {
-              _tmp = _cursor.getDouble(0);
-            }
-            _result = _tmp;
-          } else {
-            _result = null;
           }
           return _result;
         } finally {
@@ -523,6 +427,7 @@ public final class ReadingRecordDao_Impl implements ReadingRecordDao {
           final int _cursorIndexOfPagesRead = CursorUtil.getColumnIndexOrThrow(_cursor, "pagesRead");
           final int _cursorIndexOfFromPage = CursorUtil.getColumnIndexOrThrow(_cursor, "fromPage");
           final int _cursorIndexOfToPage = CursorUtil.getColumnIndexOrThrow(_cursor, "toPage");
+          final int _cursorIndexOfChaptersRead = CursorUtil.getColumnIndexOrThrow(_cursor, "chaptersRead");
           final int _cursorIndexOfDate = CursorUtil.getColumnIndexOrThrow(_cursor, "date");
           final int _cursorIndexOfNote = CursorUtil.getColumnIndexOrThrow(_cursor, "note");
           final int _cursorIndexOfRecordType = CursorUtil.getColumnIndexOrThrow(_cursor, "recordType");
@@ -551,6 +456,12 @@ public final class ReadingRecordDao_Impl implements ReadingRecordDao {
             _tmpFromPage = _cursor.getDouble(_cursorIndexOfFromPage);
             final double _tmpToPage;
             _tmpToPage = _cursor.getDouble(_cursorIndexOfToPage);
+            final Integer _tmpChaptersRead;
+            if (_cursor.isNull(_cursorIndexOfChaptersRead)) {
+              _tmpChaptersRead = null;
+            } else {
+              _tmpChaptersRead = _cursor.getInt(_cursorIndexOfChaptersRead);
+            }
             final long _tmpDate;
             _tmpDate = _cursor.getLong(_cursorIndexOfDate);
             final String _tmpNote;
@@ -563,7 +474,7 @@ public final class ReadingRecordDao_Impl implements ReadingRecordDao {
             final String _tmp_1;
             _tmp_1 = _cursor.getString(_cursorIndexOfRecordType);
             _tmpRecordType = __converters.toRecordType(_tmp_1);
-            _item = new ReadingRecordEntity(_tmpId,_tmpBookId,_tmpBookSnapshot,_tmpPagesRead,_tmpFromPage,_tmpToPage,_tmpDate,_tmpNote,_tmpRecordType);
+            _item = new ReadingRecordEntity(_tmpId,_tmpBookId,_tmpBookSnapshot,_tmpPagesRead,_tmpFromPage,_tmpToPage,_tmpChaptersRead,_tmpDate,_tmpNote,_tmpRecordType);
             _result.add(_item);
           }
           return _result;

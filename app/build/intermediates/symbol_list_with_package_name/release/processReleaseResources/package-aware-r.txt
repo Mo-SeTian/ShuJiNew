@@ -45,6 +45,10 @@ attr startDestination
 attr targetPackage
 attr ttcIndex
 attr uri
+bool enable_system_alarm_service_default
+bool enable_system_foreground_service_default
+bool enable_system_job_service_default
+bool workmanager_test_configuration
 color AbandonedRed
 color FinishedBlue
 color OnHoldGray

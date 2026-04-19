@@ -14,7 +14,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.readtrack.data.local.entity.BookEntity
-import com.readtrack.presentation.viewmodel.ProgressType
+import com.readtrack.domain.model.ProgressType
 
 /**
  * 快速记录阅读进度弹窗

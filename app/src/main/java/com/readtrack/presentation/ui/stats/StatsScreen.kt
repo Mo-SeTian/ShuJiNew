@@ -34,7 +34,7 @@ import com.readtrack.presentation.ui.components.statusColorOf
 import com.readtrack.presentation.ui.components.statusLabelOf
 import com.readtrack.presentation.ui.theme.*
 import com.readtrack.presentation.viewmodel.DailyReading
-import com.readtrack.presentation.viewmodel.ProgressType
+import com.readtrack.domain.model.ProgressType
 import com.readtrack.presentation.viewmodel.StatsViewModel
 import com.readtrack.presentation.viewmodel.RecordWithBook
 import java.text.SimpleDateFormat

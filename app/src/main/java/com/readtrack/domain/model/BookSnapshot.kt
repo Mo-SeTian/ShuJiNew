@@ -1,7 +1,7 @@
 package com.readtrack.domain.model
 
 import com.readtrack.data.local.entity.BookEntity
-import com.readtrack.presentation.viewmodel.ProgressType
+import com.readtrack.domain.model.ProgressType
 
 /**
  * 写入阅读记录时对图书信息的"快照"。

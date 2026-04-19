@@ -13,6 +13,8 @@ import androidx.sqlite.db.SupportSQLiteDatabase;
 import androidx.sqlite.db.SupportSQLiteOpenHelper;
 import com.readtrack.data.local.dao.BookDao;
 import com.readtrack.data.local.dao.BookDao_Impl;
+import com.readtrack.data.local.dao.BookListDao;
+import com.readtrack.data.local.dao.BookListDao_Impl;
 import com.readtrack.data.local.dao.ReadingRecordDao;
 import com.readtrack.data.local.dao.ReadingRecordDao_Impl;
 import java.lang.Class;
@@ -35,30 +37,40 @@ public final class ReadTrackDatabase_Impl extends ReadTrackDatabase {
 
   private volatile ReadingRecordDao _readingRecordDao;
 
+  private volatile BookListDao _bookListDao;
+
   @Override
   @NonNull
   protected SupportSQLiteOpenHelper createOpenHelper(@NonNull final DatabaseConfiguration config) {
-    final SupportSQLiteOpenHelper.Callback _openCallback = new RoomOpenHelper(config, new RoomOpenHelper.Delegate(7) {
+    final SupportSQLiteOpenHelper.Callback _openCallback = new RoomOpenHelper(config, new RoomOpenHelper.Delegate(9) {
       @Override
       public void createAllTables(@NonNull final SupportSQLiteDatabase db) {
-        db.execSQL("CREATE TABLE IF NOT EXISTS `books` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `title` TEXT NOT NULL, `author` TEXT, `publisher` TEXT, `description` TEXT, `progressType` TEXT NOT NULL, `totalPages` REAL NOT NULL, `currentPage` REAL NOT NULL, `totalChapters` INTEGER, `currentChapter` INTEGER NOT NULL, `coverPath` TEXT, `status` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `lastReadAt` INTEGER)");
+        db.execSQL("CREATE TABLE IF NOT EXISTS `books` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `title` TEXT NOT NULL, `author` TEXT, `publisher` TEXT, `description` TEXT, `progressType` TEXT NOT NULL, `totalPages` REAL NOT NULL, `currentPage` REAL NOT NULL, `totalChapters` INTEGER, `currentChapter` INTEGER NOT NULL, `coverPath` TEXT, `status` TEXT NOT NULL, `rating` REAL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `lastReadAt` INTEGER)");
         db.execSQL("CREATE INDEX IF NOT EXISTS `index_books_status_updatedAt` ON `books` (`status`, `updatedAt`)");
         db.execSQL("CREATE INDEX IF NOT EXISTS `index_books_updatedAt` ON `books` (`updatedAt`)");
         db.execSQL("CREATE INDEX IF NOT EXISTS `index_books_lastReadAt` ON `books` (`lastReadAt`)");
         db.execSQL("CREATE INDEX IF NOT EXISTS `index_books_title` ON `books` (`title`)");
         db.execSQL("CREATE INDEX IF NOT EXISTS `index_books_author` ON `books` (`author`)");
-        db.execSQL("CREATE TABLE IF NOT EXISTS `reading_records` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `bookId` INTEGER, `bookSnapshot` TEXT, `pagesRead` REAL NOT NULL, `fromPage` REAL NOT NULL, `toPage` REAL NOT NULL, `date` INTEGER NOT NULL, `note` TEXT, `recordType` TEXT NOT NULL, FOREIGN KEY(`bookId`) REFERENCES `books`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )");
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_books_rating` ON `books` (`rating`)");
+        db.execSQL("CREATE TABLE IF NOT EXISTS `reading_records` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `bookId` INTEGER, `bookSnapshot` TEXT, `pagesRead` REAL NOT NULL, `fromPage` REAL NOT NULL, `toPage` REAL NOT NULL, `chaptersRead` INTEGER, `date` INTEGER NOT NULL, `note` TEXT, `recordType` TEXT NOT NULL, FOREIGN KEY(`bookId`) REFERENCES `books`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )");
         db.execSQL("CREATE INDEX IF NOT EXISTS `index_reading_records_bookId` ON `reading_records` (`bookId`)");
         db.execSQL("CREATE INDEX IF NOT EXISTS `index_reading_records_date` ON `reading_records` (`date`)");
         db.execSQL("CREATE INDEX IF NOT EXISTS `index_reading_records_bookId_date` ON `reading_records` (`bookId`, `date`)");
+        db.execSQL("CREATE TABLE IF NOT EXISTS `book_lists` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `description` TEXT, `coverPath` TEXT, `coverBookId` INTEGER, `bookCount` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL)");
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_book_lists_updatedAt` ON `book_lists` (`updatedAt`)");
+        db.execSQL("CREATE TABLE IF NOT EXISTS `book_list_cross_ref` (`bookListId` INTEGER NOT NULL, `bookId` INTEGER NOT NULL, `addedAt` INTEGER NOT NULL, PRIMARY KEY(`bookListId`, `bookId`), FOREIGN KEY(`bookListId`) REFERENCES `book_lists`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`bookId`) REFERENCES `books`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )");
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_book_list_cross_ref_bookListId` ON `book_list_cross_ref` (`bookListId`)");
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_book_list_cross_ref_bookId` ON `book_list_cross_ref` (`bookId`)");
         db.execSQL("CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)");
-        db.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '0e01e94eb88e05a145e929830316aea8')");
+        db.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '569ad01f43848c28e7c79f2e2c231df8')");
       }
 
       @Override
       public void dropAllTables(@NonNull final SupportSQLiteDatabase db) {
         db.execSQL("DROP TABLE IF EXISTS `books`");
         db.execSQL("DROP TABLE IF EXISTS `reading_records`");
+        db.execSQL("DROP TABLE IF EXISTS `book_lists`");
+        db.execSQL("DROP TABLE IF EXISTS `book_list_cross_ref`");
         final List<? extends RoomDatabase.Callback> _callbacks = mCallbacks;
         if (_callbacks != null) {
           for (RoomDatabase.Callback _callback : _callbacks) {
@@ -103,7 +115,7 @@ public final class ReadTrackDatabase_Impl extends ReadTrackDatabase {
       @NonNull
       public RoomOpenHelper.ValidationResult onValidateSchema(
           @NonNull final SupportSQLiteDatabase db) {
-        final HashMap<String, TableInfo.Column> _columnsBooks = new HashMap<String, TableInfo.Column>(15);
+        final HashMap<String, TableInfo.Column> _columnsBooks = new HashMap<String, TableInfo.Column>(16);
         _columnsBooks.put("id", new TableInfo.Column("id", "INTEGER", true, 1, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsBooks.put("title", new TableInfo.Column("title", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsBooks.put("author", new TableInfo.Column("author", "TEXT", false, 0, null, TableInfo.CREATED_FROM_ENTITY));
@@ -116,16 +128,18 @@ public final class ReadTrackDatabase_Impl extends ReadTrackDatabase {
         _columnsBooks.put("currentChapter", new TableInfo.Column("currentChapter", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsBooks.put("coverPath", new TableInfo.Column("coverPath", "TEXT", false, 0, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsBooks.put("status", new TableInfo.Column("status", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsBooks.put("rating", new TableInfo.Column("rating", "REAL", false, 0, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsBooks.put("createdAt", new TableInfo.Column("createdAt", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsBooks.put("updatedAt", new TableInfo.Column("updatedAt", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsBooks.put("lastReadAt", new TableInfo.Column("lastReadAt", "INTEGER", false, 0, null, TableInfo.CREATED_FROM_ENTITY));
         final HashSet<TableInfo.ForeignKey> _foreignKeysBooks = new HashSet<TableInfo.ForeignKey>(0);
-        final HashSet<TableInfo.Index> _indicesBooks = new HashSet<TableInfo.Index>(5);
+        final HashSet<TableInfo.Index> _indicesBooks = new HashSet<TableInfo.Index>(6);
         _indicesBooks.add(new TableInfo.Index("index_books_status_updatedAt", false, Arrays.asList("status", "updatedAt"), Arrays.asList("ASC", "ASC")));
         _indicesBooks.add(new TableInfo.Index("index_books_updatedAt", false, Arrays.asList("updatedAt"), Arrays.asList("ASC")));
         _indicesBooks.add(new TableInfo.Index("index_books_lastReadAt", false, Arrays.asList("lastReadAt"), Arrays.asList("ASC")));
         _indicesBooks.add(new TableInfo.Index("index_books_title", false, Arrays.asList("title"), Arrays.asList("ASC")));
         _indicesBooks.add(new TableInfo.Index("index_books_author", false, Arrays.asList("author"), Arrays.asList("ASC")));
+        _indicesBooks.add(new TableInfo.Index("index_books_rating", false, Arrays.asList("rating"), Arrays.asList("ASC")));
         final TableInfo _infoBooks = new TableInfo("books", _columnsBooks, _foreignKeysBooks, _indicesBooks);
         final TableInfo _existingBooks = TableInfo.read(db, "books");
         if (!_infoBooks.equals(_existingBooks)) {
@@ -133,13 +147,14 @@ public final class ReadTrackDatabase_Impl extends ReadTrackDatabase {
                   + " Expected:\n" + _infoBooks + "\n"
                   + " Found:\n" + _existingBooks);
         }
-        final HashMap<String, TableInfo.Column> _columnsReadingRecords = new HashMap<String, TableInfo.Column>(9);
+        final HashMap<String, TableInfo.Column> _columnsReadingRecords = new HashMap<String, TableInfo.Column>(10);
         _columnsReadingRecords.put("id", new TableInfo.Column("id", "INTEGER", true, 1, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsReadingRecords.put("bookId", new TableInfo.Column("bookId", "INTEGER", false, 0, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsReadingRecords.put("bookSnapshot", new TableInfo.Column("bookSnapshot", "TEXT", false, 0, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsReadingRecords.put("pagesRead", new TableInfo.Column("pagesRead", "REAL", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsReadingRecords.put("fromPage", new TableInfo.Column("fromPage", "REAL", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsReadingRecords.put("toPage", new TableInfo.Column("toPage", "REAL", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsReadingRecords.put("chaptersRead", new TableInfo.Column("chaptersRead", "INTEGER", false, 0, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsReadingRecords.put("date", new TableInfo.Column("date", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsReadingRecords.put("note", new TableInfo.Column("note", "TEXT", false, 0, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsReadingRecords.put("recordType", new TableInfo.Column("recordType", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
@@ -156,9 +171,45 @@ public final class ReadTrackDatabase_Impl extends ReadTrackDatabase {
                   + " Expected:\n" + _infoReadingRecords + "\n"
                   + " Found:\n" + _existingReadingRecords);
         }
+        final HashMap<String, TableInfo.Column> _columnsBookLists = new HashMap<String, TableInfo.Column>(8);
+        _columnsBookLists.put("id", new TableInfo.Column("id", "INTEGER", true, 1, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsBookLists.put("name", new TableInfo.Column("name", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsBookLists.put("description", new TableInfo.Column("description", "TEXT", false, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsBookLists.put("coverPath", new TableInfo.Column("coverPath", "TEXT", false, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsBookLists.put("coverBookId", new TableInfo.Column("coverBookId", "INTEGER", false, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsBookLists.put("bookCount", new TableInfo.Column("bookCount", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsBookLists.put("createdAt", new TableInfo.Column("createdAt", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsBookLists.put("updatedAt", new TableInfo.Column("updatedAt", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        final HashSet<TableInfo.ForeignKey> _foreignKeysBookLists = new HashSet<TableInfo.ForeignKey>(0);
+        final HashSet<TableInfo.Index> _indicesBookLists = new HashSet<TableInfo.Index>(1);
+        _indicesBookLists.add(new TableInfo.Index("index_book_lists_updatedAt", false, Arrays.asList("updatedAt"), Arrays.asList("ASC")));
+        final TableInfo _infoBookLists = new TableInfo("book_lists", _columnsBookLists, _foreignKeysBookLists, _indicesBookLists);
+        final TableInfo _existingBookLists = TableInfo.read(db, "book_lists");
+        if (!_infoBookLists.equals(_existingBookLists)) {
+          return new RoomOpenHelper.ValidationResult(false, "book_lists(com.readtrack.data.local.entity.BookListEntity).\n"
+                  + " Expected:\n" + _infoBookLists + "\n"
+                  + " Found:\n" + _existingBookLists);
+        }
+        final HashMap<String, TableInfo.Column> _columnsBookListCrossRef = new HashMap<String, TableInfo.Column>(3);
+        _columnsBookListCrossRef.put("bookListId", new TableInfo.Column("bookListId", "INTEGER", true, 1, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsBookListCrossRef.put("bookId", new TableInfo.Column("bookId", "INTEGER", true, 2, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsBookListCrossRef.put("addedAt", new TableInfo.Column("addedAt", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        final HashSet<TableInfo.ForeignKey> _foreignKeysBookListCrossRef = new HashSet<TableInfo.ForeignKey>(2);
+        _foreignKeysBookListCrossRef.add(new TableInfo.ForeignKey("book_lists", "CASCADE", "NO ACTION", Arrays.asList("bookListId"), Arrays.asList("id")));
+        _foreignKeysBookListCrossRef.add(new TableInfo.ForeignKey("books", "CASCADE", "NO ACTION", Arrays.asList("bookId"), Arrays.asList("id")));
+        final HashSet<TableInfo.Index> _indicesBookListCrossRef = new HashSet<TableInfo.Index>(2);
+        _indicesBookListCrossRef.add(new TableInfo.Index("index_book_list_cross_ref_bookListId", false, Arrays.asList("bookListId"), Arrays.asList("ASC")));
+        _indicesBookListCrossRef.add(new TableInfo.Index("index_book_list_cross_ref_bookId", false, Arrays.asList("bookId"), Arrays.asList("ASC")));
+        final TableInfo _infoBookListCrossRef = new TableInfo("book_list_cross_ref", _columnsBookListCrossRef, _foreignKeysBookListCrossRef, _indicesBookListCrossRef);
+        final TableInfo _existingBookListCrossRef = TableInfo.read(db, "book_list_cross_ref");
+        if (!_infoBookListCrossRef.equals(_existingBookListCrossRef)) {
+          return new RoomOpenHelper.ValidationResult(false, "book_list_cross_ref(com.readtrack.data.local.entity.BookListCrossRef).\n"
+                  + " Expected:\n" + _infoBookListCrossRef + "\n"
+                  + " Found:\n" + _existingBookListCrossRef);
+        }
         return new RoomOpenHelper.ValidationResult(true, null);
       }
-    }, "0e01e94eb88e05a145e929830316aea8", "7f68a49655196c9bea7203d6f30c446f");
+    }, "569ad01f43848c28e7c79f2e2c231df8", "72e760349d2e1bf2049512566dc94559");
     final SupportSQLiteOpenHelper.Configuration _sqliteConfig = SupportSQLiteOpenHelper.Configuration.builder(config.context).name(config.name).callback(_openCallback).build();
     final SupportSQLiteOpenHelper _helper = config.sqliteOpenHelperFactory.create(_sqliteConfig);
     return _helper;
@@ -169,7 +220,7 @@ public final class ReadTrackDatabase_Impl extends ReadTrackDatabase {
   protected InvalidationTracker createInvalidationTracker() {
     final HashMap<String, String> _shadowTablesMap = new HashMap<String, String>(0);
     final HashMap<String, Set<String>> _viewTables = new HashMap<String, Set<String>>(0);
-    return new InvalidationTracker(this, _shadowTablesMap, _viewTables, "books","reading_records");
+    return new InvalidationTracker(this, _shadowTablesMap, _viewTables, "books","reading_records","book_lists","book_list_cross_ref");
   }
 
   @Override
@@ -187,6 +238,8 @@ public final class ReadTrackDatabase_Impl extends ReadTrackDatabase {
       }
       _db.execSQL("DELETE FROM `books`");
       _db.execSQL("DELETE FROM `reading_records`");
+      _db.execSQL("DELETE FROM `book_lists`");
+      _db.execSQL("DELETE FROM `book_list_cross_ref`");
       super.setTransactionSuccessful();
     } finally {
       super.endTransaction();
@@ -206,6 +259,7 @@ public final class ReadTrackDatabase_Impl extends ReadTrackDatabase {
     final HashMap<Class<?>, List<Class<?>>> _typeConvertersMap = new HashMap<Class<?>, List<Class<?>>>();
     _typeConvertersMap.put(BookDao.class, BookDao_Impl.getRequiredConverters());
     _typeConvertersMap.put(ReadingRecordDao.class, ReadingRecordDao_Impl.getRequiredConverters());
+    _typeConvertersMap.put(BookListDao.class, BookListDao_Impl.getRequiredConverters());
     return _typeConvertersMap;
   }
 
@@ -248,6 +302,20 @@ public final class ReadTrackDatabase_Impl extends ReadTrackDatabase {
           _readingRecordDao = new ReadingRecordDao_Impl(this);
         }
         return _readingRecordDao;
+      }
+    }
+  }
+
+  @Override
+  public BookListDao bookListDao() {
+    if (_bookListDao != null) {
+      return _bookListDao;
+    } else {
+      synchronized(this) {
+        if(_bookListDao == null) {
+          _bookListDao = new BookListDao_Impl(this);
+        }
+        return _bookListDao;
       }
     }
   }

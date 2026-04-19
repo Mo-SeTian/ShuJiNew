@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.readtrack.app-mergeReleaseResources-59:/values-night-v8/values-night-v8.xml",
+            "outputFile": "com.readtrack.app-mergeReleaseResources-63:/values-night-v8/values-night-v8.xml",
             "map": [
                 {
                     "source": "/root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/src/main/res/values-night/colors.xml",
