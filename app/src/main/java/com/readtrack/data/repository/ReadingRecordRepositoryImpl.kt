@@ -18,9 +18,6 @@ class ReadingRecordRepositoryImpl @Inject constructor(
     override fun getAllRecords(): Flow<List<ReadingRecordEntity>> =
         readingRecordDao.getAllRecords()
 
-    override fun getTotalPagesReadOnDate(startOfDay: Long, endOfDay: Long): Flow<Double?> =
-        readingRecordDao.getTotalPagesReadOnDate(startOfDay, endOfDay)
-
     override fun getTotalPagesReadSince(startTime: Long): Flow<Double?> =
         readingRecordDao.getTotalPagesReadSince(startTime)
 

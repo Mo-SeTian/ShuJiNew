@@ -4,7 +4,7 @@ import androidx.room.TypeConverter
 import com.readtrack.data.local.entity.RecordType
 import com.readtrack.domain.model.BookSnapshot
 import com.readtrack.domain.model.BookStatus
-import com.readtrack.presentation.viewmodel.ProgressType
+import com.readtrack.domain.model.ProgressType
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 

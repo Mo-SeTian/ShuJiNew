@@ -1,6 +1,7 @@
 package com.readtrack.data.repository;
 
 import com.readtrack.data.local.dao.BookDao;
+import com.readtrack.data.local.dao.BookListDao;
 import com.readtrack.data.local.dao.ReadingRecordDao;
 import dagger.internal.DaggerGenerated;
 import dagger.internal.Factory;
@@ -28,23 +29,27 @@ public final class DataBackupRepositoryImpl_Factory implements Factory<DataBacku
 
   private final Provider<ReadingRecordDao> recordDaoProvider;
 
+  private final Provider<BookListDao> bookListDaoProvider;
+
   public DataBackupRepositoryImpl_Factory(Provider<BookDao> bookDaoProvider,
-      Provider<ReadingRecordDao> recordDaoProvider) {
+      Provider<ReadingRecordDao> recordDaoProvider, Provider<BookListDao> bookListDaoProvider) {
     this.bookDaoProvider = bookDaoProvider;
     this.recordDaoProvider = recordDaoProvider;
+    this.bookListDaoProvider = bookListDaoProvider;
   }
 
   @Override
   public DataBackupRepositoryImpl get() {
-    return newInstance(bookDaoProvider.get(), recordDaoProvider.get());
+    return newInstance(bookDaoProvider.get(), recordDaoProvider.get(), bookListDaoProvider.get());
   }
 
   public static DataBackupRepositoryImpl_Factory create(Provider<BookDao> bookDaoProvider,
-      Provider<ReadingRecordDao> recordDaoProvider) {
-    return new DataBackupRepositoryImpl_Factory(bookDaoProvider, recordDaoProvider);
+      Provider<ReadingRecordDao> recordDaoProvider, Provider<BookListDao> bookListDaoProvider) {
+    return new DataBackupRepositoryImpl_Factory(bookDaoProvider, recordDaoProvider, bookListDaoProvider);
   }
 
-  public static DataBackupRepositoryImpl newInstance(BookDao bookDao, ReadingRecordDao recordDao) {
-    return new DataBackupRepositoryImpl(bookDao, recordDao);
+  public static DataBackupRepositoryImpl newInstance(BookDao bookDao, ReadingRecordDao recordDao,
+      BookListDao bookListDao) {
+    return new DataBackupRepositoryImpl(bookDao, recordDao, bookListDao);
   }
 }

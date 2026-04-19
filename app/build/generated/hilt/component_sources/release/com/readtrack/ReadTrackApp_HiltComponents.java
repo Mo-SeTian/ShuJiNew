@@ -1,13 +1,19 @@
 package com.readtrack;
 
+import androidx.hilt.work.HiltWrapper_WorkerFactoryModule;
 import com.readtrack.di.DatabaseModule;
+import com.readtrack.di.NetworkModule;
 import com.readtrack.presentation.viewmodel.AddBookViewModel_HiltModules;
+import com.readtrack.presentation.viewmodel.AddToBookListViewModel_HiltModules;
 import com.readtrack.presentation.viewmodel.BookDetailViewModel_HiltModules;
+import com.readtrack.presentation.viewmodel.BookListDetailViewModel_HiltModules;
+import com.readtrack.presentation.viewmodel.BookListViewModel_HiltModules;
 import com.readtrack.presentation.viewmodel.BooksViewModel_HiltModules;
 import com.readtrack.presentation.viewmodel.HomeViewModel_HiltModules;
 import com.readtrack.presentation.viewmodel.SettingsViewModel_HiltModules;
 import com.readtrack.presentation.viewmodel.StatsViewModel_HiltModules;
 import com.readtrack.presentation.viewmodel.TimelineViewModel_HiltModules;
+import com.readtrack.worker.WebDavAutoBackupWorker_HiltModule;
 import dagger.Binds;
 import dagger.Component;
 import dagger.Module;
@@ -135,8 +141,11 @@ public final class ReadTrackApp_HiltComponents {
           ApplicationContextModule.class,
           DatabaseModule.class,
           HiltWrapper_FragmentGetContextFix_FragmentGetContextFixModule.class,
+          HiltWrapper_WorkerFactoryModule.class,
+          NetworkModule.class,
           ActivityRetainedCBuilderModule.class,
-          ServiceCBuilderModule.class
+          ServiceCBuilderModule.class,
+          WebDavAutoBackupWorker_HiltModule.class
       }
   )
   @Singleton
@@ -160,7 +169,10 @@ public final class ReadTrackApp_HiltComponents {
   @Subcomponent(
       modules = {
           AddBookViewModel_HiltModules.KeyModule.class,
+          AddToBookListViewModel_HiltModules.KeyModule.class,
           BookDetailViewModel_HiltModules.KeyModule.class,
+          BookListDetailViewModel_HiltModules.KeyModule.class,
+          BookListViewModel_HiltModules.KeyModule.class,
           BooksViewModel_HiltModules.KeyModule.class,
           HiltWrapper_ActivityRetainedComponentManager_LifecycleModule.class,
           HiltWrapper_SavedStateHandleModule.class,
@@ -206,7 +218,10 @@ public final class ReadTrackApp_HiltComponents {
   @Subcomponent(
       modules = {
           AddBookViewModel_HiltModules.BindsModule.class,
+          AddToBookListViewModel_HiltModules.BindsModule.class,
           BookDetailViewModel_HiltModules.BindsModule.class,
+          BookListDetailViewModel_HiltModules.BindsModule.class,
+          BookListViewModel_HiltModules.BindsModule.class,
           BooksViewModel_HiltModules.BindsModule.class,
           HiltWrapper_HiltViewModelFactory_ViewModelModule.class,
           HomeViewModel_HiltModules.BindsModule.class,

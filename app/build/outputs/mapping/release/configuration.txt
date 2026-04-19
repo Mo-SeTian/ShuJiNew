@@ -95,10 +95,12 @@
 # You can control the set of applied configuration files using the
 # proguardFiles setting in build.gradle.kts.
 
-# Keep Room entities
+# ============ Room ============
+# Keep Room entities (required for database operations)
 -keep class com.readtrack.data.local.entity.** { *; }
+-keep class com.readtrack.data.local.dao.** { *; }
 
-# Keep Kotlin Serialization
+# ============ Kotlin Serialization ============
 -keepattributes *Annotation*, InnerClasses
 -dontnote kotlinx.serialization.AnnotationsKt
 
@@ -109,9 +111,28 @@
     kotlinx.serialization.KSerializer serializer(...);
 }
 
-# Keep Hilt
+# Keep @Serializable classes explicitly (R8 will find them via @Serializable but explicit is safer)
+-keep,includedescriptorclasses class com.readtrack.domain.model.**$$serializer { *; }
+-keepclassmembers class com.readtrack.domain.model.** {
+    *** Companion;
+}
+-keepclasseswithmembers class com.readtrack.domain.model.** {
+    kotlinx.serialization.KSerializer serializer(...);
+}
+
+# ============ Hilt ============
 -keep class dagger.hilt.** { *; }
 -keep class javax.inject.** { *; }
+-keep class * extends dagger.hilt.android.internal.managers.ComponentSupplier { *; }
+-keep class * extends dagger.hilt.android.internal.managers.ViewComponentManager$FragmentContextWrapper { *; }
+
+# ============ Coil ============
+-dontwarn coil.**
+
+# ============ OkHttp ============
+-dontwarn okhttp3.**
+-dontwarn okio.**
+-keepnames class okhttp3.internal.publicsuffix.PublicSuffixDatabase
 
 # End of content from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/proguard-rules.pro
 # The proguard configuration file for the following section is /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/aapt_proguard_file/release/processReleaseResources/aapt_rules.txt
@@ -119,10 +140,36 @@
 -keep class androidx.profileinstaller.ProfileInstallReceiver { <init>(); }
 -keep class androidx.room.MultiInstanceInvalidationService { <init>(); }
 -keep class androidx.startup.InitializationProvider { <init>(); }
+-keep class androidx.work.impl.background.systemalarm.ConstraintProxy$BatteryChargingProxy { <init>(); }
+-keep class androidx.work.impl.background.systemalarm.ConstraintProxy$BatteryNotLowProxy { <init>(); }
+-keep class androidx.work.impl.background.systemalarm.ConstraintProxy$NetworkStateProxy { <init>(); }
+-keep class androidx.work.impl.background.systemalarm.ConstraintProxy$StorageNotLowProxy { <init>(); }
+-keep class androidx.work.impl.background.systemalarm.ConstraintProxyUpdateReceiver { <init>(); }
+-keep class androidx.work.impl.background.systemalarm.RescheduleReceiver { <init>(); }
+-keep class androidx.work.impl.background.systemalarm.SystemAlarmService { <init>(); }
+-keep class androidx.work.impl.background.systemjob.SystemJobService { <init>(); }
+-keep class androidx.work.impl.diagnostics.DiagnosticsReceiver { <init>(); }
+-keep class androidx.work.impl.foreground.SystemForegroundService { <init>(); }
+-keep class androidx.work.impl.utils.ForceStopRunnable$BroadcastReceiver { <init>(); }
 -keep class com.readtrack.MainActivity { <init>(); }
 -keep class com.readtrack.ReadTrackApp { <init>(); }
 
 # End of content from /root/.hermes/profiles/aisoftwarebot/home/ShuJiNew/app/build/intermediates/aapt_proguard_file/release/processReleaseResources/aapt_rules.txt
+# The proguard configuration file for the following section is /root/.gradle/caches/transforms-4/ac54dcda484586448859f37a14f27d42/transformed/jetified-hilt-work-1.2.0/proguard.txt
+# Keep class names of Hilt injected Workers since their name are used as a multibinding map key.
+-keepnames @androidx.hilt.work.HiltWorker class * extends androidx.work.ListenableWorker
+# End of content from /root/.gradle/caches/transforms-4/ac54dcda484586448859f37a14f27d42/transformed/jetified-hilt-work-1.2.0/proguard.txt
+# The proguard configuration file for the following section is /root/.gradle/caches/transforms-4/950faac52946a57861f56c2523caf770/transformed/work-runtime-2.9.0/proguard.txt
+-keep class * extends androidx.work.Worker
+-keep class * extends androidx.work.InputMerger
+# Keep all constructors on ListenableWorker, Worker
+-keep public class * extends androidx.work.ListenableWorker {
+    public <init>(...);
+}
+# We need to keep WorkerParameters for the ListenableWorker constructor
+-keep class androidx.work.WorkerParameters
+
+# End of content from /root/.gradle/caches/transforms-4/950faac52946a57861f56c2523caf770/transformed/work-runtime-2.9.0/proguard.txt
 # The proguard configuration file for the following section is /root/.gradle/caches/transforms-4/208f91505fc1e4848bd8d74f7e573e33/transformed/navigation-common-2.7.7/proguard.txt
 # Copyright (C) 2019 The Android Open Source Project
 #

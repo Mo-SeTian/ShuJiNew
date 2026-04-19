@@ -16,9 +16,10 @@ import androidx.sqlite.db.SupportSQLiteStatement;
 import com.readtrack.data.local.database.Converters;
 import com.readtrack.data.local.entity.BookEntity;
 import com.readtrack.domain.model.BookStatus;
-import com.readtrack.presentation.viewmodel.ProgressType;
+import com.readtrack.domain.model.ProgressType;
 import java.lang.Class;
 import java.lang.Exception;
+import java.lang.Float;
 import java.lang.Integer;
 import java.lang.Long;
 import java.lang.Object;
@@ -57,7 +58,7 @@ public final class BookDao_Impl implements BookDao {
       @Override
       @NonNull
       protected String createQuery() {
-        return "INSERT OR REPLACE INTO `books` (`id`,`title`,`author`,`publisher`,`description`,`progressType`,`totalPages`,`currentPage`,`totalChapters`,`currentChapter`,`coverPath`,`status`,`createdAt`,`updatedAt`,`lastReadAt`) VALUES (nullif(?, 0),?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+        return "INSERT OR REPLACE INTO `books` (`id`,`title`,`author`,`publisher`,`description`,`progressType`,`totalPages`,`currentPage`,`totalChapters`,`currentChapter`,`coverPath`,`status`,`rating`,`createdAt`,`updatedAt`,`lastReadAt`) VALUES (nullif(?, 0),?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
       }
 
       @Override
@@ -97,12 +98,17 @@ public final class BookDao_Impl implements BookDao {
         }
         final String _tmp_1 = __converters.fromBookStatus(entity.getStatus());
         statement.bindString(12, _tmp_1);
-        statement.bindLong(13, entity.getCreatedAt());
-        statement.bindLong(14, entity.getUpdatedAt());
-        if (entity.getLastReadAt() == null) {
-          statement.bindNull(15);
+        if (entity.getRating() == null) {
+          statement.bindNull(13);
         } else {
-          statement.bindLong(15, entity.getLastReadAt());
+          statement.bindDouble(13, entity.getRating());
+        }
+        statement.bindLong(14, entity.getCreatedAt());
+        statement.bindLong(15, entity.getUpdatedAt());
+        if (entity.getLastReadAt() == null) {
+          statement.bindNull(16);
+        } else {
+          statement.bindLong(16, entity.getLastReadAt());
         }
       }
     };
@@ -123,7 +129,7 @@ public final class BookDao_Impl implements BookDao {
       @Override
       @NonNull
       protected String createQuery() {
-        return "UPDATE OR ABORT `books` SET `id` = ?,`title` = ?,`author` = ?,`publisher` = ?,`description` = ?,`progressType` = ?,`totalPages` = ?,`currentPage` = ?,`totalChapters` = ?,`currentChapter` = ?,`coverPath` = ?,`status` = ?,`createdAt` = ?,`updatedAt` = ?,`lastReadAt` = ? WHERE `id` = ?";
+        return "UPDATE OR ABORT `books` SET `id` = ?,`title` = ?,`author` = ?,`publisher` = ?,`description` = ?,`progressType` = ?,`totalPages` = ?,`currentPage` = ?,`totalChapters` = ?,`currentChapter` = ?,`coverPath` = ?,`status` = ?,`rating` = ?,`createdAt` = ?,`updatedAt` = ?,`lastReadAt` = ? WHERE `id` = ?";
       }
 
       @Override
@@ -163,14 +169,19 @@ public final class BookDao_Impl implements BookDao {
         }
         final String _tmp_1 = __converters.fromBookStatus(entity.getStatus());
         statement.bindString(12, _tmp_1);
-        statement.bindLong(13, entity.getCreatedAt());
-        statement.bindLong(14, entity.getUpdatedAt());
-        if (entity.getLastReadAt() == null) {
-          statement.bindNull(15);
+        if (entity.getRating() == null) {
+          statement.bindNull(13);
         } else {
-          statement.bindLong(15, entity.getLastReadAt());
+          statement.bindDouble(13, entity.getRating());
         }
-        statement.bindLong(16, entity.getId());
+        statement.bindLong(14, entity.getCreatedAt());
+        statement.bindLong(15, entity.getUpdatedAt());
+        if (entity.getLastReadAt() == null) {
+          statement.bindNull(16);
+        } else {
+          statement.bindLong(16, entity.getLastReadAt());
+        }
+        statement.bindLong(17, entity.getId());
       }
     };
     this.__preparedStmtOfDeleteBookById = new SharedSQLiteStatement(__db) {
@@ -315,6 +326,7 @@ public final class BookDao_Impl implements BookDao {
           final int _cursorIndexOfCurrentChapter = CursorUtil.getColumnIndexOrThrow(_cursor, "currentChapter");
           final int _cursorIndexOfCoverPath = CursorUtil.getColumnIndexOrThrow(_cursor, "coverPath");
           final int _cursorIndexOfStatus = CursorUtil.getColumnIndexOrThrow(_cursor, "status");
+          final int _cursorIndexOfRating = CursorUtil.getColumnIndexOrThrow(_cursor, "rating");
           final int _cursorIndexOfCreatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "createdAt");
           final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
           final int _cursorIndexOfLastReadAt = CursorUtil.getColumnIndexOrThrow(_cursor, "lastReadAt");
@@ -369,6 +381,12 @@ public final class BookDao_Impl implements BookDao {
             final String _tmp_1;
             _tmp_1 = _cursor.getString(_cursorIndexOfStatus);
             _tmpStatus = __converters.toBookStatus(_tmp_1);
+            final Float _tmpRating;
+            if (_cursor.isNull(_cursorIndexOfRating)) {
+              _tmpRating = null;
+            } else {
+              _tmpRating = _cursor.getFloat(_cursorIndexOfRating);
+            }
             final long _tmpCreatedAt;
             _tmpCreatedAt = _cursor.getLong(_cursorIndexOfCreatedAt);
             final long _tmpUpdatedAt;
@@ -379,7 +397,7 @@ public final class BookDao_Impl implements BookDao {
             } else {
               _tmpLastReadAt = _cursor.getLong(_cursorIndexOfLastReadAt);
             }
-            _item = new BookEntity(_tmpId,_tmpTitle,_tmpAuthor,_tmpPublisher,_tmpDescription,_tmpProgressType,_tmpTotalPages,_tmpCurrentPage,_tmpTotalChapters,_tmpCurrentChapter,_tmpCoverPath,_tmpStatus,_tmpCreatedAt,_tmpUpdatedAt,_tmpLastReadAt);
+            _item = new BookEntity(_tmpId,_tmpTitle,_tmpAuthor,_tmpPublisher,_tmpDescription,_tmpProgressType,_tmpTotalPages,_tmpCurrentPage,_tmpTotalChapters,_tmpCurrentChapter,_tmpCoverPath,_tmpStatus,_tmpRating,_tmpCreatedAt,_tmpUpdatedAt,_tmpLastReadAt);
             _result.add(_item);
           }
           return _result;
@@ -420,6 +438,7 @@ public final class BookDao_Impl implements BookDao {
           final int _cursorIndexOfCurrentChapter = CursorUtil.getColumnIndexOrThrow(_cursor, "currentChapter");
           final int _cursorIndexOfCoverPath = CursorUtil.getColumnIndexOrThrow(_cursor, "coverPath");
           final int _cursorIndexOfStatus = CursorUtil.getColumnIndexOrThrow(_cursor, "status");
+          final int _cursorIndexOfRating = CursorUtil.getColumnIndexOrThrow(_cursor, "rating");
           final int _cursorIndexOfCreatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "createdAt");
           final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
           final int _cursorIndexOfLastReadAt = CursorUtil.getColumnIndexOrThrow(_cursor, "lastReadAt");
@@ -474,6 +493,12 @@ public final class BookDao_Impl implements BookDao {
             final String _tmp_2;
             _tmp_2 = _cursor.getString(_cursorIndexOfStatus);
             _tmpStatus = __converters.toBookStatus(_tmp_2);
+            final Float _tmpRating;
+            if (_cursor.isNull(_cursorIndexOfRating)) {
+              _tmpRating = null;
+            } else {
+              _tmpRating = _cursor.getFloat(_cursorIndexOfRating);
+            }
             final long _tmpCreatedAt;
             _tmpCreatedAt = _cursor.getLong(_cursorIndexOfCreatedAt);
             final long _tmpUpdatedAt;
@@ -484,7 +509,7 @@ public final class BookDao_Impl implements BookDao {
             } else {
               _tmpLastReadAt = _cursor.getLong(_cursorIndexOfLastReadAt);
             }
-            _item = new BookEntity(_tmpId,_tmpTitle,_tmpAuthor,_tmpPublisher,_tmpDescription,_tmpProgressType,_tmpTotalPages,_tmpCurrentPage,_tmpTotalChapters,_tmpCurrentChapter,_tmpCoverPath,_tmpStatus,_tmpCreatedAt,_tmpUpdatedAt,_tmpLastReadAt);
+            _item = new BookEntity(_tmpId,_tmpTitle,_tmpAuthor,_tmpPublisher,_tmpDescription,_tmpProgressType,_tmpTotalPages,_tmpCurrentPage,_tmpTotalChapters,_tmpCurrentChapter,_tmpCoverPath,_tmpStatus,_tmpRating,_tmpCreatedAt,_tmpUpdatedAt,_tmpLastReadAt);
             _result.add(_item);
           }
           return _result;
@@ -524,6 +549,7 @@ public final class BookDao_Impl implements BookDao {
           final int _cursorIndexOfCurrentChapter = CursorUtil.getColumnIndexOrThrow(_cursor, "currentChapter");
           final int _cursorIndexOfCoverPath = CursorUtil.getColumnIndexOrThrow(_cursor, "coverPath");
           final int _cursorIndexOfStatus = CursorUtil.getColumnIndexOrThrow(_cursor, "status");
+          final int _cursorIndexOfRating = CursorUtil.getColumnIndexOrThrow(_cursor, "rating");
           final int _cursorIndexOfCreatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "createdAt");
           final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
           final int _cursorIndexOfLastReadAt = CursorUtil.getColumnIndexOrThrow(_cursor, "lastReadAt");
@@ -577,6 +603,12 @@ public final class BookDao_Impl implements BookDao {
             final String _tmp_1;
             _tmp_1 = _cursor.getString(_cursorIndexOfStatus);
             _tmpStatus = __converters.toBookStatus(_tmp_1);
+            final Float _tmpRating;
+            if (_cursor.isNull(_cursorIndexOfRating)) {
+              _tmpRating = null;
+            } else {
+              _tmpRating = _cursor.getFloat(_cursorIndexOfRating);
+            }
             final long _tmpCreatedAt;
             _tmpCreatedAt = _cursor.getLong(_cursorIndexOfCreatedAt);
             final long _tmpUpdatedAt;
@@ -587,7 +619,7 @@ public final class BookDao_Impl implements BookDao {
             } else {
               _tmpLastReadAt = _cursor.getLong(_cursorIndexOfLastReadAt);
             }
-            _result = new BookEntity(_tmpId,_tmpTitle,_tmpAuthor,_tmpPublisher,_tmpDescription,_tmpProgressType,_tmpTotalPages,_tmpCurrentPage,_tmpTotalChapters,_tmpCurrentChapter,_tmpCoverPath,_tmpStatus,_tmpCreatedAt,_tmpUpdatedAt,_tmpLastReadAt);
+            _result = new BookEntity(_tmpId,_tmpTitle,_tmpAuthor,_tmpPublisher,_tmpDescription,_tmpProgressType,_tmpTotalPages,_tmpCurrentPage,_tmpTotalChapters,_tmpCurrentChapter,_tmpCoverPath,_tmpStatus,_tmpRating,_tmpCreatedAt,_tmpUpdatedAt,_tmpLastReadAt);
           } else {
             _result = null;
           }
@@ -629,6 +661,7 @@ public final class BookDao_Impl implements BookDao {
           final int _cursorIndexOfCurrentChapter = CursorUtil.getColumnIndexOrThrow(_cursor, "currentChapter");
           final int _cursorIndexOfCoverPath = CursorUtil.getColumnIndexOrThrow(_cursor, "coverPath");
           final int _cursorIndexOfStatus = CursorUtil.getColumnIndexOrThrow(_cursor, "status");
+          final int _cursorIndexOfRating = CursorUtil.getColumnIndexOrThrow(_cursor, "rating");
           final int _cursorIndexOfCreatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "createdAt");
           final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
           final int _cursorIndexOfLastReadAt = CursorUtil.getColumnIndexOrThrow(_cursor, "lastReadAt");
@@ -682,6 +715,12 @@ public final class BookDao_Impl implements BookDao {
             final String _tmp_1;
             _tmp_1 = _cursor.getString(_cursorIndexOfStatus);
             _tmpStatus = __converters.toBookStatus(_tmp_1);
+            final Float _tmpRating;
+            if (_cursor.isNull(_cursorIndexOfRating)) {
+              _tmpRating = null;
+            } else {
+              _tmpRating = _cursor.getFloat(_cursorIndexOfRating);
+            }
             final long _tmpCreatedAt;
             _tmpCreatedAt = _cursor.getLong(_cursorIndexOfCreatedAt);
             final long _tmpUpdatedAt;
@@ -692,7 +731,7 @@ public final class BookDao_Impl implements BookDao {
             } else {
               _tmpLastReadAt = _cursor.getLong(_cursorIndexOfLastReadAt);
             }
-            _result = new BookEntity(_tmpId,_tmpTitle,_tmpAuthor,_tmpPublisher,_tmpDescription,_tmpProgressType,_tmpTotalPages,_tmpCurrentPage,_tmpTotalChapters,_tmpCurrentChapter,_tmpCoverPath,_tmpStatus,_tmpCreatedAt,_tmpUpdatedAt,_tmpLastReadAt);
+            _result = new BookEntity(_tmpId,_tmpTitle,_tmpAuthor,_tmpPublisher,_tmpDescription,_tmpProgressType,_tmpTotalPages,_tmpCurrentPage,_tmpTotalChapters,_tmpCurrentChapter,_tmpCoverPath,_tmpStatus,_tmpRating,_tmpCreatedAt,_tmpUpdatedAt,_tmpLastReadAt);
           } else {
             _result = null;
           }
@@ -731,6 +770,7 @@ public final class BookDao_Impl implements BookDao {
           final int _cursorIndexOfCurrentChapter = CursorUtil.getColumnIndexOrThrow(_cursor, "currentChapter");
           final int _cursorIndexOfCoverPath = CursorUtil.getColumnIndexOrThrow(_cursor, "coverPath");
           final int _cursorIndexOfStatus = CursorUtil.getColumnIndexOrThrow(_cursor, "status");
+          final int _cursorIndexOfRating = CursorUtil.getColumnIndexOrThrow(_cursor, "rating");
           final int _cursorIndexOfCreatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "createdAt");
           final int _cursorIndexOfUpdatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "updatedAt");
           final int _cursorIndexOfLastReadAt = CursorUtil.getColumnIndexOrThrow(_cursor, "lastReadAt");
@@ -785,6 +825,12 @@ public final class BookDao_Impl implements BookDao {
             final String _tmp_1;
             _tmp_1 = _cursor.getString(_cursorIndexOfStatus);
             _tmpStatus = __converters.toBookStatus(_tmp_1);
+            final Float _tmpRating;
+            if (_cursor.isNull(_cursorIndexOfRating)) {
+              _tmpRating = null;
+            } else {
+              _tmpRating = _cursor.getFloat(_cursorIndexOfRating);
+            }
             final long _tmpCreatedAt;
             _tmpCreatedAt = _cursor.getLong(_cursorIndexOfCreatedAt);
             final long _tmpUpdatedAt;
@@ -795,7 +841,7 @@ public final class BookDao_Impl implements BookDao {
             } else {
               _tmpLastReadAt = _cursor.getLong(_cursorIndexOfLastReadAt);
             }
-            _item = new BookEntity(_tmpId,_tmpTitle,_tmpAuthor,_tmpPublisher,_tmpDescription,_tmpProgressType,_tmpTotalPages,_tmpCurrentPage,_tmpTotalChapters,_tmpCurrentChapter,_tmpCoverPath,_tmpStatus,_tmpCreatedAt,_tmpUpdatedAt,_tmpLastReadAt);
+            _item = new BookEntity(_tmpId,_tmpTitle,_tmpAuthor,_tmpPublisher,_tmpDescription,_tmpProgressType,_tmpTotalPages,_tmpCurrentPage,_tmpTotalChapters,_tmpCurrentChapter,_tmpCoverPath,_tmpStatus,_tmpRating,_tmpCreatedAt,_tmpUpdatedAt,_tmpLastReadAt);
             _result.add(_item);
           }
           return _result;

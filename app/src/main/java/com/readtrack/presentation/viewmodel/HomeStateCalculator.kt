@@ -5,6 +5,7 @@ import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.data.local.entity.ReadingRecordEntity
 import com.readtrack.data.local.entity.RecordType
 import com.readtrack.domain.model.BookStatus
+import com.readtrack.domain.model.ProgressType
 import com.readtrack.util.getStartOfDay
 
 data class HomeUiState(

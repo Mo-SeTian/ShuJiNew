@@ -51,7 +51,7 @@ import com.readtrack.presentation.ui.components.buildBookImageRequest
 import com.readtrack.domain.model.BookStatus
 import com.readtrack.presentation.ui.components.getStatusColor
 import com.readtrack.presentation.viewmodel.AddBookViewModel
-import com.readtrack.presentation.viewmodel.ProgressType
+import com.readtrack.domain.model.ProgressType
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

@@ -3,7 +3,7 @@ package com.readtrack.domain.model
 import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.data.local.entity.BookListEntity
 import com.readtrack.data.local.entity.ReadingRecordEntity
-import com.readtrack.presentation.viewmodel.ProgressType
+import com.readtrack.domain.model.ProgressType
 import kotlinx.serialization.Serializable
 
 /**

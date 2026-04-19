@@ -2,28 +2,47 @@ package com.readtrack;
 
 import android.app.Activity;
 import android.app.Service;
+import android.content.Context;
 import android.view.View;
 import androidx.fragment.app.Fragment;
+import androidx.hilt.work.HiltWorkerFactory;
+import androidx.hilt.work.WorkerAssistedFactory;
+import androidx.hilt.work.WorkerFactoryModule_ProvideFactoryFactory;
 import androidx.lifecycle.SavedStateHandle;
 import androidx.lifecycle.ViewModel;
+import androidx.work.ListenableWorker;
+import androidx.work.WorkerParameters;
 import com.readtrack.data.local.PreferencesManager;
 import com.readtrack.data.local.dao.BookDao;
+import com.readtrack.data.local.dao.BookListDao;
 import com.readtrack.data.local.dao.ReadingRecordDao;
 import com.readtrack.data.local.database.ReadTrackDatabase;
+import com.readtrack.data.remote.BingImageSearchService;
 import com.readtrack.data.remote.DoubanSearchService;
+import com.readtrack.data.remote.WebDavService;
 import com.readtrack.di.DatabaseModule_ProvideBookDaoFactory;
+import com.readtrack.di.DatabaseModule_ProvideBookListDaoFactory;
+import com.readtrack.di.DatabaseModule_ProvideBookListRepositoryFactory;
 import com.readtrack.di.DatabaseModule_ProvideBookRepositoryFactory;
 import com.readtrack.di.DatabaseModule_ProvideDataBackupRepositoryFactory;
 import com.readtrack.di.DatabaseModule_ProvideDatabaseFactory;
 import com.readtrack.di.DatabaseModule_ProvideReadingRecordDaoFactory;
 import com.readtrack.di.DatabaseModule_ProvideReadingRecordRepositoryFactory;
+import com.readtrack.di.NetworkModule_ProvideOkHttpClientFactory;
+import com.readtrack.domain.repository.BookListRepository;
 import com.readtrack.domain.repository.BookRepository;
 import com.readtrack.domain.repository.DataBackupRepository;
 import com.readtrack.domain.repository.ReadingRecordRepository;
 import com.readtrack.presentation.viewmodel.AddBookViewModel;
 import com.readtrack.presentation.viewmodel.AddBookViewModel_HiltModules;
+import com.readtrack.presentation.viewmodel.AddToBookListViewModel;
+import com.readtrack.presentation.viewmodel.AddToBookListViewModel_HiltModules;
 import com.readtrack.presentation.viewmodel.BookDetailViewModel;
 import com.readtrack.presentation.viewmodel.BookDetailViewModel_HiltModules;
+import com.readtrack.presentation.viewmodel.BookListDetailViewModel;
+import com.readtrack.presentation.viewmodel.BookListDetailViewModel_HiltModules;
+import com.readtrack.presentation.viewmodel.BookListViewModel;
+import com.readtrack.presentation.viewmodel.BookListViewModel_HiltModules;
 import com.readtrack.presentation.viewmodel.BooksViewModel;
 import com.readtrack.presentation.viewmodel.BooksViewModel_HiltModules;
 import com.readtrack.presentation.viewmodel.HomeViewModel;
@@ -34,6 +53,9 @@ import com.readtrack.presentation.viewmodel.StatsViewModel;
 import com.readtrack.presentation.viewmodel.StatsViewModel_HiltModules;
 import com.readtrack.presentation.viewmodel.TimelineViewModel;
 import com.readtrack.presentation.viewmodel.TimelineViewModel_HiltModules;
+import com.readtrack.worker.WebDavAutoBackupWorker;
+import com.readtrack.worker.WebDavAutoBackupWorker_AssistedFactory;
+import com.readtrack.worker.WebDavBackupScheduler;
 import dagger.hilt.android.ActivityRetainedLifecycle;
 import dagger.hilt.android.ViewModelLifecycle;
 import dagger.hilt.android.internal.builders.ActivityComponentBuilder;
@@ -57,10 +79,12 @@ import dagger.internal.LazyClassKeyMap;
 import dagger.internal.MapBuilder;
 import dagger.internal.Preconditions;
 import dagger.internal.Provider;
+import dagger.internal.SingleCheck;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import javax.annotation.processing.Generated;
+import okhttp3.OkHttpClient;
 
 @DaggerGenerated
 @Generated(
@@ -394,7 +418,7 @@ public final class DaggerReadTrackApp_HiltComponents_SingletonC {
 
     @Override
     public Map<Class<?>, Boolean> getViewModelKeys() {
-      return LazyClassKeyMap.<Boolean>of(MapBuilder.<String, Boolean>newMapBuilder(7).put(LazyClassKeyProvider.com_readtrack_presentation_viewmodel_AddBookViewModel, AddBookViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_readtrack_presentation_viewmodel_BookDetailViewModel, BookDetailViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_readtrack_presentation_viewmodel_BooksViewModel, BooksViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_readtrack_presentation_viewmodel_HomeViewModel, HomeViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_readtrack_presentation_viewmodel_SettingsViewModel, SettingsViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_readtrack_presentation_viewmodel_StatsViewModel, StatsViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_readtrack_presentation_viewmodel_TimelineViewModel, TimelineViewModel_HiltModules.KeyModule.provide()).build());
+      return LazyClassKeyMap.<Boolean>of(MapBuilder.<String, Boolean>newMapBuilder(10).put(LazyClassKeyProvider.com_readtrack_presentation_viewmodel_AddBookViewModel, AddBookViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_readtrack_presentation_viewmodel_AddToBookListViewModel, AddToBookListViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_readtrack_presentation_viewmodel_BookDetailViewModel, BookDetailViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_readtrack_presentation_viewmodel_BookListDetailViewModel, BookListDetailViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_readtrack_presentation_viewmodel_BookListViewModel, BookListViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_readtrack_presentation_viewmodel_BooksViewModel, BooksViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_readtrack_presentation_viewmodel_HomeViewModel, HomeViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_readtrack_presentation_viewmodel_SettingsViewModel, SettingsViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_readtrack_presentation_viewmodel_StatsViewModel, StatsViewModel_HiltModules.KeyModule.provide()).put(LazyClassKeyProvider.com_readtrack_presentation_viewmodel_TimelineViewModel, TimelineViewModel_HiltModules.KeyModule.provide()).build());
     }
 
     @Override
@@ -414,40 +438,55 @@ public final class DaggerReadTrackApp_HiltComponents_SingletonC {
 
     @IdentifierNameString
     private static final class LazyClassKeyProvider {
-      static String com_readtrack_presentation_viewmodel_HomeViewModel = "com.readtrack.presentation.viewmodel.HomeViewModel";
+      static String com_readtrack_presentation_viewmodel_BookDetailViewModel = "com.readtrack.presentation.viewmodel.BookDetailViewModel";
 
-      static String com_readtrack_presentation_viewmodel_BooksViewModel = "com.readtrack.presentation.viewmodel.BooksViewModel";
-
-      static String com_readtrack_presentation_viewmodel_TimelineViewModel = "com.readtrack.presentation.viewmodel.TimelineViewModel";
-
-      static String com_readtrack_presentation_viewmodel_StatsViewModel = "com.readtrack.presentation.viewmodel.StatsViewModel";
+      static String com_readtrack_presentation_viewmodel_AddToBookListViewModel = "com.readtrack.presentation.viewmodel.AddToBookListViewModel";
 
       static String com_readtrack_presentation_viewmodel_SettingsViewModel = "com.readtrack.presentation.viewmodel.SettingsViewModel";
 
+      static String com_readtrack_presentation_viewmodel_StatsViewModel = "com.readtrack.presentation.viewmodel.StatsViewModel";
+
+      static String com_readtrack_presentation_viewmodel_BookListDetailViewModel = "com.readtrack.presentation.viewmodel.BookListDetailViewModel";
+
+      static String com_readtrack_presentation_viewmodel_HomeViewModel = "com.readtrack.presentation.viewmodel.HomeViewModel";
+
       static String com_readtrack_presentation_viewmodel_AddBookViewModel = "com.readtrack.presentation.viewmodel.AddBookViewModel";
 
-      static String com_readtrack_presentation_viewmodel_BookDetailViewModel = "com.readtrack.presentation.viewmodel.BookDetailViewModel";
+      static String com_readtrack_presentation_viewmodel_TimelineViewModel = "com.readtrack.presentation.viewmodel.TimelineViewModel";
+
+      static String com_readtrack_presentation_viewmodel_BookListViewModel = "com.readtrack.presentation.viewmodel.BookListViewModel";
+
+      static String com_readtrack_presentation_viewmodel_BooksViewModel = "com.readtrack.presentation.viewmodel.BooksViewModel";
 
       @KeepFieldType
-      HomeViewModel com_readtrack_presentation_viewmodel_HomeViewModel2;
+      BookDetailViewModel com_readtrack_presentation_viewmodel_BookDetailViewModel2;
 
       @KeepFieldType
-      BooksViewModel com_readtrack_presentation_viewmodel_BooksViewModel2;
-
-      @KeepFieldType
-      TimelineViewModel com_readtrack_presentation_viewmodel_TimelineViewModel2;
-
-      @KeepFieldType
-      StatsViewModel com_readtrack_presentation_viewmodel_StatsViewModel2;
+      AddToBookListViewModel com_readtrack_presentation_viewmodel_AddToBookListViewModel2;
 
       @KeepFieldType
       SettingsViewModel com_readtrack_presentation_viewmodel_SettingsViewModel2;
 
       @KeepFieldType
+      StatsViewModel com_readtrack_presentation_viewmodel_StatsViewModel2;
+
+      @KeepFieldType
+      BookListDetailViewModel com_readtrack_presentation_viewmodel_BookListDetailViewModel2;
+
+      @KeepFieldType
+      HomeViewModel com_readtrack_presentation_viewmodel_HomeViewModel2;
+
+      @KeepFieldType
       AddBookViewModel com_readtrack_presentation_viewmodel_AddBookViewModel2;
 
       @KeepFieldType
-      BookDetailViewModel com_readtrack_presentation_viewmodel_BookDetailViewModel2;
+      TimelineViewModel com_readtrack_presentation_viewmodel_TimelineViewModel2;
+
+      @KeepFieldType
+      BookListViewModel com_readtrack_presentation_viewmodel_BookListViewModel2;
+
+      @KeepFieldType
+      BooksViewModel com_readtrack_presentation_viewmodel_BooksViewModel2;
     }
   }
 
@@ -462,7 +501,13 @@ public final class DaggerReadTrackApp_HiltComponents_SingletonC {
 
     private Provider<AddBookViewModel> addBookViewModelProvider;
 
+    private Provider<AddToBookListViewModel> addToBookListViewModelProvider;
+
     private Provider<BookDetailViewModel> bookDetailViewModelProvider;
+
+    private Provider<BookListDetailViewModel> bookListDetailViewModelProvider;
+
+    private Provider<BookListViewModel> bookListViewModelProvider;
 
     private Provider<BooksViewModel> booksViewModelProvider;
 
@@ -488,17 +533,20 @@ public final class DaggerReadTrackApp_HiltComponents_SingletonC {
     private void initialize(final SavedStateHandle savedStateHandleParam,
         final ViewModelLifecycle viewModelLifecycleParam) {
       this.addBookViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 0);
-      this.bookDetailViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 1);
-      this.booksViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 2);
-      this.homeViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 3);
-      this.settingsViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 4);
-      this.statsViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 5);
-      this.timelineViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 6);
+      this.addToBookListViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 1);
+      this.bookDetailViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 2);
+      this.bookListDetailViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 3);
+      this.bookListViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 4);
+      this.booksViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 5);
+      this.homeViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 6);
+      this.settingsViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 7);
+      this.statsViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 8);
+      this.timelineViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 9);
     }
 
     @Override
     public Map<Class<?>, javax.inject.Provider<ViewModel>> getHiltViewModelMap() {
-      return LazyClassKeyMap.<javax.inject.Provider<ViewModel>>of(MapBuilder.<String, javax.inject.Provider<ViewModel>>newMapBuilder(7).put(LazyClassKeyProvider.com_readtrack_presentation_viewmodel_AddBookViewModel, ((Provider) addBookViewModelProvider)).put(LazyClassKeyProvider.com_readtrack_presentation_viewmodel_BookDetailViewModel, ((Provider) bookDetailViewModelProvider)).put(LazyClassKeyProvider.com_readtrack_presentation_viewmodel_BooksViewModel, ((Provider) booksViewModelProvider)).put(LazyClassKeyProvider.com_readtrack_presentation_viewmodel_HomeViewModel, ((Provider) homeViewModelProvider)).put(LazyClassKeyProvider.com_readtrack_presentation_viewmodel_SettingsViewModel, ((Provider) settingsViewModelProvider)).put(LazyClassKeyProvider.com_readtrack_presentation_viewmodel_StatsViewModel, ((Provider) statsViewModelProvider)).put(LazyClassKeyProvider.com_readtrack_presentation_viewmodel_TimelineViewModel, ((Provider) timelineViewModelProvider)).build());
+      return LazyClassKeyMap.<javax.inject.Provider<ViewModel>>of(MapBuilder.<String, javax.inject.Provider<ViewModel>>newMapBuilder(10).put(LazyClassKeyProvider.com_readtrack_presentation_viewmodel_AddBookViewModel, ((Provider) addBookViewModelProvider)).put(LazyClassKeyProvider.com_readtrack_presentation_viewmodel_AddToBookListViewModel, ((Provider) addToBookListViewModelProvider)).put(LazyClassKeyProvider.com_readtrack_presentation_viewmodel_BookDetailViewModel, ((Provider) bookDetailViewModelProvider)).put(LazyClassKeyProvider.com_readtrack_presentation_viewmodel_BookListDetailViewModel, ((Provider) bookListDetailViewModelProvider)).put(LazyClassKeyProvider.com_readtrack_presentation_viewmodel_BookListViewModel, ((Provider) bookListViewModelProvider)).put(LazyClassKeyProvider.com_readtrack_presentation_viewmodel_BooksViewModel, ((Provider) booksViewModelProvider)).put(LazyClassKeyProvider.com_readtrack_presentation_viewmodel_HomeViewModel, ((Provider) homeViewModelProvider)).put(LazyClassKeyProvider.com_readtrack_presentation_viewmodel_SettingsViewModel, ((Provider) settingsViewModelProvider)).put(LazyClassKeyProvider.com_readtrack_presentation_viewmodel_StatsViewModel, ((Provider) statsViewModelProvider)).put(LazyClassKeyProvider.com_readtrack_presentation_viewmodel_TimelineViewModel, ((Provider) timelineViewModelProvider)).build());
     }
 
     @Override
@@ -508,22 +556,37 @@ public final class DaggerReadTrackApp_HiltComponents_SingletonC {
 
     @IdentifierNameString
     private static final class LazyClassKeyProvider {
-      static String com_readtrack_presentation_viewmodel_BooksViewModel = "com.readtrack.presentation.viewmodel.BooksViewModel";
+      static String com_readtrack_presentation_viewmodel_StatsViewModel = "com.readtrack.presentation.viewmodel.StatsViewModel";
+
+      static String com_readtrack_presentation_viewmodel_BookListViewModel = "com.readtrack.presentation.viewmodel.BookListViewModel";
+
+      static String com_readtrack_presentation_viewmodel_SettingsViewModel = "com.readtrack.presentation.viewmodel.SettingsViewModel";
+
+      static String com_readtrack_presentation_viewmodel_BookListDetailViewModel = "com.readtrack.presentation.viewmodel.BookListDetailViewModel";
 
       static String com_readtrack_presentation_viewmodel_BookDetailViewModel = "com.readtrack.presentation.viewmodel.BookDetailViewModel";
 
       static String com_readtrack_presentation_viewmodel_AddBookViewModel = "com.readtrack.presentation.viewmodel.AddBookViewModel";
 
-      static String com_readtrack_presentation_viewmodel_HomeViewModel = "com.readtrack.presentation.viewmodel.HomeViewModel";
-
-      static String com_readtrack_presentation_viewmodel_StatsViewModel = "com.readtrack.presentation.viewmodel.StatsViewModel";
+      static String com_readtrack_presentation_viewmodel_BooksViewModel = "com.readtrack.presentation.viewmodel.BooksViewModel";
 
       static String com_readtrack_presentation_viewmodel_TimelineViewModel = "com.readtrack.presentation.viewmodel.TimelineViewModel";
 
-      static String com_readtrack_presentation_viewmodel_SettingsViewModel = "com.readtrack.presentation.viewmodel.SettingsViewModel";
+      static String com_readtrack_presentation_viewmodel_AddToBookListViewModel = "com.readtrack.presentation.viewmodel.AddToBookListViewModel";
+
+      static String com_readtrack_presentation_viewmodel_HomeViewModel = "com.readtrack.presentation.viewmodel.HomeViewModel";
 
       @KeepFieldType
-      BooksViewModel com_readtrack_presentation_viewmodel_BooksViewModel2;
+      StatsViewModel com_readtrack_presentation_viewmodel_StatsViewModel2;
+
+      @KeepFieldType
+      BookListViewModel com_readtrack_presentation_viewmodel_BookListViewModel2;
+
+      @KeepFieldType
+      SettingsViewModel com_readtrack_presentation_viewmodel_SettingsViewModel2;
+
+      @KeepFieldType
+      BookListDetailViewModel com_readtrack_presentation_viewmodel_BookListDetailViewModel2;
 
       @KeepFieldType
       BookDetailViewModel com_readtrack_presentation_viewmodel_BookDetailViewModel2;
@@ -532,16 +595,16 @@ public final class DaggerReadTrackApp_HiltComponents_SingletonC {
       AddBookViewModel com_readtrack_presentation_viewmodel_AddBookViewModel2;
 
       @KeepFieldType
-      HomeViewModel com_readtrack_presentation_viewmodel_HomeViewModel2;
-
-      @KeepFieldType
-      StatsViewModel com_readtrack_presentation_viewmodel_StatsViewModel2;
+      BooksViewModel com_readtrack_presentation_viewmodel_BooksViewModel2;
 
       @KeepFieldType
       TimelineViewModel com_readtrack_presentation_viewmodel_TimelineViewModel2;
 
       @KeepFieldType
-      SettingsViewModel com_readtrack_presentation_viewmodel_SettingsViewModel2;
+      AddToBookListViewModel com_readtrack_presentation_viewmodel_AddToBookListViewModel2;
+
+      @KeepFieldType
+      HomeViewModel com_readtrack_presentation_viewmodel_HomeViewModel2;
     }
 
     private static final class SwitchingProvider<T> implements Provider<T> {
@@ -566,24 +629,33 @@ public final class DaggerReadTrackApp_HiltComponents_SingletonC {
       public T get() {
         switch (id) {
           case 0: // com.readtrack.presentation.viewmodel.AddBookViewModel 
-          return (T) new AddBookViewModel(singletonCImpl.provideBookRepositoryProvider.get(), singletonCImpl.doubanSearchServiceProvider.get(), singletonCImpl.preferencesManagerProvider.get());
+          return (T) new AddBookViewModel(singletonCImpl.provideBookRepositoryProvider.get(), singletonCImpl.doubanSearchServiceProvider.get(), singletonCImpl.bingImageSearchServiceProvider.get(), singletonCImpl.preferencesManagerProvider.get());
 
-          case 1: // com.readtrack.presentation.viewmodel.BookDetailViewModel 
+          case 1: // com.readtrack.presentation.viewmodel.AddToBookListViewModel 
+          return (T) new AddToBookListViewModel(singletonCImpl.provideBookListRepositoryProvider.get());
+
+          case 2: // com.readtrack.presentation.viewmodel.BookDetailViewModel 
           return (T) new BookDetailViewModel(singletonCImpl.provideBookRepositoryProvider.get(), singletonCImpl.provideReadingRecordRepositoryProvider.get(), viewModelCImpl.savedStateHandle);
 
-          case 2: // com.readtrack.presentation.viewmodel.BooksViewModel 
+          case 3: // com.readtrack.presentation.viewmodel.BookListDetailViewModel 
+          return (T) new BookListDetailViewModel(singletonCImpl.provideBookListRepositoryProvider.get());
+
+          case 4: // com.readtrack.presentation.viewmodel.BookListViewModel 
+          return (T) new BookListViewModel(singletonCImpl.provideBookListRepositoryProvider.get());
+
+          case 5: // com.readtrack.presentation.viewmodel.BooksViewModel 
           return (T) new BooksViewModel(singletonCImpl.provideBookRepositoryProvider.get());
 
-          case 3: // com.readtrack.presentation.viewmodel.HomeViewModel 
+          case 6: // com.readtrack.presentation.viewmodel.HomeViewModel 
           return (T) new HomeViewModel(singletonCImpl.provideBookRepositoryProvider.get(), singletonCImpl.provideReadingRecordRepositoryProvider.get(), singletonCImpl.preferencesManagerProvider.get());
 
-          case 4: // com.readtrack.presentation.viewmodel.SettingsViewModel 
-          return (T) new SettingsViewModel(singletonCImpl.provideDataBackupRepositoryProvider.get(), singletonCImpl.preferencesManagerProvider.get());
+          case 7: // com.readtrack.presentation.viewmodel.SettingsViewModel 
+          return (T) new SettingsViewModel(singletonCImpl.provideDataBackupRepositoryProvider.get(), singletonCImpl.preferencesManagerProvider.get(), singletonCImpl.provideOkHttpClientProvider.get(), singletonCImpl.webDavServiceProvider.get(), singletonCImpl.webDavBackupSchedulerProvider.get());
 
-          case 5: // com.readtrack.presentation.viewmodel.StatsViewModel 
+          case 8: // com.readtrack.presentation.viewmodel.StatsViewModel 
           return (T) new StatsViewModel(singletonCImpl.provideBookRepositoryProvider.get(), singletonCImpl.provideReadingRecordRepositoryProvider.get(), singletonCImpl.preferencesManagerProvider.get());
 
-          case 6: // com.readtrack.presentation.viewmodel.TimelineViewModel 
+          case 9: // com.readtrack.presentation.viewmodel.TimelineViewModel 
           return (T) new TimelineViewModel(singletonCImpl.provideBookRepositoryProvider.get(), singletonCImpl.provideReadingRecordRepositoryProvider.get());
 
           default: throw new AssertionError(id);
@@ -672,15 +744,29 @@ public final class DaggerReadTrackApp_HiltComponents_SingletonC {
 
     private Provider<ReadingRecordDao> provideReadingRecordDaoProvider;
 
+    private Provider<BookListDao> provideBookListDaoProvider;
+
+    private Provider<DataBackupRepository> provideDataBackupRepositoryProvider;
+
+    private Provider<PreferencesManager> preferencesManagerProvider;
+
+    private Provider<OkHttpClient> provideOkHttpClientProvider;
+
+    private Provider<WebDavService> webDavServiceProvider;
+
+    private Provider<WebDavAutoBackupWorker_AssistedFactory> webDavAutoBackupWorker_AssistedFactoryProvider;
+
     private Provider<BookRepository> provideBookRepositoryProvider;
 
     private Provider<DoubanSearchService> doubanSearchServiceProvider;
 
-    private Provider<PreferencesManager> preferencesManagerProvider;
+    private Provider<BingImageSearchService> bingImageSearchServiceProvider;
+
+    private Provider<BookListRepository> provideBookListRepositoryProvider;
 
     private Provider<ReadingRecordRepository> provideReadingRecordRepositoryProvider;
 
-    private Provider<DataBackupRepository> provideDataBackupRepositoryProvider;
+    private Provider<WebDavBackupScheduler> webDavBackupSchedulerProvider;
 
     private SingletonCImpl(ApplicationContextModule applicationContextModuleParam) {
       this.applicationContextModule = applicationContextModuleParam;
@@ -688,20 +774,37 @@ public final class DaggerReadTrackApp_HiltComponents_SingletonC {
 
     }
 
+    private Map<String, javax.inject.Provider<WorkerAssistedFactory<? extends ListenableWorker>>> mapOfStringAndProviderOfWorkerAssistedFactoryOf(
+        ) {
+      return Collections.<String, javax.inject.Provider<WorkerAssistedFactory<? extends ListenableWorker>>>singletonMap("com.readtrack.worker.WebDavAutoBackupWorker", ((Provider) webDavAutoBackupWorker_AssistedFactoryProvider));
+    }
+
+    private HiltWorkerFactory hiltWorkerFactory() {
+      return WorkerFactoryModule_ProvideFactoryFactory.provideFactory(mapOfStringAndProviderOfWorkerAssistedFactoryOf());
+    }
+
     @SuppressWarnings("unchecked")
     private void initialize(final ApplicationContextModule applicationContextModuleParam) {
-      this.provideDatabaseProvider = DoubleCheck.provider(new SwitchingProvider<ReadTrackDatabase>(singletonCImpl, 2));
-      this.provideBookDaoProvider = DoubleCheck.provider(new SwitchingProvider<BookDao>(singletonCImpl, 1));
-      this.provideReadingRecordDaoProvider = DoubleCheck.provider(new SwitchingProvider<ReadingRecordDao>(singletonCImpl, 3));
-      this.provideBookRepositoryProvider = DoubleCheck.provider(new SwitchingProvider<BookRepository>(singletonCImpl, 0));
-      this.doubanSearchServiceProvider = DoubleCheck.provider(new SwitchingProvider<DoubanSearchService>(singletonCImpl, 4));
-      this.preferencesManagerProvider = DoubleCheck.provider(new SwitchingProvider<PreferencesManager>(singletonCImpl, 5));
-      this.provideReadingRecordRepositoryProvider = DoubleCheck.provider(new SwitchingProvider<ReadingRecordRepository>(singletonCImpl, 6));
-      this.provideDataBackupRepositoryProvider = DoubleCheck.provider(new SwitchingProvider<DataBackupRepository>(singletonCImpl, 7));
+      this.provideDatabaseProvider = DoubleCheck.provider(new SwitchingProvider<ReadTrackDatabase>(singletonCImpl, 3));
+      this.provideBookDaoProvider = DoubleCheck.provider(new SwitchingProvider<BookDao>(singletonCImpl, 2));
+      this.provideReadingRecordDaoProvider = DoubleCheck.provider(new SwitchingProvider<ReadingRecordDao>(singletonCImpl, 4));
+      this.provideBookListDaoProvider = DoubleCheck.provider(new SwitchingProvider<BookListDao>(singletonCImpl, 5));
+      this.provideDataBackupRepositoryProvider = DoubleCheck.provider(new SwitchingProvider<DataBackupRepository>(singletonCImpl, 1));
+      this.preferencesManagerProvider = DoubleCheck.provider(new SwitchingProvider<PreferencesManager>(singletonCImpl, 6));
+      this.provideOkHttpClientProvider = DoubleCheck.provider(new SwitchingProvider<OkHttpClient>(singletonCImpl, 8));
+      this.webDavServiceProvider = DoubleCheck.provider(new SwitchingProvider<WebDavService>(singletonCImpl, 7));
+      this.webDavAutoBackupWorker_AssistedFactoryProvider = SingleCheck.provider(new SwitchingProvider<WebDavAutoBackupWorker_AssistedFactory>(singletonCImpl, 0));
+      this.provideBookRepositoryProvider = DoubleCheck.provider(new SwitchingProvider<BookRepository>(singletonCImpl, 9));
+      this.doubanSearchServiceProvider = DoubleCheck.provider(new SwitchingProvider<DoubanSearchService>(singletonCImpl, 10));
+      this.bingImageSearchServiceProvider = DoubleCheck.provider(new SwitchingProvider<BingImageSearchService>(singletonCImpl, 11));
+      this.provideBookListRepositoryProvider = DoubleCheck.provider(new SwitchingProvider<BookListRepository>(singletonCImpl, 12));
+      this.provideReadingRecordRepositoryProvider = DoubleCheck.provider(new SwitchingProvider<ReadingRecordRepository>(singletonCImpl, 13));
+      this.webDavBackupSchedulerProvider = DoubleCheck.provider(new SwitchingProvider<WebDavBackupScheduler>(singletonCImpl, 14));
     }
 
     @Override
     public void injectReadTrackApp(ReadTrackApp readTrackApp) {
+      injectReadTrackApp2(readTrackApp);
     }
 
     @Override
@@ -719,6 +822,11 @@ public final class DaggerReadTrackApp_HiltComponents_SingletonC {
       return new ServiceCBuilder(singletonCImpl);
     }
 
+    private ReadTrackApp injectReadTrackApp2(ReadTrackApp instance) {
+      ReadTrackApp_MembersInjector.injectWorkerFactory(instance, hiltWorkerFactory());
+      return instance;
+    }
+
     private static final class SwitchingProvider<T> implements Provider<T> {
       private final SingletonCImpl singletonCImpl;
 
@@ -733,29 +841,56 @@ public final class DaggerReadTrackApp_HiltComponents_SingletonC {
       @Override
       public T get() {
         switch (id) {
-          case 0: // com.readtrack.domain.repository.BookRepository 
-          return (T) DatabaseModule_ProvideBookRepositoryFactory.provideBookRepository(singletonCImpl.provideBookDaoProvider.get(), singletonCImpl.provideReadingRecordDaoProvider.get(), singletonCImpl.provideDatabaseProvider.get());
+          case 0: // com.readtrack.worker.WebDavAutoBackupWorker_AssistedFactory 
+          return (T) new WebDavAutoBackupWorker_AssistedFactory() {
+            @Override
+            public WebDavAutoBackupWorker create(Context appContext,
+                WorkerParameters workerParams) {
+              return new WebDavAutoBackupWorker(appContext, workerParams, singletonCImpl.provideDataBackupRepositoryProvider.get(), singletonCImpl.preferencesManagerProvider.get(), singletonCImpl.webDavServiceProvider.get());
+            }
+          };
 
-          case 1: // com.readtrack.data.local.dao.BookDao 
+          case 1: // com.readtrack.domain.repository.DataBackupRepository 
+          return (T) DatabaseModule_ProvideDataBackupRepositoryFactory.provideDataBackupRepository(singletonCImpl.provideBookDaoProvider.get(), singletonCImpl.provideReadingRecordDaoProvider.get(), singletonCImpl.provideBookListDaoProvider.get());
+
+          case 2: // com.readtrack.data.local.dao.BookDao 
           return (T) DatabaseModule_ProvideBookDaoFactory.provideBookDao(singletonCImpl.provideDatabaseProvider.get());
 
-          case 2: // com.readtrack.data.local.database.ReadTrackDatabase 
+          case 3: // com.readtrack.data.local.database.ReadTrackDatabase 
           return (T) DatabaseModule_ProvideDatabaseFactory.provideDatabase(ApplicationContextModule_ProvideContextFactory.provideContext(singletonCImpl.applicationContextModule));
 
-          case 3: // com.readtrack.data.local.dao.ReadingRecordDao 
+          case 4: // com.readtrack.data.local.dao.ReadingRecordDao 
           return (T) DatabaseModule_ProvideReadingRecordDaoFactory.provideReadingRecordDao(singletonCImpl.provideDatabaseProvider.get());
 
-          case 4: // com.readtrack.data.remote.DoubanSearchService 
-          return (T) new DoubanSearchService();
+          case 5: // com.readtrack.data.local.dao.BookListDao 
+          return (T) DatabaseModule_ProvideBookListDaoFactory.provideBookListDao(singletonCImpl.provideDatabaseProvider.get());
 
-          case 5: // com.readtrack.data.local.PreferencesManager 
+          case 6: // com.readtrack.data.local.PreferencesManager 
           return (T) new PreferencesManager(ApplicationContextModule_ProvideContextFactory.provideContext(singletonCImpl.applicationContextModule));
 
-          case 6: // com.readtrack.domain.repository.ReadingRecordRepository 
+          case 7: // com.readtrack.data.remote.WebDavService 
+          return (T) new WebDavService(singletonCImpl.provideOkHttpClientProvider.get());
+
+          case 8: // okhttp3.OkHttpClient 
+          return (T) NetworkModule_ProvideOkHttpClientFactory.provideOkHttpClient();
+
+          case 9: // com.readtrack.domain.repository.BookRepository 
+          return (T) DatabaseModule_ProvideBookRepositoryFactory.provideBookRepository(singletonCImpl.provideBookDaoProvider.get(), singletonCImpl.provideReadingRecordDaoProvider.get(), singletonCImpl.provideDatabaseProvider.get());
+
+          case 10: // com.readtrack.data.remote.DoubanSearchService 
+          return (T) new DoubanSearchService(singletonCImpl.provideOkHttpClientProvider.get());
+
+          case 11: // com.readtrack.data.remote.BingImageSearchService 
+          return (T) new BingImageSearchService(singletonCImpl.provideOkHttpClientProvider.get());
+
+          case 12: // com.readtrack.domain.repository.BookListRepository 
+          return (T) DatabaseModule_ProvideBookListRepositoryFactory.provideBookListRepository(singletonCImpl.provideBookListDaoProvider.get(), singletonCImpl.provideBookDaoProvider.get());
+
+          case 13: // com.readtrack.domain.repository.ReadingRecordRepository 
           return (T) DatabaseModule_ProvideReadingRecordRepositoryFactory.provideReadingRecordRepository(singletonCImpl.provideReadingRecordDaoProvider.get());
 
-          case 7: // com.readtrack.domain.repository.DataBackupRepository 
-          return (T) DatabaseModule_ProvideDataBackupRepositoryFactory.provideDataBackupRepository(singletonCImpl.provideBookDaoProvider.get(), singletonCImpl.provideReadingRecordDaoProvider.get());
+          case 14: // com.readtrack.worker.WebDavBackupScheduler 
+          return (T) new WebDavBackupScheduler(ApplicationContextModule_ProvideContextFactory.provideContext(singletonCImpl.applicationContextModule));
 
           default: throw new AssertionError(id);
         }

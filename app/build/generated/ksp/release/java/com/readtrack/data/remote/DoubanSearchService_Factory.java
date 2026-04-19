@@ -5,6 +5,8 @@ import dagger.internal.Factory;
 import dagger.internal.QualifierMetadata;
 import dagger.internal.ScopeMetadata;
 import javax.annotation.processing.Generated;
+import javax.inject.Provider;
+import okhttp3.OkHttpClient;
 
 @ScopeMetadata("javax.inject.Singleton")
 @QualifierMetadata
@@ -21,20 +23,22 @@ import javax.annotation.processing.Generated;
     "cast"
 })
 public final class DoubanSearchService_Factory implements Factory<DoubanSearchService> {
+  private final Provider<OkHttpClient> okHttpClientProvider;
+
+  public DoubanSearchService_Factory(Provider<OkHttpClient> okHttpClientProvider) {
+    this.okHttpClientProvider = okHttpClientProvider;
+  }
+
   @Override
   public DoubanSearchService get() {
-    return newInstance();
+    return newInstance(okHttpClientProvider.get());
   }
 
-  public static DoubanSearchService_Factory create() {
-    return InstanceHolder.INSTANCE;
+  public static DoubanSearchService_Factory create(Provider<OkHttpClient> okHttpClientProvider) {
+    return new DoubanSearchService_Factory(okHttpClientProvider);
   }
 
-  public static DoubanSearchService newInstance() {
-    return new DoubanSearchService();
-  }
-
-  private static final class InstanceHolder {
-    private static final DoubanSearchService_Factory INSTANCE = new DoubanSearchService_Factory();
+  public static DoubanSearchService newInstance(OkHttpClient okHttpClient) {
+    return new DoubanSearchService(okHttpClient);
   }
 }

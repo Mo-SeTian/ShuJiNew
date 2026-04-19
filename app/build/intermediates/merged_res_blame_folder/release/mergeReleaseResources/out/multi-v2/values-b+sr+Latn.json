@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.readtrack.app-mergeReleaseResources-59:/values-b+sr+Latn/values-b+sr+Latn.xml",
+            "outputFile": "com.readtrack.app-mergeReleaseResources-63:/values-b+sr+Latn/values-b+sr+Latn.xml",
             "map": [
                 {
                     "source": "/root/.gradle/caches/transforms-4/37a85dfa5bc99f1ad6f6fdd1c794a2e2/transformed/jetified-ui-release/res/values-b+sr+Latn/values-b+sr+Latn.xml",

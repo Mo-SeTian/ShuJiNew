@@ -63,7 +63,7 @@ import com.readtrack.data.local.entity.RecordType
 import com.readtrack.domain.model.BookStatus
 import com.readtrack.presentation.ui.components.BookCover
 import com.readtrack.presentation.ui.components.BookCoverQuality
-import com.readtrack.presentation.viewmodel.ProgressType
+import com.readtrack.domain.model.ProgressType
 import com.readtrack.presentation.viewmodel.TimelineDayGroup
 import com.readtrack.presentation.viewmodel.TimelineItem
 import com.readtrack.presentation.viewmodel.TimelineTimeRange
