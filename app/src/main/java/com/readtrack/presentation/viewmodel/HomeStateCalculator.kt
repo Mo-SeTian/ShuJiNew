@@ -80,7 +80,7 @@ internal fun buildHomeUiState(
         normalRecords.add(record)
 
         val isChapterBook = record.bookId != null && chapterBookIds.contains(record.bookId)
-        val value = record.pagesRead
+        val value = if (isChapterBook) (record.chaptersRead ?: 0).toDouble() else record.pagesRead
         totalReadingTime += value
 
         if (record.date >= startOfMonth) {
