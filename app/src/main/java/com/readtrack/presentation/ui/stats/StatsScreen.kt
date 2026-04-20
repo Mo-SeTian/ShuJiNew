@@ -475,7 +475,7 @@ fun ReadingRecordItem(recordWithBook: RecordWithBook) {
         if (isStatusRecord) {
             record.note?.takeIf { it.isNotBlank() } ?: ""
         } else {
-            record.note?.takeIf { it.isNotBlank() } ?: "阅读了 ${record.pagesRead.toInt()} ${if (isChapterBased) "章" else "页"}"
+            record.note?.takeIf { it.isNotBlank() } ?: "阅读了 ${if (isChapterBased) record.chaptersRead ?: 0 else record.pagesRead.toInt()} ${if (isChapterBased) "章" else "页"}"
         }
     }
 
