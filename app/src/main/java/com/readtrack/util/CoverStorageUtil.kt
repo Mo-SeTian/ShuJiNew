@@ -5,6 +5,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import java.io.FileOutputStream
 import java.util.UUID
@@ -22,7 +23,7 @@ import javax.inject.Singleton
  */
 @Singleton
 class CoverStorageUtil @Inject constructor(
-    private val context: Context
+    @ApplicationContext private val context: Context
 ) {
     private val coversDir: File
         get() = File(context.filesDir, "covers").also { it.mkdirs() }
