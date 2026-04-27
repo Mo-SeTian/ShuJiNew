@@ -2,6 +2,8 @@ package com.readtrack.di
 
 import android.content.Context
 import androidx.room.Room
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.readtrack.data.local.dao.BookDao
 import com.readtrack.data.local.dao.BookListDao
 import com.readtrack.data.local.dao.ReadingRecordDao
@@ -33,8 +35,16 @@ object DatabaseModule {
             ReadTrackDatabase::class.java,
             "readtrack_database"
         )
+            .addMigrations(MIGRATION_9_10)
             .fallbackToDestructiveMigration()
             .build()
+    }
+
+    /**
+     * 从版本 9 迁移到 10：为 books 表新增 bookType 列（默认 'NOVEL'）
+     */
+    private val MIGRATION_9_10 = Migration(9, 10) { db ->
+        db.execSQL("ALTER TABLE books ADD COLUMN bookType TEXT NOT NULL DEFAULT 'NOVEL'")
     }
 
     @Provides
