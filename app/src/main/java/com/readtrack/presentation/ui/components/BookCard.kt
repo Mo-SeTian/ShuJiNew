@@ -122,11 +122,25 @@ fun BookCard(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Status + Rating inline row
+                // Status + Type + Rating inline row
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+                    // Book Type Chip
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f)
+                    ) {
+                        Text(
+                            text = book.bookType.displayName,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+
                     // Status Chip
                     Surface(
                         shape = RoundedCornerShape(8.dp),

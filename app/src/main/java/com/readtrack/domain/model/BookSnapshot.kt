@@ -14,6 +14,7 @@ data class BookSnapshot(
     val author: String? = null,
     val coverPath: String? = null,
     val progressType: ProgressType = ProgressType.PAGE,
+    val bookType: String = "NOVEL",
     val status: BookStatus = BookStatus.WANT_TO_READ,
     val totalChapters: Int? = null,
     val currentChapter: Int? = null
@@ -25,6 +26,7 @@ data class BookSnapshot(
             author = book.author,
             coverPath = book.coverPath,
             progressType = book.progressType,
+            bookType = book.bookType.name,
             status = status,
             totalChapters = book.totalChapters,
             currentChapter = book.currentChapter
