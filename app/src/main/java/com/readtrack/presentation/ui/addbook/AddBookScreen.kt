@@ -504,6 +504,38 @@ fun AddBookScreen(
                 )
             }
 
+            // Book Type Selection
+            Text(
+                "书籍类型",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                com.readtrack.domain.model.BookType.entries.forEach { type ->
+                    FilterChip(
+                        selected = uiState.bookType == type,
+                        onClick = { viewModel.updateBookType(type) },
+                        label = {
+                            Box(
+                                modifier = Modifier.fillMaxWidth(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    type.displayName,
+                                    style = MaterialTheme.typography.labelMedium
+                                )
+                            }
+                        },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                }
+            }
+
             // Book Status Selection
             Text(
                 "书籍状态",

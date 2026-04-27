@@ -9,6 +9,7 @@ import com.readtrack.data.remote.BingImageSearchService
 import com.readtrack.data.remote.BookSearchResult
 import com.readtrack.data.remote.DoubanSearchService
 import com.readtrack.domain.model.BookStatus
+import com.readtrack.domain.model.BookType
 import com.readtrack.domain.model.ProgressType
 import com.readtrack.domain.repository.BookRepository
 import com.readtrack.util.CoverStorageUtil
@@ -36,6 +37,7 @@ data class AddBookUiState(
     val currentChapter: String = "",
     val description: String = "",
     val coverUri: String? = null,
+    val bookType: BookType = BookType.NOVEL,
     val status: BookStatus = BookStatus.WANT_TO_READ,
     val isSaving: Boolean = false,
     val isSaved: Boolean = false,
@@ -102,6 +104,7 @@ class AddBookViewModel @Inject constructor(
                                 currentChapter = it.currentChapter.toString(),
                                 description = it.description ?: "",
                                 coverUri = it.coverPath,
+                                bookType = it.bookType,
                                 status = it.status,
                                 isEditing = true,
                                 editingBookId = bookId
@@ -126,6 +129,7 @@ class AddBookViewModel @Inject constructor(
     fun updateDescription(description: String) = _uiState.update { it.copy(description = description) }
     fun updateCoverUri(uri: String?) = _uiState.update { it.copy(coverUri = uri) }
     fun updateStatus(status: BookStatus) = _uiState.update { it.copy(status = status) }
+    fun updateBookType(bookType: BookType) = _uiState.update { it.copy(bookType = bookType) }
 
     fun showSearchDialog() {
         searchJob?.cancel()
@@ -400,6 +404,7 @@ class AddBookViewModel @Inject constructor(
                         currentChapter = currentChapter,
                         description = state.description.ifBlank { null },
                         coverPath = persistedCoverPath,
+                        bookType = state.bookType,
                         status = state.status,
                         updatedAt = now
                     )
@@ -416,6 +421,7 @@ class AddBookViewModel @Inject constructor(
                         currentChapter = currentChapter,
                         description = state.description.ifBlank { null },
                         coverPath = persistedCoverPath,
+                        bookType = state.bookType,
                         status = state.status,
                         createdAt = now,
                         updatedAt = now,

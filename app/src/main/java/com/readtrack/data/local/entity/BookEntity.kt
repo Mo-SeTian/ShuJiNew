@@ -4,6 +4,7 @@ import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.readtrack.domain.model.BookStatus
+import com.readtrack.domain.model.BookType
 import com.readtrack.domain.model.ProgressType
 
 @Entity(
@@ -31,6 +32,7 @@ data class BookEntity(
     val currentChapter: Int = 0,
     val coverPath: String? = null,
     val status: BookStatus = BookStatus.WANT_TO_READ,
+    val bookType: BookType = BookType.NOVEL,
     val rating: Float? = null,        // 0-5 星评分，null 表示未评分
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis(),

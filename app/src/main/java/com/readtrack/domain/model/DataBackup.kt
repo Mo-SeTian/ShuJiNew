@@ -51,6 +51,7 @@ data class BookExport(
     val coverPath: String? = null,
     val description: String? = null,
     val status: String,
+    val bookType: String = "NOVEL",
     val rating: Float? = null,
     val createdAt: Long,
     val updatedAt: Long,
@@ -70,6 +71,7 @@ data class BookExport(
             coverPath = book.coverPath,
             description = book.description,
             status = book.status.name,
+            bookType = book.bookType.name,
             rating = book.rating,
             createdAt = book.createdAt,
             updatedAt = book.updatedAt,
@@ -92,6 +94,7 @@ data class BookExport(
         coverPath = coverPath,
         description = description,
         status = BookStatus.valueOf(status),
+        bookType = try { BookType.valueOf(bookType) } catch (e: Exception) { BookType.NOVEL },
         rating = rating,
         createdAt = createdAt,
         updatedAt = updatedAt,    // 保留原始时间，不覆盖

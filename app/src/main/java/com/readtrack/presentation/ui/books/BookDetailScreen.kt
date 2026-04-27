@@ -481,7 +481,26 @@ private fun BookInfoCard(book: BookEntity) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                
+
+                // 书籍类型标签
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f)
+                    ) {
+                        Text(
+                            book.bookType.displayName,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+
                 if (book.totalPages > 0 || book.totalChapters != null) {
                     val info = if (book.progressType == ProgressType.CHAPTER) {
                         "共 ${book.totalChapters ?: 0} 章"
