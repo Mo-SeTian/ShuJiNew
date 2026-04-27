@@ -11,6 +11,7 @@ import com.readtrack.data.remote.DoubanSearchService
 import com.readtrack.domain.model.BookStatus
 import com.readtrack.domain.model.ProgressType
 import com.readtrack.domain.repository.BookRepository
+import com.readtrack.util.CoverStorageUtil
 import com.readtrack.util.PerformanceTrace
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -64,7 +65,8 @@ class AddBookViewModel @Inject constructor(
     private val bookRepository: BookRepository,
     private val doubanSearchService: DoubanSearchService,
     private val bingImageSearchService: BingImageSearchService,
-    private val preferencesManager: PreferencesManager
+    private val preferencesManager: PreferencesManager,
+    private val coverStorageUtil: CoverStorageUtil
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AddBookUiState())
@@ -384,6 +386,8 @@ class AddBookViewModel @Inject constructor(
             _uiState.update { it.copy(isSaving = true, errorMessage = null) }
             try {
                 val now = System.currentTimeMillis()
+                // 将 content:// 等临时 URI 持久化到内部存储
+                val persistedCoverPath = coverStorageUtil.persistCover(state.coverUri)
                 if (state.isEditing && loadedBook != null) {
                     val updatedBook = loadedBook!!.copy(
                         title = state.title,
@@ -395,7 +399,7 @@ class AddBookViewModel @Inject constructor(
                         totalChapters = if (totalChapters > 0) totalChapters else null,
                         currentChapter = currentChapter,
                         description = state.description.ifBlank { null },
-                        coverPath = state.coverUri,
+                        coverPath = persistedCoverPath,
                         status = state.status,
                         updatedAt = now
                     )
@@ -411,7 +415,7 @@ class AddBookViewModel @Inject constructor(
                         totalChapters = if (totalChapters > 0) totalChapters else null,
                         currentChapter = currentChapter,
                         description = state.description.ifBlank { null },
-                        coverPath = state.coverUri,
+                        coverPath = persistedCoverPath,
                         status = state.status,
                         createdAt = now,
                         updatedAt = now,
