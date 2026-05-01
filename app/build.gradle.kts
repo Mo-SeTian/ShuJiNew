@@ -21,6 +21,9 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+
+        // APK 体积优化：只保留中文和英文语言资源
+        resourceConfigurations += listOf("zh", "en")
     }
 
     signingConfigs {

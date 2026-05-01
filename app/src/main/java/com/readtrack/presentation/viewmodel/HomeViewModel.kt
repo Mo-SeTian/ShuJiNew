@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -42,12 +43,14 @@ class HomeViewModel @Inject constructor(
                 preferencesManager.homeComponentOrder
             ) { books, records, statsUnit, componentOrder ->
                 buildHomeUiState(books, records, statsUnit, componentOrder)
-            }.collect { state ->
-                _uiState.value = state
-                PerformanceTrace.mark(
-                    "home.ready total=${state.totalBooks} recent=${state.recentBooks.size} streak=${state.streakDays}"
-                )
             }
+                .debounce(300L)
+                .collect { state ->
+                    _uiState.value = state
+                    PerformanceTrace.mark(
+                        "home.ready total=${state.totalBooks} recent=${state.recentBooks.size} streak=${state.streakDays}"
+                    )
+                }
         }
     }
 
