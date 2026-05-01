@@ -236,6 +236,7 @@ class PreferencesManager @Inject constructor(
             PreferencesExport(
                 themeMode = preferences[THEME_MODE] ?: ThemeMode.SYSTEM.name,
                 statsUnit = preferences[STATS_UNIT] ?: StatsUnit.CHAPTER.name,
+                statsRange = preferences[STATS_RANGE] ?: StatsRange.WEEK.name,
                 doubanCookie = preferences[DOUBAN_COOKIE] ?: "",
                 webDavServerUrl = preferences[WEBDAV_SERVER_URL] ?: "",
                 webDavUsername = preferences[WEBDAV_USERNAME] ?: "",
@@ -254,6 +255,7 @@ class PreferencesManager @Inject constructor(
         dataStore.edit { preferences ->
             preferences[THEME_MODE] = prefs.themeMode
             preferences[STATS_UNIT] = prefs.statsUnit
+            preferences[STATS_RANGE] = prefs.statsRange
             preferences[DOUBAN_COOKIE] = prefs.doubanCookie
             preferences[WEBDAV_SERVER_URL] = prefs.webDavServerUrl
             preferences[WEBDAV_USERNAME] = prefs.webDavUsername
