@@ -12,6 +12,8 @@ import com.readtrack.domain.model.DataBackup
 import com.readtrack.domain.model.ImportPreview
 import com.readtrack.domain.model.ImportResult
 import com.readtrack.domain.repository.DataBackupRepository
+import com.readtrack.data.repository.DataBackupRepositoryImpl
+import com.readtrack.util.CoverStorageUtil
 import com.readtrack.worker.WebDavBackupScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,6 +25,7 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import java.io.File
 import javax.inject.Inject
 
 data class SettingsUiState(
@@ -37,8 +40,12 @@ data class SettingsUiState(
     val lastImportResult: ImportResult? = null,
     val errorMessage: String? = null,
     val exportJson: String? = null,
+    val /** 导出时生成的 ZIP 文件路径（用于保存到用户选择的路径）*/
+    exportZipPath: String? = null,
     val showClearConfirmDialog: Boolean = false,
     val importPreview: ImportPreview? = null,
+    val /** 导入时解析出的 ZIP 文件路径（用于后续 importFromZip）*/
+    pendingZipPath: String? = null,
     val showWebDavRestoreDialog: Boolean = false,
     val doubanCookie: String = "",
     val isTestingCookie: Boolean = false,
@@ -75,7 +82,8 @@ class SettingsViewModel @Inject constructor(
     private val preferencesManager: PreferencesManager,
     private val okHttpClient: OkHttpClient,
     private val webDavService: WebDavService,
-    private val webDavBackupScheduler: WebDavBackupScheduler
+    private val webDavBackupScheduler: WebDavBackupScheduler,
+    private val coverStorageUtil: CoverStorageUtil
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingsUiState())
@@ -166,18 +174,18 @@ class SettingsViewModel @Inject constructor(
     fun exportData() {
         viewModelScope.launch {
             _uiState.update { it.copy(isExporting = true, errorMessage = null) }
-            dataBackupRepository.exportAllData()
-                .onSuccess { backup ->
-                    val json = Json.encodeToString(DataBackup.serializer(), backup)
+            (dataBackupRepository as? DataBackupRepositoryImpl)?.exportToZip()
+                ?.onSuccess { zipFile ->
                     _uiState.update {
                         it.copy(
                             isExporting = false,
                             exportSuccess = true,
-                            exportJson = json
+                            exportZipPath = zipFile.absolutePath,
+                            exportJson = null
                         )
                     }
                 }
-                .onFailure { error ->
+                ?.onFailure { error ->
                     _uiState.update {
                         it.copy(
                             isExporting = false,
@@ -185,54 +193,116 @@ class SettingsViewModel @Inject constructor(
                         )
                     }
                 }
+                ?: run {
+                    // 回退：纯 JSON 导出（不应发生）
+                    dataBackupRepository.exportAllData()
+                        .onSuccess { backup ->
+                            val json = Json.encodeToString(DataBackup.serializer(), backup)
+                            _uiState.update {
+                                it.copy(
+                                    isExporting = false,
+                                    exportSuccess = true,
+                                    exportJson = json,
+                                    exportZipPath = null
+                                )
+                            }
+                        }
+                        .onFailure { error ->
+                            _uiState.update {
+                                it.copy(
+                                    isExporting = false,
+                                    errorMessage = "导出失败: ${error.message}"
+                                )
+                            }
+                        }
+                }
         }
     }
 
-    fun prepareImportPreview(jsonContent: String) {
+    /**
+     * 准备导入预览：自动判断是 JSON 还是 ZIP
+     * - JSON 文件：直接预览
+     * - ZIP 文件：解压后预览 data.json，并将 ZIP 路径存入 pendingZipPath
+     */
+    fun prepareImportPreview(content: String, zipPath: String? = null) {
         viewModelScope.launch {
             _uiState.update {
                 it.copy(
                     isImporting = true,
                     errorMessage = null,
                     showClearConfirmDialog = false,
-                    importPreview = null
+                    importPreview = null,
+                    pendingZipPath = null
                 )
             }
-            val backup = dataBackupRepository.parseBackupFromJson(jsonContent)
-            if (backup == null) {
-                _uiState.update {
-                    it.copy(
-                        isImporting = false,
-                        errorMessage = "文件格式无效",
-                        importPreview = null
-                    )
-                }
+
+            // 尝试解析为纯 JSON
+            val backup = dataBackupRepository.parseBackupFromJson(content)
+            if (backup != null) {
+                dataBackupRepository.previewImport(backup)
+                    .onSuccess { preview ->
+                        _uiState.update {
+                            it.copy(
+                                isImporting = false,
+                                showClearConfirmDialog = true,
+                                importPreview = preview
+                            )
+                        }
+                    }
+                    .onFailure { error ->
+                        _uiState.update {
+                            it.copy(
+                                isImporting = false,
+                                errorMessage = "导入预览失败: ${error.message}",
+                                importPreview = null
+                            )
+                        }
+                    }
                 return@launch
             }
 
-            dataBackupRepository.previewImport(backup)
-                .onSuccess { preview ->
-                    _uiState.update {
-                        it.copy(
-                            isImporting = false,
-                            showClearConfirmDialog = true,
-                            importPreview = preview
-                        )
-                    }
+            // 尝试解析为 ZIP
+            if (zipPath != null) {
+                val zipFile = File(zipPath)
+                if (zipFile.exists()) {
+                    (dataBackupRepository as? DataBackupRepositoryImpl)?.importFromZipForPreview(zipFile)
+                        ?.onSuccess { preview ->
+                            _uiState.update {
+                                it.copy(
+                                    isImporting = false,
+                                    showClearConfirmDialog = true,
+                                    importPreview = preview,
+                                    pendingZipPath = zipPath
+                                )
+                            }
+                        }
+                        ?.onFailure { error ->
+                            _uiState.update {
+                                it.copy(
+                                    isImporting = false,
+                                    errorMessage = "读取 ZIP 失败: ${error.message}",
+                                    importPreview = null
+                                )
+                            }
+                        }
+                    return@launch
                 }
-                .onFailure { error ->
-                    _uiState.update {
-                        it.copy(
-                            isImporting = false,
-                            errorMessage = "导入预览失败: ${error.message}",
-                            importPreview = null
-                        )
-                    }
-                }
+            }
+
+            _uiState.update {
+                it.copy(
+                    isImporting = false,
+                    errorMessage = "文件格式无效，请选择有效的备份文件",
+                    importPreview = null
+                )
+            }
         }
     }
 
-    fun importData(jsonContent: String, clearExisting: Boolean) {
+    /**
+     * 执行导入：自动根据 pendingZipPath 判断走 ZIP 还是 JSON 路径
+     */
+    fun importData(content: String, clearExisting: Boolean, zipPath: String? = null) {
         viewModelScope.launch {
             _uiState.update {
                 it.copy(
@@ -241,7 +311,39 @@ class SettingsViewModel @Inject constructor(
                     showClearConfirmDialog = false
                 )
             }
-            val backup = dataBackupRepository.parseBackupFromJson(jsonContent)
+
+            // ZIP 路径存在 → 从 ZIP 导入
+            val resolvedZipPath = zipPath ?: _uiState.value.pendingZipPath
+            if (resolvedZipPath != null) {
+                val zipFile = File(resolvedZipPath)
+                if (zipFile.exists()) {
+                    (dataBackupRepository as? DataBackupRepositoryImpl)?.importFromZip(zipFile, clearExisting)
+                        ?.onSuccess { result ->
+                            _uiState.update {
+                                it.copy(
+                                    isImporting = false,
+                                    importSuccess = true,
+                                    lastImportResult = result,
+                                    importPreview = null,
+                                    pendingZipPath = null
+                                )
+                            }
+                            return@launch
+                        }
+                        ?.onFailure { error ->
+                            _uiState.update {
+                                it.copy(
+                                    isImporting = false,
+                                    errorMessage = "导入失败: ${error.message}"
+                                )
+                            }
+                            return@launch
+                        }
+                }
+            }
+
+            // JSON 导入
+            val backup = dataBackupRepository.parseBackupFromJson(content)
             if (backup == null) {
                 _uiState.update {
                     it.copy(

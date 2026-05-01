@@ -11,6 +11,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import com.readtrack.domain.model.PreferencesExport
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -203,8 +204,44 @@ class PreferencesManager @Inject constructor(
     }
 
     suspend fun clearAll() {
+        dataStore.edit { preferences -> preferences.clear() }
+    }
+
+    /**
+     * 将当前所有偏好设置序列化为 PreferencesExport 模型（不含 lastBackupAt / lastError 等运行时状态）
+     */
+    suspend fun exportPreferences(): PreferencesExport {
+        var result = PreferencesExport()
+        dataStore.data.collect { preferences ->
+            result = PreferencesExport(
+                themeMode = preferences[THEME_MODE] ?: ThemeMode.SYSTEM.name,
+                statsUnit = preferences[STATS_UNIT] ?: StatsUnit.CHAPTER.name,
+                doubanCookie = preferences[DOUBAN_COOKIE] ?: "",
+                webDavServerUrl = preferences[WEBDAV_SERVER_URL] ?: "",
+                webDavUsername = preferences[WEBDAV_USERNAME] ?: "",
+                webDavPassword = preferences[WEBDAV_PASSWORD] ?: "",
+                webDavRemotePath = preferences[WEBDAV_REMOTE_PATH] ?: "ReadTrack",
+                webDavAutoBackupFrequency = preferences[WEBDAV_AUTO_BACKUP_FREQUENCY] ?: AutoBackupFrequency.OFF.name,
+                homeComponentOrder = (preferences[HOME_COMPONENT_ORDER] ?: "").split(",").filter { it.isNotBlank() }
+            )
+        }
+        return result
+    }
+
+    /**
+     * 将 PreferencesExport 写入 DataStore（不清洗运行时状态字段）
+     */
+    suspend fun importPreferences(prefs: PreferencesExport) {
         dataStore.edit { preferences ->
-            preferences.clear()
+            preferences[THEME_MODE] = prefs.themeMode
+            preferences[STATS_UNIT] = prefs.statsUnit
+            preferences[DOUBAN_COOKIE] = prefs.doubanCookie
+            preferences[WEBDAV_SERVER_URL] = prefs.webDavServerUrl
+            preferences[WEBDAV_USERNAME] = prefs.webDavUsername
+            preferences[WEBDAV_PASSWORD] = prefs.webDavPassword
+            preferences[WEBDAV_REMOTE_PATH] = prefs.webDavRemotePath.ifBlank { "ReadTrack" }
+            preferences[WEBDAV_AUTO_BACKUP_FREQUENCY] = prefs.webDavAutoBackupFrequency
+            preferences[HOME_COMPONENT_ORDER] = prefs.homeComponentOrder.joinToString(",")
         }
     }
 }
