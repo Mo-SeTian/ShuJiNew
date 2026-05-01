@@ -704,7 +704,15 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun clearExportSuccess() {
-        _uiState.update { it.copy(exportSuccess = false, exportZipPath = null, exportJson = null) }
+        _uiState.update {
+            it.copy(
+                exportSuccess = false,
+                exportZipPath = null,
+                exportJson = null,
+                showProgressDialog = false,
+                progressMessage = ""
+            )
+        }
     }
 
     fun clearImportSuccess() {
