@@ -27,6 +27,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.readtrack.data.local.StatsRange
 import com.readtrack.data.local.StatsUnit
 import com.readtrack.data.local.entity.RecordType
 import com.readtrack.domain.model.BookStatus
@@ -147,11 +148,36 @@ fun StatsScreen(
 
                 // Recent Records
                 item {
-                    Text(
-                        text = "最近阅读记录",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Column {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "最近阅读记录",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            StatsRange.entries.forEach { range ->
+                                FilterChip(
+                                    selected = uiState.statsRange == range,
+                                    onClick = { viewModel.setStatsRange(range) },
+                                    label = { Text(range.label, style = MaterialTheme.typography.labelMedium) },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                )
+                            }
+                        }
+                    }
                 }
 
                 if (uiState.recentRecordsWithBooks.isEmpty()) {
