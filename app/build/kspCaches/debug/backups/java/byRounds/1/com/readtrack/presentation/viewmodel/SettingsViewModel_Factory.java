@@ -1,5 +1,6 @@
 package com.readtrack.presentation.viewmodel;
 
+import android.content.Context;
 import com.readtrack.data.local.PreferencesManager;
 import com.readtrack.data.remote.WebDavService;
 import com.readtrack.domain.repository.DataBackupRepository;
@@ -14,7 +15,7 @@ import javax.inject.Provider;
 import okhttp3.OkHttpClient;
 
 @ScopeMetadata
-@QualifierMetadata
+@QualifierMetadata("dagger.hilt.android.qualifiers.ApplicationContext")
 @DaggerGenerated
 @Generated(
     value = "dagger.internal.codegen.ComponentProcessor",
@@ -28,6 +29,8 @@ import okhttp3.OkHttpClient;
     "cast"
 })
 public final class SettingsViewModel_Factory implements Factory<SettingsViewModel> {
+  private final Provider<Context> applicationContextProvider;
+
   private final Provider<DataBackupRepository> dataBackupRepositoryProvider;
 
   private final Provider<PreferencesManager> preferencesManagerProvider;
@@ -40,11 +43,13 @@ public final class SettingsViewModel_Factory implements Factory<SettingsViewMode
 
   private final Provider<CoverStorageUtil> coverStorageUtilProvider;
 
-  public SettingsViewModel_Factory(Provider<DataBackupRepository> dataBackupRepositoryProvider,
+  public SettingsViewModel_Factory(Provider<Context> applicationContextProvider,
+      Provider<DataBackupRepository> dataBackupRepositoryProvider,
       Provider<PreferencesManager> preferencesManagerProvider,
       Provider<OkHttpClient> okHttpClientProvider, Provider<WebDavService> webDavServiceProvider,
       Provider<WebDavBackupScheduler> webDavBackupSchedulerProvider,
       Provider<CoverStorageUtil> coverStorageUtilProvider) {
+    this.applicationContextProvider = applicationContextProvider;
     this.dataBackupRepositoryProvider = dataBackupRepositoryProvider;
     this.preferencesManagerProvider = preferencesManagerProvider;
     this.okHttpClientProvider = okHttpClientProvider;
@@ -55,21 +60,22 @@ public final class SettingsViewModel_Factory implements Factory<SettingsViewMode
 
   @Override
   public SettingsViewModel get() {
-    return newInstance(dataBackupRepositoryProvider.get(), preferencesManagerProvider.get(), okHttpClientProvider.get(), webDavServiceProvider.get(), webDavBackupSchedulerProvider.get(), coverStorageUtilProvider.get());
+    return newInstance(applicationContextProvider.get(), dataBackupRepositoryProvider.get(), preferencesManagerProvider.get(), okHttpClientProvider.get(), webDavServiceProvider.get(), webDavBackupSchedulerProvider.get(), coverStorageUtilProvider.get());
   }
 
-  public static SettingsViewModel_Factory create(
+  public static SettingsViewModel_Factory create(Provider<Context> applicationContextProvider,
       Provider<DataBackupRepository> dataBackupRepositoryProvider,
       Provider<PreferencesManager> preferencesManagerProvider,
       Provider<OkHttpClient> okHttpClientProvider, Provider<WebDavService> webDavServiceProvider,
       Provider<WebDavBackupScheduler> webDavBackupSchedulerProvider,
       Provider<CoverStorageUtil> coverStorageUtilProvider) {
-    return new SettingsViewModel_Factory(dataBackupRepositoryProvider, preferencesManagerProvider, okHttpClientProvider, webDavServiceProvider, webDavBackupSchedulerProvider, coverStorageUtilProvider);
+    return new SettingsViewModel_Factory(applicationContextProvider, dataBackupRepositoryProvider, preferencesManagerProvider, okHttpClientProvider, webDavServiceProvider, webDavBackupSchedulerProvider, coverStorageUtilProvider);
   }
 
-  public static SettingsViewModel newInstance(DataBackupRepository dataBackupRepository,
-      PreferencesManager preferencesManager, OkHttpClient okHttpClient, WebDavService webDavService,
+  public static SettingsViewModel newInstance(Context applicationContext,
+      DataBackupRepository dataBackupRepository, PreferencesManager preferencesManager,
+      OkHttpClient okHttpClient, WebDavService webDavService,
       WebDavBackupScheduler webDavBackupScheduler, CoverStorageUtil coverStorageUtil) {
-    return new SettingsViewModel(dataBackupRepository, preferencesManager, okHttpClient, webDavService, webDavBackupScheduler, coverStorageUtil);
+    return new SettingsViewModel(applicationContext, dataBackupRepository, preferencesManager, okHttpClient, webDavService, webDavBackupScheduler, coverStorageUtil);
   }
 }

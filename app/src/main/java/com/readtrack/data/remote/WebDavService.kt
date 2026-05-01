@@ -38,6 +38,47 @@ class WebDavService @Inject constructor(
         }
     }
 
+    // ───── ZIP 上传/下载 ─────
+
+    /**
+     * 上传 ZIP 备份文件到 WebDAV（保存 latest + 历史快照）
+     * @return 上传的 URL
+     */
+    suspend fun uploadBackupZip(config: WebDavConfig, zipData: ByteArray): Result<String> = withContext(Dispatchers.IO) {
+        runCatching {
+            validateConfig(config)
+            ensureRemoteDirectory(config)
+
+            val latestUrl = buildUrl(config, LATEST_ZIP_FILE)
+            putBinary(config, latestUrl, zipData)
+
+            val historyUrl = buildUrl(config, buildZipFileName())
+            putBinary(config, historyUrl, zipData)
+            latestUrl
+        }
+    }
+
+    /**
+     * 从 WebDAV 下载 ZIP 备份文件
+     * @return ZIP 文件字节数组
+     */
+    suspend fun downloadBackupZip(config: WebDavConfig, fileName: String? = null): Result<ByteArray> = withContext(Dispatchers.IO) {
+        runCatching {
+            validateConfig(config)
+            val targetFile = fileName ?: LATEST_ZIP_FILE
+            val url = buildUrl(config, targetFile)
+            val request = requestBuilder(config, url).get().build()
+            okHttpClient.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) {
+                    throw IllegalStateException("下载失败（HTTP ${response.code}）")
+                }
+                response.body?.bytes() ?: throw IllegalStateException("远端备份为空")
+            }
+        }
+    }
+
+    // ───── 旧 JSON 上传/下载（保留兼容，逐步移除以支持旧版备份） ─────
+
     suspend fun uploadBackup(config: WebDavConfig, json: String): Result<String> = withContext(Dispatchers.IO) {
         runCatching {
             validateConfig(config)
@@ -107,7 +148,8 @@ class WebDavService @Inject constructor(
             val fileName = hrefMatches[i].groupValues[1]
                 .substringAfterLast("/")
                 .substringAfterLast("%2F")
-            if (!fileName.endsWith(".json")) continue
+            // 匹配 .json 和 .zip 文件
+            if (!fileName.endsWith(".json") && !fileName.endsWith(".zip")) continue
 
             val lastModified = lastModifiedMatches.getOrNull(i)?.groupValues?.get(1)
                 ?.let { parseHttpDate(it) } ?: 0L
@@ -171,6 +213,17 @@ class WebDavService @Inject constructor(
         }
     }
 
+    private fun putBinary(config: WebDavConfig, url: String, data: ByteArray) {
+        val request = requestBuilder(config, url)
+            .put(data.toRequestBody(OCTET_STREAM_MEDIA_TYPE))
+            .build()
+        okHttpClient.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) {
+                throw IllegalStateException("上传失败（HTTP ${response.code}）")
+            }
+        }
+    }
+
     private fun requestBuilder(config: WebDavConfig, url: String): Request.Builder {
         return Request.Builder()
             .url(url)
@@ -204,8 +257,14 @@ class WebDavService @Inject constructor(
         return "readtrack_backup_${formatter.format(Date())}.json"
     }
 
+    private fun buildZipFileName(): String {
+        val formatter = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
+        return "readtrack_backup_${formatter.format(Date())}.zip"
+    }
+
     companion object {
         private val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
+        private val OCTET_STREAM_MEDIA_TYPE = "application/octet-stream".toMediaType()
         private val EMPTY_BODY = ByteArray(0).toRequestBody(null)
         private val PROPFIND_BODY = """
             <?xml version="1.0" encoding="UTF-8"?>
@@ -218,5 +277,6 @@ class WebDavService @Inject constructor(
             </d:propfind>
         """.trimIndent().toRequestBody("application/xml".toMediaType())
         const val LATEST_BACKUP_FILE = "readtrack_backup_latest.json"
+        const val LATEST_ZIP_FILE = "readtrack_backup_latest.zip"
     }
 }
