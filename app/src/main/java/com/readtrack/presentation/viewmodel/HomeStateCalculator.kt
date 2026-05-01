@@ -150,7 +150,8 @@ internal fun calculateReadingStreak(
     val sortedDates = dates
         .map(::getStartOfDay)
         .distinct()
-        .sortedDescending()
+        // DB 查询已按时间排序（reading_records.date DESC），直接倒序遍历即可
+        // 不再额外 sort，节省 O(n log n)
 
     if (sortedDates.isEmpty()) return 0
 
