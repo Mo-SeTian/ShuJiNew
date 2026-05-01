@@ -380,6 +380,7 @@ class SettingsViewModel @Inject constructor(
                     }
                     (dataBackupRepository as? DataBackupRepositoryImpl)?.importFromZip(zipFile, clearExisting)
                         ?.onSuccess { result ->
+                            cleanupTempZip(resolvedZipPath)
                             _uiState.update {
                                 it.copy(
                                     isImporting = false,
@@ -395,6 +396,7 @@ class SettingsViewModel @Inject constructor(
                             return@launch
                         }
                         ?.onFailure { error ->
+                            cleanupTempZip(resolvedZipPath)
                             _uiState.update {
                                 it.copy(
                                     isImporting = false,
@@ -687,50 +689,45 @@ class SettingsViewModel @Inject constructor(
                     .mapCatching { zipData ->
                         val tempFile = File(applicationContext.cacheDir, "webdav_restore_${System.currentTimeMillis()}.zip")
                         tempFile.writeBytes(zipData)
-                        tempFile
+                        // 预览 ZIP 内容
+                        val preview = (dataBackupRepository as DataBackupRepositoryImpl).importFromZipForPreview(tempFile)
+                        preview to tempFile
                     }
                     .fold(
-                        onSuccess = { zipFile ->
-                            (dataBackupRepository as DataBackupRepositoryImpl).importFromZip(zipFile, clearExisting)
-                                .onSuccess { result ->
-                                    zipFile.delete()
-                                    preferencesManager.setLastWebDavError(null)
+                        onSuccess = { (previewResult, tempFile) ->
+                            previewResult
+                                .onSuccess { preview ->
                                     _uiState.update {
                                         it.copy(
                                             isSyncingWebDav = false,
-                                            importSuccess = true,
-                                            lastImportResult = result,
-                                            webDavStatusMessage = if (fileName != null) "已从 WebDAV 恢复 $fileName（含封面）" else "已从 WebDAV 恢复最新备份（含封面）"
+                                            showClearConfirmDialog = true,
+                                            importPreview = preview,
+                                            pendingZipPath = tempFile.absolutePath
                                         )
                                     }
                                 }
                                 .onFailure { error ->
-                                    zipFile.delete()
-                                    preferencesManager.setLastWebDavError(error.message)
-                                    _uiState.update {
-                                        it.copy(
-                                            isSyncingWebDav = false,
-                                            errorMessage = "恢复失败: ${error.message}"
-                                        )
-                                    }
+                                    tempFile.delete()
+                                    // 预览失败，降级到 JSON
+                                    restoreBackupJsonPreviewFromWebDav(config, clearExisting, fileName)
                                 }
                         },
-                        onFailure = { error ->
-                            // ZIP 下载失败，尝试降级到 JSON
-                            restoreBackupJsonFromWebDav(config, clearExisting, fileName)
+                        onFailure = { _ ->
+                            // ZIP 下载失败，降级到 JSON
+                            restoreBackupJsonPreviewFromWebDav(config, clearExisting, fileName)
                         }
                     )
             } else {
-                // 文件名以 .json 结尾或 DataBackupRepositoryImpl 不可用 → JSON 恢复
-                restoreBackupJsonFromWebDav(config, clearExisting, fileName)
+                // 文件名以 .json 结尾或 DataBackupRepositoryImpl 不可用 → JSON 预览
+                restoreBackupJsonPreviewFromWebDav(config, clearExisting, fileName)
             }
         }
     }
 
     /**
-     * 回退：从 WebDAV 下载 JSON 备份并恢复（不含封面）
+     * 回退：从 WebDAV 下载 JSON 备份并预览
      */
-    private suspend fun restoreBackupJsonFromWebDav(config: WebDavConfig, clearExisting: Boolean, fileName: String?) {
+    private suspend fun restoreBackupJsonPreviewFromWebDav(config: WebDavConfig, clearExisting: Boolean, fileName: String?) {
         webDavService.downloadBackup(config, fileName)
             .mapCatching { json ->
                 dataBackupRepository.parseBackupFromJson(json)
@@ -738,24 +735,22 @@ class SettingsViewModel @Inject constructor(
             }
             .fold(
                 onSuccess = { backup ->
-                    dataBackupRepository.importData(backup, clearExisting)
-                        .onSuccess { result ->
-                            preferencesManager.setLastWebDavError(null)
+                    dataBackupRepository.previewImport(backup)
+                        .onSuccess { preview ->
                             _uiState.update {
                                 it.copy(
                                     isSyncingWebDav = false,
-                                    importSuccess = true,
-                                    lastImportResult = result,
-                                    webDavStatusMessage = if (fileName != null) "已从 WebDAV 恢复 $fileName（纯 JSON）" else "已从 WebDAV 恢复最新备份（纯 JSON）"
+                                    showClearConfirmDialog = true,
+                                    importPreview = preview,
+                                    pendingZipPath = null
                                 )
                             }
                         }
                         .onFailure { error ->
-                            preferencesManager.setLastWebDavError(error.message)
                             _uiState.update {
                                 it.copy(
                                     isSyncingWebDav = false,
-                                    errorMessage = "恢复失败: ${error.message}"
+                                    errorMessage = "恢复预览失败: ${error.message}"
                                 )
                             }
                         }
@@ -800,7 +795,12 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun dismissClearConfirmDialog() {
-        _uiState.update { it.copy(showClearConfirmDialog = false, importPreview = null) }
+        // 清理 WebDAV 临时 ZIP 文件
+        val zipPath = _uiState.value.pendingZipPath
+        if (zipPath != null && zipPath.startsWith(applicationContext.cacheDir.absolutePath)) {
+            File(zipPath).delete()
+        }
+        _uiState.update { it.copy(showClearConfirmDialog = false, importPreview = null, pendingZipPath = null) }
     }
 
     fun clearExportSuccess() {
@@ -816,6 +816,8 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun clearImportSuccess() {
+        val zipPath = _uiState.value.pendingZipPath
+        if (zipPath != null) cleanupTempZip(zipPath)
         _uiState.update { it.copy(importSuccess = false, lastImportResult = null) }
     }
 
@@ -932,6 +934,15 @@ class SettingsViewModel @Inject constructor(
             password = password,
             remotePath = remotePath.trim().trim('/').ifBlank { "ReadTrack" }
         )
+    }
+
+    /**
+     * 清理 cache 目录下的临时 ZIP 文件（WebDAV 下载的）
+     */
+    private fun cleanupTempZip(path: String) {
+        if (path.startsWith(applicationContext.cacheDir.absolutePath)) {
+            File(path).delete()
+        }
     }
 
     fun dismissProgressDialog() {
