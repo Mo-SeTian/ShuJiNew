@@ -29,6 +29,14 @@ enum class StatsUnit {
     PAGE
 }
 
+enum class StatsRange(val days: Int, val label: String) {
+    WEEK(7, "本周"),
+    MONTH(30, "本月"),
+    TWO_MONTHS(60, "2个月"),
+    THREE_MONTHS(90, "3个月"),
+    ALL(-1, "全部")
+}
+
 enum class AutoBackupFrequency(val intervalDays: Long) {
     OFF(0),
     DAILY(1),
@@ -56,6 +64,7 @@ class PreferencesManager @Inject constructor(
         val LAST_READ_BOOK_ID = longPreferencesKey("last_read_book_id")
         val DOUBAN_COOKIE = stringPreferencesKey("douban_cookie")
         val STATS_UNIT = stringPreferencesKey("stats_unit")
+        val STATS_RANGE = stringPreferencesKey("stats_range")
         val WEBDAV_SERVER_URL = stringPreferencesKey("webdav_server_url")
         val WEBDAV_USERNAME = stringPreferencesKey("webdav_username")
         val WEBDAV_PASSWORD = stringPreferencesKey("webdav_password")
@@ -74,6 +83,11 @@ class PreferencesManager @Inject constructor(
     val statsUnit: Flow<StatsUnit> = dataStore.data.map { preferences ->
         val unitName = preferences[STATS_UNIT] ?: StatsUnit.CHAPTER.name
         runCatching { StatsUnit.valueOf(unitName) }.getOrDefault(StatsUnit.CHAPTER)
+    }
+
+    val statsRange: Flow<StatsRange> = dataStore.data.map { preferences ->
+        val rangeName = preferences[STATS_RANGE] ?: StatsRange.WEEK.name
+        runCatching { StatsRange.valueOf(rangeName) }.getOrDefault(StatsRange.WEEK)
     }
 
     val isFirstLaunch: Flow<Boolean> = dataStore.data.map { preferences ->
@@ -155,6 +169,12 @@ class PreferencesManager @Inject constructor(
     suspend fun setStatsUnit(unit: StatsUnit) {
         dataStore.edit { preferences ->
             preferences[STATS_UNIT] = unit.name
+        }
+    }
+
+    suspend fun setStatsRange(range: StatsRange) {
+        dataStore.edit { preferences ->
+            preferences[STATS_RANGE] = range.name
         }
     }
 

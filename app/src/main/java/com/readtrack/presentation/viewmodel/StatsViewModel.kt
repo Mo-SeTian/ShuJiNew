@@ -3,6 +3,7 @@ package com.readtrack.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.readtrack.data.local.PreferencesManager
+import com.readtrack.data.local.StatsRange
 import com.readtrack.data.local.StatsUnit
 import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.data.local.entity.ReadingRecordEntity
@@ -12,17 +13,12 @@ import com.readtrack.domain.model.BookStatus
 import com.readtrack.domain.model.ProgressType
 import com.readtrack.domain.repository.BookRepository
 import com.readtrack.domain.repository.ReadingRecordRepository
-import com.readtrack.util.PerformanceTrace
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 import java.util.Calendar
 import javax.inject.Inject
@@ -31,6 +27,7 @@ data class StatsUiState(
     val totalBooks: Int = 0,
     val booksByStatus: Map<BookStatus, Int> = emptyMap(),
     val statsUnit: StatsUnit = StatsUnit.CHAPTER,
+    val statsRange: StatsRange = StatsRange.WEEK,
     // 按偏好过滤后的显示值
     val todayValue: Double = 0.0,
     val weekValue: Double = 0.0,
@@ -64,6 +61,12 @@ class StatsViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(StatsUiState())
     val uiState: StateFlow<StatsUiState> = _uiState.asStateFlow()
 
+    fun setStatsRange(range: StatsRange) {
+        viewModelScope.launch {
+            preferencesManager.setStatsRange(range)
+        }
+    }
+
     init {
         loadStats()
     }
@@ -73,11 +76,13 @@ class StatsViewModel @Inject constructor(
             combine(
                 bookRepository.getAllBooks().catch { emit(emptyList()) },
                 recordRepository.getAllRecords().catch { emit(emptyList()) },
-                preferencesManager.statsUnit
-            ) { books, records, statsUnit ->
-                Triple(books, records, statsUnit)
-            }.collect { (books, records, statsUnit) ->
-                val state = buildStatsUiState(books, records, statsUnit)
+                preferencesManager.statsUnit,
+                preferencesManager.statsRange
+            ) { books, records, statsUnit, statsRange ->
+                Triple(Triple(books, records, statsUnit), statsRange, Unit)
+            }.collect { (triple, statsRange) ->
+                val (books, records, statsUnit) = triple
+                val state = buildStatsUiState(books, records, statsUnit, statsRange)
                 _uiState.value = state
             }
         }
@@ -86,7 +91,8 @@ class StatsViewModel @Inject constructor(
     private fun buildStatsUiState(
         books: List<BookEntity>,
         records: List<ReadingRecordEntity>,
-        statsUnit: StatsUnit
+        statsUnit: StatsUnit,
+        statsRange: StatsRange
     ): StatsUiState {
         val now = System.currentTimeMillis()
         val boundaries = createTimeBoundaries(now)
@@ -162,9 +168,17 @@ class StatsViewModel @Inject constructor(
         // 单次遍历获取 booksByStatus
         val booksByStatus = books.groupBy { it.status }.mapValues { it.value.size }
 
-        // recentRecords 取最近10条，优先用快照，旧的 null 快照用 live book 补全
-        val recentRecords = records.sortedByDescending { it.date }.take(10)
-        val recordsWithBooks = recentRecords.map { record ->
+        // recentRecords 过滤并取最近10条，优先用快照，旧的 null 快照用 live book 补全
+        val rangeStart = if (statsRange.days < 0) 0L else {
+            Calendar.getInstance().apply {
+                timeInMillis = now
+                add(Calendar.DAY_OF_MONTH, -statsRange.days)
+            }.timeInMillis
+        }
+        val filteredRecords = records.filter { it.date >= rangeStart }
+            .sortedByDescending { it.date }
+            .take(10)
+        val recordsWithBooks = filteredRecords.map { record ->
             val snapshot: BookSnapshot? = record.bookSnapshot
                 ?: record.bookId?.let { booksMap[it] }?.let { book ->
                     BookSnapshot.from(book, book.status)
@@ -176,6 +190,7 @@ class StatsViewModel @Inject constructor(
             totalBooks = books.size,
             booksByStatus = booksByStatus,
             statsUnit = statsUnit,
+            statsRange = statsRange,
             todayValue = if (statsUnit == StatsUnit.CHAPTER) todayChapters else todayPages,
             weekValue = if (statsUnit == StatsUnit.CHAPTER) weekChapters else weekPages,
             monthValue = if (statsUnit == StatsUnit.CHAPTER) monthChapters else monthPages,
@@ -188,7 +203,7 @@ class StatsViewModel @Inject constructor(
                     dayOfWeek = dayLabel(date)
                 )
             },
-            recentRecords = recentRecords,
+            recentRecords = filteredRecords,
             recentRecordsWithBooks = recordsWithBooks,
             isLoading = false
         )
