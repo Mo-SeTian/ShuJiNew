@@ -60,7 +60,11 @@ data class SettingsUiState(
     val webDavStatusMessage: String? = null,
     val webDavBackupFiles: List<WebDavService.BackupFileInfo> = emptyList(),
     val isLoadingWebDavBackups: Boolean = false,
-    val selectedWebDavBackupFile: String? = null
+    val selectedWebDavBackupFile: String? = null,
+    // 导入导出进度
+    val showProgressDialog: Boolean = false,
+    val progressMessage: String = "",
+    val progressPercent: Float = 0f
 ) {
     val isWebDavConfigured: Boolean
         get() =
@@ -173,7 +177,15 @@ class SettingsViewModel @Inject constructor(
 
     fun exportData() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isExporting = true, errorMessage = null) }
+            _uiState.update {
+                it.copy(
+                    isExporting = true,
+                    errorMessage = null,
+                    showProgressDialog = true,
+                    progressMessage = "正在准备导出...",
+                    progressPercent = 0f
+                )
+            }
             (dataBackupRepository as? DataBackupRepositoryImpl)?.exportToZip()
                 ?.onSuccess { zipFile ->
                     _uiState.update {
@@ -181,7 +193,10 @@ class SettingsViewModel @Inject constructor(
                             isExporting = false,
                             exportSuccess = true,
                             exportZipPath = zipFile.absolutePath,
-                            exportJson = null
+                            exportJson = null,
+                            showProgressDialog = false,
+                            progressMessage = "",
+                            progressPercent = 1f
                         )
                     }
                 }
@@ -189,7 +204,9 @@ class SettingsViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(
                             isExporting = false,
-                            errorMessage = "导出失败: ${error.message}"
+                            errorMessage = "导出失败: ${error.message}",
+                            showProgressDialog = false,
+                            progressMessage = ""
                         )
                     }
                 }
@@ -203,7 +220,10 @@ class SettingsViewModel @Inject constructor(
                                     isExporting = false,
                                     exportSuccess = true,
                                     exportJson = json,
-                                    exportZipPath = null
+                                    exportZipPath = null,
+                                    showProgressDialog = false,
+                                    progressMessage = "",
+                                    progressPercent = 1f
                                 )
                             }
                         }
@@ -211,7 +231,9 @@ class SettingsViewModel @Inject constructor(
                             _uiState.update {
                                 it.copy(
                                     isExporting = false,
-                                    errorMessage = "导出失败: ${error.message}"
+                                    errorMessage = "导出失败: ${error.message}",
+                                    showProgressDialog = false,
+                                    progressMessage = ""
                                 )
                             }
                         }
@@ -232,20 +254,32 @@ class SettingsViewModel @Inject constructor(
                     errorMessage = null,
                     showClearConfirmDialog = false,
                     importPreview = null,
-                    pendingZipPath = null
+                    pendingZipPath = null,
+                    showProgressDialog = true,
+                    progressMessage = "正在读取文件...",
+                    progressPercent = 0f
                 )
             }
 
             // 尝试解析为纯 JSON
             val backup = dataBackupRepository.parseBackupFromJson(content)
             if (backup != null) {
+                _uiState.update {
+                    it.copy(
+                        progressMessage = "正在分析备份内容...",
+                        progressPercent = 0.5f
+                    )
+                }
                 dataBackupRepository.previewImport(backup)
                     .onSuccess { preview ->
                         _uiState.update {
                             it.copy(
                                 isImporting = false,
                                 showClearConfirmDialog = true,
-                                importPreview = preview
+                                importPreview = preview,
+                                showProgressDialog = false,
+                                progressMessage = "",
+                                progressPercent = 1f
                             )
                         }
                     }
@@ -254,7 +288,9 @@ class SettingsViewModel @Inject constructor(
                             it.copy(
                                 isImporting = false,
                                 errorMessage = "导入预览失败: ${error.message}",
-                                importPreview = null
+                                importPreview = null,
+                                showProgressDialog = false,
+                                progressMessage = ""
                             )
                         }
                     }
@@ -265,6 +301,12 @@ class SettingsViewModel @Inject constructor(
             if (zipPath != null) {
                 val zipFile = File(zipPath)
                 if (zipFile.exists()) {
+                    _uiState.update {
+                        it.copy(
+                            progressMessage = "正在读取 ZIP 文件...",
+                            progressPercent = 0.3f
+                        )
+                    }
                     (dataBackupRepository as? DataBackupRepositoryImpl)?.importFromZipForPreview(zipFile)
                         ?.onSuccess { preview ->
                             _uiState.update {
@@ -272,7 +314,10 @@ class SettingsViewModel @Inject constructor(
                                     isImporting = false,
                                     showClearConfirmDialog = true,
                                     importPreview = preview,
-                                    pendingZipPath = zipPath
+                                    pendingZipPath = zipPath,
+                                    showProgressDialog = false,
+                                    progressMessage = "",
+                                    progressPercent = 1f
                                 )
                             }
                         }
@@ -281,7 +326,9 @@ class SettingsViewModel @Inject constructor(
                                 it.copy(
                                     isImporting = false,
                                     errorMessage = "读取 ZIP 失败: ${error.message}",
-                                    importPreview = null
+                                    importPreview = null,
+                                    showProgressDialog = false,
+                                    progressMessage = ""
                                 )
                             }
                         }
@@ -293,7 +340,9 @@ class SettingsViewModel @Inject constructor(
                 it.copy(
                     isImporting = false,
                     errorMessage = "文件格式无效，请选择有效的备份文件",
-                    importPreview = null
+                    importPreview = null,
+                    showProgressDialog = false,
+                    progressMessage = ""
                 )
             }
         }
@@ -308,7 +357,10 @@ class SettingsViewModel @Inject constructor(
                 it.copy(
                     isImporting = true,
                     errorMessage = null,
-                    showClearConfirmDialog = false
+                    showClearConfirmDialog = false,
+                    showProgressDialog = true,
+                    progressMessage = "正在导入数据...",
+                    progressPercent = 0f
                 )
             }
 
@@ -317,6 +369,12 @@ class SettingsViewModel @Inject constructor(
             if (resolvedZipPath != null) {
                 val zipFile = File(resolvedZipPath)
                 if (zipFile.exists()) {
+                    _uiState.update {
+                        it.copy(
+                            progressMessage = "正在解压 ZIP 并恢复封面...",
+                            progressPercent = 0.2f
+                        )
+                    }
                     (dataBackupRepository as? DataBackupRepositoryImpl)?.importFromZip(zipFile, clearExisting)
                         ?.onSuccess { result ->
                             _uiState.update {
@@ -325,7 +383,10 @@ class SettingsViewModel @Inject constructor(
                                     importSuccess = true,
                                     lastImportResult = result,
                                     importPreview = null,
-                                    pendingZipPath = null
+                                    pendingZipPath = null,
+                                    showProgressDialog = false,
+                                    progressMessage = "",
+                                    progressPercent = 1f
                                 )
                             }
                             return@launch
@@ -334,7 +395,9 @@ class SettingsViewModel @Inject constructor(
                             _uiState.update {
                                 it.copy(
                                     isImporting = false,
-                                    errorMessage = "导入失败: ${error.message}"
+                                    errorMessage = "导入失败: ${error.message}",
+                                    showProgressDialog = false,
+                                    progressMessage = ""
                                 )
                             }
                             return@launch
@@ -343,18 +406,32 @@ class SettingsViewModel @Inject constructor(
             }
 
             // JSON 导入
+            _uiState.update {
+                it.copy(
+                    progressMessage = "正在解析备份数据...",
+                    progressPercent = 0.2f
+                )
+            }
             val backup = dataBackupRepository.parseBackupFromJson(content)
             if (backup == null) {
                 _uiState.update {
                     it.copy(
                         isImporting = false,
                         errorMessage = "文件格式无效",
-                        importPreview = null
+                        importPreview = null,
+                        showProgressDialog = false,
+                        progressMessage = ""
                     )
                 }
                 return@launch
             }
 
+            _uiState.update {
+                it.copy(
+                    progressMessage = "正在恢复数据...",
+                    progressPercent = 0.5f
+                )
+            }
             dataBackupRepository.importData(backup, clearExisting)
                 .onSuccess { result ->
                     _uiState.update {
@@ -362,7 +439,10 @@ class SettingsViewModel @Inject constructor(
                             isImporting = false,
                             importSuccess = true,
                             lastImportResult = result,
-                            importPreview = null
+                            importPreview = null,
+                            showProgressDialog = false,
+                            progressMessage = "",
+                            progressPercent = 1f
                         )
                     }
                 }
@@ -370,7 +450,9 @@ class SettingsViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(
                             isImporting = false,
-                            errorMessage = "导入失败: ${error.message}"
+                            errorMessage = "导入失败: ${error.message}",
+                            showProgressDialog = false,
+                            progressMessage = ""
                         )
                     }
                 }
@@ -742,5 +824,9 @@ class SettingsViewModel @Inject constructor(
             password = password,
             remotePath = remotePath.trim().trim('/').ifBlank { "ReadTrack" }
         )
+    }
+
+    fun dismissProgressDialog() {
+        _uiState.update { it.copy(showProgressDialog = false, progressMessage = "", progressPercent = 0f) }
     }
 }
