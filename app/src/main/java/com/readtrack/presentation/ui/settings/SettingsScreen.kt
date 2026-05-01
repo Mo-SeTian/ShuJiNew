@@ -39,6 +39,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -914,6 +915,35 @@ private fun DoubanCookieCard(
             },
             dismissButton = {
                 TextButton(onClick = { showCookieDialog = false }) { Text("取消") }
+            }
+        )
+    }
+
+    // 导入导出进度弹窗
+    if (uiState.showProgressDialog) {
+        AlertDialog(
+            onDismissRequest = { /* 进度中不允许关闭 */ },
+            confirmButton = {},
+            dismissButton = {},
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    CircularProgressIndicator()
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = uiState.progressMessage,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    if (uiState.progressPercent > 0f) {
+                        LinearProgressIndicator(
+                            progress = { uiState.progressPercent },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                }
             }
         )
     }

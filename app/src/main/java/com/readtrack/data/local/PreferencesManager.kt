@@ -10,6 +10,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import com.readtrack.domain.model.PreferencesExport
 import javax.inject.Inject
@@ -211,9 +212,8 @@ class PreferencesManager @Inject constructor(
      * 将当前所有偏好设置序列化为 PreferencesExport 模型（不含 lastBackupAt / lastError 等运行时状态）
      */
     suspend fun exportPreferences(): PreferencesExport {
-        var result = PreferencesExport()
-        dataStore.data.collect { preferences ->
-            result = PreferencesExport(
+        return dataStore.data.first().let { preferences ->
+            PreferencesExport(
                 themeMode = preferences[THEME_MODE] ?: ThemeMode.SYSTEM.name,
                 statsUnit = preferences[STATS_UNIT] ?: StatsUnit.CHAPTER.name,
                 doubanCookie = preferences[DOUBAN_COOKIE] ?: "",
@@ -225,7 +225,6 @@ class PreferencesManager @Inject constructor(
                 homeComponentOrder = (preferences[HOME_COMPONENT_ORDER] ?: "").split(",").filter { it.isNotBlank() }
             )
         }
-        return result
     }
 
     /**
