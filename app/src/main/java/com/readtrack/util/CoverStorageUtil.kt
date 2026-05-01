@@ -25,7 +25,7 @@ import javax.inject.Singleton
 class CoverStorageUtil @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
-    private val coversDir: File
+    val coversDir: File
         get() = File(context.filesDir, "covers").also { it.mkdirs() }
 
     /**

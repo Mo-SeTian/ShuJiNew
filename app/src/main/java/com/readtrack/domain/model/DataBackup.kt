@@ -22,16 +22,33 @@ data class BookListExport(
 )
 
 /**
+ * 用户设置导出模型 - 包含所有可在设备间迁移的偏好设置
+ */
+@Serializable
+data class PreferencesExport(
+    val themeMode: String = "SYSTEM",
+    val statsUnit: String = "CHAPTER",
+    val doubanCookie: String = "",
+    val webDavServerUrl: String = "",
+    val webDavUsername: String = "",
+    val webDavPassword: String = "",
+    val webDavRemotePath: String = "ReadTrack",
+    val webDavAutoBackupFrequency: String = "OFF",
+    val homeComponentOrder: List<String> = emptyList()
+)
+
+/**
  * 数据备份模型 - 用于导入导出
  */
 @Serializable
 data class DataBackup(
-    val version: Int = 3,
+    val version: Int = 4,
     val exportTime: Long = System.currentTimeMillis(),
-    val appVersion: String = "1.1.0",
+    val appVersion: String = "1.6.5",
     val books: List<BookExport> = emptyList(),
     val readingRecords: List<ReadingRecordExport> = emptyList(),
-    val bookLists: List<BookListExport> = emptyList()
+    val bookLists: List<BookListExport> = emptyList(),
+    val preferences: PreferencesExport? = null   // 用户设置（可空，兼容旧版本）
 )
 
 /**
@@ -150,9 +167,11 @@ data class ImportPreview(
     val duplicateBookCount: Int,
     val duplicateRecordCount: Int,
     val skippedOrphanRecordCount: Int,
+    val duplicateBookListCount: Int,
     val appendBookCount: Int,
     val appendRecordCount: Int,
-    val appendBookListCount: Int
+    val appendBookListCount: Int,
+    val willRestorePreferences: Boolean   // 是否将恢复用户设置
 )
 
 fun buildImportPreview(
@@ -194,8 +213,13 @@ fun buildImportPreview(
         }
     }
 
+    // 书单去重：按名称匹配
+    val existingBookListNames = existingBookLists.map { it.name }.toSet()
+    val duplicateBookListCount = backup.bookLists.count { it.name in existingBookListNames }
+
     val appendBookCount = backup.books.size - duplicateBookCount
     val appendRecordCount = backup.readingRecords.size - duplicateRecordCount - skippedOrphanRecordCount
+    val appendBookListCount = backup.bookLists.size - duplicateBookListCount
 
     return ImportPreview(
         exportTime = backup.exportTime,
@@ -209,9 +233,11 @@ fun buildImportPreview(
         duplicateBookCount = duplicateBookCount,
         duplicateRecordCount = duplicateRecordCount,
         skippedOrphanRecordCount = skippedOrphanRecordCount,
+        duplicateBookListCount = duplicateBookListCount,
         appendBookCount = appendBookCount.coerceAtLeast(0),
         appendRecordCount = appendRecordCount.coerceAtLeast(0),
-        appendBookListCount = backup.bookLists.size
+        appendBookListCount = appendBookListCount.coerceAtLeast(0),
+        willRestorePreferences = backup.preferences != null
     )
 }
 

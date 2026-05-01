@@ -68,6 +68,7 @@ import com.readtrack.data.local.ThemeMode
 import com.readtrack.presentation.viewmodel.CookieTestResult
 import com.readtrack.presentation.viewmodel.SettingsUiState
 import com.readtrack.presentation.viewmodel.SettingsViewModel
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -90,24 +91,34 @@ fun SettingsScreen(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
         uri?.let {
+            // 先将文件复制到 cache 目录，以便后续 ZIP 流程可以反复读取
+            val mimeType = context.contentResolver.getType(it)
+            val isZip = mimeType == "application/zip"
+            val tempFile = if (isZip) {
+                File(context.cacheDir, "import_backup_${System.currentTimeMillis()}.zip").also { f ->
+                    context.contentResolver.openInputStream(it)?.use { input -> f.outputStream().use { output -> input.copyTo(output) } }
+                }
+            } else null
+
             val content = context.contentResolver.openInputStream(it)?.bufferedReader()?.readText()
-            if (content != null) {
-                pendingImportUri = uri
-                pendingImportContent = content
-                viewModel.prepareImportPreview(content)
-            }
+            pendingImportUri = uri
+            pendingImportContent = content
+            viewModel.prepareImportPreview(content ?: "", zipPath = tempFile?.absolutePath)
         }
     }
 
     val exportLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument("application/json")
+        contract = ActivityResultContracts.CreateDocument("application/zip")
     ) { uri ->
         viewModel.clearExportSuccess()
         if (uri != null) {
-            uiState.exportJson?.let { json ->
-                context.contentResolver.openOutputStream(uri)?.bufferedWriter()?.use { writer ->
-                    writer.write(json)
+            uiState.exportZipPath?.let { zipPath ->
+                File(zipPath).inputStream().use { input ->
+                    context.contentResolver.openOutputStream(uri)?.use { output -> input.copyTo(output) }
                 }
+            } ?: uiState.exportJson?.let { json ->
+                // 回退：纯 JSON 格式
+                context.contentResolver.openOutputStream(uri)?.bufferedWriter()?.use { writer -> writer.write(json) }
             }
         }
     }
@@ -124,13 +135,22 @@ fun SettingsScreen(
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     if (importPreview != null) {
+                        val backupType = if (uiState.pendingZipPath != null) "（ZIP 含封面）" else "（JSON）"
+                        Text("备份时间：${
+                            SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+                                .format(Date(importPreview.exportTime))
+                        }，导出自 v${importPreview.appVersion} $backupType")
+                        Spacer(modifier = Modifier.height(4.dp))
                         Text("即将导入：${importPreview.backupBookCount} 本书、${importPreview.backupRecordCount} 条记录、${importPreview.backupBookListCount} 个书单")
                         Text("追加导入预计新增：${importPreview.appendBookCount} 本书、${importPreview.appendRecordCount} 条记录、${importPreview.appendBookListCount} 个书单")
-                        if (importPreview.duplicateBookCount > 0 || importPreview.duplicateRecordCount > 0) {
-                            Text("将跳过重复内容：${importPreview.duplicateBookCount} 本重复书籍、${importPreview.duplicateRecordCount} 条重复记录")
+                        if (importPreview.duplicateBookCount > 0 || importPreview.duplicateRecordCount > 0 || importPreview.duplicateBookListCount > 0) {
+                            Text("将跳过重复内容：${importPreview.duplicateBookCount} 本重复书籍、${importPreview.duplicateRecordCount} 条重复记录、${importPreview.duplicateBookListCount} 个重复书单", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         if (importPreview.skippedOrphanRecordCount > 0) {
-                            Text("警告：有 ${importPreview.skippedOrphanRecordCount} 条记录因缺少对应书籍而会被跳过")
+                            Text("⚠ 有 ${importPreview.skippedOrphanRecordCount} 条记录因缺少对应书籍而会被跳过", color = MaterialTheme.colorScheme.error)
+                        }
+                        if (importPreview.willRestorePreferences) {
+                            Text("✅ 将同时恢复用户设置（主题、统计单位、WebDAV 配置等）")
                         }
                     }
                     Text("是否清空现有数据后再导入？\n\n• 清空并导入：删除当前书籍、记录和书单后恢复备份\n• 追加导入：保留当前数据，只导入新增内容")
@@ -138,7 +158,7 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = {
-                    pendingImportContent?.let { content -> viewModel.importData(content, true) }
+                    viewModel.importData(pendingImportContent ?: "", true, uiState.pendingZipPath)
                     pendingImportUri = null
                     pendingImportContent = null
                 }) { Text("清空并导入") }
@@ -151,7 +171,7 @@ fun SettingsScreen(
                         pendingImportContent = null
                     }) { Text("取消") }
                     TextButton(onClick = {
-                        pendingImportContent?.let { content -> viewModel.importData(content, false) }
+                        viewModel.importData(pendingImportContent ?: "", false, uiState.pendingZipPath)
                         pendingImportUri = null
                         pendingImportContent = null
                     }) { Text("追加导入") }
@@ -376,8 +396,8 @@ fun SettingsScreen(
             item { DoubanCookieCard(viewModel, uiState) }
 
             item { Spacer(Modifier.height(8.dp)); SettingsSectionCard("数据管理") }
-            item { SettingsClickableCard(Icons.Outlined.Upload, "导出数据", "将数据导出为 JSON 文件") { viewModel.exportData() } }
-            item { SettingsClickableCard(Icons.Outlined.Download, "导入数据", "从 JSON 文件恢复数据") { importLauncher.launch(arrayOf("application/json", "*/*")) } }
+            item { SettingsClickableCard(Icons.Outlined.Upload, "导出数据", "将数据导出为 ZIP（含封面图片 + 用户设置）") { viewModel.exportData() } }
+            item { SettingsClickableCard(Icons.Outlined.Download, "导入数据", "从 ZIP/JSON 文件恢复数据（含封面）") { importLauncher.launch(arrayOf("application/zip", "application/json", "*/*")) } }
 
             item { Spacer(Modifier.height(8.dp)); SettingsSectionCard("WebDAV 云备份") }
             item {

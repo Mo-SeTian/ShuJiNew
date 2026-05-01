@@ -8,6 +8,7 @@ import com.readtrack.data.local.dao.BookDao
 import com.readtrack.data.local.dao.BookListDao
 import com.readtrack.data.local.dao.ReadingRecordDao
 import com.readtrack.data.local.database.ReadTrackDatabase
+import com.readtrack.data.local.PreferencesManager
 import com.readtrack.data.repository.BookListRepositoryImpl
 import com.readtrack.data.repository.BookRepositoryImpl
 import com.readtrack.data.repository.DataBackupRepositoryImpl
@@ -16,6 +17,7 @@ import com.readtrack.domain.repository.BookListRepository
 import com.readtrack.domain.repository.BookRepository
 import com.readtrack.domain.repository.DataBackupRepository
 import com.readtrack.domain.repository.ReadingRecordRepository
+import com.readtrack.util.CoverStorageUtil
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -93,10 +95,20 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideDataBackupRepository(
+        @ApplicationContext context: Context,
         bookDao: BookDao,
         readingRecordDao: ReadingRecordDao,
-        bookListDao: BookListDao
+        bookListDao: BookListDao,
+        preferencesManager: PreferencesManager,
+        coverStorageUtil: CoverStorageUtil
     ): DataBackupRepository {
-        return DataBackupRepositoryImpl(bookDao, readingRecordDao, bookListDao)
+        return DataBackupRepositoryImpl(
+            context = context,
+            bookDao = bookDao,
+            recordDao = readingRecordDao,
+            bookListDao = bookListDao,
+            preferencesManager = preferencesManager,
+            coverStorageUtil = coverStorageUtil
+        )
     }
 }
