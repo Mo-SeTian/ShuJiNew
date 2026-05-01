@@ -45,7 +45,7 @@ data class PreferencesExport(
 data class DataBackup(
     val version: Int = 4,
     val exportTime: Long = System.currentTimeMillis(),
-    val appVersion: String = "1.6.5",
+    val appVersion: String = "1.7.0",
     val books: List<BookExport> = emptyList(),
     val readingRecords: List<ReadingRecordExport> = emptyList(),
     val bookLists: List<BookListExport> = emptyList(),
