@@ -108,18 +108,41 @@ fun SettingsScreen(
         }
     }
 
-    val exportLauncher = rememberLauncherForActivityResult(
+    // ZIP 导出：保存到用户指定位置
+    val zipExportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/zip")
     ) { uri ->
+        // 先读取路径，再清状态（顺序不能反）
+        val zipPath = uiState.exportZipPath
         viewModel.clearExportSuccess()
-        if (uri != null) {
-            uiState.exportZipPath?.let { zipPath ->
-                File(zipPath).inputStream().use { input ->
-                    context.contentResolver.openOutputStream(uri)?.use { output -> input.copyTo(output) }
-                }
-            } ?: uiState.exportJson?.let { json ->
-                // 回退：纯 JSON 格式
-                context.contentResolver.openOutputStream(uri)?.bufferedWriter()?.use { writer -> writer.write(json) }
+        if (uri != null && zipPath != null) {
+            File(zipPath).inputStream().use { input ->
+                context.contentResolver.openOutputStream(uri)?.use { output -> input.copyTo(output) }
+            }
+        }
+    }
+
+    // JSON 导出：保存到用户指定位置
+    val jsonExportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        val json = uiState.exportJson
+        viewModel.clearExportSuccess()
+        if (uri != null && json != null) {
+            context.contentResolver.openOutputStream(uri)?.bufferedWriter()?.use { writer -> writer.write(json) }
+        }
+    }
+
+    // 导出结果准备好后，自动弹出系统文件保存面板
+    LaunchedEffect(uiState.exportZipPath, uiState.exportJson) {
+        when {
+            uiState.exportZipPath != null -> {
+                val ts = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+                zipExportLauncher.launch("readtrack_backup_$ts.zip")
+            }
+            uiState.exportJson != null -> {
+                val ts = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+                jsonExportLauncher.launch("readtrack_backup_$ts.json")
             }
         }
     }
@@ -321,24 +344,6 @@ fun SettingsScreen(
                 }
             )
         }
-    }
-
-    if (uiState.exportSuccess && uiState.exportJson != null) {
-        AlertDialog(
-            onDismissRequest = viewModel::clearExportSuccess,
-            icon = { Icon(Icons.Default.CheckCircle, null) },
-            title = { Text("导出成功") },
-            text = { Text("数据已准备好，是否保存到文件？") },
-            confirmButton = {
-                TextButton(onClick = {
-                    val ts = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-                    exportLauncher.launch("readtrack_backup_$ts.json")
-                }) { Text("保存文件") }
-            },
-            dismissButton = {
-                TextButton(onClick = viewModel::clearExportSuccess) { Text("稍后保存") }
-            }
-        )
     }
 
     if (uiState.importSuccess && uiState.lastImportResult != null) {

@@ -188,15 +188,15 @@ class SettingsViewModel @Inject constructor(
             }
             (dataBackupRepository as? DataBackupRepositoryImpl)?.exportToZip()
                 ?.onSuccess { zipFile ->
+                    // 不在这里关闭进度弹窗，等 exportLauncher 回调用户选择保存位置后再关闭
                     _uiState.update {
                         it.copy(
                             isExporting = false,
                             exportSuccess = true,
                             exportZipPath = zipFile.absolutePath,
                             exportJson = null,
-                            showProgressDialog = false,
-                            progressMessage = "",
-                            progressPercent = 1f
+                            progressMessage = "正在等待选择保存位置...",
+                            progressPercent = 0f
                         )
                     }
                 }
@@ -215,15 +215,15 @@ class SettingsViewModel @Inject constructor(
                     dataBackupRepository.exportAllData()
                         .onSuccess { backup ->
                             val json = Json.encodeToString(DataBackup.serializer(), backup)
+                            // JSON 导出同样等文件保存后再关闭弹窗
                             _uiState.update {
                                 it.copy(
                                     isExporting = false,
                                     exportSuccess = true,
                                     exportJson = json,
                                     exportZipPath = null,
-                                    showProgressDialog = false,
-                                    progressMessage = "",
-                                    progressPercent = 1f
+                                    progressMessage = "正在等待选择保存位置...",
+                                    progressPercent = 0f
                                 )
                             }
                         }
@@ -704,7 +704,7 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun clearExportSuccess() {
-        _uiState.update { it.copy(exportSuccess = false, exportJson = null) }
+        _uiState.update { it.copy(exportSuccess = false, exportZipPath = null, exportJson = null) }
     }
 
     fun clearImportSuccess() {
