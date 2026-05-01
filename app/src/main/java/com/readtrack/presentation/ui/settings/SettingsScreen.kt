@@ -147,7 +147,7 @@ fun SettingsScreen(
         }
     }
 
-    if (uiState.showClearConfirmDialog && pendingImportContent != null) {
+    if (uiState.showClearConfirmDialog && (pendingImportContent != null || uiState.pendingZipPath != null)) {
         val importPreview = uiState.importPreview
         AlertDialog(
             onDismissRequest = {
