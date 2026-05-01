@@ -14,6 +14,7 @@ import com.readtrack.data.local.AutoBackupFrequency
 import com.readtrack.data.local.PreferencesManager
 import com.readtrack.data.remote.WebDavConfig
 import com.readtrack.data.remote.WebDavService
+import com.readtrack.data.repository.DataBackupRepositoryImpl
 import com.readtrack.domain.model.DataBackup
 import com.readtrack.domain.repository.DataBackupRepository
 import dagger.assisted.Assisted
@@ -21,6 +22,7 @@ import dagger.assisted.AssistedInject
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.Json
+import java.io.File
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -42,9 +44,19 @@ class WebDavAutoBackupWorker @AssistedInject constructor(
                 return Result.failure()
             }
 
-            val backup = dataBackupRepository.exportAllData().getOrThrow()
-            val json = Json.encodeToString(DataBackup.serializer(), backup)
-            webDavService.uploadBackup(config, json).getOrThrow()
+            // 优先使用 ZIP 备份
+            val impl = dataBackupRepository as? DataBackupRepositoryImpl
+            if (impl != null) {
+                val zipFile = impl.exportToZip().getOrThrow()
+                val zipData = zipFile.readBytes()
+                webDavService.uploadBackupZip(config, zipData).getOrThrow()
+            } else {
+                // 回退到 JSON
+                val backup = dataBackupRepository.exportAllData().getOrThrow()
+                val json = Json.encodeToString(DataBackup.serializer(), backup)
+                webDavService.uploadBackup(config, json).getOrThrow()
+            }
+
             preferencesManager.setLastWebDavBackupAt(System.currentTimeMillis())
             preferencesManager.setLastWebDavError(null)
             Result.success()
@@ -79,22 +91,18 @@ class WebDavBackupScheduler @Inject constructor(
             frequency.intervalDays,
             TimeUnit.DAYS
         )
-            .setConstraints(
-                Constraints.Builder()
-                    .setRequiredNetworkType(NetworkType.CONNECTED)
-                    .build()
-            )
+            .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
             .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, TimeUnit.MINUTES)
             .build()
 
         workManager.enqueueUniquePeriodicWork(
             UNIQUE_WORK_NAME,
-            ExistingPeriodicWorkPolicy.UPDATE,
+            ExistingPeriodicWorkPolicy.KEEP,
             request
         )
     }
 
     companion object {
-        const val UNIQUE_WORK_NAME = "webdav_auto_backup"
+        private const val UNIQUE_WORK_NAME = "webdav_auto_backup"
     }
 }

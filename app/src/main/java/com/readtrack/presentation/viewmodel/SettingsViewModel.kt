@@ -1,5 +1,6 @@
 package com.readtrack.presentation.viewmodel
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.readtrack.data.local.AutoBackupFrequency
@@ -16,6 +17,7 @@ import com.readtrack.data.repository.DataBackupRepositoryImpl
 import com.readtrack.util.CoverStorageUtil
 import com.readtrack.worker.WebDavBackupScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -82,6 +84,7 @@ enum class CookieTestResult {
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
+    @ApplicationContext private val applicationContext: Context,
     private val dataBackupRepository: DataBackupRepository,
     private val preferencesManager: PreferencesManager,
     private val okHttpClient: OkHttpClient,
@@ -525,11 +528,13 @@ class SettingsViewModel @Inject constructor(
 
         viewModelScope.launch {
             _uiState.update { it.copy(isSyncingWebDav = true, errorMessage = null, webDavStatusMessage = null) }
-            dataBackupRepository.exportAllData()
-                .mapCatching { backup -> Json.encodeToString(DataBackup.serializer(), backup) }
-                .fold(
-                    onSuccess = { json ->
-                        webDavService.uploadBackup(config, json)
+            // 1. 生成 ZIP 备份
+            (dataBackupRepository as? DataBackupRepositoryImpl)?.exportToZip()
+                ?.mapCatching { zipFile -> zipFile.readBytes() }
+                ?.fold(
+                    onSuccess = { zipData ->
+                        // 2. 上传到 WebDAV
+                        webDavService.uploadBackupZip(config, zipData)
                             .onSuccess {
                                 val now = System.currentTimeMillis()
                                 preferencesManager.setLastWebDavBackupAt(now)
@@ -537,7 +542,7 @@ class SettingsViewModel @Inject constructor(
                                 _uiState.update {
                                     it.copy(
                                         isSyncingWebDav = false,
-                                        webDavStatusMessage = "已上传到 WebDAV，并保留 latest + 历史快照"
+                                        webDavStatusMessage = "已上传 ZIP 备份到 WebDAV（含封面 + 设置）"
                                     )
                                 }
                             }
@@ -560,7 +565,52 @@ class SettingsViewModel @Inject constructor(
                         }
                     }
                 )
+                ?: run {
+                    // 如果 DataBackupRepositoryImpl 不可用，退回到 JSON 上传
+                    uploadBackupJsonToWebDav(config)
+                }
         }
+    }
+
+    /**
+     * 回退：纯 JSON 上传到 WebDAV（DataBackupRepositoryImpl 不可用时）
+     */
+    private suspend fun uploadBackupJsonToWebDav(config: WebDavConfig) {
+        dataBackupRepository.exportAllData()
+            .mapCatching { backup -> Json.encodeToString(DataBackup.serializer(), backup) }
+            .fold(
+                onSuccess = { json ->
+                    webDavService.uploadBackup(config, json)
+                        .onSuccess {
+                            val now = System.currentTimeMillis()
+                            preferencesManager.setLastWebDavBackupAt(now)
+                            preferencesManager.setLastWebDavError(null)
+                            _uiState.update {
+                                it.copy(
+                                    isSyncingWebDav = false,
+                                    webDavStatusMessage = "已上传到 WebDAV（纯 JSON，不含封面）"
+                                )
+                            }
+                        }
+                        .onFailure { error ->
+                            preferencesManager.setLastWebDavError(error.message)
+                            _uiState.update {
+                                it.copy(
+                                    isSyncingWebDav = false,
+                                    errorMessage = "上传失败: ${error.message}"
+                                )
+                            }
+                        }
+                },
+                onFailure = { error ->
+                    _uiState.update {
+                        it.copy(
+                            isSyncingWebDav = false,
+                            errorMessage = "导出失败: ${error.message}"
+                        )
+                    }
+                }
+            )
     }
 
     fun showWebDavRestoreDialog() {
@@ -630,46 +680,96 @@ class SettingsViewModel @Inject constructor(
                     webDavStatusMessage = null
                 )
             }
-            webDavService.downloadBackup(config, fileName)
-                .mapCatching { json ->
-                    dataBackupRepository.parseBackupFromJson(json)
-                        ?: throw IllegalStateException("远端备份格式无效")
-                }
-                .fold(
-                    onSuccess = { backup ->
-                        dataBackupRepository.importData(backup, clearExisting)
-                            .onSuccess { result ->
-                                preferencesManager.setLastWebDavError(null)
-                                _uiState.update {
-                                    it.copy(
-                                        isSyncingWebDav = false,
-                                        importSuccess = true,
-                                        lastImportResult = result,
-                                        webDavStatusMessage = if (fileName != null) "已从 WebDAV 恢复 $fileName" else "已从 WebDAV 恢复最新备份"
-                                    )
-                                }
-                            }
-                            .onFailure { error ->
-                                preferencesManager.setLastWebDavError(error.message)
-                                _uiState.update {
-                                    it.copy(
-                                        isSyncingWebDav = false,
-                                        errorMessage = "恢复失败: ${error.message}"
-                                    )
-                                }
-                            }
-                    },
-                    onFailure = { error ->
-                        preferencesManager.setLastWebDavError(error.message)
-                        _uiState.update {
-                            it.copy(
-                                isSyncingWebDav = false,
-                                errorMessage = "下载失败: ${error.message}"
-                            )
-                        }
+            // 先尝试 ZIP 恢复
+            val isZipFile = fileName == null || fileName.endsWith(".zip")
+            if (isZipFile && dataBackupRepository is DataBackupRepositoryImpl) {
+                webDavService.downloadBackupZip(config, fileName)
+                    .mapCatching { zipData ->
+                        val tempFile = File(applicationContext.cacheDir, "webdav_restore_${System.currentTimeMillis()}.zip")
+                        tempFile.writeBytes(zipData)
+                        tempFile
                     }
-                )
+                    .fold(
+                        onSuccess = { zipFile ->
+                            (dataBackupRepository as DataBackupRepositoryImpl).importFromZip(zipFile, clearExisting)
+                                .onSuccess { result ->
+                                    zipFile.delete()
+                                    preferencesManager.setLastWebDavError(null)
+                                    _uiState.update {
+                                        it.copy(
+                                            isSyncingWebDav = false,
+                                            importSuccess = true,
+                                            lastImportResult = result,
+                                            webDavStatusMessage = if (fileName != null) "已从 WebDAV 恢复 $fileName（含封面）" else "已从 WebDAV 恢复最新备份（含封面）"
+                                        )
+                                    }
+                                }
+                                .onFailure { error ->
+                                    zipFile.delete()
+                                    preferencesManager.setLastWebDavError(error.message)
+                                    _uiState.update {
+                                        it.copy(
+                                            isSyncingWebDav = false,
+                                            errorMessage = "恢复失败: ${error.message}"
+                                        )
+                                    }
+                                }
+                        },
+                        onFailure = { error ->
+                            // ZIP 下载失败，尝试降级到 JSON
+                            restoreBackupJsonFromWebDav(config, clearExisting, fileName)
+                        }
+                    )
+            } else {
+                // 文件名以 .json 结尾或 DataBackupRepositoryImpl 不可用 → JSON 恢复
+                restoreBackupJsonFromWebDav(config, clearExisting, fileName)
+            }
         }
+    }
+
+    /**
+     * 回退：从 WebDAV 下载 JSON 备份并恢复（不含封面）
+     */
+    private suspend fun restoreBackupJsonFromWebDav(config: WebDavConfig, clearExisting: Boolean, fileName: String?) {
+        webDavService.downloadBackup(config, fileName)
+            .mapCatching { json ->
+                dataBackupRepository.parseBackupFromJson(json)
+                    ?: throw IllegalStateException("远端备份格式无效")
+            }
+            .fold(
+                onSuccess = { backup ->
+                    dataBackupRepository.importData(backup, clearExisting)
+                        .onSuccess { result ->
+                            preferencesManager.setLastWebDavError(null)
+                            _uiState.update {
+                                it.copy(
+                                    isSyncingWebDav = false,
+                                    importSuccess = true,
+                                    lastImportResult = result,
+                                    webDavStatusMessage = if (fileName != null) "已从 WebDAV 恢复 $fileName（纯 JSON）" else "已从 WebDAV 恢复最新备份（纯 JSON）"
+                                )
+                            }
+                        }
+                        .onFailure { error ->
+                            preferencesManager.setLastWebDavError(error.message)
+                            _uiState.update {
+                                it.copy(
+                                    isSyncingWebDav = false,
+                                    errorMessage = "恢复失败: ${error.message}"
+                                )
+                            }
+                        }
+                },
+                onFailure = { error ->
+                    preferencesManager.setLastWebDavError(error.message)
+                    _uiState.update {
+                        it.copy(
+                            isSyncingWebDav = false,
+                            errorMessage = "下载失败: ${error.message}"
+                        )
+                    }
+                }
+            )
     }
 
     fun setAutoBackupFrequency(frequency: AutoBackupFrequency) {
