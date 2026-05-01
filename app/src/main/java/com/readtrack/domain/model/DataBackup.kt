@@ -28,6 +28,7 @@ data class BookListExport(
 data class PreferencesExport(
     val themeMode: String = "SYSTEM",
     val statsUnit: String = "CHAPTER",
+    val statsRange: String = "WEEK",
     val doubanCookie: String = "",
     val webDavServerUrl: String = "",
     val webDavUsername: String = "",
