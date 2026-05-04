@@ -75,12 +75,13 @@ class DoubanSearchService @Inject constructor(
      * 解析豆瓣搜索页中的 window.__DATA__ 数据
      */
     private fun parseSearchResponse(html: String, limit: Int): Result<List<BookSearchResult>> {
-        val jsonText = extractSearchDataJson(html).getOrNull()
-            ?: return Result.failure(IllegalStateException("未找到豆瓣搜索数据起始标记"))
+        val jsonTextResult = extractSearchDataJson(html)
+        val jsonText = jsonTextResult.getOrNull()
+            ?: return Result.failure(jsonTextResult.exceptionOrNull() ?: IllegalStateException("解析失败"))
 
         return runCatching {
             val jsonObject = JSONObject(jsonText)
-            val items = jsonObject.optJSONArray("items") ?: return Result.success(emptyList())
+            val items = jsonObject.optJSONArray("items") ?: emptyList()
             val results = mutableListOf<BookSearchResult>()
 
             for (i in 0 until items.length()) {
@@ -95,10 +96,7 @@ class DoubanSearchService @Inject constructor(
             }
 
             results
-        }.fold(
-            onSuccess = { Result.success(it) },
-            onFailure = { Result.failure(it) }
-        )
+        }
     }
 
     private fun extractSearchDataJson(html: String): Result<String> {
