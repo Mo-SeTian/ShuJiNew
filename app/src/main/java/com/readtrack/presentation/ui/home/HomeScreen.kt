@@ -523,15 +523,11 @@ private fun InsightMetricCard(
 
 @Composable
 private fun StatusOverviewCard(uiState: HomeUiState) {
-    val statusItems = remember(uiState.statusCounts) {
-        listOf(
-            StatusSummaryItem(BookStatus.WANT_TO_READ, statusLabel(BookStatus.WANT_TO_READ), statusColor(BookStatus.WANT_TO_READ), uiState.statusCounts[BookStatus.WANT_TO_READ] ?: 0),
-            StatusSummaryItem(BookStatus.READING, statusLabel(BookStatus.READING), statusColor(BookStatus.READING), uiState.statusCounts[BookStatus.READING] ?: 0),
-            StatusSummaryItem(BookStatus.FINISHED, statusLabel(BookStatus.FINISHED), statusColor(BookStatus.FINISHED), uiState.statusCounts[BookStatus.FINISHED] ?: 0),
-            StatusSummaryItem(BookStatus.ON_HOLD, statusLabel(BookStatus.ON_HOLD), statusColor(BookStatus.ON_HOLD), uiState.statusCounts[BookStatus.ON_HOLD] ?: 0),
-            StatusSummaryItem(BookStatus.ABANDONED, statusLabel(BookStatus.ABANDONED), statusColor(BookStatus.ABANDONED), uiState.statusCounts[BookStatus.ABANDONED] ?: 0)
-        )
-    }
+    val wantToReadCount = uiState.statusCounts[BookStatus.WANT_TO_READ] ?: 0
+    val readingCount = uiState.statusCounts[BookStatus.READING] ?: 0
+    val finishedCount = uiState.statusCounts[BookStatus.FINISHED] ?: 0
+    val onHoldCount = uiState.statusCounts[BookStatus.ON_HOLD] ?: 0
+    val abandonedCount = uiState.statusCounts[BookStatus.ABANDONED] ?: 0
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -550,27 +546,29 @@ private fun StatusOverviewCard(uiState: HomeUiState) {
                 StatusItem(count = uiState.finishedBooks, label = "已读", color = statusColor(BookStatus.FINISHED))
             }
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                statusItems.forEach { item ->
-                    StatusBarRow(item)
-                }
+                StatusBarRow(wantToReadCount, "想读", statusColor(BookStatus.WANT_TO_READ))
+                StatusBarRow(readingCount, "在读", statusColor(BookStatus.READING))
+                StatusBarRow(finishedCount, "已读", statusColor(BookStatus.FINISHED))
+                StatusBarRow(onHoldCount, "闲置", statusColor(BookStatus.ON_HOLD))
+                StatusBarRow(abandonedCount, "放弃", statusColor(BookStatus.ABANDONED))
             }
         }
     }
 }
 
 @Composable
-private fun StatusBarRow(item: StatusSummaryItem) {
-    val progress = remember(item.count) { (item.count.coerceAtMost(10)) / 10f }
+private fun StatusBarRow(count: Int, label: String, color: Color) {
+    val progress = remember(count) { (count.coerceAtMost(10)) / 10f }
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(item.label, style = MaterialTheme.typography.bodySmall)
-            Text("${item.count}", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold)
+            Text(label, style = MaterialTheme.typography.bodySmall)
+            Text("$count", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold)
         }
         LinearProgressIndicator(
             progress = { progress },
             modifier = Modifier.fillMaxWidth(),
-            color = item.color,
-            trackColor = item.color.copy(alpha = 0.18f)
+            color = color,
+            trackColor = color.copy(alpha = 0.18f)
         )
     }
 }
@@ -693,13 +691,6 @@ private fun StatusItem(
         )
     }
 }
-
-private data class StatusSummaryItem(
-    val status: BookStatus,
-    val label: String,
-    val color: Color,
-    val count: Int
-)
 
 private fun statusColor(status: BookStatus): Color = when (status) {
     BookStatus.WANT_TO_READ -> Color(0xFF4CAF50)
