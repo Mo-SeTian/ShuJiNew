@@ -1,6 +1,7 @@
 package com.readtrack.di
 
 import android.util.Log
+import com.readtrack.BuildConfig
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -32,7 +33,7 @@ object NetworkModule {
         return HttpLoggingInterceptor { message ->
             Log.d("OkHttp", message)
         }.apply {
-            level = if (Log.isDebug()) {
+            level = if (BuildConfig.DEBUG) {
                 HttpLoggingInterceptor.Level.BODY
             } else {
                 HttpLoggingInterceptor.Level.NONE

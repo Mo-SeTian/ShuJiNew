@@ -81,7 +81,8 @@ class DoubanSearchService @Inject constructor(
 
         return runCatching {
             val jsonObject = JSONObject(jsonText)
-            val items = jsonObject.optJSONArray("items") ?: emptyList()
+            val items = jsonObject.optJSONArray("items")
+            if (items == null) return@runCatching emptyList<BookSearchResult>()
             val results = mutableListOf<BookSearchResult>()
 
             for (i in 0 until items.length()) {
