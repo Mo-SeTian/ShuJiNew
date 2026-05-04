@@ -117,6 +117,7 @@ dependencies {
 
     // OkHttp — 网络请求客户端（豆瓣 Cookie 搜索 / Bing 封面搜索）
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
     
     // Testing
     testImplementation("junit:junit:4.13.2")
