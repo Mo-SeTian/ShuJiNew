@@ -40,7 +40,7 @@ class WebDavAutoBackupWorker @AssistedInject constructor(
         return try {
             val config = loadConfig()
             if (!config.isValid()) {
-                preferencesManager.setLastWebDavError(appContext.getString(com.readtrack.R.string.webdav_backup_skipped))
+                preferencesManager.setLastWebDavError(applicationContext.getString(com.readtrack.R.string.webdav_backup_skipped))
                 return Result.failure()
             }
 
