@@ -39,11 +39,7 @@ class BingImageSearchService @Inject constructor(
                 return@withContext Result.success(emptyList())
             }
 
-            val results = searchViaScraping(query.trim(), page)
-            results.fold(
-                onSuccess = { Result.success(it) },
-                onFailure = { Result.failure(it) }
-            )
+            searchViaScraping(query.trim(), page)
         }
     }
 
