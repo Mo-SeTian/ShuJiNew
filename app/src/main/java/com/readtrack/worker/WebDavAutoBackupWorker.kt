@@ -40,7 +40,7 @@ class WebDavAutoBackupWorker @AssistedInject constructor(
         return try {
             val config = loadConfig()
             if (!config.isValid()) {
-                preferencesManager.setLastWebDavError("自动备份已跳过：WebDAV 配置不完整")
+                preferencesManager.setLastWebDavError(appContext.getString(com.readtrack.R.string.webdav_backup_skipped))
                 return Result.failure()
             }
 

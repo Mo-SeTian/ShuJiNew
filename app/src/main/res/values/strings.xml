@@ -55,4 +55,15 @@
     <string name="enter_valid_pages">请输入有效的页数</string>
     <string name="save_failed">保存失败</string>
     <string name="enter_pages_read">输入阅读页数</string>
+    <string-array name="day_names">
+        <item>周日</item>
+        <item>周一</item>
+        <item>周二</item>
+        <item>周三</item>
+        <item>周四</item>
+        <item>周五</item>
+        <item>周六</item>
+    </string-array>
+    <string name="webdav_backup_skipped">自动备份已跳过：WebDAV 配置不完整</string>
+    <string name="webdav_backup_failed">自动备份失败</string>
 </resources>

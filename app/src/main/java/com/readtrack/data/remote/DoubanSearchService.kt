@@ -17,7 +17,7 @@ import javax.inject.Singleton
 @Singleton
 class DoubanSearchService @Inject constructor(
     private val okHttpClient: OkHttpClient
-) {
+) : BaseSearchService() {
 
     companion object {
         private const val SEARCH_URL = "https://search.douban.com/book/subject_search"
@@ -41,12 +41,7 @@ class DoubanSearchService @Inject constructor(
 
                 val requestBuilder = Request.Builder()
                     .url(url)
-                    .header("User-Agent", "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36")
-                    .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
-                    .header("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8")
-                    .header("Referer", "https://book.douban.com/")
-                    .header("DNT", "1")
-                    .header("Upgrade-Insecure-Requests", "1")
+                buildCommonHeaders(requestBuilder, referer = "https://book.douban.com/")
 
                 if (cookie.isNotBlank()) {
                     requestBuilder.header("Cookie", cookie)
@@ -62,9 +57,14 @@ class DoubanSearchService @Inject constructor(
                     )
                 }
 
-                val html = response.body?.string().orEmpty()
-                val results = parseSearchResponse(html, limit)
-                Result.success(results)
+                val responseBody = response.body?.string().orEmpty()
+                val results = parseSearchResponse(responseBody, limit)
+                if (results.isFailure) {
+                    return@withContext Result.failure(
+                        IllegalStateException("解析豆瓣响应失败: ${results.exceptionOrNull()?.message}")
+                    )
+                }
+                Result.success(results.getOrDefault(emptyList()))
             } catch (e: Exception) {
                 Result.failure(e)
             }
@@ -74,88 +74,110 @@ class DoubanSearchService @Inject constructor(
     /**
      * 解析豆瓣搜索页中的 window.__DATA__ 数据
      */
-    private fun parseSearchResponse(html: String, limit: Int): List<BookSearchResult> {
-        val jsonText = extractSearchDataJson(html)
-        val jsonObject = JSONObject(jsonText)
-        val items = jsonObject.optJSONArray("items") ?: return emptyList()
-        val results = mutableListOf<BookSearchResult>()
+    private fun parseSearchResponse(html: String, limit: Int): Result<List<BookSearchResult>> {
+        val jsonText = extractSearchDataJson(html).getOrNull()
+            ?: return Result.failure(IllegalStateException("未找到豆瓣搜索数据起始标记"))
 
-        for (i in 0 until items.length()) {
-            val item = items.optJSONObject(i) ?: continue
-            if (item.optString("tpl_name") != "search_subject") continue
+        return runCatching {
+            val jsonObject = JSONObject(jsonText)
+            val items = jsonObject.optJSONArray("items") ?: return Result.success(emptyList())
+            val results = mutableListOf<BookSearchResult>()
 
-            val result = parseBook(item)
-            if (result.title.isBlank()) continue
+            for (i in 0 until items.length()) {
+                val item = items.optJSONObject(i) ?: continue
+                if (item.optString("tpl_name") != "search_subject") continue
 
-            results += result
-            if (results.size >= limit) break
-        }
+                val result = parseBook(item)
+                if (result.title.isBlank()) continue
 
-        return results
+                results += result
+                if (results.size >= limit) break
+            }
+
+            results
+        }.fold(
+            onSuccess = { Result.success(it) },
+            onFailure = { Result.failure(it) }
+        )
     }
 
-    private fun extractSearchDataJson(html: String): String {
+    private fun extractSearchDataJson(html: String): Result<String> {
         val startMarker = "window.__DATA__ ="
         val endMarker = "window.__USER__"
 
         val startIndex = html.indexOf(startMarker)
         if (startIndex == -1) {
-            throw IllegalStateException("未找到豆瓣搜索数据起始标记")
+            return Result.failure(IllegalStateException("未找到豆瓣搜索数据起始标记"))
         }
 
         val endIndex = html.indexOf(endMarker, startIndex)
         if (endIndex == -1) {
-            throw IllegalStateException("未找到豆瓣搜索数据结束标记")
+            return Result.failure(IllegalStateException("未找到豆瓣搜索数据结束标记"))
         }
 
         val scriptSegment = html.substring(startIndex + startMarker.length, endIndex)
         val jsonText = scriptSegment.substringBeforeLast(';').trim()
 
         if (!jsonText.startsWith("{")) {
-            throw IllegalStateException("豆瓣搜索数据格式异常")
+            return Result.failure(IllegalStateException("豆瓣搜索数据格式异常"))
         }
 
-        return jsonText
+        return Result.success(jsonText)
     }
 
     /**
      * 解析单个搜索结果
      */
     private fun parseBook(book: JSONObject): BookSearchResult {
-        val abstractParts = book.optString("abstract")
-            .split("/")
-            .map { it.trim() }
-            .filter { it.isNotBlank() }
+        return runCatching {
+            val abstractParts = book.optString("abstract")
+                .split("/")
+                .map { it.trim() }
+                .filter { it.isNotBlank() }
 
-        val author = abstractParts.getOrNull(0)
-        val publisher = abstractParts.getOrNull(1)
-        val publishYear = abstractParts
-            .firstOrNull { it.matches(Regex("\\d{4}([-.].*)?"))
-            }
-            ?.take(4)
-            ?.toIntOrNull()
+            val author = abstractParts.getOrNull(0)
+            val publisher = abstractParts.getOrNull(1)
+            val publishYear = abstractParts
+                .firstOrNull { it.matches(Regex("\\d{4}([-.].*)?"))
+                }
+                ?.take(4)
+                ?.toIntOrNull()
 
-        val title = book.optString("title", "未知书名")
-            .replace(Regex("\\s+"), " ")
-            .trim()
+            val title = book.optString("title", "未知书名")
+                .replace(Regex("\\s+"), " ")
+                .trim()
 
-        val coverUrl = book.optString("cover_url")
-            .takeIf { it.isNotBlank() && it.startsWith("http") }
+            val coverUrl = book.optString("cover_url")
+                .takeIf { it.isNotBlank() && it.startsWith("http") }
 
-        val subjectUrl = book.optString("url")
-        val subjectId = subjectUrl.trimEnd('/').substringAfterLast('/', missingDelimiterValue = "")
+            val subjectUrl = book.optString("url")
+            val subjectId = subjectUrl.trimEnd('/').substringAfterLast('/', missingDelimiterValue = "")
 
-        return BookSearchResult(
-            key = subjectId.ifBlank { book.opt("id")?.toString().orEmpty() },
-            title = title,
-            author = author,
-            authors = listOfNotNull(author),
-            publisher = publisher,
-            publishYear = publishYear,
-            isbn = null,
-            coverUrl = coverUrl,
-            pageCount = null,
-            description = null
-        )
+            BookSearchResult(
+                key = subjectId.ifBlank { book.opt("id")?.toString().orEmpty() },
+                title = title,
+                author = author,
+                authors = listOfNotNull(author),
+                publisher = publisher,
+                publishYear = publishYear,
+                isbn = null,
+                coverUrl = coverUrl,
+                pageCount = null,
+                description = null
+            )
+        }.getOrElse {
+            BookSearchResult(
+                key = "",
+                title = "未知书名",
+                author = null,
+                authors = emptyList(),
+                publisher = null,
+                publishYear = null,
+                isbn = null,
+                coverUrl = null,
+                pageCount = null,
+                description = null
+            )
+        }
     }
 }
