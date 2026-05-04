@@ -34,10 +34,13 @@ import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -79,6 +82,11 @@ import kotlinx.coroutines.launch
 
 private fun StatsUnit.label(): String = if (this == StatsUnit.CHAPTER) "章" else "页"
 
+private enum class RecentSortOrder {
+    BY_TIME,
+    BY_TITLE
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
@@ -88,6 +96,15 @@ fun HomeScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var quickRecordBookId by remember { mutableStateOf<Long?>(null) }
     var isEditMode by remember { mutableStateOf(false) }
+    var recentSortOrder by remember { mutableStateOf(RecentSortOrder.BY_TIME) }
+    var showSortMenu by remember { mutableStateOf(false) }
+
+    val sortedRecentBooks = remember(uiState.recentBooks, recentSortOrder) {
+        when (recentSortOrder) {
+            RecentSortOrder.BY_TIME -> uiState.recentBooks.sortedByDescending { it.lastReadAt ?: 0L }
+            RecentSortOrder.BY_TITLE -> uiState.recentBooks.sortedBy { it.title.lowercase() }
+        }
+    }
 
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
@@ -149,22 +166,56 @@ fun HomeScreen(
                         HomeComponent.RECENT.id -> {
                             if (uiState.recentBooks.isNotEmpty()) {
                                 item(key = "recent-header") {
-                                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                        Text(
-                                            text = "最近阅读",
-                                            style = MaterialTheme.typography.titleMedium,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                        Text(
-                                            text = uiState.latestReadingBookTitle?.let { "最近翻阅：$it" }
-                                                ?: "继续你的阅读节奏",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
+                                    Box {
+                                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Text(
+                                                    text = "最近阅读",
+                                                    style = MaterialTheme.typography.titleMedium,
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                                IconButton(onClick = { showSortMenu = true }) {
+                                                    Icon(
+                                                        Icons.AutoMirrored.Filled.Sort,
+                                                        contentDescription = "排序",
+                                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                }
+                                            }
+                                            Text(
+                                                text = uiState.latestReadingBookTitle?.let { "最近翻阅：$it" }
+                                                    ?: "继续你的阅读节奏",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                        DropdownMenu(
+                                            expanded = showSortMenu,
+                                            onDismissRequest = { showSortMenu = false }
+                                        ) {
+                                            DropdownMenuItem(
+                                                text = { Text("按修改时间" + if (recentSortOrder == RecentSortOrder.BY_TIME) " ✓" else "") },
+                                                onClick = {
+                                                    recentSortOrder = RecentSortOrder.BY_TIME
+                                                    showSortMenu = false
+                                                }
+                                            )
+                                            DropdownMenuItem(
+                                                text = { Text("按书名" + if (recentSortOrder == RecentSortOrder.BY_TITLE) " ✓" else "") },
+                                                onClick = {
+                                                    recentSortOrder = RecentSortOrder.BY_TITLE
+                                                    showSortMenu = false
+                                                }
+                                            )
+                                        }
                                     }
                                 }
                                 items(
-                                    items = uiState.recentBooks,
+                                    items = sortedRecentBooks,
                                     key = { "recent-${it.id}" }
                                 ) { book ->
                                     BookCard(
@@ -545,31 +596,7 @@ private fun StatusOverviewCard(uiState: HomeUiState) {
                 StatusItem(count = uiState.readingBooks, label = "在读", color = statusColor(BookStatus.READING))
                 StatusItem(count = uiState.finishedBooks, label = "已读", color = statusColor(BookStatus.FINISHED))
             }
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                StatusBarRow(wantToReadCount, "想读", statusColor(BookStatus.WANT_TO_READ))
-                StatusBarRow(readingCount, "在读", statusColor(BookStatus.READING))
-                StatusBarRow(finishedCount, "已读", statusColor(BookStatus.FINISHED))
-                StatusBarRow(onHoldCount, "闲置", statusColor(BookStatus.ON_HOLD))
-                StatusBarRow(abandonedCount, "放弃", statusColor(BookStatus.ABANDONED))
-            }
         }
-    }
-}
-
-@Composable
-private fun StatusBarRow(count: Int, label: String, color: Color) {
-    val progress = remember(count) { (count.coerceAtMost(10)) / 10f }
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(label, style = MaterialTheme.typography.bodySmall)
-            Text("$count", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold)
-        }
-        LinearProgressIndicator(
-            progress = { progress },
-            modifier = Modifier.fillMaxWidth(),
-            color = color,
-            trackColor = color.copy(alpha = 0.18f)
-        )
     }
 }
 
