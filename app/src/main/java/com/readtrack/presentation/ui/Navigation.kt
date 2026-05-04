@@ -110,6 +110,9 @@ fun MainNavigation() {
                 HomeScreen(
                     onBookClick = { bookId ->
                         navController.navigate(Screen.BookDetail.createRoute(bookId))
+                    },
+                    onAddBookClick = {
+                        navController.navigate(Screen.AddBook.route)
                     }
                 )
             }
