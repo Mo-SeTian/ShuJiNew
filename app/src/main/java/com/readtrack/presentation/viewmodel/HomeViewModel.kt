@@ -1,5 +1,6 @@
 package com.readtrack.presentation.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.readtrack.data.local.PreferencesManager
@@ -26,6 +27,8 @@ class HomeViewModel @Inject constructor(
     private val recordRepository: ReadingRecordRepository,
     private val preferencesManager: PreferencesManager
 ) : ViewModel() {
+
+    private val TAG = "HomeViewModel"
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
@@ -76,8 +79,8 @@ class HomeViewModel @Inject constructor(
                     updatedAt = System.currentTimeMillis()
                 )
                 bookRepository.insertRecordAndUpdateBook(record, updatedBook)
-            } catch (_: Exception) {
-                // 快速记录失败时静默忽略，避免打断首页使用
+            } catch (e: Exception) {
+                Log.e(TAG, "快速记录失败: bookId=$bookId, page=$newPage", e)
             }
         }
     }
