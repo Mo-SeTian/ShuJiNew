@@ -56,7 +56,34 @@ class CoverStorageUtil @Inject constructor(
             return uriStr
         }
 
-        // 将 URI 复制到内部存储
+        // file:// 开头：如果是外部文件则复制到内部目录
+        if (uriStr.startsWith("file://")) {
+            // 复制到内部存储（和 content:// 一样的处理方式）
+            return try {
+                val uri = Uri.parse(uriStr)
+                val fileName = "cover_${UUID.randomUUID()}.jpg"
+                val destFile = File(coversDir, fileName)
+
+                context.contentResolver.openInputStream(uri)?.use { input ->
+                    FileOutputStream(destFile).use { output ->
+                        input.copyTo(output)
+                    }
+                }
+
+                if (destFile.exists()) {
+                    android.util.Log.d("CoverStorage", "file:// 封面已复制到内部存储: ${destFile.absolutePath}")
+                    destFile.absolutePath
+                } else {
+                    android.util.Log.e("CoverStorage", "file:// 封面复制失败: $uriStr")
+                    uriStr
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("CoverStorage", "file:// 封面复制异常: $uriStr", e)
+                uriStr
+            }
+        }
+
+        // 将 content:// / 其他 URI 复制到内部存储
         return try {
             val uri = Uri.parse(uriStr)
             val fileName = "cover_${UUID.randomUUID()}.jpg"
