@@ -146,17 +146,19 @@ class DataBackupRepositoryImpl @Inject constructor(
 
                 // 写入封面图片
                 val missingCovers = mutableListOf<String>()
+                val includedCovers = mutableListOf<String>()
                 coverPathsToInclude.forEach { coverPath ->
                     val coverFile = File(coverPath)
                     if (coverFile.exists()) {
                         zip.putNextEntry(ZipEntry("covers/${coverFile.name}"))
                         FileInputStream(coverFile).use { it.copyTo(zip) }
                         zip.closeEntry()
+                        includedCovers.add(coverPath)
                     } else {
                         missingCovers.add(coverPath)
                     }
                 }
-                // 如果有缺失的封面，打印日志（帮助排查）
+                android.util.Log.d("DataBackup", "封面打包完成: 共 ${coverPathsToInclude.size} 个, 成功 ${includedCovers.size} 个, 缺失 ${missingCovers.size} 个")
                 if (missingCovers.isNotEmpty()) {
                     android.util.Log.w("DataBackup", "以下封面文件缺失，已跳过: $missingCovers")
                 }
@@ -361,11 +363,14 @@ class DataBackupRepositoryImpl @Inject constructor(
                             val destFile = File(coverStorageUtil.coversDir, fileName)
                             FileOutputStream(destFile).use { output -> zip.copyTo(output) }
                             extractedCoverFiles.add(destFile)
+                            android.util.Log.d("DataBackup", "封面已解压: ${destFile.absolutePath}")
                         }
                     }
                     entry = zip.nextEntry
                 }
             }
+
+            android.util.Log.d("DataBackup", "ZIP 解压完成: 共提取 ${extractedCoverFiles.size} 个封面文件")
 
             val backup = parseBackupFromJson(jsonContent)
                 ?: return Result.failure(IllegalStateException("ZIP 中未找到有效的 data.json"))
