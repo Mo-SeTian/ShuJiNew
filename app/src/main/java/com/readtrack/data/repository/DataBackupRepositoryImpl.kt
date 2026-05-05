@@ -117,8 +117,10 @@ class DataBackupRepositoryImpl @Inject constructor(
 
             backup.books.forEach { book ->
                 book.coverPath?.let { path ->
+                    // 排除网络URL、特殊协议、file://本地路径（这些都不是内部存储的封面）
                     if (!path.startsWith("http://") && !path.startsWith("https://") &&
-                        !path.startsWith("emoji://") && !path.startsWith("color://")) {
+                        !path.startsWith("emoji://") && !path.startsWith("color://") &&
+                        !path.startsWith("file://")) {
                         coverPathsToInclude.add(path)
                     }
                 }
@@ -126,7 +128,8 @@ class DataBackupRepositoryImpl @Inject constructor(
             backup.bookLists.forEach { list ->
                 list.coverPath?.let { path ->
                     if (!path.startsWith("http://") && !path.startsWith("https://") &&
-                        !path.startsWith("emoji://") && !path.startsWith("color://")) {
+                        !path.startsWith("emoji://") && !path.startsWith("color://") &&
+                        !path.startsWith("file://")) {
                         coverPathsToInclude.add(path)
                     }
                 }
