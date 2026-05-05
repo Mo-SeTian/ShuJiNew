@@ -5,6 +5,7 @@ import com.readtrack.data.local.PreferencesManager
 import com.readtrack.data.local.dao.BookDao
 import com.readtrack.data.local.dao.BookListDao
 import com.readtrack.data.local.dao.ReadingRecordDao
+import com.readtrack.data.local.database.ReadTrackDatabase
 import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.data.local.entity.BookListCrossRef
 import com.readtrack.data.local.entity.BookListEntity
@@ -16,7 +17,6 @@ import com.readtrack.domain.model.BookSnapshot
 import com.readtrack.domain.model.DataBackup
 import com.readtrack.domain.model.ImportPreview
 import com.readtrack.domain.model.ImportResult
-import com.readtrack.domain.model.PreferencesExport
 import com.readtrack.domain.model.ReadingRecordExport
 import com.readtrack.domain.model.buildImportPreview
 import com.readtrack.domain.repository.DataBackupRepository
@@ -36,9 +36,13 @@ import java.util.zip.ZipOutputStream
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/** 当前备份格式版本，导入低版本时执行迁移 */
+private const val CURRENT_BACKUP_VERSION = 4
+
 @Singleton
 class DataBackupRepositoryImpl @Inject constructor(
     @ApplicationContext private val context: Context,
+    private val database: ReadTrackDatabase,
     private val bookDao: BookDao,
     private val recordDao: ReadingRecordDao,
     private val bookListDao: BookListDao,
@@ -105,7 +109,7 @@ class DataBackupRepositoryImpl @Inject constructor(
      * 导出为 ZIP 文件（包含 JSON 数据文件 + 封面图片目录）
      * @return ZIP 文件路径
      */
-    suspend fun exportToZip(): Result<File> {
+    override suspend fun exportToZip(): Result<File> {
         return try {
             val backupResult = exportAllData()
             if (backupResult.isFailure) return Result.failure(backupResult.exceptionOrNull()!!)
@@ -117,21 +121,12 @@ class DataBackupRepositoryImpl @Inject constructor(
 
             backup.books.forEach { book ->
                 book.coverPath?.let { path ->
-                    // 排除网络URL、特殊协议、file://本地路径（这些都不是内部存储的封面）
-                    if (!path.startsWith("http://") && !path.startsWith("https://") &&
-                        !path.startsWith("emoji://") && !path.startsWith("color://") &&
-                        !path.startsWith("file://")) {
-                        coverPathsToInclude.add(path)
-                    }
+                    if (isLocalCoverPath(path)) coverPathsToInclude.add(path)
                 }
             }
             backup.bookLists.forEach { list ->
                 list.coverPath?.let { path ->
-                    if (!path.startsWith("http://") && !path.startsWith("https://") &&
-                        !path.startsWith("emoji://") && !path.startsWith("color://") &&
-                        !path.startsWith("file://")) {
-                        coverPathsToInclude.add(path)
-                    }
+                    if (isLocalCoverPath(path)) coverPathsToInclude.add(path)
                 }
             }
 
@@ -171,7 +166,7 @@ class DataBackupRepositoryImpl @Inject constructor(
     }
 
     /**
-     * 导出纯 JSON（不含封面），用于 WebDAV 自动备份等场景
+     * 导出纯 JSON（不含封面），用于兼容旧版 WebDAV 等场景
      */
     override fun getExportJson(): Flow<String> = flow {
         val backupResult = exportAllData()
@@ -183,6 +178,9 @@ class DataBackupRepositoryImpl @Inject constructor(
     // ─── 导入 ──────────────────────────────────────────────────────────────────
 
     override suspend fun importData(backup: DataBackup, clearExisting: Boolean): Result<ImportResult> {
+        // 版本迁移：低版本备份自动升级字段
+        val migrated = migrateBackup(backup)
+
         return try {
             val errors = mutableListOf<String>()
             var booksImported = 0
@@ -192,25 +190,27 @@ class DataBackupRepositoryImpl @Inject constructor(
             val oldIdToNewId = mutableMapOf<Long, Long>()
             val oldIdToNewBook = mutableMapOf<Long, BookEntity>()
 
+            // 阶段 0：清空现有数据（如果需要）
             if (clearExisting) {
                 recordDao.deleteAllRecords()
                 bookDao.deleteAllBooks()
                 bookListDao.deleteAllBookLists()
             }
 
+            // 阶段 1：读取现有数据用于去重
             val existingBooks = if (!clearExisting) {
                 bookDao.getAllBooks().first()
             } else {
                 emptyList()
             }
-            val existingKeys = existingBooks.map { "${it.title}::${it.author ?: ""}" }.toSet()
+            val existingKeys = existingBooks.map { importIdentityKey(it) }.toSet()
 
-            // 导入书籍
-            backup.books.forEach { bookExport ->
+            // 阶段 2：导入书籍
+            migrated.books.forEach { bookExport ->
                 try {
-                    val key = "${bookExport.title}::${bookExport.author ?: ""}"
+                    val key = importIdentityKey(bookExport)
                     if (!clearExisting && key in existingKeys) {
-                        val matched = existingBooks.first { "${it.title}::${it.author ?: ""}" == key }
+                        val matched = existingBooks.first { importIdentityKey(it) == key }
                         oldIdToNewId[bookExport.id] = matched.id
                         oldIdToNewBook[bookExport.id] = matched
                         return@forEach
@@ -226,53 +226,56 @@ class DataBackupRepositoryImpl @Inject constructor(
                 }
             }
 
+            // 阶段 3：读取现有记录用于去重
             val existingRecords = if (!clearExisting) {
                 recordDao.getAllRecords().first()
             } else {
                 emptyList()
             }
-            val existingRecordKeys = existingRecords.map { "${it.bookId}::${it.date}" }.toSet()
+            val existingRecordKeys = existingRecords.mapNotNull { record ->
+                record.bookId?.let { bookId -> "${bookId}::${record.date}" }
+            }.toSet()
 
-            // 导入阅读记录
-            backup.readingRecords.forEach { recordExport ->
+            // 阶段 4：导入阅读记录
+            migrated.readingRecords.forEach { recordExport ->
                 try {
-                    val newBookId = oldIdToNewId[recordExport.bookId]
+                    val newBookId = recordExport.bookId?.let { oldIdToNewId[it] }
                     if (newBookId != null) {
                         val recordKey = "${newBookId}::${recordExport.date}"
                         if (!clearExisting && recordKey in existingRecordKeys) {
                             return@forEach
                         }
-
-                        val newRecord = ReadingRecordEntity(
-                            id = 0,
-                            bookId = newBookId,
-                            bookSnapshot = oldIdToNewBook[recordExport.bookId]?.let { BookSnapshot.from(it, it.status) },
-                            pagesRead = recordExport.pagesRead,
-                            fromPage = recordExport.fromPage,
-                            toPage = recordExport.toPage,
-                            chaptersRead = recordExport.chaptersRead,
-                            date = recordExport.date,
-                            note = recordExport.note,
-                            recordType = try { RecordType.valueOf(recordExport.recordType) } catch (e: Exception) { RecordType.NORMAL }
-                        )
-                        recordDao.insertRecord(newRecord)
-                        recordsImported++
-                    } else {
-                        errors.add("未找到书籍《${recordExport.bookTitle}》，其阅读记录被跳过")
                     }
+
+                    val newRecord = ReadingRecordEntity(
+                        id = 0,
+                        bookId = newBookId,
+                        bookSnapshot = recordExport.bookSnapshot
+                            ?: oldIdToNewBook[recordExport.bookId]?.let { BookSnapshot.from(it, it.status) },
+                        pagesRead = recordExport.pagesRead,
+                        fromPage = recordExport.fromPage,
+                        toPage = recordExport.toPage,
+                        chaptersRead = recordExport.chaptersRead,
+                        date = recordExport.date,
+                        note = recordExport.note,
+                        recordType = try { RecordType.valueOf(recordExport.recordType) } catch (e: Exception) { RecordType.NORMAL }
+                    )
+                    recordDao.insertRecord(newRecord)
+                    recordsImported++
                 } catch (e: Exception) {
                     errors.add("导入阅读记录失败: ${e.message}")
                 }
             }
 
-            // 导入书单
+            // 阶段 5：读取现有书单用于去重
             val existingBookListNames = if (!clearExisting) {
                 bookListDao.getAllBookLists().first().map { it.name }.toSet()
             } else {
                 emptySet()
             }
 
-            backup.bookLists.forEach { bookListExport ->
+            // 阶段 6：导入书单
+            migrated.bookLists.forEach { bookListExport ->
                 try {
                     if (!clearExisting && bookListExport.name in existingBookListNames) {
                         return@forEach
@@ -304,10 +307,10 @@ class DataBackupRepositoryImpl @Inject constructor(
                 }
             }
 
-            // 恢复用户设置（始终追加模式，不覆盖运行时状态）
-            if (backup.preferences != null) {
+            // 恢复用户设置（DataStore 不支持事务）
+            if (migrated.preferences != null) {
                 try {
-                    preferencesManager.importPreferences(backup.preferences)
+                    preferencesManager.importPreferences(migrated.preferences)
                 } catch (e: Exception) {
                     errors.add("恢复用户设置失败: ${e.message}")
                 }
@@ -322,7 +325,7 @@ class DataBackupRepositoryImpl @Inject constructor(
     /**
      * 从 ZIP 文件提取 data.json 并预览（不解压封面，不执行导入）
      */
-    suspend fun importFromZipForPreview(zipFile: File): Result<ImportPreview> {
+    override suspend fun importFromZipForPreview(zipFile: File): Result<ImportPreview> {
         return try {
             val jsonContent: String
             ZipInputStream(FileInputStream(zipFile)).use { zip ->
@@ -346,7 +349,7 @@ class DataBackupRepositoryImpl @Inject constructor(
     /**
      * 从 ZIP 文件导入（包含封面图片自动解压到 covers 目录）
      */
-    suspend fun importFromZip(zipFile: File, clearExisting: Boolean): Result<ImportResult> {
+    override suspend fun importFromZip(zipFile: File, clearExisting: Boolean): Result<ImportResult> {
         return try {
             var jsonContent: String = ""
             val extractedCoverFiles = mutableListOf<File>()
@@ -361,10 +364,9 @@ class DataBackupRepositoryImpl @Inject constructor(
                         }
                         entry.name.startsWith("covers/") && !entry.isDirectory -> {
                             val fileName = entry.name.removePrefix("covers/")
-                            val destFile = File(coverStorageUtil.coversDir, fileName)
+                            val destFile = resolveCoverFile(fileName)
                             FileOutputStream(destFile).use { output -> zip.copyTo(output) }
                             extractedCoverFiles.add(destFile)
-                            // 记录：原始文件名 -> 新设备上的路径
                             extractedCoverMap[fileName] = destFile.absolutePath
                             android.util.Log.d("DataBackup", "封面已解压: ${destFile.absolutePath}")
                         }
@@ -397,6 +399,18 @@ class DataBackupRepositoryImpl @Inject constructor(
     }
 
     /**
+     * 安全解析封面文件名，防止 ZIP 路径穿越攻击。
+     * 拒绝包含 "/"、"\\"、".." 的文件名，并将结果限定在 covers 目录内。
+     */
+    private fun resolveCoverFile(fileName: String): File {
+        val safeName = File(fileName).name  // 剥离任何路径前缀
+        if (safeName != fileName || safeName.contains("..") || safeName.isEmpty()) {
+            throw SecurityException("ZIP 中封面文件名不安全: $fileName")
+        }
+        return File(coverStorageUtil.coversDir, safeName)
+    }
+
+    /**
      * 修复跨设备恢复时的封面路径问题
      * ZIP 中只存储文件名（如 cover_uuid.jpg），但 data.json 中存储的是原设备的绝对路径
      * 这里将 data.json 中的封面路径替换为解压后的新设备路径
@@ -421,7 +435,7 @@ class DataBackupRepositoryImpl @Inject constructor(
             bookExport.copy(coverPath = fixedCoverPath)
         }
 
-        // 修复书单封面路径（如果有的话）
+        // 修复书单封面路径
         val fixedBookLists = backup.bookLists.map { listExport ->
             val fixedCoverPath = listExport.coverPath?.let { originalPath ->
                 val fileName = File(originalPath).name
@@ -443,7 +457,7 @@ class DataBackupRepositoryImpl @Inject constructor(
 
     override suspend fun previewImport(backup: DataBackup) = runCatching {
         buildImportPreview(
-            backup = backup,
+            backup = migrateBackup(backup),
             existingBooks = bookDao.getAllBooks().first(),
             existingRecords = recordDao.getAllRecords().first(),
             existingBookLists = bookListDao.getAllBookLists().first()
@@ -457,4 +471,43 @@ class DataBackupRepositoryImpl @Inject constructor(
             null
         }
     }
+
+    // ─── 版本迁移 ──────────────────────────────────────────────────────────────
+
+    /**
+     * 按版本号逐步升级备份数据到当前版本格式。
+     * 新增字段使用默认值，不会丢失数据。
+     */
+    private fun migrateBackup(backup: DataBackup): DataBackup {
+        var current = backup
+        if (current.version < 1) {
+            // v1: 添加 bookLists 和 preferences 字段（使用默认值即可）
+        }
+        if (current.version < 2) {
+            // v2: BookExport 添加 bookType 字段（默认 "NOVEL"）
+        }
+        if (current.version < 3) {
+            // v3: ReadingRecordExport 添加 recordType 字段（默认 "NORMAL"）
+        }
+        if (current.version < 4) {
+            // v4: ReadingRecordExport 添加 bookSnapshot 字段
+        }
+        // 确保版本号更新到当前版本，后续导入不再重复迁移
+        if (current.version < CURRENT_BACKUP_VERSION) {
+            current = current.copy(version = CURRENT_BACKUP_VERSION)
+        }
+        return current
+    }
+
+    // ─── helpers ───────────────────────────────────────────────────────────────
+
+    private fun isLocalCoverPath(path: String): Boolean {
+        return !path.startsWith("http://") && !path.startsWith("https://") &&
+            !path.startsWith("emoji://") && !path.startsWith("color://") &&
+            !path.startsWith("file://")
+    }
 }
+
+private fun importIdentityKey(book: BookEntity): String = "${book.title.trim()}::${book.author?.trim().orEmpty()}"
+
+private fun importIdentityKey(bookExport: BookExport): String = "${bookExport.title.trim()}::${bookExport.author?.trim().orEmpty()}"

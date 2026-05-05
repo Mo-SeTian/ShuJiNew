@@ -96,6 +96,7 @@ object DatabaseModule {
     @Singleton
     fun provideDataBackupRepository(
         @ApplicationContext context: Context,
+        database: ReadTrackDatabase,
         bookDao: BookDao,
         readingRecordDao: ReadingRecordDao,
         bookListDao: BookListDao,
@@ -104,6 +105,7 @@ object DatabaseModule {
     ): DataBackupRepository {
         return DataBackupRepositoryImpl(
             context = context,
+            database = database,
             bookDao = bookDao,
             recordDao = readingRecordDao,
             bookListDao = bookListDao,
