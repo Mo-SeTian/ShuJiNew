@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import com.readtrack.data.local.ThemeMode
 
 // Material You inspired color palette
 private val LightColorScheme = lightColorScheme(
@@ -81,10 +82,17 @@ private val DarkColorScheme = darkColorScheme(
 
 @Composable
 fun ReadTrackTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    themeMode: ThemeMode = ThemeMode.SYSTEM,
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
+    val systemDark = isSystemInDarkTheme()
+    val darkTheme = when (themeMode) {
+        ThemeMode.DARK -> true
+        ThemeMode.LIGHT -> false
+        ThemeMode.SYSTEM -> systemDark
+    }
+
     val colorScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
@@ -98,12 +106,10 @@ fun ReadTrackTheme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            // Enable edge-to-edge and make status bar transparent
             WindowCompat.setDecorFitsSystemWindows(window, false)
             window.statusBarColor = Color.Transparent.toArgb()
             window.navigationBarColor = Color.Transparent.toArgb()
-            
-            // Set light/dark icons based on theme
+
             val isLightStatusBar = !darkTheme
             WindowCompat.getInsetsController(window, view).apply {
                 isAppearanceLightStatusBars = isLightStatusBar

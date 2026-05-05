@@ -7,23 +7,32 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.core.view.WindowCompat
+import com.readtrack.data.local.PreferencesManager
 import com.readtrack.presentation.ui.MainNavigation
 import com.readtrack.presentation.ui.theme.ReadTrackTheme
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    @Inject
+    lateinit var preferencesManager: PreferencesManager
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
-        // Enable edge-to-edge for immersive experience
+
         enableEdgeToEdge()
         WindowCompat.setDecorFitsSystemWindows(window, false)
-        
+
         setContent {
-            ReadTrackTheme {
+            val themeMode by preferencesManager.themeMode.collectAsState(initial = com.readtrack.data.local.ThemeMode.SYSTEM)
+
+            ReadTrackTheme(themeMode = themeMode) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
