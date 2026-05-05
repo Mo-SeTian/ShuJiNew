@@ -53,7 +53,7 @@ import com.readtrack.presentation.ui.components.getStatusColor
 import com.readtrack.presentation.viewmodel.AddBookViewModel
 import com.readtrack.domain.model.ProgressType
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun AddBookScreen(
     onNavigateBack: () -> Unit,
@@ -511,26 +511,16 @@ fun AddBookScreen(
                 fontWeight = FontWeight.Bold
             )
 
-            Row(
+            FlowRow(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 com.readtrack.domain.model.BookType.entries.forEach { type ->
                     FilterChip(
                         selected = uiState.bookType == type,
                         onClick = { viewModel.updateBookType(type) },
-                        label = {
-                            Box(
-                                modifier = Modifier.fillMaxWidth(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    type.displayName,
-                                    style = MaterialTheme.typography.labelMedium
-                                )
-                            }
-                        },
-                        modifier = Modifier.weight(1f),
+                        label = { Text(type.displayName, style = MaterialTheme.typography.labelMedium) },
                         shape = RoundedCornerShape(12.dp)
                     )
                 }
@@ -542,33 +532,69 @@ fun AddBookScreen(
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
-            
-            Row(
+
+            // 5个状态使用2行布局：第1行3个，第2行2个
+            Column(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                BookStatus.entries.forEach { status ->
-                    FilterChip(
-                        selected = uiState.status == status,
-                        onClick = { viewModel.updateStatus(status) },
-                        label = { 
-                            Box(
-                                modifier = Modifier.fillMaxWidth(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    status.displayName, 
-                                    style = MaterialTheme.typography.labelMedium
-                                )
-                            }
-                        },
-                        modifier = Modifier.weight(1f),
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = getStatusColor(status),
-                            selectedLabelColor = MaterialTheme.colorScheme.surface
-                        ),
-                        shape = RoundedCornerShape(12.dp)
-                    )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    BookStatus.entries.take(3).forEach { status ->
+                        FilterChip(
+                            selected = uiState.status == status,
+                            onClick = { viewModel.updateStatus(status) },
+                            label = {
+                                Box(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        status.displayName,
+                                        style = MaterialTheme.typography.labelMedium
+                                    )
+                                }
+                            },
+                            modifier = Modifier.weight(1f),
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = getStatusColor(status),
+                                selectedLabelColor = MaterialTheme.colorScheme.surface
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                    }
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    BookStatus.entries.drop(3).forEach { status ->
+                        FilterChip(
+                            selected = uiState.status == status,
+                            onClick = { viewModel.updateStatus(status) },
+                            label = {
+                                Box(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        status.displayName,
+                                        style = MaterialTheme.typography.labelMedium
+                                    )
+                                }
+                            },
+                            modifier = Modifier.weight(1f),
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = getStatusColor(status),
+                                selectedLabelColor = MaterialTheme.colorScheme.surface
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                    }
+                    // 填充空白保持对齐
+                    Spacer(modifier = Modifier.weight(1f))
                 }
             }
 

@@ -1,6 +1,9 @@
 package com.readtrack.presentation.ui.stats
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -16,8 +19,12 @@ import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,6 +41,7 @@ import com.readtrack.data.local.entity.RecordType
 import com.readtrack.domain.model.BookStatus
 import com.readtrack.presentation.ui.components.statusColorOf
 import com.readtrack.presentation.ui.components.statusLabelOf
+import com.readtrack.presentation.ui.components.ShimmerStatCard
 import com.readtrack.presentation.ui.theme.*
 import com.readtrack.presentation.viewmodel.DailyReading
 import com.readtrack.domain.model.ProgressType
@@ -52,6 +60,33 @@ fun StatsScreen(
     viewModel: StatsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var selectedDay by remember { mutableStateOf<DailyReading?>(null) }
+
+    // Day detail dialog
+    selectedDay?.let { day ->
+        val value = if (uiState.statsUnit == StatsUnit.CHAPTER) day.chapters else day.pages
+        AlertDialog(
+            onDismissRequest = { selectedDay = null },
+            title = { Text(day.dayOfWeek, fontWeight = FontWeight.Bold) },
+            text = {
+                Column {
+                    Text("阅读量: ${value.toInt()} ${uiState.statsUnit.label()}")
+                    if (day.chapters > 0 && day.pages > 0) {
+                        Text(
+                            "包含 ${day.chapters.toInt()} 章 / ${day.pages.toInt()} 页",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { selectedDay = null }) {
+                    Text("关闭")
+                }
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -70,13 +105,34 @@ fun StatsScreen(
         }
     ) { padding ->
         if (uiState.isLoading) {
-            Box(
+            LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding),
-                contentAlignment = Alignment.Center
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                CircularProgressIndicator()
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        ShimmerStatCard(modifier = Modifier.weight(1f))
+                        ShimmerStatCard(modifier = Modifier.weight(1f))
+                    }
+                }
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        ShimmerStatCard(modifier = Modifier.weight(1f))
+                        ShimmerStatCard(modifier = Modifier.weight(1f))
+                    }
+                }
+                item { ShimmerStatCard(modifier = Modifier.fillMaxWidth()) }
+                item { ShimmerStatCard(modifier = Modifier.fillMaxWidth()) }
+                items(3) { ShimmerStatCard(modifier = Modifier.fillMaxWidth()) }
             }
         } else {
             LazyColumn(
@@ -137,7 +193,11 @@ fun StatsScreen(
 
                 // Weekly Chart
                 item {
-                    WeeklyChartModern(weeklyData = uiState.weeklyReadingData, statsUnit = uiState.statsUnit)
+                    WeeklyChartModern(
+                        weeklyData = uiState.weeklyReadingData,
+                        statsUnit = uiState.statsUnit,
+                        onDayClick = { day -> selectedDay = day }
+                    )
                 }
 
                 // Books by Status
@@ -279,7 +339,11 @@ private fun StatsCardModern(
 }
 
 @Composable
-fun WeeklyChartModern(weeklyData: List<DailyReading>, statsUnit: StatsUnit = StatsUnit.CHAPTER) {
+fun WeeklyChartModern(
+    weeklyData: List<DailyReading>,
+    statsUnit: StatsUnit = StatsUnit.CHAPTER,
+    onDayClick: ((DailyReading) -> Unit)? = null
+) {
     val valueSelector: (DailyReading) -> Double = if (statsUnit == StatsUnit.CHAPTER) {
         { it.chapters }
     } else {
@@ -296,11 +360,24 @@ fun WeeklyChartModern(weeklyData: List<DailyReading>, statsUnit: StatsUnit = Sta
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
-            Text(
-                text = "近7天阅读趋势",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "近7天阅读趋势",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                if (onDayClick != null) {
+                    Text(
+                        text = "点击查看详情",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
             Spacer(modifier = Modifier.height(16.dp))
 
             Row(
@@ -310,11 +387,22 @@ fun WeeklyChartModern(weeklyData: List<DailyReading>, statsUnit: StatsUnit = Sta
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.Bottom
             ) {
-                weeklyData.forEachIndexed { _, day ->
+                weeklyData.forEachIndexed { index, day ->
                     val dayValue = valueSelector(day)
-                    val height = if (maxValue > 0) {
+                    val targetHeight = if (maxValue > 0) {
                         (dayValue / maxValue * 100).coerceIn(4.0, 100.0)
                     } else 4.0
+
+                    // 动画效果
+                    var animatedHeight by remember { mutableFloatStateOf(0f) }
+                    LaunchedEffect(targetHeight) {
+                        animatedHeight = targetHeight.toFloat()
+                    }
+                    val animatedHeightDp by animateFloatAsState(
+                        targetValue = animatedHeight,
+                        animationSpec = tween(durationMillis = 400, delayMillis = index * 50),
+                        label = "barHeight"
+                    )
 
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -333,13 +421,18 @@ fun WeeklyChartModern(weeklyData: List<DailyReading>, statsUnit: StatsUnit = Sta
                         Box(
                             modifier = Modifier
                                 .width(28.dp)
-                                .height(height.dp)
+                                .height(animatedHeightDp.dp)
                                 .clip(RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp))
                                 .background(
                                     if (dayValue > 0)
                                         MaterialTheme.colorScheme.primary
                                     else
                                         MaterialTheme.colorScheme.surfaceVariant
+                                )
+                                .then(
+                                    if (onDayClick != null) {
+                                        Modifier.clickable { onDayClick(day) }
+                                    } else Modifier
                                 )
                         )
                         Spacer(modifier = Modifier.height(8.dp))
