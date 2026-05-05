@@ -1,5 +1,6 @@
 package com.readtrack.domain.model
 
+import com.readtrack.BuildConfig
 import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.data.local.entity.BookListEntity
 import com.readtrack.data.local.entity.ReadingRecordEntity
@@ -45,7 +46,7 @@ data class PreferencesExport(
 data class DataBackup(
     val version: Int = 4,
     val exportTime: Long = System.currentTimeMillis(),
-    val appVersion: String = "1.7.0",
+    val appVersion: String = BuildConfig.VERSION_NAME,
     val books: List<BookExport> = emptyList(),
     val readingRecords: List<ReadingRecordExport> = emptyList(),
     val bookLists: List<BookListExport> = emptyList(),
@@ -102,7 +103,7 @@ data class BookExport(
         title = title,
         author = author,
         publisher = publisher,
-        progressType = ProgressType.valueOf(progressType),
+        progressType = try { ProgressType.valueOf(progressType) } catch (e: Exception) { ProgressType.PAGE },
         totalPages = totalPages,
         currentPage = currentPage,
         totalChapters = totalChapters,
@@ -134,7 +135,8 @@ data class ReadingRecordExport(
     val chaptersRead: Int? = null,  // 章节模式阅读量
     val date: Long,
     val note: String? = null,
-    val recordType: String = "NORMAL"  // 记录类型
+    val recordType: String = "NORMAL",  // 记录类型
+    val bookSnapshot: BookSnapshot? = null  // 图书快照，删除图书后可凭此显示书名、封面
 ) {
     companion object {
         fun fromEntity(record: ReadingRecordEntity, bookTitle: String): ReadingRecordExport =
@@ -148,7 +150,8 @@ data class ReadingRecordExport(
                 chaptersRead = record.chaptersRead,
                 date = record.date,
                 note = record.note,
-                recordType = record.recordType.name
+                recordType = record.recordType.name,
+                bookSnapshot = record.bookSnapshot
             )
     }
 }

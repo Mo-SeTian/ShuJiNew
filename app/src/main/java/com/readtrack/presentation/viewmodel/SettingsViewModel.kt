@@ -13,7 +13,6 @@ import com.readtrack.domain.model.DataBackup
 import com.readtrack.domain.model.ImportPreview
 import com.readtrack.domain.model.ImportResult
 import com.readtrack.domain.repository.DataBackupRepository
-import com.readtrack.data.repository.DataBackupRepositoryImpl
 import com.readtrack.util.CoverStorageUtil
 import com.readtrack.worker.WebDavBackupScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -189,9 +188,8 @@ class SettingsViewModel @Inject constructor(
                     progressPercent = 0f
                 )
             }
-            (dataBackupRepository as? DataBackupRepositoryImpl)?.exportToZip()
-                ?.onSuccess { zipFile ->
-                    // 不在这里关闭进度弹窗，等 exportLauncher 回调用户选择保存位置后再关闭
+            dataBackupRepository.exportToZip()
+                .onSuccess { zipFile ->
                     _uiState.update {
                         it.copy(
                             isExporting = false,
@@ -203,22 +201,11 @@ class SettingsViewModel @Inject constructor(
                         )
                     }
                 }
-                ?.onFailure { error ->
-                    _uiState.update {
-                        it.copy(
-                            isExporting = false,
-                            errorMessage = "导出失败: ${error.message}",
-                            showProgressDialog = false,
-                            progressMessage = ""
-                        )
-                    }
-                }
-                ?: run {
-                    // 回退：纯 JSON 导出（不应发生）
+                .onFailure { error ->
+                    // 回退：纯 JSON 导出
                     dataBackupRepository.exportAllData()
                         .onSuccess { backup ->
                             val json = Json.encodeToString(DataBackup.serializer(), backup)
-                            // JSON 导出同样等文件保存后再关闭弹窗
                             _uiState.update {
                                 it.copy(
                                     isExporting = false,
@@ -230,11 +217,11 @@ class SettingsViewModel @Inject constructor(
                                 )
                             }
                         }
-                        .onFailure { error ->
+                        .onFailure { e ->
                             _uiState.update {
                                 it.copy(
                                     isExporting = false,
-                                    errorMessage = "导出失败: ${error.message}",
+                                    errorMessage = "导出失败: ${e.message}",
                                     showProgressDialog = false,
                                     progressMessage = ""
                                 )
@@ -310,8 +297,8 @@ class SettingsViewModel @Inject constructor(
                             progressPercent = 0.3f
                         )
                     }
-                    (dataBackupRepository as? DataBackupRepositoryImpl)?.importFromZipForPreview(zipFile)
-                        ?.onSuccess { preview ->
+                    dataBackupRepository.importFromZipForPreview(zipFile)
+                        .onSuccess { preview ->
                             _uiState.update {
                                 it.copy(
                                     isImporting = false,
@@ -324,7 +311,7 @@ class SettingsViewModel @Inject constructor(
                                 )
                             }
                         }
-                        ?.onFailure { error ->
+                        .onFailure { error ->
                             _uiState.update {
                                 it.copy(
                                     isImporting = false,
@@ -378,8 +365,8 @@ class SettingsViewModel @Inject constructor(
                             progressPercent = 0.2f
                         )
                     }
-                    (dataBackupRepository as? DataBackupRepositoryImpl)?.importFromZip(zipFile, clearExisting)
-                        ?.onSuccess { result ->
+                    dataBackupRepository.importFromZip(zipFile, clearExisting)
+                        .onSuccess { result ->
                             cleanupTempZip(resolvedZipPath)
                             _uiState.update {
                                 it.copy(
@@ -395,7 +382,7 @@ class SettingsViewModel @Inject constructor(
                             }
                             return@launch
                         }
-                        ?.onFailure { error ->
+                        .onFailure { error ->
                             cleanupTempZip(resolvedZipPath)
                             _uiState.update {
                                 it.copy(
@@ -531,9 +518,9 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isSyncingWebDav = true, errorMessage = null, webDavStatusMessage = null) }
             // 1. 生成 ZIP 备份
-            (dataBackupRepository as? DataBackupRepositoryImpl)?.exportToZip()
-                ?.mapCatching { zipFile -> zipFile.readBytes() }
-                ?.fold(
+            dataBackupRepository.exportToZip()
+                .mapCatching { zipFile -> zipFile.readBytes() }
+                .fold(
                     onSuccess = { zipData ->
                         // 2. 上传到 WebDAV
                         webDavService.uploadBackupZip(config, zipData)
@@ -559,23 +546,15 @@ class SettingsViewModel @Inject constructor(
                             }
                     },
                     onFailure = { error ->
-                        _uiState.update {
-                            it.copy(
-                                isSyncingWebDav = false,
-                                errorMessage = "导出失败: ${error.message}"
-                            )
-                        }
+                        // ZIP 导出失败 → 回退到 JSON 上传
+                        uploadBackupJsonToWebDav(config)
                     }
                 )
-                ?: run {
-                    // 如果 DataBackupRepositoryImpl 不可用，退回到 JSON 上传
-                    uploadBackupJsonToWebDav(config)
-                }
         }
     }
 
     /**
-     * 回退：纯 JSON 上传到 WebDAV（DataBackupRepositoryImpl 不可用时）
+     * 回退：纯 JSON 上传到 WebDAV（ZIP 导出不可用时）
      */
     private suspend fun uploadBackupJsonToWebDav(config: WebDavConfig) {
         dataBackupRepository.exportAllData()
@@ -684,13 +663,13 @@ class SettingsViewModel @Inject constructor(
             }
             // 先尝试 ZIP 恢复
             val isZipFile = fileName == null || fileName.endsWith(".zip")
-            if (isZipFile && dataBackupRepository is DataBackupRepositoryImpl) {
+            if (isZipFile) {
                 webDavService.downloadBackupZip(config, fileName)
                     .mapCatching { zipData ->
                         val tempFile = File(applicationContext.cacheDir, "webdav_restore_${System.currentTimeMillis()}.zip")
                         tempFile.writeBytes(zipData)
                         // 预览 ZIP 内容
-                        val preview = (dataBackupRepository as DataBackupRepositoryImpl).importFromZipForPreview(tempFile)
+                        val preview = dataBackupRepository.importFromZipForPreview(tempFile)
                         preview to tempFile
                     }
                     .fold(
@@ -718,7 +697,7 @@ class SettingsViewModel @Inject constructor(
                         }
                     )
             } else {
-                // 文件名以 .json 结尾或 DataBackupRepositoryImpl 不可用 → JSON 预览
+                // 文件名以 .json 结尾 → JSON 预览
                 restoreBackupJsonPreviewFromWebDav(config, clearExisting, fileName)
             }
         }
