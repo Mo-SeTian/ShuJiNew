@@ -350,6 +350,7 @@ class DataBackupRepositoryImpl @Inject constructor(
         return try {
             var jsonContent: String = ""
             val extractedCoverFiles = mutableListOf<File>()
+            val extractedCoverMap = mutableMapOf<String, String>() // originalFileName -> newPath
 
             ZipInputStream(FileInputStream(zipFile)).use { zip ->
                 var entry = zip.nextEntry
@@ -363,6 +364,8 @@ class DataBackupRepositoryImpl @Inject constructor(
                             val destFile = File(coverStorageUtil.coversDir, fileName)
                             FileOutputStream(destFile).use { output -> zip.copyTo(output) }
                             extractedCoverFiles.add(destFile)
+                            // 记录：原始文件名 -> 新设备上的路径
+                            extractedCoverMap[fileName] = destFile.absolutePath
                             android.util.Log.d("DataBackup", "封面已解压: ${destFile.absolutePath}")
                         }
                     }
@@ -375,8 +378,14 @@ class DataBackupRepositoryImpl @Inject constructor(
             val backup = parseBackupFromJson(jsonContent)
                 ?: return Result.failure(IllegalStateException("ZIP 中未找到有效的 data.json"))
 
-            // 导入数据（coverPath 已经是解压后的本地路径，可直接使用）
-            val result = importData(backup, clearExisting)
+            // 修复封面路径：将 data.json 中的原设备路径替换为新设备路径
+            val fixedBackup = fixCoverPathsForNewDevice(backup, extractedCoverMap)
+            if (fixedBackup != backup) {
+                android.util.Log.d("DataBackup", "封面路径已修复为新设备路径")
+            }
+
+            // 导入数据
+            val result = importData(fixedBackup, clearExisting)
 
             // 清理临时 ZIP
             zipFile.delete()
@@ -385,6 +394,51 @@ class DataBackupRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    /**
+     * 修复跨设备恢复时的封面路径问题
+     * ZIP 中只存储文件名（如 cover_uuid.jpg），但 data.json 中存储的是原设备的绝对路径
+     * 这里将 data.json 中的封面路径替换为解压后的新设备路径
+     */
+    private fun fixCoverPathsForNewDevice(
+        backup: DataBackup,
+        extractedCoverMap: Map<String, String>
+    ): DataBackup {
+        if (extractedCoverMap.isEmpty()) return backup
+
+        // 提取文件名到新路径的映射
+        val fileNameToNewPath = extractedCoverMap.entries.associate { (fileName, newPath) ->
+            fileName to newPath
+        }
+
+        // 修复书籍封面路径
+        val fixedBooks = backup.books.map { bookExport ->
+            val fixedCoverPath = bookExport.coverPath?.let { originalPath ->
+                val fileName = File(originalPath).name
+                fileNameToNewPath[fileName] ?: originalPath
+            }
+            bookExport.copy(coverPath = fixedCoverPath)
+        }
+
+        // 修复书单封面路径（如果有的话）
+        val fixedBookLists = backup.bookLists.map { listExport ->
+            val fixedCoverPath = listExport.coverPath?.let { originalPath ->
+                val fileName = File(originalPath).name
+                fileNameToNewPath[fileName] ?: originalPath
+            }
+            listExport.copy(coverPath = fixedCoverPath)
+        }
+
+        return DataBackup(
+            version = backup.version,
+            exportTime = backup.exportTime,
+            appVersion = backup.appVersion,
+            books = fixedBooks,
+            readingRecords = backup.readingRecords,
+            bookLists = fixedBookLists,
+            preferences = backup.preferences
+        )
     }
 
     override suspend fun previewImport(backup: DataBackup) = runCatching {
