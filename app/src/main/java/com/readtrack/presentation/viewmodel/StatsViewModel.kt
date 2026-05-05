@@ -64,9 +64,7 @@ class StatsViewModel @Inject constructor(
     fun setStatsRange(range: StatsRange) {
         viewModelScope.launch {
             preferencesManager.setStatsRange(range)
-            // Force recompute by re-reading current state and updating
-            val current = _uiState.value
-            _uiState.value = current.copy(statsRange = range)
+            // 注意：statsRange Flow 会自动触发 combine 重新计算，无需手动调用 loadStats()
         }
     }
 
