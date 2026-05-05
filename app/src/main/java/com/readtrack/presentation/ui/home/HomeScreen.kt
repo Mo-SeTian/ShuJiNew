@@ -1,6 +1,5 @@
 package com.readtrack.presentation.ui.home
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,13 +16,13 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.AutoGraph
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DragHandle
@@ -32,17 +31,13 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material.icons.automirrored.filled.Sort
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -51,6 +46,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SmallTopAppBar
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -150,7 +146,6 @@ fun HomeScreen(
                     }
                 }
             } else {
-                // 根据 componentOrder 渲染组件
                 val order = if (uiState.componentOrder.isEmpty()) {
                     HomeComponent.entries.map { it.id }
                 } else {
@@ -234,9 +229,7 @@ fun HomeScreen(
         }
     }
 
-    // 编辑底部弹窗
     if (isEditMode) {
-        // 关键：直接用 uiState.componentOrder 作为 remember key，而非局部 val
         val editableList = remember(uiState.componentOrder) {
             mutableStateListOf<HomeComponentItem>().apply {
                 val order = uiState.componentOrder.ifEmpty { HomeComponent.entries.map { it.id } }
@@ -252,123 +245,26 @@ fun HomeScreen(
 
         ModalBottomSheet(
             onDismissRequest = { isEditMode = false },
-            sheetState = sheetState
+            sheetState = sheetState,
+            containerColor = MaterialTheme.colorScheme.surface
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .padding(bottom = 32.dp)
-            ) {
-                Text(
-                    text = "编辑首页组件",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
-
-                Text(
-                    text = "选择要在首页显示的组件，并拖动排序",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f, fill = false)
-                        .verticalScroll(rememberScrollState())
-                ) {
-                    editableList.forEachIndexed { index, item ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                Icons.Default.DragHandle,
-                                contentDescription = "拖动把手",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = item.component.title,
-                                    style = MaterialTheme.typography.bodyLarge
-                                )
-                                Text(
-                                    text = componentDescription(item.component),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            IconButton(
-                                onClick = {
-                                    if (index > 0) {
-                                        editableList.apply {
-                                            add(index - 1, removeAt(index))
-                                        }
-                                    }
-                                },
-                                enabled = index > 0
-                            ) {
-                                Icon(
-                                    Icons.Default.KeyboardArrowUp,
-                                    contentDescription = "上移",
-                                    tint = if (index > 0) MaterialTheme.colorScheme.primary
-                                           else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
-                                )
-                            }
-                            IconButton(
-                                onClick = {
-                                    if (index < editableList.lastIndex) {
-                                        editableList.apply {
-                                            add(index + 1, removeAt(index))
-                                        }
-                                    }
-                                },
-                                enabled = index < editableList.lastIndex
-                            ) {
-                                Icon(
-                                    Icons.Default.KeyboardArrowDown,
-                                    contentDescription = "下移",
-                                    tint = if (index < editableList.lastIndex) MaterialTheme.colorScheme.primary
-                                           else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
-                                )
-                            }
-                            Switch(
-                                checked = item.enabled,
-                                onCheckedChange = { enabled ->
-                                    editableList[index] = item.copy(enabled = enabled)
-                                }
-                            )
-                        }
-                        if (index < editableList.lastIndex) {
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                        }
+            EditHomeComponentsContent(
+                editableList = editableList,
+                onReorder = { from, to ->
+                    editableList.apply { add(to, removeAt(from)) }
+                },
+                onToggle = { index, enabled ->
+                    editableList[index] = editableList[index].copy(enabled = enabled)
+                },
+                onSave = {
+                    val newOrder = editableList.filter { it.enabled }.map { it.component.id }
+                    viewModel.updateComponentOrder(newOrder)
+                    scope.launch {
+                        sheetState.hide()
+                        isEditMode = false
                     }
                 }
-
-                androidx.compose.material3.Button(
-                    onClick = {
-                        // 保存顺序：仅保留 enabled 的，按当前顺序
-                        val newOrder = editableList.filter { it.enabled }.map { it.component.id }
-                        viewModel.updateComponentOrder(newOrder)
-                        scope.launch {
-                            sheetState.hide()
-                            isEditMode = false
-                        }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 16.dp)
-                ) {
-                    Text("保存")
-                }
-            }
+            )
         }
     }
 
@@ -398,6 +294,189 @@ private fun componentDescription(component: HomeComponent): String = when (compo
     HomeComponent.INSIGHT -> "月度阅读统计和阅读洞察"
     HomeComponent.STATUS -> "书架书籍状态分布"
     HomeComponent.RECENT -> "最近阅读的书籍列表"
+}
+
+@Composable
+private fun EditHomeComponentsContent(
+    editableList: List<HomeComponentItem>,
+    onReorder: (Int, Int) -> Unit,
+    onToggle: (Int, Boolean) -> Unit,
+    onSave: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .padding(bottom = 32.dp)
+    ) {
+        Text(
+            text = "编辑首页组件",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+
+        Text(
+            text = "点击开关启用/禁用组件，使用箭头调整顺序",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+
+        if (editableList.any { it.enabled }) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Default.CheckCircle,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(Modifier.width(4.dp))
+                Text(
+                    text = "已启用 ${editableList.count { it.enabled }} 个组件",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f, fill = false)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            editableList.forEachIndexed { index, item ->
+                HomeComponentRow(
+                    item = item,
+                    index = index,
+                    totalItems = editableList.size,
+                    onToggle = { enabled -> onToggle(index, enabled) },
+                    onMoveUp = { if (index > 0) onReorder(index, index - 1) },
+                    onMoveDown = { if (index < editableList.lastIndex) onReorder(index, index + 1) }
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+            onClick = onSave,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Icon(Icons.Default.CheckCircle, contentDescription = null)
+            Spacer(Modifier.width(8.dp))
+            Text("保存更改", fontWeight = FontWeight.Bold)
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+    }
+}
+
+@Composable
+private fun HomeComponentRow(
+    item: HomeComponentItem,
+    index: Int,
+    totalItems: Int,
+    onToggle: (Boolean) -> Unit,
+    onMoveUp: () -> Unit,
+    onMoveDown: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (item.enabled)
+                MaterialTheme.colorScheme.surface
+            else
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                Icons.Default.DragHandle,
+                contentDescription = "拖动排序",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp)
+            )
+
+            Spacer(Modifier.width(10.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = item.component.title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
+                    color = if (item.enabled)
+                        MaterialTheme.colorScheme.onSurface
+                    else
+                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                )
+                Text(
+                    text = componentDescription(item.component),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                        alpha = if (item.enabled) 1f else 0.6f
+                    )
+                )
+            }
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(
+                    onClick = onMoveUp,
+                    enabled = index > 0 && item.enabled,
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        Icons.Default.KeyboardArrowUp,
+                        contentDescription = "上移",
+                        tint = if (index > 0 && item.enabled) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+                    )
+                }
+                IconButton(
+                    onClick = onMoveDown,
+                    enabled = index < totalItems - 1 && item.enabled,
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        Icons.Default.KeyboardArrowDown,
+                        contentDescription = "下移",
+                        tint = if (index < totalItems - 1 && item.enabled) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+                    )
+                }
+            }
+
+            Spacer(Modifier.width(4.dp))
+
+            Switch(
+                checked = item.enabled,
+                onCheckedChange = onToggle,
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = MaterialTheme.colorScheme.primary,
+                    checkedTrackColor = MaterialTheme.colorScheme.primaryContainer
+                )
+            )
+        }
+    }
 }
 
 @Composable
@@ -574,12 +653,6 @@ private fun InsightMetricCard(
 
 @Composable
 private fun StatusOverviewCard(uiState: HomeUiState) {
-    val wantToReadCount = uiState.statusCounts[BookStatus.WANT_TO_READ] ?: 0
-    val readingCount = uiState.statusCounts[BookStatus.READING] ?: 0
-    val finishedCount = uiState.statusCounts[BookStatus.FINISHED] ?: 0
-    val onHoldCount = uiState.statusCounts[BookStatus.ON_HOLD] ?: 0
-    val abandonedCount = uiState.statusCounts[BookStatus.ABANDONED] ?: 0
-
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp)
