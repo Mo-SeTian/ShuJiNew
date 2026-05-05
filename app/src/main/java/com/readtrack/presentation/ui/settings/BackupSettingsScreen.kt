@@ -37,7 +37,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LargeTopAppBar
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
@@ -107,9 +106,11 @@ fun BackupSettingsScreen(
         val zipPath = uiState.exportZipPath
         viewModel.clearExportSuccess()
         if (uri != null && zipPath != null) {
-            File(zipPath).inputStream().use { input ->
+            val tempFile = File(zipPath)
+            tempFile.inputStream().use { input ->
                 context.contentResolver.openOutputStream(uri)?.use { output -> input.copyTo(output) }
             }
+            tempFile.delete()
         }
     }
 
@@ -519,17 +520,10 @@ fun BackupSettingsScreen(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     CircularProgressIndicator()
-                    Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = uiState.progressMessage,
                         style = MaterialTheme.typography.bodyMedium
                     )
-                    if (uiState.progressPercent > 0f) {
-                        LinearProgressIndicator(
-                            progress = { uiState.progressPercent },
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                    }
                 }
             }
         )
