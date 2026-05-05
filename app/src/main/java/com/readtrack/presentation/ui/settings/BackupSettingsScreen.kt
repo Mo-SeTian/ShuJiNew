@@ -6,6 +6,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -20,18 +21,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.CloudDone
-import androidx.compose.material.icons.filled.Cookie
-import androidx.compose.material.icons.outlined.Analytics
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.outlined.CloudDownload
 import androidx.compose.material.icons.outlined.CloudSync
 import androidx.compose.material.icons.outlined.CloudUpload
-import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.Download
-import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.SettingsEthernet
+import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Upload
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -39,14 +36,15 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.LargeTopAppBar
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -64,9 +62,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.readtrack.data.local.AutoBackupFrequency
-import com.readtrack.data.local.StatsUnit
-import com.readtrack.data.local.ThemeMode
-import com.readtrack.presentation.viewmodel.CookieTestResult
 import com.readtrack.presentation.viewmodel.SettingsUiState
 import com.readtrack.presentation.viewmodel.SettingsViewModel
 import java.io.File
@@ -76,14 +71,12 @@ import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(
-    onNavigateToBackupSettings: () -> Unit,
+fun BackupSettingsScreen(
+    onNavigateBack: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    var showThemeDialog by remember { mutableStateOf(false) }
-    var showStatsUnitDialog by remember { mutableStateOf(false) }
     var showWebDavConfigDialog by remember { mutableStateOf(false) }
     var showAutoBackupDialog by remember { mutableStateOf(false) }
     var pendingImportUri by remember { mutableStateOf<Uri?>(null) }
@@ -93,7 +86,6 @@ fun SettingsScreen(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
         uri?.let {
-            // 先将文件复制到 cache 目录，以便后续 ZIP 流程可以反复读取
             val mimeType = context.contentResolver.getType(it)
             val isZip = mimeType == "application/zip"
             val tempFile = if (isZip) {
@@ -109,11 +101,9 @@ fun SettingsScreen(
         }
     }
 
-    // ZIP 导出：保存到用户指定位置
     val zipExportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/zip")
     ) { uri ->
-        // 先读取路径，再清状态（顺序不能反）
         val zipPath = uiState.exportZipPath
         viewModel.clearExportSuccess()
         if (uri != null && zipPath != null) {
@@ -123,7 +113,6 @@ fun SettingsScreen(
         }
     }
 
-    // JSON 导出：保存到用户指定位置
     val jsonExportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/json")
     ) { uri ->
@@ -134,7 +123,6 @@ fun SettingsScreen(
         }
     }
 
-    // 导出结果准备好后，自动弹出系统文件保存面板
     LaunchedEffect(uiState.exportZipPath, uiState.exportJson) {
         when {
             uiState.exportZipPath != null -> {
@@ -381,8 +369,8 @@ fun SettingsScreen(
             LargeTopAppBar(
                 title = {
                     Column {
-                        Text("设置", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-                        Text("个性化你的阅读体验", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("备份与恢复", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                        Text("管理本地和云端备份", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 },
                 colors = TopAppBarDefaults.largeTopAppBarColors(
@@ -399,109 +387,72 @@ fun SettingsScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            item { Spacer(Modifier.height(8.dp)); SettingsSectionCard("书籍搜索") }
-            item { DoubanCookieCard(viewModel, uiState) }
+            item { Spacer(Modifier.height(8.dp)); SettingsSectionCard("本地备份") }
+            item { SettingsClickableCard(Icons.Outlined.Upload, "导出数据", "将数据导出为 ZIP（含封面图片 + 用户设置）") { viewModel.exportData() } }
+            item { SettingsClickableCard(Icons.Outlined.Download, "导入数据", "从 ZIP/JSON 文件恢复数据（含封面）") { importLauncher.launch(arrayOf("application/zip", "application/json", "*/*")) } }
 
-            item { Spacer(Modifier.height(8.dp)); SettingsSectionCard("数据管理") }
-            item { SettingsClickableCard(Icons.Outlined.CloudSync, "备份与恢复", "本地备份与 WebDAV 云备份") { onNavigateToBackupSettings() } }
-
-            item { Spacer(Modifier.height(8.dp)); SettingsSectionCard("外观") }
+            item { Spacer(Modifier.height(8.dp)); SettingsSectionCard("WebDAV 云备份") }
             item {
-                SettingsClickableCard(Icons.Outlined.DarkMode, "主题模式", when (uiState.themeMode) {
-                    ThemeMode.SYSTEM -> "跟随系统"
-                    ThemeMode.LIGHT -> "浅色模式"
-                    ThemeMode.DARK -> "深色模式"
-                }) { showThemeDialog = true }
+                SettingsClickableCard(
+                    icon = Icons.Outlined.SettingsEthernet,
+                    title = "配置 WebDAV",
+                    subtitle = if (uiState.isWebDavConfigured) {
+                        "${uiState.webDavUsername} · ${uiState.webDavRemotePath}"
+                    } else {
+                        "填写服务器地址、账号、密码和目录"
+                    }
+                ) {
+                    showWebDavConfigDialog = true
+                }
             }
             item {
-                SettingsClickableCard(Icons.Outlined.Analytics, "统计单位", when (uiState.statsUnit) {
-                    StatsUnit.CHAPTER -> "章节数"
-                    StatsUnit.PAGE -> "页数"
-                }) { showStatsUnitDialog = true }
+                SettingsClickableCard(
+                    icon = Icons.Outlined.CloudUpload,
+                    title = "上传到 WebDAV",
+                    subtitle = "手动执行一次云端备份"
+                ) {
+                    viewModel.uploadBackupToWebDav()
+                }
+            }
+            item {
+                SettingsClickableCard(
+                    icon = Icons.Outlined.CloudDownload,
+                    title = "从 WebDAV 恢复",
+                    subtitle = "从远端选择一个备份文件恢复"
+                ) {
+                    viewModel.showWebDavRestoreDialog()
+                }
+            }
+            item {
+                SettingsClickableCard(
+                    icon = Icons.Outlined.Schedule,
+                    title = "自动备份",
+                    subtitle = when (uiState.autoBackupFrequency) {
+                        AutoBackupFrequency.OFF -> "关闭"
+                        AutoBackupFrequency.DAILY -> "每天自动上传一次"
+                        AutoBackupFrequency.WEEKLY -> "每周自动上传一次"
+                    }
+                ) {
+                    showAutoBackupDialog = true
+                }
+            }
+            item {
+                WebDavStatusCard(uiState)
             }
 
-            item { Spacer(Modifier.height(8.dp)); SettingsSectionCard("其他") }
-            item { SettingsClickableCard(Icons.Outlined.Info, "应用信息", "版本 1.0.0") { } }
+            if (uiState.isExporting) {
+                item { LoadingCard("正在导出数据...") }
+            }
+            if (uiState.isImporting) {
+                item { LoadingCard("正在导入数据...") }
+            }
+            if (uiState.isTestingWebDav) {
+                item { LoadingCard("正在测试 WebDAV 连接...") }
+            }
+            if (uiState.isSyncingWebDav) {
+                item { LoadingCard("正在与 WebDAV 同步数据...") }
+            }
         }
-    }
-
-    if (showThemeDialog) {
-        AlertDialog(
-            onDismissRequest = { showThemeDialog = false },
-            title = { Text("选择主题模式") },
-            text = {
-                Column {
-                    ThemeMode.entries.forEach { mode ->
-                        Row(
-                            Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    viewModel.setThemeMode(mode)
-                                    showThemeDialog = false
-                                }
-                                .padding(vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            RadioButton(
-                                selected = uiState.themeMode == mode,
-                                onClick = {
-                                    viewModel.setThemeMode(mode)
-                                    showThemeDialog = false
-                                }
-                            )
-                            Spacer(Modifier.width(12.dp))
-                            Text(when (mode) {
-                                ThemeMode.SYSTEM -> "跟随系统"
-                                ThemeMode.LIGHT -> "浅色模式"
-                                ThemeMode.DARK -> "深色模式"
-                            })
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showThemeDialog = false }) { Text("取消") }
-            }
-        )
-    }
-
-    if (showStatsUnitDialog) {
-        AlertDialog(
-            onDismissRequest = { showStatsUnitDialog = false },
-            title = { Text("选择统计单位") },
-            text = {
-                Column {
-                    StatsUnit.entries.forEach { unit ->
-                        Row(
-                            Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    viewModel.setStatsUnit(unit)
-                                    showStatsUnitDialog = false
-                                }
-                                .padding(vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            RadioButton(
-                                selected = uiState.statsUnit == unit,
-                                onClick = {
-                                    viewModel.setStatsUnit(unit)
-                                    showStatsUnitDialog = false
-                                }
-                            )
-                            Spacer(Modifier.width(12.dp))
-                            Text(when (unit) {
-                                StatsUnit.CHAPTER -> "章节数"
-                                StatsUnit.PAGE -> "页数"
-                            })
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showStatsUnitDialog = false }) { Text("取消") }
-            }
-        )
     }
 
     if (showWebDavConfigDialog) {
@@ -552,6 +503,34 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showAutoBackupDialog = false }) { Text("取消") }
+            }
+        )
+    }
+
+    if (uiState.showProgressDialog) {
+        AlertDialog(
+            onDismissRequest = { /* 进度中不允许关闭 */ },
+            confirmButton = {},
+            dismissButton = {},
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    CircularProgressIndicator()
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = uiState.progressMessage,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    if (uiState.progressPercent > 0f) {
+                        LinearProgressIndicator(
+                            progress = { uiState.progressPercent },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                }
             }
         )
     }
@@ -609,13 +588,6 @@ private fun WebDavStatusCard(uiState: SettingsUiState) {
             uiState.lastWebDavError?.takeIf { it.isNotBlank() }?.let { error ->
                 Text(
                     text = "最近错误：$error",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error
-                )
-            }
-            uiState.errorMessage?.takeIf { it.isNotBlank() }?.let { error ->
-                Text(
-                    text = error,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error
                 )
@@ -710,135 +682,4 @@ private fun WebDavConfigDialog(
             TextButton(onClick = onDismiss) { Text("取消") }
         }
     )
-}
-
-@Composable
-private fun DoubanCookieCard(
-    viewModel: SettingsViewModel,
-    uiState: SettingsUiState
-) {
-    var showCookieDialog by remember { mutableStateOf(false) }
-    var cookieInput by remember { mutableStateOf(uiState.doubanCookie) }
-
-    LaunchedEffect(uiState.doubanCookie) {
-        cookieInput = uiState.doubanCookie
-    }
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { showCookieDialog = true },
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(imageVector = Icons.Default.Cookie, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-            Spacer(Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text("豆瓣 Cookie（可选）", style = MaterialTheme.typography.bodyLarge)
-                Text(
-                    if (uiState.doubanCookie.isNotBlank()) "已配置，可提升兼容性" else "未配置，搜索也可直接使用",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (uiState.doubanCookie.isNotBlank()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
-        }
-    }
-
-    if (showCookieDialog) {
-        AlertDialog(
-            onDismissRequest = { showCookieDialog = false },
-            title = { Text("配置豆瓣 Cookie（可选）", fontWeight = FontWeight.Bold) },
-            text = {
-                Column {
-                    Text(
-                        "现在书籍搜索默认可直接使用。若你有豆瓣登录态，也可以粘贴 Cookie 以提升兼容性。",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(Modifier.height(12.dp))
-                    OutlinedTextField(
-                        value = cookieInput,
-                        onValueChange = { cookieInput = it },
-                        label = { Text("Cookie") },
-                        placeholder = { Text("bid=xxx; dbcl2=xxx...") },
-                        modifier = Modifier.fillMaxWidth(),
-                        maxLines = 3,
-                        shape = RoundedCornerShape(12.dp)
-                    )
-                    uiState.cookieTestResult?.let { result ->
-                        Spacer(Modifier.height(8.dp))
-                        val (text, color) = when (result) {
-                            CookieTestResult.SUCCESS -> "✓ Cookie有效" to MaterialTheme.colorScheme.primary
-                            CookieTestResult.INVALID -> "✗ Cookie无效" to MaterialTheme.colorScheme.error
-                            CookieTestResult.NETWORK_ERROR -> "✗ 网络错误" to MaterialTheme.colorScheme.error
-                        }
-                        Text(text, color = color, style = MaterialTheme.typography.bodySmall)
-                    }
-                    uiState.errorMessage?.let { error ->
-                        Spacer(Modifier.height(4.dp))
-                        Text(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-                    }
-                }
-            },
-            confirmButton = {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    TextButton(
-                        onClick = { viewModel.testDoubanCookie(cookieInput) },
-                        enabled = !uiState.isTestingCookie && cookieInput.isNotBlank()
-                    ) {
-                        if (uiState.isTestingCookie) {
-                            CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
-                        } else {
-                            Text("测试")
-                        }
-                    }
-                    TextButton(onClick = {
-                        viewModel.updateDoubanCookie(cookieInput)
-                        showCookieDialog = false
-                    }) {
-                        Text("保存")
-                    }
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showCookieDialog = false }) { Text("取消") }
-            }
-        )
-    }
-
-    // 导入导出进度弹窗
-    if (uiState.showProgressDialog) {
-        AlertDialog(
-            onDismissRequest = { /* 进度中不允许关闭 */ },
-            confirmButton = {},
-            dismissButton = {},
-            text = {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    CircularProgressIndicator()
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = uiState.progressMessage,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    if (uiState.progressPercent > 0f) {
-                        LinearProgressIndicator(
-                            progress = { uiState.progressPercent },
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                    }
-                }
-            }
-        )
-    }
 }

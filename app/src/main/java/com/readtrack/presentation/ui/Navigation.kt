@@ -26,6 +26,7 @@ import com.readtrack.presentation.ui.booklist.BookListScreen
 import com.readtrack.presentation.ui.books.BookDetailScreen
 import com.readtrack.presentation.ui.books.BooksScreen
 import com.readtrack.presentation.ui.home.HomeScreen
+import com.readtrack.presentation.ui.settings.BackupSettingsScreen
 import com.readtrack.presentation.ui.settings.SettingsScreen
 import com.readtrack.presentation.ui.stats.StatsScreen
 import com.readtrack.presentation.ui.readinghistory.ReadingHistoryScreen
@@ -53,6 +54,7 @@ sealed class Screen(
         fun createRoute(bookListId: Long) = "book_list/$bookListId"
     }
     data object ReadingHistory : Screen("reading_history", "阅读历史", Icons.Filled.DateRange, Icons.Outlined.DateRange)
+    data object BackupSettings : Screen("backup_settings", "备份与恢复", Icons.Filled.CloudSync, Icons.Outlined.CloudSync)
 }
 
 @Composable
@@ -137,7 +139,11 @@ fun MainNavigation() {
             }
             
             composable(Screen.Settings.route) {
-                SettingsScreen()
+                SettingsScreen(
+                    onNavigateToBackupSettings = {
+                        navController.navigate(Screen.BackupSettings.route)
+                    }
+                )
             }
 
             composable(Screen.BookList.route) {
@@ -209,6 +215,12 @@ fun MainNavigation() {
                     onBookClick = { bookId ->
                         navController.navigate(Screen.BookDetail.createRoute(bookId))
                     }
+                )
+            }
+
+            composable(Screen.BackupSettings.route) {
+                BackupSettingsScreen(
+                    onNavigateBack = { navController.popBackStack() }
                 )
             }
         }
