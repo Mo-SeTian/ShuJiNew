@@ -62,6 +62,7 @@ class CoverStorageUtil @Inject constructor(
             val fileName = "cover_${UUID.randomUUID()}.jpg"
             val destFile = File(coversDir, fileName)
 
+            var success = false
             context.contentResolver.openInputStream(uri)?.use { input ->
                 // 先解码为 Bitmap 再压缩写入，保证是标准 JPEG
                 val bitmap = BitmapFactory.decodeStream(input)
@@ -70,19 +71,28 @@ class CoverStorageUtil @Inject constructor(
                         bitmap.compress(Bitmap.CompressFormat.JPEG, 90, output)
                     }
                     bitmap.recycle()
-                } else {
-                    // 如果 BitmapFactory 解码失败（罕见情况），回退到流复制
-                    input.close()
-                    context.contentResolver.openInputStream(uri)?.use { retryInput ->
-                        FileOutputStream(destFile).use { output ->
-                            retryInput.copyTo(output)
-                        }
-                    }
+                    success = true
                 }
             }
 
-            destFile.absolutePath
+            if (!success) {
+                // 如果 BitmapFactory 解码失败，回退到流复制
+                context.contentResolver.openInputStream(uri)?.use { input ->
+                    FileOutputStream(destFile).use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                success = destFile.exists()
+            }
+
+            if (success) {
+                destFile.absolutePath
+            } else {
+                android.util.Log.e("CoverStorage", "封面复制失败: $uriStr")
+                uriStr
+            }
         } catch (e: Exception) {
+            android.util.Log.e("CoverStorage", "封面复制异常: $uriStr", e)
             // 复制失败时返回原始 URI，至少尝试保留现有行为
             uriStr
         }
