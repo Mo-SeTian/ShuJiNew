@@ -142,13 +142,20 @@ class DataBackupRepositoryImpl @Inject constructor(
                 zip.closeEntry()
 
                 // 写入封面图片
+                val missingCovers = mutableListOf<String>()
                 coverPathsToInclude.forEach { coverPath ->
                     val coverFile = File(coverPath)
                     if (coverFile.exists()) {
                         zip.putNextEntry(ZipEntry("covers/${coverFile.name}"))
                         FileInputStream(coverFile).use { it.copyTo(zip) }
                         zip.closeEntry()
+                    } else {
+                        missingCovers.add(coverPath)
                     }
+                }
+                // 如果有缺失的封面，打印日志（帮助排查）
+                if (missingCovers.isNotEmpty()) {
+                    android.util.Log.w("DataBackup", "以下封面文件缺失，已跳过: $missingCovers")
                 }
             }
 

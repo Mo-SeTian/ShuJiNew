@@ -230,23 +230,6 @@ fun StatsScreen(
                                 )
                             }
                         }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            StatsRange.entries.take(3).forEach { range ->
-                                FilterChip(
-                                    selected = uiState.statsRange == range,
-                                    onClick = { viewModel.setStatsRange(range) },
-                                    label = { Text(range.label, style = MaterialTheme.typography.labelMedium) },
-                                    colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
-                                    )
-                                )
-                            }
-                        }
                     }
                 }
 
