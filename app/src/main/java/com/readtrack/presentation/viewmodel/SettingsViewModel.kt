@@ -519,9 +519,10 @@ class SettingsViewModel @Inject constructor(
             _uiState.update { it.copy(isSyncingWebDav = true, errorMessage = null, webDavStatusMessage = null) }
             // 1. 生成 ZIP 备份
             dataBackupRepository.exportToZip()
-                .mapCatching { zipFile -> zipFile.readBytes() }
                 .fold(
-                    onSuccess = { zipData ->
+                    onSuccess = { zipFile ->
+                        val zipData = zipFile.readBytes()
+                        zipFile.delete()
                         // 2. 上传到 WebDAV
                         webDavService.uploadBackupZip(config, zipData)
                             .onSuccess {

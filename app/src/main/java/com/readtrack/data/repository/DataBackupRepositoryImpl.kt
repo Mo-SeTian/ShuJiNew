@@ -60,6 +60,9 @@ class DataBackupRepositoryImpl @Inject constructor(
     private val tempDir: File
         get() = File(context.cacheDir, "backup_temp").also { it.mkdirs() }
 
+    /** 缓存 importFromZipForPreview 解析的备份，供 importFromZip 复用，避免二次解析 ZIP */
+    private var pendingBackupFromPreview: DataBackup? = null
+
     // ─── 导出 ──────────────────────────────────────────────────────────────────
 
     override suspend fun exportAllData(): Result<DataBackup> {
@@ -335,6 +338,7 @@ class DataBackupRepositoryImpl @Inject constructor(
                         jsonContent = zip.readBytes().toString(Charsets.UTF_8)
                         val backup = parseBackupFromJson(jsonContent)
                             ?: return Result.failure(IllegalStateException("ZIP 中 data.json 格式无效"))
+                        pendingBackupFromPreview = backup
                         return previewImport(backup)
                     }
                     entry = zip.nextEntry
@@ -347,20 +351,26 @@ class DataBackupRepositoryImpl @Inject constructor(
     }
 
     /**
-     * 从 ZIP 文件导入（包含封面图片自动解压到 covers 目录）
+     * 从 ZIP 文件导入（包含封面图片自动解压到 covers 目录）。
+     * 如果此前已调用 importFromZipForPreview 缓存了解析结果，则跳过 data.json 的二次解析。
      */
     override suspend fun importFromZip(zipFile: File, clearExisting: Boolean): Result<ImportResult> {
         return try {
-            var jsonContent: String = ""
+            var backup = pendingBackupFromPreview
+            pendingBackupFromPreview = null
             val extractedCoverFiles = mutableListOf<File>()
-            val extractedCoverMap = mutableMapOf<String, String>() // originalFileName -> newPath
+            val extractedCoverMap = mutableMapOf<String, String>()
 
             ZipInputStream(FileInputStream(zipFile)).use { zip ->
                 var entry = zip.nextEntry
                 while (entry != null) {
                     when {
                         entry.name == "data.json" -> {
-                            jsonContent = zip.readBytes().toString(Charsets.UTF_8)
+                            if (backup == null) {
+                                val jsonContent = zip.readBytes().toString(Charsets.UTF_8)
+                                backup = parseBackupFromJson(jsonContent)
+                                    ?: return Result.failure(IllegalStateException("ZIP 中未找到有效的 data.json"))
+                            }
                         }
                         entry.name.startsWith("covers/") && !entry.isDirectory -> {
                             val fileName = entry.name.removePrefix("covers/")
@@ -377,23 +387,17 @@ class DataBackupRepositoryImpl @Inject constructor(
 
             android.util.Log.d("DataBackup", "ZIP 解压完成: 共提取 ${extractedCoverFiles.size} 个封面文件")
 
-            val backup = parseBackupFromJson(jsonContent)
-                ?: return Result.failure(IllegalStateException("ZIP 中未找到有效的 data.json"))
+            val finalBackup = backup ?: return Result.failure(IllegalStateException("ZIP 中未找到有效的 data.json"))
 
-            // 修复封面路径：将 data.json 中的原设备路径替换为新设备路径
-            val fixedBackup = fixCoverPathsForNewDevice(backup, extractedCoverMap)
-            if (fixedBackup != backup) {
+            val fixedBackup = fixCoverPathsForNewDevice(finalBackup, extractedCoverMap)
+            if (fixedBackup != finalBackup) {
                 android.util.Log.d("DataBackup", "封面路径已修复为新设备路径")
             }
-
-            // 导入数据
             val result = importData(fixedBackup, clearExisting)
-
-            // 清理临时 ZIP
             zipFile.delete()
-
             result
         } catch (e: Exception) {
+            pendingBackupFromPreview = null
             Result.failure(e)
         }
     }

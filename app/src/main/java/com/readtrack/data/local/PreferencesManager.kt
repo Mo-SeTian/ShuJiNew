@@ -240,7 +240,8 @@ class PreferencesManager @Inject constructor(
                 doubanCookie = preferences[DOUBAN_COOKIE] ?: "",
                 webDavServerUrl = preferences[WEBDAV_SERVER_URL] ?: "",
                 webDavUsername = preferences[WEBDAV_USERNAME] ?: "",
-                webDavPassword = preferences[WEBDAV_PASSWORD] ?: "",
+                // 安全策略：不导出密码明文，避免分享备份文件时泄露
+                webDavPassword = "",
                 webDavRemotePath = preferences[WEBDAV_REMOTE_PATH] ?: "ReadTrack",
                 webDavAutoBackupFrequency = preferences[WEBDAV_AUTO_BACKUP_FREQUENCY] ?: AutoBackupFrequency.OFF.name,
                 homeComponentOrder = (preferences[HOME_COMPONENT_ORDER] ?: "").split(",").filter { it.isNotBlank() }
@@ -253,16 +254,18 @@ class PreferencesManager @Inject constructor(
      */
     suspend fun importPreferences(prefs: PreferencesExport) {
         dataStore.edit { preferences ->
-            preferences[THEME_MODE] = prefs.themeMode
-            preferences[STATS_UNIT] = prefs.statsUnit
-            preferences[STATS_RANGE] = prefs.statsRange
+            preferences[THEME_MODE] = prefs.themeMode.takeIf { v -> runCatching { ThemeMode.valueOf(v) }.isSuccess } ?: ThemeMode.SYSTEM.name
+            preferences[STATS_UNIT] = prefs.statsUnit.takeIf { v -> runCatching { StatsUnit.valueOf(v) }.isSuccess } ?: StatsUnit.CHAPTER.name
+            preferences[STATS_RANGE] = prefs.statsRange.takeIf { v -> runCatching { StatsRange.valueOf(v) }.isSuccess } ?: StatsRange.WEEK.name
             preferences[DOUBAN_COOKIE] = prefs.doubanCookie
             preferences[WEBDAV_SERVER_URL] = prefs.webDavServerUrl
             preferences[WEBDAV_USERNAME] = prefs.webDavUsername
-            preferences[WEBDAV_PASSWORD] = prefs.webDavPassword
-            preferences[WEBDAV_REMOTE_PATH] = prefs.webDavRemotePath.ifBlank { "ReadTrack" }
-            preferences[WEBDAV_AUTO_BACKUP_FREQUENCY] = prefs.webDavAutoBackupFrequency
-            preferences[HOME_COMPONENT_ORDER] = prefs.homeComponentOrder.joinToString(",")
+            if (prefs.webDavPassword.isNotBlank()) {
+                preferences[WEBDAV_PASSWORD] = prefs.webDavPassword
+            }
+            preferences[WEBDAV_REMOTE_PATH] = prefs.webDavRemotePath.trim('/').ifBlank { "ReadTrack" }
+            preferences[WEBDAV_AUTO_BACKUP_FREQUENCY] = prefs.webDavAutoBackupFrequency.takeIf { v -> runCatching { AutoBackupFrequency.valueOf(v) }.isSuccess } ?: AutoBackupFrequency.OFF.name
+            preferences[HOME_COMPONENT_ORDER] = prefs.homeComponentOrder.filter { id -> HomeComponent.entries.any { it.id == id } }.joinToString(",")
         }
     }
 }

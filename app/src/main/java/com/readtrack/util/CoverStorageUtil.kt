@@ -1,10 +1,8 @@
 package com.readtrack.util
 
-import android.content.ContentResolver
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.net.Uri
+import android.webkit.MimeTypeMap
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import java.io.FileOutputStream
@@ -86,41 +84,26 @@ class CoverStorageUtil @Inject constructor(
         // 将 content:// / 其他 URI 复制到内部存储
         return try {
             val uri = Uri.parse(uriStr)
-            val fileName = "cover_${UUID.randomUUID()}.jpg"
+            val extension = guessExtension(uri) ?: "jpg"
+            val fileName = "cover_${UUID.randomUUID()}.$extension"
             val destFile = File(coversDir, fileName)
 
-            var success = false
+            // 优先流复制，避免 Bitmap 重编码导致的质量损失
             context.contentResolver.openInputStream(uri)?.use { input ->
-                // 先解码为 Bitmap 再压缩写入，保证是标准 JPEG
-                val bitmap = BitmapFactory.decodeStream(input)
-                if (bitmap != null) {
-                    FileOutputStream(destFile).use { output ->
-                        bitmap.compress(Bitmap.CompressFormat.JPEG, 90, output)
-                    }
-                    bitmap.recycle()
-                    success = true
+                FileOutputStream(destFile).use { output ->
+                    input.copyTo(output)
                 }
             }
 
-            if (!success) {
-                // 如果 BitmapFactory 解码失败，回退到流复制
-                context.contentResolver.openInputStream(uri)?.use { input ->
-                    FileOutputStream(destFile).use { output ->
-                        input.copyTo(output)
-                    }
-                }
-                success = destFile.exists()
-            }
-
-            if (success) {
+            if (destFile.exists() && destFile.length() > 0) {
                 destFile.absolutePath
             } else {
+                destFile.delete()
                 android.util.Log.e("CoverStorage", "封面复制失败: $uriStr")
                 uriStr
             }
         } catch (e: Exception) {
             android.util.Log.e("CoverStorage", "封面复制异常: $uriStr", e)
-            // 复制失败时返回原始 URI，至少尝试保留现有行为
             uriStr
         }
     }
@@ -132,5 +115,11 @@ class CoverStorageUtil @Inject constructor(
         if (coverPath.isNullOrBlank()) return
         if (!coverPath.startsWith(coversDir.absolutePath)) return
         File(coverPath).delete()
+    }
+
+    /** 从 URI 或 MIME 类型推测文件扩展名 */
+    private fun guessExtension(uri: Uri): String? {
+        val mimeType = context.contentResolver.getType(uri)
+        return MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType)
     }
 }
