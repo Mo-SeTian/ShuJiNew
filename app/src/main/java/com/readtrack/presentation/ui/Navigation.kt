@@ -28,18 +28,17 @@ import com.readtrack.presentation.ui.books.BooksScreen
 import com.readtrack.presentation.ui.home.HomeScreen
 import com.readtrack.presentation.ui.settings.SettingsScreen
 import com.readtrack.presentation.ui.stats.StatsScreen
-import com.readtrack.presentation.ui.timeline.TimelineScreen
+import com.readtrack.presentation.ui.readinghistory.ReadingHistoryScreen
 import com.readtrack.presentation.viewmodel.AddBookViewModel
 
 sealed class Screen(
-    val route: String, 
-    val title: String, 
+    val route: String,
+    val title: String,
     val selectedIcon: ImageVector,
     val unselectedIcon: ImageVector
 ) {
     data object Home : Screen("home", "首页", Icons.Filled.Home, Icons.Outlined.Home)
     data object Books : Screen("books", "我的书籍", Icons.Filled.MenuBook, Icons.Outlined.MenuBook)
-    data object Timeline : Screen("timeline", "时间线", Icons.Filled.DateRange, Icons.Outlined.DateRange)
     data object Stats : Screen("stats", "统计", Icons.Filled.BarChart, Icons.Outlined.BarChart)
     data object Settings : Screen("settings", "设置", Icons.Filled.Settings, Icons.Outlined.Settings)
     data object BookDetail : Screen("book/{bookId}", "书籍详情", Icons.Filled.Book, Icons.Outlined.Book) {
@@ -53,12 +52,13 @@ sealed class Screen(
     data object BookListDetail : Screen("book_list/{bookListId}", "书单详情", Icons.Filled.CollectionsBookmark, Icons.Outlined.CollectionsBookmark) {
         fun createRoute(bookListId: Long) = "book_list/$bookListId"
     }
+    data object ReadingHistory : Screen("reading_history", "阅读历史", Icons.Filled.DateRange, Icons.Outlined.DateRange)
 }
 
 @Composable
 fun MainNavigation() {
     val navController = rememberNavController()
-    val bottomNavItems = listOf(Screen.Home, Screen.Books, Screen.Timeline, Screen.Stats, Screen.Settings)
+    val bottomNavItems = listOf(Screen.Home, Screen.Books, Screen.Stats, Screen.Settings)
 
     Scaffold(
         bottomBar = {
@@ -128,16 +128,12 @@ fun MainNavigation() {
                 )
             }
 
-            composable(Screen.Timeline.route) {
-                TimelineScreen(
-                    onBookClick = { bookId ->
-                        navController.navigate(Screen.BookDetail.createRoute(bookId))
+            composable(Screen.Stats.route) {
+                StatsScreen(
+                    onReadingHistoryClick = {
+                        navController.navigate(Screen.ReadingHistory.route)
                     }
                 )
-            }
-
-            composable(Screen.Stats.route) {
-                StatsScreen()
             }
             
             composable(Screen.Settings.route) {
@@ -198,12 +194,21 @@ fun MainNavigation() {
             ) { backStackEntry ->
                 val bookId = backStackEntry.arguments?.getLong("bookId") ?: return@composable
                 val viewModel: AddBookViewModel = hiltViewModel()
-                
+
                 AddBookScreen(
                     onNavigateBack = { navController.popBackStack() },
                     bookId = bookId,
                     onPickCover = { },
                     viewModel = viewModel
+                )
+            }
+
+            composable(Screen.ReadingHistory.route) {
+                ReadingHistoryScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    onBookClick = { bookId ->
+                        navController.navigate(Screen.BookDetail.createRoute(bookId))
+                    }
                 )
             }
         }
