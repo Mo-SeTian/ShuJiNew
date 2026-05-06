@@ -9,6 +9,8 @@ import coil.disk.DiskCache
 import coil.memory.MemoryCache
 import coil.request.CachePolicy
 import dagger.hilt.android.HiltAndroidApp
+import ly.count.android.sdk.Countly
+import ly.count.android.sdk.CountlyConfig
 import javax.inject.Inject
 
 @HiltAndroidApp
@@ -21,6 +23,20 @@ class ReadTrackApp : Application(), ImageLoaderFactory, Configuration.Provider {
         get() = Configuration.Builder()
             .setWorkerFactory(workerFactory)
             .build()
+
+    override fun onCreate() {
+        super.onCreate()
+
+        initCountly()
+    }
+
+    private fun initCountly() {
+        val config = CountlyConfig(this, "f37adc977a22d632eb4e89a250a2c518a2356753", "http://countly.nn1nn.top")
+            .setRequiresConsent(false)
+            .setLoggingEnabled(false)
+
+        Countly.sharedInstance().init(config)
+    }
 
     override fun newImageLoader(): ImageLoader {
         return ImageLoader.Builder(this)
