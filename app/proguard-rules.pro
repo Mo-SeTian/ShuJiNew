@@ -40,3 +40,7 @@
 -dontwarn okhttp3.**
 -dontwarn okio.**
 -keepnames class okhttp3.internal.publicsuffix.PublicSuffixDatabase
+
+# ============ Countly ============
+-keep class ly.count.android.sdk.** { *; }
+-dontwarn ly.count.android.sdk.**
