@@ -35,7 +35,7 @@ class ReadTrackApp : Application(), ImageLoaderFactory, Configuration.Provider {
             val config = CountlyConfig(
                 this,
                 "f37adc977a22d632eb4e89a250a2c518a2356753",
-                "http://countly.nn1nn.top"
+                "http://countly.nn1nn.top/i"
             )
                 .setRequiresConsent(false)
                 .setLoggingEnabled(true)
