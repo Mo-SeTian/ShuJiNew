@@ -31,11 +31,21 @@ class ReadTrackApp : Application(), ImageLoaderFactory, Configuration.Provider {
     }
 
     private fun initCountly() {
-        val config = CountlyConfig(this, "f37adc977a22d632eb4e89a250a2c518a2356753", "http://countly.nn1nn.top")
-            .setRequiresConsent(false)
-            .setLoggingEnabled(true)
+        try {
+            val config = CountlyConfig(
+                this,
+                "f37adc977a22d632eb4e89a250a2c518a2356753",
+                "http://countly.nn1nn.top"
+            )
+                .setRequiresConsent(false)
+                .setLoggingEnabled(true)
 
-        Countly.sharedInstance().init(config)
+            Countly.sharedInstance().init(config)
+
+            android.util.Log.i("ReadTrack", "Countly 初始化完成, isInitialized=${Countly.sharedInstance().isInitialized}")
+        } catch (e: Exception) {
+            android.util.Log.e("ReadTrack", "Countly 初始化失败", e)
+        }
     }
 
     override fun newImageLoader(): ImageLoader {
