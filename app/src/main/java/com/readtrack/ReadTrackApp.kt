@@ -32,17 +32,18 @@ class ReadTrackApp : Application(), ImageLoaderFactory, Configuration.Provider {
 
     private fun initCountly() {
         try {
+            val countly = Countly.sharedInstance()
             val config = CountlyConfig(
                 this,
                 "f37adc977a22d632eb4e89a250a2c518a2356753",
-                "http://countly.nn1nn.top/i"
+                "http://countly.nn1nn.top"
             )
                 .setRequiresConsent(false)
                 .setLoggingEnabled(true)
 
-            Countly.sharedInstance().init(config)
+            countly.init(config)
 
-            android.util.Log.i("ReadTrack", "Countly 初始化完成, isInitialized=${Countly.sharedInstance().isInitialized}")
+            android.util.Log.i("ReadTrack", "Countly 初始化完成, isInitialized=${countly.isInitialized}, serverURL=http://countly.nn1nn.top")
         } catch (e: Exception) {
             android.util.Log.e("ReadTrack", "Countly 初始化失败", e)
         }
