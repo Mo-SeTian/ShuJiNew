@@ -78,6 +78,7 @@ import java.util.Locale
 @Composable
 fun SettingsScreen(
     onNavigateToBackupSettings: () -> Unit,
+    onNavigateToAbout: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -421,7 +422,7 @@ fun SettingsScreen(
             }
 
             item { Spacer(Modifier.height(8.dp)); SettingsSectionCard("其他") }
-            item { SettingsClickableCard(Icons.Outlined.Info, "应用信息", "版本 1.0.0") { } }
+            item { SettingsClickableCard(Icons.Outlined.Info, "关于", "应用信息与隐私声明") { onNavigateToAbout() } }
         }
     }
 

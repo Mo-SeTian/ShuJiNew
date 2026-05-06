@@ -27,6 +27,7 @@ import com.readtrack.presentation.ui.books.BookDetailScreen
 import com.readtrack.presentation.ui.books.BooksScreen
 import com.readtrack.presentation.ui.home.HomeScreen
 import com.readtrack.presentation.ui.settings.BackupSettingsScreen
+import com.readtrack.presentation.ui.settings.AboutScreen
 import com.readtrack.presentation.ui.settings.SettingsScreen
 import com.readtrack.presentation.ui.stats.StatsScreen
 import com.readtrack.presentation.ui.readinghistory.ReadingHistoryScreen
@@ -55,6 +56,7 @@ sealed class Screen(
     }
     data object ReadingHistory : Screen("reading_history", "阅读历史", Icons.Filled.DateRange, Icons.Outlined.DateRange)
     data object BackupSettings : Screen("backup_settings", "备份与恢复", Icons.Filled.CloudSync, Icons.Outlined.CloudSync)
+    data object About : Screen("about", "关于", Icons.Filled.Info, Icons.Outlined.Info)
 }
 
 @Composable
@@ -142,6 +144,9 @@ fun MainNavigation() {
                 SettingsScreen(
                     onNavigateToBackupSettings = {
                         navController.navigate(Screen.BackupSettings.route)
+                    },
+                    onNavigateToAbout = {
+                        navController.navigate(Screen.About.route)
                     }
                 )
             }
@@ -220,6 +225,12 @@ fun MainNavigation() {
 
             composable(Screen.BackupSettings.route) {
                 BackupSettingsScreen(
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
+
+            composable(Screen.About.route) {
+                AboutScreen(
                     onNavigateBack = { navController.popBackStack() }
                 )
             }
