@@ -1,6 +1,7 @@
 package com.readtrack.presentation.ui
 
 import androidx.compose.animation.*
+import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -107,8 +108,23 @@ fun MainNavigation() {
         NavHost(
             navController = navController,
             startDestination = Screen.Home.route,
-            modifier = Modifier.padding(padding)
-            // 移除动画以提升性能
+            modifier = Modifier.padding(padding),
+            enterTransition = {
+                fadeIn(animationSpec = tween(300)) +
+                    slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Start, animationSpec = tween(300))
+            },
+            exitTransition = {
+                fadeOut(animationSpec = tween(250)) +
+                    slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Start, animationSpec = tween(250))
+            },
+            popEnterTransition = {
+                fadeIn(animationSpec = tween(300)) +
+                    slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.End, animationSpec = tween(300))
+            },
+            popExitTransition = {
+                fadeOut(animationSpec = tween(250)) +
+                    slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.End, animationSpec = tween(250))
+            }
         ) {
             composable(Screen.Home.route) {
                 HomeScreen(

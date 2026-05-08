@@ -1,5 +1,7 @@
 package com.readtrack.presentation.ui.books
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -134,7 +136,11 @@ fun BooksScreen(
             }
         },
         floatingActionButton = {
-            if (isSelectionMode) {
+            AnimatedVisibility(
+                visible = isSelectionMode,
+                enter = fadeIn(tween(200)) + slideInVertically(tween(200)),
+                exit = fadeOut(tween(150)) + slideOutVertically(tween(150))
+            ) {
                 ExtendedFloatingActionButton(
                     onClick = { showAddToBookListDialog = true },
                     containerColor = MaterialTheme.colorScheme.primary,
@@ -144,7 +150,12 @@ fun BooksScreen(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("加入书单")
                 }
-            } else {
+            }
+            AnimatedVisibility(
+                visible = !isSelectionMode,
+                enter = fadeIn(tween(200)) + slideInVertically(tween(200)),
+                exit = fadeOut(tween(150)) + slideOutVertically(tween(150))
+            ) {
                 ExtendedFloatingActionButton(
                     onClick = onAddBookClick,
                     containerColor = MaterialTheme.colorScheme.primary,

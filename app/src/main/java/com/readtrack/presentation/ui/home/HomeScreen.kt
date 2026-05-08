@@ -74,6 +74,11 @@ import com.readtrack.presentation.ui.components.BookCard
 import com.readtrack.presentation.ui.components.QuickRecordDialog
 import com.readtrack.presentation.viewmodel.HomeUiState
 import com.readtrack.presentation.viewmodel.HomeViewModel
+import com.readtrack.presentation.ui.theme.AbandonedRed
+import com.readtrack.presentation.ui.theme.FinishedBlue
+import com.readtrack.presentation.ui.theme.OnHoldGray
+import com.readtrack.presentation.ui.theme.ReadingOrange
+import com.readtrack.presentation.ui.theme.WantToReadGreen
 import kotlinx.coroutines.launch
 
 private fun StatsUnit.label(): String = if (this == StatsUnit.CHAPTER) "章" else "页"
@@ -793,11 +798,11 @@ private fun StatusItem(
 }
 
 private fun statusColor(status: BookStatus): Color = when (status) {
-    BookStatus.WANT_TO_READ -> Color(0xFF4CAF50)
-    BookStatus.READING -> Color(0xFFFF9800)
-    BookStatus.FINISHED -> Color(0xFF2196F3)
-    BookStatus.ON_HOLD -> Color(0xFF9E9E9E)
-    BookStatus.ABANDONED -> Color(0xFFF44336)
+    BookStatus.WANT_TO_READ -> WantToReadGreen
+    BookStatus.READING -> ReadingOrange
+    BookStatus.FINISHED -> FinishedBlue
+    BookStatus.ON_HOLD -> OnHoldGray
+    BookStatus.ABANDONED -> AbandonedRed
 }
 
 private fun statusLabel(status: BookStatus): String = when (status) {

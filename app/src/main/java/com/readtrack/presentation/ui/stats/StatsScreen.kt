@@ -49,6 +49,11 @@ import com.readtrack.presentation.viewmodel.StatsViewModel
 import com.readtrack.presentation.viewmodel.RecordWithBook
 import java.text.SimpleDateFormat
 import java.util.*
+import com.readtrack.presentation.ui.theme.AbandonedRed
+import com.readtrack.presentation.ui.theme.FinishedBlue
+import com.readtrack.presentation.ui.theme.OnHoldGray
+import com.readtrack.presentation.ui.theme.ReadingOrange
+import com.readtrack.presentation.ui.theme.WantToReadGreen
 
 private fun StatsUnit.label(): String = if (this == StatsUnit.CHAPTER) "章" else "页"
 private fun StatsUnit.subLabel(): String = if (this == StatsUnit.CHAPTER) "页" else "章"
@@ -561,18 +566,18 @@ fun ReadingRecordItem(recordWithBook: RecordWithBook) {
     val (statusColor, statusIcon) = when (record.recordType) {
         RecordType.STATUS_ADDED -> {
             val color: Color = when (snapshot?.status) {
-                BookStatus.WANT_TO_READ -> Color(0xFF4CAF50)
-                BookStatus.READING -> Color(0xFFFF9800)
-                BookStatus.FINISHED -> Color(0xFF2196F3)
-                BookStatus.ON_HOLD -> Color(0xFF9E9E9E)
-                BookStatus.ABANDONED -> Color(0xFFF44336)
+                BookStatus.WANT_TO_READ -> WantToReadGreen
+                BookStatus.READING -> ReadingOrange
+                BookStatus.FINISHED -> FinishedBlue
+                BookStatus.ON_HOLD -> OnHoldGray
+                BookStatus.ABANDONED -> AbandonedRed
                 else -> MaterialTheme.colorScheme.primary
             }
             color to Icons.Default.Add
         }
-        RecordType.STATUS_READING -> Color(0xFFFF9800) to Icons.Default.PlayArrow
-        RecordType.STATUS_FINISHED -> Color(0xFF2196F3) to Icons.Default.CheckCircle
-        RecordType.STATUS_DROPPED -> Color(0xFFF44336) to Icons.Default.Delete
+        RecordType.STATUS_READING -> ReadingOrange to Icons.Default.PlayArrow
+        RecordType.STATUS_FINISHED -> FinishedBlue to Icons.Default.CheckCircle
+        RecordType.STATUS_DROPPED -> AbandonedRed to Icons.Default.Delete
         else -> MaterialTheme.colorScheme.primary to Icons.Default.Add
     }
     val statusLabel: String = when (record.recordType) {

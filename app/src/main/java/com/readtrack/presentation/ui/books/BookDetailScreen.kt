@@ -48,6 +48,10 @@ import com.readtrack.domain.model.ProgressType
 import com.readtrack.presentation.ui.booklist.AddToBookListDialog
 import java.text.SimpleDateFormat
 import java.util.*
+import com.readtrack.presentation.ui.theme.AbandonedRed
+import com.readtrack.presentation.ui.theme.FinishedBlue
+import com.readtrack.presentation.ui.theme.ReadingOrange
+import com.readtrack.presentation.ui.theme.WantToReadGreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -922,10 +926,10 @@ private fun ReadingRecordRow(
     val isStatusRecord = record.recordType != RecordType.NORMAL
 
     val (statusColor, statusIcon) = when (record.recordType) {
-        RecordType.STATUS_ADDED -> Color(0xFF4CAF50) to Icons.Default.Add
-        RecordType.STATUS_READING -> Color(0xFFFF9800) to Icons.Default.PlayArrow
-        RecordType.STATUS_FINISHED -> Color(0xFF2196F3) to Icons.Default.CheckCircle
-        RecordType.STATUS_DROPPED -> Color(0xFFF44336) to Icons.Default.Delete
+        RecordType.STATUS_ADDED -> WantToReadGreen to Icons.Default.Add
+        RecordType.STATUS_READING -> ReadingOrange to Icons.Default.PlayArrow
+        RecordType.STATUS_FINISHED -> FinishedBlue to Icons.Default.CheckCircle
+        RecordType.STATUS_DROPPED -> AbandonedRed to Icons.Default.Delete
         else -> MaterialTheme.colorScheme.primary to Icons.Default.Add
     }
     val statusLabel: String = when (record.recordType) {
