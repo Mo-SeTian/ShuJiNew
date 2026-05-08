@@ -73,6 +73,7 @@ class PreferencesManager @Inject constructor(
         val WEBDAV_LAST_BACKUP_AT = longPreferencesKey("webdav_last_backup_at")
         val WEBDAV_LAST_ERROR = stringPreferencesKey("webdav_last_error")
         val HOME_COMPONENT_ORDER = stringPreferencesKey("home_component_order")
+        val UPDATE_SOURCE = stringPreferencesKey("update_source")
     }
 
     val themeMode: Flow<ThemeMode> = dataStore.data.map { preferences ->
@@ -129,6 +130,10 @@ class PreferencesManager @Inject constructor(
 
     val lastWebDavError: Flow<String?> = dataStore.data.map { preferences ->
         preferences[WEBDAV_LAST_ERROR]
+    }
+
+    val updateSource: Flow<String> = dataStore.data.map { preferences ->
+        preferences[UPDATE_SOURCE] ?: "github"
     }
 
     val homeComponentOrder: Flow<List<String>> = dataStore.data.map { preferences ->
@@ -218,6 +223,12 @@ class PreferencesManager @Inject constructor(
         }
     }
 
+    suspend fun setUpdateSource(source: String) {
+        dataStore.edit { preferences ->
+            preferences[UPDATE_SOURCE] = source
+        }
+    }
+
     suspend fun setHomeComponentOrder(order: List<String>) {
         dataStore.edit { preferences ->
             preferences[HOME_COMPONENT_ORDER] = order.joinToString(",")
@@ -244,6 +255,7 @@ class PreferencesManager @Inject constructor(
                 webDavPassword = "",
                 webDavRemotePath = preferences[WEBDAV_REMOTE_PATH] ?: "ReadTrack",
                 webDavAutoBackupFrequency = preferences[WEBDAV_AUTO_BACKUP_FREQUENCY] ?: AutoBackupFrequency.OFF.name,
+                updateSource = preferences[UPDATE_SOURCE] ?: "github",
                 homeComponentOrder = (preferences[HOME_COMPONENT_ORDER] ?: "").split(",").filter { it.isNotBlank() }
             )
         }
@@ -265,6 +277,7 @@ class PreferencesManager @Inject constructor(
             }
             preferences[WEBDAV_REMOTE_PATH] = prefs.webDavRemotePath.trim('/').ifBlank { "ReadTrack" }
             preferences[WEBDAV_AUTO_BACKUP_FREQUENCY] = prefs.webDavAutoBackupFrequency.takeIf { v -> runCatching { AutoBackupFrequency.valueOf(v) }.isSuccess } ?: AutoBackupFrequency.OFF.name
+            preferences[UPDATE_SOURCE] = prefs.updateSource.takeIf { it == "github" || it == "gitee" } ?: "github"
             preferences[HOME_COMPONENT_ORDER] = prefs.homeComponentOrder.filter { id -> HomeComponent.entries.any { it.id == id } }.joinToString(",")
         }
     }

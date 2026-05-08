@@ -1,0 +1,54 @@
+name: Sync Release to Gitee
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download release APK
+        run: |
+          ASSET_URL=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/${{ github.event.release.id }}/assets" \
+            | jq -r '.[] | select(.name | endswith(".apk")) | .browser_download_url' | head -1)
+          if [ -n "$ASSET_URL" ]; then
+            curl -L -o readtrack.apk "$ASSET_URL"
+            echo "APK downloaded: $(ls -lh readtrack.apk)"
+          else
+            echo "No APK asset found"
+          fi
+
+      - name: Create release on Gitee
+        run: |
+          RESPONSE=$(curl -s -X POST \
+            "https://gitee.com/api/v5/repos/mosetian/shu-ji-new/releases?access_token=${{ secrets.GITEE_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d @- <<EOF
+          {
+            "tag_name": "${{ github.event.release.tag_name }}",
+            "name": "${{ github.event.release.name }}",
+            "body": "$(echo "${{ github.event.release.body }}" | sed 's/"/\\"/g' | tr '\n' ' ')",
+            "target_commitish": "main"
+          }
+          EOF
+          )
+          echo "Gitee response: $RESPONSE"
+          RELEASE_ID=$(echo "$RESPONSE" | jq -r '.id')
+          echo "RELEASE_ID=$RELEASE_ID" >> $GITHUB_ENV
+
+      - name: Upload APK to Gitee release
+        if: env.RELEASE_ID != '' && env.RELEASE_ID != 'null'
+        run: |
+          if [ -f readtrack.apk ]; then
+            FILE_SIZE=$(stat -f%z readtrack.apk 2>/dev/null || stat -c%s readtrack.apk 2>/dev/null)
+            echo "Uploading APK (${FILE_SIZE} bytes) to Gitee release $RELEASE_ID..."
+            curl -s -X POST \
+              "https://gitee.com/api/v5/repos/mosetian/shu-ji-new/releases/${RELEASE_ID}/attach_files?access_token=${{ secrets.GITEE_TOKEN }}" \
+              -F "file=@readtrack.apk;filename=readtrack-${RELEASE_TAG}.apk" \
+              --connect-timeout 60 --max-time 120
+            echo "Upload completed"
+          fi
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}

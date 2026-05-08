@@ -63,6 +63,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.readtrack.BuildConfig
 import com.readtrack.data.local.AutoBackupFrequency
 import com.readtrack.data.local.StatsUnit
 import com.readtrack.data.local.ThemeMode
@@ -87,6 +88,8 @@ fun SettingsScreen(
     var showStatsUnitDialog by remember { mutableStateOf(false) }
     var showWebDavConfigDialog by remember { mutableStateOf(false) }
     var showAutoBackupDialog by remember { mutableStateOf(false) }
+    var showUpdateSourceDialog by remember { mutableStateOf(false) }
+    var showUpdateResultDialog by remember { mutableStateOf(false) }
     var pendingImportUri by remember { mutableStateOf<Uri?>(null) }
     var pendingImportContent by remember { mutableStateOf<String?>(null) }
 
@@ -422,6 +425,22 @@ fun SettingsScreen(
             }
 
             item { Spacer(Modifier.height(8.dp)); SettingsSectionCard("其他") }
+            item {
+                SettingsClickableCard(
+                    Icons.Outlined.SettingsEthernet,
+                    "更新源",
+                    if (uiState.updateSource == "gitee") "Gitee" else "GitHub"
+                ) { showUpdateSourceDialog = true }
+            }
+            item {
+                SettingsClickableCard(
+                    Icons.Outlined.Download,
+                    "检查更新",
+                    if (uiState.isCheckingUpdate) "正在检查..." else "当前版本 ${BuildConfig.VERSION_NAME}"
+                ) {
+                    viewModel.checkForUpdate()
+                }
+            }
             item { SettingsClickableCard(Icons.Outlined.Info, "关于", "应用信息与隐私声明") { onNavigateToAbout() } }
         }
     }
@@ -553,6 +572,113 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showAutoBackupDialog = false }) { Text("取消") }
+            }
+        )
+    }
+
+    if (showUpdateSourceDialog) {
+        AlertDialog(
+            onDismissRequest = { showUpdateSourceDialog = false },
+            title = { Text("选择更新源") },
+            text = {
+                Column {
+                    listOf("github" to "GitHub", "gitee" to "Gitee").forEach { (value, label) ->
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    viewModel.setUpdateSource(value)
+                                    showUpdateSourceDialog = false
+                                }
+                                .padding(vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = uiState.updateSource == value,
+                                onClick = {
+                                    viewModel.setUpdateSource(value)
+                                    showUpdateSourceDialog = false
+                                }
+                            )
+                            Spacer(Modifier.width(12.dp))
+                            Text(label)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showUpdateSourceDialog = false }) { Text("取消") }
+            }
+        )
+    }
+
+    LaunchedEffect(uiState.updateResult) {
+        if (uiState.updateResult != null) {
+            showUpdateResultDialog = true
+        }
+    }
+
+    if (showUpdateResultDialog && uiState.updateResult != null) {
+        val result = uiState.updateResult!!
+        AlertDialog(
+            onDismissRequest = {
+                showUpdateResultDialog = false
+                viewModel.clearUpdateResult()
+            },
+            title = {
+                Text(if (result.hasUpdate) "发现新版本" else "已是最新版本")
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (result.hasUpdate) {
+                        Text("最新版本：v${result.latestVersion}")
+                        Text("当前版本：v${result.currentVersion}")
+                        if (result.releaseNotes.isNotBlank()) {
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                "更新内容：",
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                result.releaseNotes.take(500),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    } else {
+                        Text("当前已是最新版本 v${result.currentVersion}")
+                    }
+                }
+            },
+            confirmButton = {
+                if (result.hasUpdate) {
+                    TextButton(onClick = {
+                        val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(result.releasePageUrl))
+                        context.startActivity(intent)
+                        showUpdateResultDialog = false
+                        viewModel.clearUpdateResult()
+                    }) {
+                        Text("前往下载")
+                    }
+                } else {
+                    TextButton(onClick = {
+                        showUpdateResultDialog = false
+                        viewModel.clearUpdateResult()
+                    }) {
+                        Text("确定")
+                    }
+                }
+            },
+            dismissButton = {
+                if (result.hasUpdate) {
+                    TextButton(onClick = {
+                        showUpdateResultDialog = false
+                        viewModel.clearUpdateResult()
+                    }) {
+                        Text("稍后再说")
+                    }
+                }
             }
         )
     }

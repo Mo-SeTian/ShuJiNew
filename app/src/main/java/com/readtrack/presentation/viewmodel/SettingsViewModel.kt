@@ -13,6 +13,8 @@ import com.readtrack.domain.model.DataBackup
 import com.readtrack.domain.model.ImportPreview
 import com.readtrack.domain.model.ImportResult
 import com.readtrack.domain.repository.DataBackupRepository
+import com.readtrack.remote.UpdateChecker
+import com.readtrack.remote.UpdateResult
 import com.readtrack.util.CoverStorageUtil
 import com.readtrack.worker.WebDavBackupScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -65,7 +67,11 @@ data class SettingsUiState(
     // 导入导出进度
     val showProgressDialog: Boolean = false,
     val progressMessage: String = "",
-    val progressPercent: Float = 0f
+    val progressPercent: Float = 0f,
+    // 更新检测
+    val updateSource: String = "github",
+    val isCheckingUpdate: Boolean = false,
+    val updateResult: UpdateResult? = null
 ) {
     val isWebDavConfigured: Boolean
         get() =
@@ -105,15 +111,17 @@ class SettingsViewModel @Inject constructor(
             combine(
                 preferencesManager.themeMode,
                 preferencesManager.statsUnit,
-                preferencesManager.doubanCookie
-            ) { themeMode, statsUnit, cookie ->
-                Triple(themeMode, statsUnit, cookie)
-            }.collect { (themeMode, statsUnit, cookie) ->
+                preferencesManager.doubanCookie,
+                preferencesManager.updateSource
+            ) { themeMode, statsUnit, cookie, source ->
+                listOf(themeMode, statsUnit, cookie, source)
+            }.collect { (themeMode, statsUnit, cookie, source) ->
                 _uiState.update {
                     it.copy(
-                        themeMode = themeMode,
-                        statsUnit = statsUnit,
-                        doubanCookie = cookie
+                        themeMode = themeMode as ThemeMode,
+                        statsUnit = statsUnit as StatsUnit,
+                        doubanCookie = cookie as String,
+                        updateSource = source as String
                     )
                 }
             }
@@ -927,5 +935,32 @@ class SettingsViewModel @Inject constructor(
 
     fun dismissProgressDialog() {
         _uiState.update { it.copy(showProgressDialog = false, progressMessage = "", progressPercent = 0f) }
+    }
+
+    fun setUpdateSource(source: String) {
+        viewModelScope.launch {
+            preferencesManager.setUpdateSource(source)
+        }
+    }
+
+    fun checkForUpdate() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isCheckingUpdate = true, updateResult = null) }
+            try {
+                val result = UpdateChecker.checkForUpdate(okHttpClient, _uiState.value.updateSource)
+                _uiState.update { it.copy(isCheckingUpdate = false, updateResult = result) }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isCheckingUpdate = false,
+                        errorMessage = "检查更新失败: ${e.message}"
+                    )
+                }
+            }
+        }
+    }
+
+    fun clearUpdateResult() {
+        _uiState.update { it.copy(updateResult = null) }
     }
 }
