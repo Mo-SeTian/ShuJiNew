@@ -620,68 +620,75 @@ fun SettingsScreen(
 
     if (showUpdateResultDialog && uiState.updateResult != null) {
         val result = uiState.updateResult!!
-        AlertDialog(
-            onDismissRequest = {
+        UpdateDialog(
+            result = result,
+            onDismiss = {
                 showUpdateResultDialog = false
                 viewModel.clearUpdateResult()
             },
-            title = {
-                Text(if (result.hasUpdate) "发现新版本" else "已是最新版本")
-            },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    if (result.hasUpdate) {
-                        Text("最新版本：v${result.latestVersion}")
-                        Text("当前版本：v${result.currentVersion}")
-                        if (result.releaseNotes.isNotBlank()) {
-                            Spacer(Modifier.height(4.dp))
-                            Text(
-                                "更新内容：",
-                                style = MaterialTheme.typography.bodySmall,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                result.releaseNotes.take(500),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    } else {
-                        Text("当前已是最新版本 v${result.currentVersion}")
-                    }
-                }
-            },
-            confirmButton = {
-                if (result.hasUpdate) {
-                    TextButton(onClick = {
-                        val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(result.releasePageUrl))
-                        context.startActivity(intent)
-                        showUpdateResultDialog = false
-                        viewModel.clearUpdateResult()
-                    }) {
-                        Text("前往下载")
-                    }
-                } else {
-                    TextButton(onClick = {
-                        showUpdateResultDialog = false
-                        viewModel.clearUpdateResult()
-                    }) {
-                        Text("确定")
-                    }
-                }
-            },
-            dismissButton = {
-                if (result.hasUpdate) {
-                    TextButton(onClick = {
-                        showUpdateResultDialog = false
-                        viewModel.clearUpdateResult()
-                    }) {
-                        Text("稍后再说")
-                    }
-                }
+            onOpenDownload = {
+                val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(result.downloadUrl))
+                context.startActivity(intent)
+                showUpdateResultDialog = false
+                viewModel.clearUpdateResult()
             }
         )
     }
+}
+
+@Composable
+fun UpdateDialog(
+    result: com.readtrack.remote.UpdateResult,
+    onDismiss: () -> Unit,
+    onOpenDownload: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(if (result.hasUpdate) "发现新版本" else "已是最新版本")
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (result.hasUpdate) {
+                    Text("最新版本：v${result.latestVersion}")
+                    Text("当前版本：v${result.currentVersion}")
+                    if (result.releaseNotes.isNotBlank()) {
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            "更新内容：",
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            result.releaseNotes.take(500),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                } else {
+                    Text("当前已是最新版本 v${result.currentVersion}")
+                }
+            }
+        },
+        confirmButton = {
+            if (result.hasUpdate) {
+                TextButton(onClick = onOpenDownload) {
+                    Text("前往下载")
+                }
+            } else {
+                TextButton(onClick = onDismiss) {
+                    Text("确定")
+                }
+            }
+        },
+        dismissButton = {
+            if (result.hasUpdate) {
+                TextButton(onClick = onDismiss) {
+                    Text("稍后再说")
+                }
+            }
+        }
+    )
 }
 
 @Composable
