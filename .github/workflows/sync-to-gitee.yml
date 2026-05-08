@@ -52,6 +52,7 @@ jobs:
 
       - name: Push main branch to Gitee
         run: |
+          git remote add gitee "https://mosetian:${{ secrets.GITEE_TOKEN }}@gitee.com/mosetian/shu-ji-new.git"
           # First try normal push, fall back to force
           git push gitee main:master 2>/dev/null || git push gitee main:master --force
           echo "Main branch pushed"
