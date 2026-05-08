@@ -3,15 +3,32 @@ name: Sync Release to Gitee
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag to sync (e.g., v1.9.6)'
+        required: true
+        default: 'v1.9.6'
 
 jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
+      - name: Determine release info
+        id: release_info
+        run: |
+          RELEASE_TAG="${{ github.event.inputs.release_tag || github.event.release.tag_name }}"
+          echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_ENV
+
       - name: Download release APK
         run: |
+          # First get release by tag
+          RELEASE_ID=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/tags/${RELEASE_TAG}" \
+            | jq -r '.id')
+          echo "GitHub release ID: $RELEASE_ID"
           ASSET_URL=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/repos/${{ github.repository }}/releases/${{ github.event.release.id }}/assets" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/${RELEASE_ID}/assets" \
             | jq -r '.[] | select(.name | endswith(".apk")) | .browser_download_url' | head -1)
           if [ -n "$ASSET_URL" ]; then
             curl -L -o readtrack.apk "$ASSET_URL"
@@ -27,9 +44,9 @@ jobs:
             -H "Content-Type: application/json" \
             -d @- <<EOF
           {
-            "tag_name": "${{ github.event.release.tag_name }}",
-            "name": "${{ github.event.release.name }}",
-            "body": "$(echo "${{ github.event.release.body }}" | sed 's/"/\\"/g' | tr '\n' ' ')",
+            "tag_name": "${RELEASE_TAG}",
+            "name": "书迹 ${RELEASE_TAG}",
+            "body": "https://github.com/Mo-SeTian/ShuJiNew/releases/tag/${RELEASE_TAG}",
             "target_commitish": "main"
           }
           EOF
@@ -50,5 +67,3 @@ jobs:
               --connect-timeout 60 --max-time 120
             echo "Upload completed"
           fi
-        env:
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
