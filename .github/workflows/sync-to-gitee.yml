@@ -20,9 +20,27 @@ jobs:
           RELEASE_TAG="${{ github.event.inputs.release_tag || github.event.release.tag_name }}"
           echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_ENV
 
+      - name: Checkout repo for sync
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Push main branch to Gitee
+        run: |
+          # Check if Gitee already has main branch
+          RESPONSE=$(curl -s -H "Authorization: Bearer ${{ secrets.GITEE_TOKEN }}" \
+            "https://gitee.com/api/v5/repos/mosetian/shu-ji-new/branches/main")
+          if echo "$RESPONSE" | jq -e '.name' > /dev/null 2>&1; then
+            echo "Gitee main branch exists"
+          else
+            echo "Pushing main branch to Gitee..."
+            git remote add gitee "https://mosetian:${{ secrets.GITEE_TOKEN }}@gitee.com/mosetian/shu-ji-new.git"
+            git push gitee main:main
+            echo "Main branch pushed"
+          fi
+
       - name: Download release APK
         run: |
-          # First get release by tag
           RELEASE_ID=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
             "https://api.github.com/repos/${{ github.repository }}/releases/tags/${RELEASE_TAG}" \
             | jq -r '.id')
@@ -36,6 +54,13 @@ jobs:
           else
             echo "No APK asset found"
           fi
+
+      - name: Push tag to Gitee
+        run: |
+          # Push the specific tag to Gitee using the token
+          git remote add gitee "https://mosetian:${{ secrets.GITEE_TOKEN }}@gitee.com/mosetian/shu-ji-new.git"
+          git push gitee refs/tags/${RELEASE_TAG}
+          echo "Tag ${RELEASE_TAG} pushed to Gitee"
 
       - name: Create or update release on Gitee
         id: create_release
@@ -56,7 +81,7 @@ jobs:
             RESPONSE=$(curl -s -X POST \
               "https://gitee.com/api/v5/repos/mosetian/shu-ji-new/releases?access_token=${{ secrets.GITEE_TOKEN }}" \
               -H "Content-Type: application/json" \
-              -d "{\"tag_name\":\"${TAG_NAME}\",\"name\":\"书迹 ${TAG_NAME}\",\"body\":\"${BODY_URL}\",\"target_commitish\":\"main\"}")
+              -d "{\"tag_name\":\"${TAG_NAME}\",\"name\":\"书迹 ${TAG_NAME}\",\"body\":\"${BODY_URL}\",\"target_commitish\":\"${TAG_NAME}\"}")
             echo "Gitee create response: $RESPONSE"
             RELEASE_ID=$(echo "$RESPONSE" | jq -r '.id')
             echo "RELEASE_ID=$RELEASE_ID" >> $GITHUB_ENV
