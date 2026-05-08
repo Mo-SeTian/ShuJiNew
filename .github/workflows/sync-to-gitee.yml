@@ -37,23 +37,36 @@ jobs:
             echo "No APK asset found"
           fi
 
-      - name: Create release on Gitee
+      - name: Create or update release on Gitee
+        id: create_release
         run: |
-          RESPONSE=$(curl -s -X POST \
-            "https://gitee.com/api/v5/repos/mosetian/shu-ji-new/releases?access_token=${{ secrets.GITEE_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            -d @- <<EOF
-          {
-            "tag_name": "${RELEASE_TAG}",
-            "name": "书迹 ${RELEASE_TAG}",
-            "body": "https://github.com/Mo-SeTian/ShuJiNew/releases/tag/${RELEASE_TAG}",
-            "target_commitish": "main"
-          }
-          EOF
-          )
-          echo "Gitee response: $RESPONSE"
-          RELEASE_ID=$(echo "$RESPONSE" | jq -r '.id')
-          echo "RELEASE_ID=$RELEASE_ID" >> $GITHUB_ENV
+          # Try to get existing release by tag first
+          EXISTING=$(curl -s -H "Authorization: Bearer ${{ secrets.GITEE_TOKEN }}" \
+            "https://gitee.com/api/v5/repos/mosetian/shu-ji-new/releases/tags/${RELEASE_TAG}")
+          echo "Existing release check: $EXISTING"
+          EXISTING_ID=$(echo "$EXISTING" | jq -r '.id // empty')
+
+          if [ -n "$EXISTING_ID" ]; then
+            echo "Release already exists with ID: $EXISTING_ID"
+            echo "RELEASE_ID=$EXISTING_ID" >> $GITHUB_ENV
+          else
+            echo "Creating new release..."
+            RESPONSE=$(curl -s -X POST \
+              "https://gitee.com/api/v5/repos/mosetian/shu-ji-new/releases?access_token=${{ secrets.GITEE_TOKEN }}" \
+              -H "Content-Type: application/json" \
+              -d @- <<EOF
+            {
+              "tag_name": "${RELEASE_TAG}",
+              "name": "书迹 ${RELEASE_TAG}",
+              "body": "https://github.com/Mo-SeTian/ShuJiNew/releases/tag/${RELEASE_TAG}",
+              "target_commitish": "main"
+            }
+            EOF
+            )
+            echo "Gitee create response: $RESPONSE"
+            RELEASE_ID=$(echo "$RESPONSE" | jq -r '.id')
+            echo "RELEASE_ID=$RELEASE_ID" >> $GITHUB_ENV
+          fi
 
       - name: Upload APK to Gitee release
         if: env.RELEASE_ID != '' && env.RELEASE_ID != 'null'
