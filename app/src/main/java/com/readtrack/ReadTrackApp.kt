@@ -8,9 +8,9 @@ import coil.ImageLoaderFactory
 import coil.disk.DiskCache
 import coil.memory.MemoryCache
 import coil.request.CachePolicy
-import dagger.hilt.android.HiltAndroidApp
 import com.umeng.analytics.MobclickAgent
 import com.umeng.commonsdk.UMConfigure
+import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
 
 @HiltAndroidApp
@@ -24,6 +24,11 @@ class ReadTrackApp : Application(), ImageLoaderFactory, Configuration.Provider {
             .setWorkerFactory(workerFactory)
             .build()
 
+    override fun attachBaseContext(base: android.content.Context?) {
+        super.attachBaseContext(base)
+        UMConfigure.preInit(this, "__UMENG_APP_KEY__", "official")
+    }
+
     override fun onCreate() {
         super.onCreate()
 
@@ -32,7 +37,13 @@ class ReadTrackApp : Application(), ImageLoaderFactory, Configuration.Provider {
 
     private fun initUmeng() {
         try {
-            UMConfigure.preInit(this, "__UMENG_APP_KEY__", "official")
+            UMConfigure.init(
+                this,
+                "__UMENG_APP_KEY__",
+                "official",
+                UMConfigure.DEVICE_TYPE_PHONE,
+                ""
+            )
             UMConfigure.setLogEnabled(true)
             MobclickAgent.setPageCollectionMode(MobclickAgent.PageMode.AUTO)
 
