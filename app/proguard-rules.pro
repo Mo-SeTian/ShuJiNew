@@ -41,6 +41,6 @@
 -dontwarn okio.**
 -keepnames class okhttp3.internal.publicsuffix.PublicSuffixDatabase
 
-# ============ Countly ============
--keep class ly.count.android.sdk.** { *; }
--dontwarn ly.count.android.sdk.**
+# ============ 友盟统计 ============
+-keep class com.umeng.** { *; }
+-dontwarn com.umeng.**
