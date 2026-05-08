@@ -19,12 +19,14 @@ import com.readtrack.util.CoverStorageUtil
 import com.readtrack.worker.WebDavBackupScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -944,17 +946,25 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun checkForUpdate() {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isCheckingUpdate = true, updateResult = null) }
+        android.util.Log.i("ReadTrack", "checkForUpdate() 被调用")
+        _uiState.update { it.copy(isCheckingUpdate = true, updateResult = null) }
+        viewModelScope.launch(Dispatchers.IO) {
             try {
+                android.util.Log.i("ReadTrack", "开始请求更新 API, source=${_uiState.value.updateSource}")
                 val result = UpdateChecker.checkForUpdate(okHttpClient, _uiState.value.updateSource)
-                _uiState.update { it.copy(isCheckingUpdate = false, updateResult = result) }
+                android.util.Log.i("ReadTrack", "更新检查完成: hasUpdate=${result.hasUpdate}, latest=${result.latestVersion}")
+                withContext(Dispatchers.Main) {
+                    _uiState.update { it.copy(isCheckingUpdate = false, updateResult = result) }
+                }
             } catch (e: Exception) {
-                _uiState.update {
-                    it.copy(
-                        isCheckingUpdate = false,
-                        errorMessage = "检查更新失败: ${e.message}"
-                    )
+                android.util.Log.e("ReadTrack", "更新检查失败", e)
+                withContext(Dispatchers.Main) {
+                    _uiState.update {
+                        it.copy(
+                            isCheckingUpdate = false,
+                            errorMessage = "检查更新失败: ${e.message}"
+                        )
+                    }
                 }
             }
         }
