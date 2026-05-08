@@ -18,7 +18,7 @@ import androidx.core.view.WindowCompat
 import com.readtrack.data.local.PreferencesManager
 import com.readtrack.presentation.ui.MainNavigation
 import com.readtrack.presentation.ui.settings.UpdateDialog
-import com.readtrack.presentation.theme.ReadTrackTheme
+import com.readtrack.presentation.ui.theme.ReadTrackTheme
 import com.readtrack.presentation.viewmodel.SettingsViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
