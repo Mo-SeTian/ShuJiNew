@@ -93,7 +93,7 @@ class BookDetailViewModel @Inject constructor(
         val dateFormatter = SimpleDateFormat("M/d", Locale.CHINESE)
         val dayKeyFormatter = SimpleDateFormat("yyyy-MM-dd", Locale.CHINESE)
 
-        // 按天聚合每日阅读量
+        // 按天聚合每日阅读量（按日期字符串分组，避免时间戳精度问题）
         val dailyPages = normalRecords
             .groupBy { record ->
                 calendar.timeInMillis = record.date
@@ -101,12 +101,18 @@ class BookDetailViewModel @Inject constructor(
                 calendar.set(Calendar.MINUTE, 0)
                 calendar.set(Calendar.SECOND, 0)
                 calendar.set(Calendar.MILLISECOND, 0)
-                dayKeyFormatter.format(Date(calendar.timeInMillis)) to calendar.timeInMillis
+                dayKeyFormatter.format(Date(calendar.timeInMillis))
             }
-            .map { (dayKey, dayRecords) ->
-                val (dateKey, dateMs) = dayKey
+            .map { (dateKey, dayRecords) ->
+                val dateMs = dayRecords.first().date
+                calendar.timeInMillis = dateMs
+                calendar.set(Calendar.HOUR_OF_DAY, 0)
+                calendar.set(Calendar.MINUTE, 0)
+                calendar.set(Calendar.SECOND, 0)
+                calendar.set(Calendar.MILLISECOND, 0)
+                val normalizedDateMs = calendar.timeInMillis
                 val total = dayRecords.sumOf { it.pagesRead }
-                dateKey to (dateMs to total)
+                dateKey to (normalizedDateMs to total)
             }
             .toMap()
 
