@@ -8,7 +8,7 @@ import okhttp3.Request
 object UpdateChecker {
 
     private const val GITHUB_API = "https://api.github.com/repos/Mo-SeTian/ShuJiNew/releases/latest"
-    private const val GITEE_API = "https://gitee.com/api/v5/repos/mosetian/shu-ji-new/releases/latest"
+    private const val GITEE_API = "https://gitee.com/api/v5/repos/mosetian/ShuJiNew/releases/latest"
 
     private val json = Json { ignoreUnknownKeys = true }
 
