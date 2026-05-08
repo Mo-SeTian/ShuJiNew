@@ -54,9 +54,10 @@ class ReadTrackApp : Application(), ImageLoaderFactory, Configuration.Provider {
             ""
         )
         UMConfigure.setLogEnabled(true)
+        UMConfigure.submitPolicyGrantResult(this, true)
         MobclickAgent.setPageCollectionMode(MobclickAgent.PageMode.AUTO)
 
-        android.util.Log.i("ReadTrack", "友盟统计初始化完成（渠道=official, 自动采集版本/留存）")
+        android.util.Log.i("ReadTrack", "友盟统计初始化完成（渠道=official, 隐私协议已同意）")
     }
 
     private inner class CrashHandler : Thread.UncaughtExceptionHandler {
