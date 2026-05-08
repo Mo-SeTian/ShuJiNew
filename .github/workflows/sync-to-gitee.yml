@@ -29,6 +29,16 @@ jobs:
         run: |
           git fetch origin refs/tags/${RELEASE_TAG}:refs/tags/${RELEASE_TAG}
 
+      - name: Prepare Gitee remote with merge
+        run: |
+          git remote add gitee "https://mosetian:${{ secrets.GITEE_TOKEN }}@gitee.com/mosetian/shu-ji-new.git"
+          # Fetch Gitee's master branch to get its commit
+          git fetch gitee master:tmp_merge_branch
+          # Create a merge commit that combines both histories
+          git merge tmp_merge_branch --no-edit || true
+          # Clean up
+          git branch -d tmp_merge_branch
+
       - name: Initialize Gitee repo (create main branch if empty)
         run: |
           # Check if Gitee already has main or master branch
@@ -53,8 +63,7 @@ jobs:
       - name: Push main branch to Gitee
         run: |
           git remote add gitee "https://mosetian:${{ secrets.GITEE_TOKEN }}@gitee.com/mosetian/shu-ji-new.git"
-          # Force push main to master (Gitee master may have diverged with README commit)
-          git push gitee main:master --force
+          git push gitee main:master
           echo "Main branch pushed"
 
       - name: Download release APK
