@@ -36,6 +36,7 @@ data class PreferencesExport(
     val webDavPassword: String = "",
     val webDavRemotePath: String = "ReadTrack",
     val webDavAutoBackupFrequency: String = "OFF",
+    val updateSource: String = "github",
     val homeComponentOrder: List<String> = emptyList()
 )
 
