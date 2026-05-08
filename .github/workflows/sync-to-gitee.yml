@@ -20,13 +20,16 @@ jobs:
           RELEASE_TAG="${{ github.event.inputs.release_tag || github.event.release.tag_name }}"
           echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_ENV
 
-      - name: Checkout repo for sync
+      - name: Checkout repo (shallow)
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-          filter: blob:none
+          fetch-depth: 1
 
-      - name: Push main branch to Gitee
+      - name: Fetch tag for release
+        run: |
+          git fetch origin refs/tags/${RELEASE_TAG}:refs/tags/${RELEASE_TAG}
+
+      - name: Initialize Gitee repo (create main branch if empty)
         run: |
           # Check if Gitee already has main branch
           RESPONSE=$(curl -s -H "Authorization: Bearer ${{ secrets.GITEE_TOKEN }}" \
@@ -34,11 +37,21 @@ jobs:
           if echo "$RESPONSE" | jq -e '.name' > /dev/null 2>&1; then
             echo "Gitee main branch exists"
           else
-            echo "Pushing main branch to Gitee..."
-            git remote add gitee "https://mosetian:${{ secrets.GITEE_TOKEN }}@gitee.com/mosetian/shu-ji-new.git"
-            git push gitee main:main
-            echo "Main branch pushed"
+            echo "Gitee repo is empty, initializing with README..."
+            # Create a README to initialize the default branch
+            README_B64=$(echo "# ShuJiNew" | base64)
+            RESP=$(curl -s -X POST \
+              "https://gitee.com/api/v5/repos/mosetian/shu-ji-new/files/README.md?access_token=${{ secrets.GITEE_TOKEN }}" \
+              -H "Content-Type: application/json" \
+              -d "{\"message\":\"Initial commit\",\"content\":\"${README_B64}\"}")
+            echo "Init response: $RESP"
           fi
+
+      - name: Push main branch to Gitee
+        run: |
+          git remote add gitee "https://mosetian:${{ secrets.GITEE_TOKEN }}@gitee.com/mosetian/shu-ji-new.git"
+          git push gitee main:main
+          echo "Main branch pushed"
 
       - name: Download release APK
         run: |
