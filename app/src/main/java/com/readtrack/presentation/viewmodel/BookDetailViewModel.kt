@@ -219,7 +219,7 @@ class BookDetailViewModel @Inject constructor(
                 val record = ReadingRecordEntity(
                     bookId = currentBook.id,
                     bookSnapshot = BookSnapshot.from(currentBook, currentBook.status),
-                    pagesRead = 0.0,
+                    pagesRead = chaptersActuallyRead.toDouble(),
                     fromPage = fromChapter.toDouble(),
                     toPage = toChapter.toDouble(),
                     chaptersRead = chaptersActuallyRead,
