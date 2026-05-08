@@ -46,23 +46,17 @@ jobs:
           echo "Existing release check: $EXISTING"
           EXISTING_ID=$(echo "$EXISTING" | jq -r '.id // empty')
 
-          if [ -n "$EXISTING_ID" ]; then
+          if [ -n "$EXISTING_ID" ] && [ "$EXISTING_ID" != "null" ]; then
             echo "Release already exists with ID: $EXISTING_ID"
             echo "RELEASE_ID=$EXISTING_ID" >> $GITHUB_ENV
           else
             echo "Creating new release..."
+            TAG_NAME="${RELEASE_TAG}"
+            BODY_URL="https://github.com/Mo-SeTian/ShuJiNew/releases/tag/${RELEASE_TAG}"
             RESPONSE=$(curl -s -X POST \
               "https://gitee.com/api/v5/repos/mosetian/shu-ji-new/releases?access_token=${{ secrets.GITEE_TOKEN }}" \
               -H "Content-Type: application/json" \
-              -d @- <<EOF
-            {
-              "tag_name": "${RELEASE_TAG}",
-              "name": "书迹 ${RELEASE_TAG}",
-              "body": "https://github.com/Mo-SeTian/ShuJiNew/releases/tag/${RELEASE_TAG}",
-              "target_commitish": "main"
-            }
-            EOF
-            )
+              -d "{\"tag_name\":\"${TAG_NAME}\",\"name\":\"书迹 ${TAG_NAME}\",\"body\":\"${BODY_URL}\",\"target_commitish\":\"main\"}")
             echo "Gitee create response: $RESPONSE"
             RELEASE_ID=$(echo "$RESPONSE" | jq -r '.id')
             echo "RELEASE_ID=$RELEASE_ID" >> $GITHUB_ENV
