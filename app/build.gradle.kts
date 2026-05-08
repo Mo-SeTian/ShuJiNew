@@ -120,8 +120,9 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 
-    // Countly — 用户行为分析
-    implementation("ly.count.android:sdk:24.7.4")
+    // 友盟统计 — 用户行为分析
+    implementation("com.umeng.umsdk:common:9.9.1")
+    implementation("com.umeng.umsdk:asms:1.8.7.2")
     
     // Testing
     testImplementation("junit:junit:4.13.2")

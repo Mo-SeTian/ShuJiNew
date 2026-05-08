@@ -9,8 +9,8 @@ import coil.disk.DiskCache
 import coil.memory.MemoryCache
 import coil.request.CachePolicy
 import dagger.hilt.android.HiltAndroidApp
-import ly.count.android.sdk.Countly
-import ly.count.android.sdk.CountlyConfig
+import com.umeng.analytics.MobclickAgent
+import com.umeng.commonsdk.UMConfigure
 import javax.inject.Inject
 
 @HiltAndroidApp
@@ -27,25 +27,18 @@ class ReadTrackApp : Application(), ImageLoaderFactory, Configuration.Provider {
     override fun onCreate() {
         super.onCreate()
 
-        initCountly()
+        initUmeng()
     }
 
-    private fun initCountly() {
+    private fun initUmeng() {
         try {
-            val countly = Countly.sharedInstance()
-            val config = CountlyConfig(
-                this,
-                "f37adc977a22d632eb4e89a250a2c518a2356753",
-                "http://countly.nn1nn.top"
-            )
-                .setRequiresConsent(false)
-                .setLoggingEnabled(true)
+            UMConfigure.preInit(this, "__UMENG_APP_KEY__", "official")
+            UMConfigure.setLogEnabled(true)
+            MobclickAgent.setPageCollectionMode(MobclickAgent.PageMode.AUTO)
 
-            countly.init(config)
-
-            android.util.Log.i("ReadTrack", "Countly 初始化完成, isInitialized=${countly.isInitialized}, serverURL=http://countly.nn1nn.top")
+            android.util.Log.i("ReadTrack", "友盟统计初始化完成")
         } catch (e: Exception) {
-            android.util.Log.e("ReadTrack", "Countly 初始化失败", e)
+            android.util.Log.e("ReadTrack", "友盟统计初始化失败", e)
         }
     }
 

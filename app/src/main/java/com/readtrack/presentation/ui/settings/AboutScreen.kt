@@ -163,7 +163,7 @@ fun AboutScreen(
                             fontWeight = FontWeight.SemiBold
                         )
                         Text(
-                            "本应用使用 Countly 进行匿名使用统计。我们仅收集以下匿名的聚合数据，用于改善应用体验：",
+                            "本应用使用友盟（Umeng）统计 SDK 进行匿名使用分析。我们仅收集以下匿名的聚合数据，用于改善应用体验：",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -196,7 +196,7 @@ fun AboutScreen(
                         }
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            "Countly 服务器部署在我们自己的服务器上，所有数据仅供开发团队进行产品改进参考，绝不与第三方共享。",
+                            "友盟统计服务由友盟（阿里巴巴）提供，所有数据仅供开发团队进行产品改进参考，绝不与第三方共享。",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Start
