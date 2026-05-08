@@ -24,7 +24,7 @@ data class GiteeRelease(
     @SerialName("tag_name") val tagName: String,
     @SerialName("name") val name: String? = null,
     @SerialName("body") val body: String? = null,
-    @SerialName("html_url") val htmlUrl: String,
+    @SerialName("html_url") val htmlUrl: String? = null,
     val assets: List<GiteeAsset> = emptyList(),
     @SerialName("attach_files") val attachFiles: List<GiteeAsset> = emptyList()
 )
