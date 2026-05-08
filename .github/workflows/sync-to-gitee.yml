@@ -31,14 +31,17 @@ jobs:
 
       - name: Initialize Gitee repo (create main branch if empty)
         run: |
-          # Check if Gitee already has main branch
-          RESPONSE=$(curl -s -H "Authorization: Bearer ${{ secrets.GITEE_TOKEN }}" \
+          # Check if Gitee already has main or master branch
+          RESPONSE_MAIN=$(curl -s -H "Authorization: Bearer ${{ secrets.GITEE_TOKEN }}" \
             "https://gitee.com/api/v5/repos/mosetian/shu-ji-new/branches/main")
-          if echo "$RESPONSE" | jq -e '.name' > /dev/null 2>&1; then
+          RESPONSE_MASTER=$(curl -s -H "Authorization: Bearer ${{ secrets.GITEE_TOKEN }}" \
+            "https://gitee.com/api/v5/repos/mosetian/shu-ji-new/branches/master")
+          if echo "$RESPONSE_MAIN" | jq -e '.name' > /dev/null 2>&1; then
             echo "Gitee main branch exists"
+          elif echo "$RESPONSE_MASTER" | jq -e '.name' > /dev/null 2>&1; then
+            echo "Gitee master branch exists"
           else
             echo "Gitee repo is empty, initializing with README..."
-            # Create a README to initialize the default branch
             README_B64=$(echo "# ShuJiNew" | base64)
             RESP=$(curl -s -X POST \
               "https://gitee.com/api/v5/repos/mosetian/shu-ji-new/files/README.md?access_token=${{ secrets.GITEE_TOKEN }}" \
@@ -50,7 +53,8 @@ jobs:
       - name: Push main branch to Gitee
         run: |
           git remote add gitee "https://mosetian:${{ secrets.GITEE_TOKEN }}@gitee.com/mosetian/shu-ji-new.git"
-          git push gitee main:main
+          # Try pushing to main first, fall back to master
+          git push gitee main:main 2>/dev/null || git push gitee main:master
           echo "Main branch pushed"
 
       - name: Download release APK
