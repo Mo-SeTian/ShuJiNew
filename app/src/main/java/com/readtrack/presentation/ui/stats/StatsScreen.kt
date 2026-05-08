@@ -213,47 +213,20 @@ fun StatsScreen(
                     )
                 }
 
-                // Recent Records
+                // 查看全部按钮
                 item {
-                    Column {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "最近阅读记录",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                            TextButton(onClick = onReadingHistoryClick) {
-                                Text("查看全部")
-                                Icon(
-                                    imageVector = Icons.Default.KeyboardArrowRight,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                        }
+                    OutlinedButton(
+                        onClick = onReadingHistoryClick,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("查看全部阅读记录")
+                        Icon(
+                            imageVector = Icons.Default.KeyboardArrowRight,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
                     }
-                }
-
-                if (uiState.recentRecordsWithBooks.isEmpty()) {
-                    item {
-                        EmptyRecordsCard()
-                    }
-                } else {
-                    items(
-                        items = uiState.recentRecordsWithBooks,
-                        key = { it.record.id }
-                    ) { recordWithBook ->
-                        ReadingRecordItem(recordWithBook = recordWithBook)
-                    }
-                }
-                
-                // Bottom spacing
-                item {
-                    Spacer(modifier = Modifier.height(16.dp))
                 }
             }
         }
