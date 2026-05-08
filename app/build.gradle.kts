@@ -120,9 +120,10 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 
-    // 友盟统计 — 用户行为分析
+    // 友盟统计 — 用户行为分析（含闪退上报）
     implementation("com.umeng.umsdk:common:9.9.1")
     implementation("com.umeng.umsdk:asms:1.8.7.2")
+    implementation("com.umeng.umsdk:apm:2.0.8")
     
     // Testing
     testImplementation("junit:junit:4.13.2")
