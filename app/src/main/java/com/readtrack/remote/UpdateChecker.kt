@@ -66,6 +66,7 @@ object UpdateChecker {
         val downloadUrl = release.attachFiles.firstOrNull { it.name.endsWith(".apk") }?.downloadUrl
             ?: release.assets.firstOrNull { it.name.endsWith(".apk") }?.downloadUrl
             ?: release.htmlUrl
+            ?: "https://gitee.com/mosetian/ShuJiNew/releases"
 
         return UpdateResult(
             hasUpdate = hasUpdate,
@@ -73,7 +74,7 @@ object UpdateChecker {
             currentVersion = BuildConfig.VERSION_NAME,
             releaseNotes = release.body ?: "",
             downloadUrl = downloadUrl,
-            releasePageUrl = release.htmlUrl
+            releasePageUrl = release.htmlUrl ?: "https://gitee.com/mosetian/ShuJiNew/releases"
         )
     }
 
