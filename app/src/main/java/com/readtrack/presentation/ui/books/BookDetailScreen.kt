@@ -5,6 +5,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -12,6 +14,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.PlayArrow
@@ -52,8 +55,9 @@ import com.readtrack.presentation.ui.theme.AbandonedRed
 import com.readtrack.presentation.ui.theme.FinishedBlue
 import com.readtrack.presentation.ui.theme.ReadingOrange
 import com.readtrack.presentation.ui.theme.WantToReadGreen
+import com.readtrack.data.local.entity.TagEntity
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun BookDetailScreen(
     bookId: Long,
@@ -66,6 +70,7 @@ fun BookDetailScreen(
     var showAddRecordDialog by remember { mutableStateOf(false) }
     var showEditRecordDialog by remember { mutableStateOf(false) }
     var showAddToBookListDialog by remember { mutableStateOf(false) }
+    var showAddTagDialog by remember { mutableStateOf(false) }
     var recordToEdit by remember { mutableStateOf<ReadingRecordEntity?>(null) }
     var recordToDelete by remember { mutableStateOf<ReadingRecordEntity?>(null) }
 
@@ -138,6 +143,16 @@ fun BookDetailScreen(
                         RatingCard(
                             rating = book.rating,
                             onRatingChange = { viewModel.updateRating(it) }
+                        )
+                    }
+
+                    // 标签
+                    item {
+                        TagsCard(
+                            bookTags = uiState.tags,
+                            allTags = uiState.allTags,
+                            onRemoveTag = { viewModel.removeTag(it) },
+                            onAddTag = { showAddTagDialog = true }
                         )
                     }
                     
@@ -223,6 +238,17 @@ fun BookDetailScreen(
                 onDismiss = { showAddToBookListDialog = false }
             )
         }
+    }
+
+    // 添加标签弹窗
+    if (showAddTagDialog) {
+        AddTagDialog(
+            currentTags = uiState.tags,
+            allTags = uiState.allTags,
+            onDismiss = { showAddTagDialog = false },
+            onSelectTag = { tagId -> viewModel.addTag(tagId) },
+            onCreateAndAdd = { name -> viewModel.createTagAndAdd(name) }
+        )
     }
 
     // 删除书籍确认
@@ -915,6 +941,77 @@ private fun RatingCard(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun TagsCard(
+    bookTags: List<TagEntity>,
+    allTags: List<TagEntity>,
+    onRemoveTag: (Long) -> Unit,
+    onAddTag: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "标签",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                TextButton(onClick = onAddTag) {
+                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("添加标签")
+                }
+            }
+
+            if (bookTags.isEmpty()) {
+                Text(
+                    "暂无标签",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            } else {
+                Spacer(modifier = Modifier.height(8.dp))
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    bookTags.forEach { tag ->
+                        InputChip(
+                            selected = true,
+                            onClick = { },
+                            label = { Text(tag.name) },
+                            trailingIcon = {
+                                IconButton(
+                                    onClick = { onRemoveTag(tag.id) },
+                                    modifier = Modifier.size(18.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.Close,
+                                        contentDescription = "移除标签",
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                }
+                            },
+                            shape = RoundedCornerShape(20.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
 @Composable
 private fun ReadingRecordRow(
     record: ReadingRecordEntity,
@@ -1033,4 +1130,95 @@ private fun ReadingRecordRow(
             }
         }
     }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun AddTagDialog(
+    currentTags: List<TagEntity>,
+    allTags: List<TagEntity>,
+    onDismiss: () -> Unit,
+    onSelectTag: (Long) -> Unit,
+    onCreateAndAdd: (String) -> Unit
+) {
+    var newTagName by remember { mutableStateOf("") }
+    val currentTagIds = currentTags.map { it.id }.toSet()
+    // 可选的标签：还未添加到此书的标签
+    val availableTags = allTags.filter { it.id !in currentTagIds }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("添加标签", fontWeight = FontWeight.Bold) },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // 已有标签列表
+                if (availableTags.isNotEmpty()) {
+                    Text(
+                        "选择已有标签",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        availableTags.forEach { tag ->
+                            FilterChip(
+                                selected = false,
+                                onClick = {
+                                    onSelectTag(tag.id)
+                                    onDismiss()
+                                },
+                                label = { Text(tag.name) },
+                                shape = RoundedCornerShape(20.dp)
+                            )
+                        }
+                    }
+                }
+
+                // 创建新标签
+                HorizontalDivider()
+                Text(
+                    "创建新标签",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedTextField(
+                        value = newTagName,
+                        onValueChange = { newTagName = it },
+                        placeholder = { Text("新标签名称") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    FilledTonalButton(
+                        onClick = {
+                            if (newTagName.isNotBlank()) {
+                                onCreateAndAdd(newTagName.trim())
+                                newTagName = ""
+                                onDismiss()
+                            }
+                        },
+                        enabled = newTagName.isNotBlank()
+                    ) {
+                        Text("创建")
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("关闭")
+            }
+        }
+    )
 }

@@ -3,12 +3,14 @@ package com.readtrack.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.readtrack.data.local.entity.BookEntity
+import com.readtrack.data.local.entity.TagEntity
 import com.readtrack.domain.model.BookSnapshot
 import com.readtrack.data.local.entity.ReadingRecordEntity
 import com.readtrack.data.local.entity.RecordType
 import com.readtrack.domain.model.BookStatus
 import com.readtrack.domain.model.ProgressType
 import com.readtrack.domain.repository.BookRepository
+import com.readtrack.domain.repository.TagRepository
 import com.readtrack.util.PerformanceTrace
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -18,6 +20,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -33,13 +36,16 @@ data class BooksUiState(
     val searchQuery: String = "",
     val sortOrder: BookSortOrder = BookSortOrder.default(),
     val isLoading: Boolean = true,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val allTags: List<TagEntity> = emptyList(),
+    val selectedTagId: Long? = null
 )
 
 @OptIn(FlowPreview::class)
 @HiltViewModel
 class BooksViewModel @Inject constructor(
-    private val bookRepository: BookRepository
+    private val bookRepository: BookRepository,
+    private val tagRepository: TagRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(BooksUiState())
@@ -48,38 +54,56 @@ class BooksViewModel @Inject constructor(
     private val selectedStatusFlow = MutableStateFlow<BookStatus?>(null)
     private val searchQueryFlow = MutableStateFlow("")
     private val sortOrderFlow = MutableStateFlow(BookSortOrder.default())
+    private val selectedTagIdFlow = MutableStateFlow<Long?>(null)
+    private val taggedBookIdsFlow = MutableStateFlow<Set<Long>>(emptySet())
 
     init {
         loadBooks()
+        loadTags()
     }
 
     private fun loadBooks() {
         viewModelScope.launch {
-            combine(
+            // 第一组：5个flow
+            val firstCombine = combine(
                 bookRepository.getAllBooks().distinctUntilChanged(),
                 selectedStatusFlow,
                 searchQueryFlow
                     .debounce(250)
                     .distinctUntilChanged(),
-                sortOrderFlow
-            ) { books, selectedStatus, rawQuery, sortOrder ->
+                sortOrderFlow,
+                selectedTagIdFlow
+            ) { books, selectedStatus, rawQuery, sortOrder, selectedTagId ->
+                FirstCombineResult(books, selectedStatus, rawQuery, sortOrder, selectedTagId)
+            }
+            // 第二组：与第6个flow合并
+            combine(
+                firstCombine,
+                taggedBookIdsFlow
+            ) { first: FirstCombineResult, taggedBookIds: Set<Long> ->
                 PerformanceTrace.measure("books.filter") {
-                    val filteredBooks = filterBooks(
+                    var filteredBooks = filterBooks(
                         BooksFilterInput(
-                            books = books,
-                            status = selectedStatus,
-                            query = rawQuery,
-                            sortOrder = sortOrder
+                            books = first.books,
+                            status = first.selectedStatus,
+                            query = first.rawQuery,
+                            sortOrder = first.sortOrder
                         )
                     )
+                    // 按标签筛选：只显示包含所选标签的书籍
+                    if (first.selectedTagId != null) {
+                        filteredBooks = filteredBooks.filter { it.id in taggedBookIds }
+                    }
                     BooksUiState(
-                        books = books,
+                        books = first.books,
                         filteredBooks = filteredBooks,
-                        selectedStatus = selectedStatus,
-                        searchQuery = rawQuery,
-                        sortOrder = sortOrder,
+                        selectedStatus = first.selectedStatus,
+                        searchQuery = first.rawQuery,
+                        sortOrder = first.sortOrder,
                         isLoading = false,
-                        errorMessage = null
+                        errorMessage = null,
+                        allTags = _uiState.value.allTags,
+                        selectedTagId = first.selectedTagId
                     )
                 }
             }
@@ -99,6 +123,22 @@ class BooksViewModel @Inject constructor(
         }
     }
 
+    private data class FirstCombineResult(
+        val books: List<BookEntity>,
+        val selectedStatus: BookStatus?,
+        val rawQuery: String,
+        val sortOrder: BookSortOrder,
+        val selectedTagId: Long?
+    )
+
+    private fun loadTags() {
+        viewModelScope.launch {
+            tagRepository.getAllTags().collect { tags ->
+                _uiState.update { it.copy(allTags = tags) }
+            }
+        }
+    }
+
     fun setStatusFilter(status: BookStatus?) {
         selectedStatusFlow.value = status
         _uiState.update { it.copy(selectedStatus = status) }
@@ -113,6 +153,19 @@ class BooksViewModel @Inject constructor(
     fun setSortOrder(sortOrder: BookSortOrder) {
         sortOrderFlow.value = sortOrder
         _uiState.update { it.copy(sortOrder = sortOrder) }
+    }
+
+    fun setTagFilter(tagId: Long?) {
+        selectedTagIdFlow.value = tagId
+        _uiState.update { it.copy(selectedTagId = tagId) }
+        // 更新按标签筛选的书籍ID集合
+        viewModelScope.launch {
+            taggedBookIdsFlow.value = if (tagId != null) {
+                tagRepository.getBookIdsWithTag(tagId).first().toSet()
+            } else {
+                emptySet()
+            }
+        }
     }
 
     fun deleteBook(bookId: Long) {

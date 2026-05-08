@@ -246,6 +246,44 @@ fun BooksScreen(
                 }
             }
 
+            // Tag Filter Chips
+            if (uiState.allTags.isNotEmpty()) {
+                LazyRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    item(key = "tag-all") {
+                        FilterChip(
+                            selected = uiState.selectedTagId == null,
+                            onClick = { viewModel.setTagFilter(null) },
+                            label = { Text("全部标签") },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.secondary,
+                                selectedLabelColor = MaterialTheme.colorScheme.onSecondary
+                            ),
+                            shape = RoundedCornerShape(20.dp)
+                        )
+                    }
+                    items(
+                        items = uiState.allTags,
+                        key = { "tag-${it.id}" }
+                    ) { tag ->
+                        FilterChip(
+                            selected = uiState.selectedTagId == tag.id,
+                            onClick = { viewModel.setTagFilter(tag.id) },
+                            label = { Text(tag.name) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer
+                            ),
+                            shape = RoundedCornerShape(20.dp)
+                        )
+                    }
+                }
+            }
+
             Spacer(modifier = Modifier.height(8.dp))
 
             // Book List

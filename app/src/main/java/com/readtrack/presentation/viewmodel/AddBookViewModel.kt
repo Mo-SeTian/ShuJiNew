@@ -3,15 +3,22 @@ package com.readtrack.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.readtrack.data.local.PreferencesManager
+import com.readtrack.data.local.database.ReadTrackDatabase
 import com.readtrack.data.local.entity.BookEntity
+import com.readtrack.data.local.entity.ReadingRecordEntity
+import com.readtrack.data.local.entity.RecordType
+import com.readtrack.data.local.entity.TagEntity
+import androidx.room.withTransaction
 import com.readtrack.data.remote.BingImageResult
 import com.readtrack.data.remote.BingImageSearchService
 import com.readtrack.data.remote.BookSearchResult
 import com.readtrack.data.remote.DoubanSearchService
+import com.readtrack.domain.model.BookSnapshot
 import com.readtrack.domain.model.BookStatus
 import com.readtrack.domain.model.BookType
 import com.readtrack.domain.model.ProgressType
 import com.readtrack.domain.repository.BookRepository
+import com.readtrack.domain.repository.TagRepository
 import com.readtrack.util.CoverStorageUtil
 import com.readtrack.util.PerformanceTrace
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -59,12 +66,17 @@ data class AddBookUiState(
     val imageSearchPage: Int = 0,
     val hasMoreImages: Boolean = true,
     val imageSearchError: String? = null,
-    val selectedImageUrl: String? = null  // 长按预览时用的 URL
+    val selectedImageUrl: String? = null,  // 长按预览时用的 URL
+    // 标签相关
+    val selectedTagIds: Set<Long> = emptySet(),
+    val allTags: List<TagEntity> = emptyList()
 )
 
 @HiltViewModel
 class AddBookViewModel @Inject constructor(
     private val bookRepository: BookRepository,
+    private val tagRepository: TagRepository,
+    private val database: ReadTrackDatabase,
     private val doubanSearchService: DoubanSearchService,
     private val bingImageSearchService: BingImageSearchService,
     private val preferencesManager: PreferencesManager,
@@ -84,6 +96,12 @@ class AddBookViewModel @Inject constructor(
             val cookie = preferencesManager.doubanCookie.first()
             _uiState.update { it.copy(doubanCookie = cookie) }
         }
+        // 加载所有标签
+        viewModelScope.launch {
+            tagRepository.getAllTags().collect { tags ->
+                _uiState.update { it.copy(allTags = tags) }
+            }
+        }
     }
 
     fun loadBook(bookId: Long) {
@@ -92,6 +110,9 @@ class AddBookViewModel @Inject constructor(
                 bookRepository.getBookById(bookId).collect { book ->
                     book?.let {
                         loadedBook = it
+                        // 加载书籍的标签
+                        val bookTags = tagRepository.getTagsForBookOnce(bookId)
+                        val tagIds = bookTags.map { it.id }.toSet()
                         _uiState.update { state ->
                             state.copy(
                                 title = it.title,
@@ -107,7 +128,8 @@ class AddBookViewModel @Inject constructor(
                                 bookType = it.bookType,
                                 status = it.status,
                                 isEditing = true,
-                                editingBookId = bookId
+                                editingBookId = bookId,
+                                selectedTagIds = tagIds
                             )
                         }
                     }
@@ -130,6 +152,25 @@ class AddBookViewModel @Inject constructor(
     fun updateCoverUri(uri: String?) = _uiState.update { it.copy(coverUri = uri) }
     fun updateStatus(status: BookStatus) = _uiState.update { it.copy(status = status) }
     fun updateBookType(bookType: BookType) = _uiState.update { it.copy(bookType = bookType) }
+
+    fun toggleTag(tagId: Long) {
+        _uiState.update { state ->
+            val newTags = if (tagId in state.selectedTagIds) {
+                state.selectedTagIds - tagId
+            } else {
+                state.selectedTagIds + tagId
+            }
+            state.copy(selectedTagIds = newTags)
+        }
+    }
+
+    suspend fun createTagAndSelect(name: String): Long {
+        val tagId = tagRepository.createTag(name.trim())
+        _uiState.update { state ->
+            state.copy(selectedTagIds = state.selectedTagIds + tagId)
+        }
+        return tagId
+    }
 
     fun showSearchDialog() {
         searchJob?.cancel()
@@ -392,6 +433,7 @@ class AddBookViewModel @Inject constructor(
                 val now = System.currentTimeMillis()
                 // 将 content:// 等临时 URI 持久化到内部存储
                 val persistedCoverPath = coverStorageUtil.persistCover(state.coverUri)
+                val bookId: Long
                 if (state.isEditing && loadedBook != null) {
                     val updatedBook = loadedBook!!.copy(
                         title = state.title,
@@ -409,6 +451,7 @@ class AddBookViewModel @Inject constructor(
                         updatedAt = now
                     )
                     bookRepository.updateBook(updatedBook)
+                    bookId = loadedBook!!.id
                 } else {
                     val newBook = BookEntity(
                         title = state.title,
@@ -427,8 +470,25 @@ class AddBookViewModel @Inject constructor(
                         updatedAt = now,
                         lastReadAt = null
                     )
-                    bookRepository.insertBookWithStatus(newBook)
+                    // 插入书籍并记录状态，用事务保证原子性
+                    bookId = database.withTransaction {
+                        val id = database.bookDao().insertBook(newBook)
+                        val snapshot = BookSnapshot.from(newBook, newBook.status)
+                        val statusRecord = ReadingRecordEntity(
+                            bookId = id,
+                            bookSnapshot = snapshot,
+                            pagesRead = 0.0,
+                            fromPage = 0.0,
+                            toPage = 0.0,
+                            date = now,
+                            recordType = RecordType.STATUS_ADDED
+                        )
+                        database.readingRecordDao().insertRecord(statusRecord)
+                        id
+                    }
                 }
+                // 保存标签
+                tagRepository.setTagsForBook(bookId, state.selectedTagIds.toList())
                 _uiState.update { it.copy(isSaving = false, isSaved = true) }
             } catch (e: Exception) {
                 _uiState.update { it.copy(isSaving = false, errorMessage = "保存失败: ${e.message}") }
@@ -437,9 +497,12 @@ class AddBookViewModel @Inject constructor(
     }
     
     fun clearError() = _uiState.update { it.copy(errorMessage = null) }
-    
+
     fun resetState() {
         loadedBook = null
-        _uiState.value = AddBookUiState()
+        _uiState.update { it.copy(
+            selectedTagIds = emptySet(),
+            allTags = it.allTags  // 保持 allTags 不变
+        ) }
     }
 }
