@@ -23,7 +23,8 @@ jobs:
       - name: Checkout repo for sync
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 0
+          filter: blob:none
 
       - name: Push main branch to Gitee
         run: |
