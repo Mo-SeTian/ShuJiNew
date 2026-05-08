@@ -15,6 +15,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.core.view.WindowCompat
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.readtrack.data.local.PreferencesManager
 import com.readtrack.presentation.ui.MainNavigation
 import com.readtrack.presentation.ui.settings.UpdateDialog
@@ -29,11 +30,6 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var preferencesManager: PreferencesManager
 
-    @Inject
-    lateinit var settingsViewModel: SettingsViewModel
-
-    private var hasCheckedUpdateOnResume = false
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -41,9 +37,14 @@ class MainActivity : ComponentActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
         setContent {
+            val settingsViewModel: SettingsViewModel = hiltViewModel()
             val themeMode by preferencesManager.themeMode.collectAsState(initial = com.readtrack.data.local.ThemeMode.SYSTEM)
             val uiState by settingsViewModel.uiState.collectAsState()
             var showUpdateDialog by remember { mutableStateOf(false) }
+
+            LaunchedEffect(Unit) {
+                settingsViewModel.checkForUpdate()
+            }
 
             LaunchedEffect(uiState.updateResult) {
                 if (uiState.updateResult != null && uiState.updateResult!!.hasUpdate) {
@@ -76,14 +77,6 @@ class MainActivity : ComponentActivity() {
                     MainNavigation()
                 }
             }
-        }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        if (!hasCheckedUpdateOnResume) {
-            settingsViewModel.checkForUpdate()
-            hasCheckedUpdateOnResume = true
         }
     }
 }
