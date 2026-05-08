@@ -13,7 +13,7 @@
 | 渠道 | 地址 |
 |------|------|
 | GitHub Releases | [最新版本](https://github.com/Mo-SeTian/ShuJiNew/releases/latest) |
-| Gitee Releases（国内镜像） | [最新版本](https://gitee.com/mosetian/shu-ji-new/releases) |
+| Gitee Releases（国内镜像） | [最新版本](https://gitee.com/mosetian/ShuJiNew/releases) |
 
 ## 功能特性
 
