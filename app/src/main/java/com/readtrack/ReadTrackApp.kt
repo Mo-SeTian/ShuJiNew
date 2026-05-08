@@ -12,8 +12,6 @@ import coil.memory.MemoryCache
 import coil.request.CachePolicy
 import com.umeng.analytics.MobclickAgent
 import com.umeng.commonsdk.UMConfigure
-import com.umeng.umcrash.UMCrash
-import com.umeng.umcrash.UMCrashCallback
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
 
@@ -28,50 +26,50 @@ class ReadTrackApp : Application(), ImageLoaderFactory, Configuration.Provider {
             .setWorkerFactory(workerFactory)
             .build()
 
-    override fun attachBaseContext(base: android.content.Context?) {
-        super.attachBaseContext(base)
-        UMConfigure.preInit(this, "__UMENG_APP_KEY__", "official")
-    }
-
     override fun onCreate() {
         super.onCreate()
 
-        initUmeng()
-        registerActivityLifecycleCallbacks(UmengSessionTracker())
+        try {
+            initUmeng()
+        } catch (e: Exception) {
+            android.util.Log.e("ReadTrack", "友盟初始化失败", e)
+        }
+
+        try {
+            registerActivityLifecycleCallbacks(UmengSessionTracker())
+        } catch (e: Exception) {
+            android.util.Log.e("ReadTrack", "友盟会话追踪注册失败", e)
+        }
     }
 
     private fun initUmeng() {
-        try {
-            UMConfigure.init(
-                this,
-                "__UMENG_APP_KEY__",
-                "official",
-                UMConfigure.DEVICE_TYPE_PHONE,
-                ""
-            )
-            UMConfigure.setLogEnabled(true)
-            MobclickAgent.setPageCollectionMode(MobclickAgent.PageMode.AUTO)
+        UMConfigure.preInit(this, "__UMENG_APP_KEY__", "official")
+        UMConfigure.init(
+            this,
+            "__UMENG_APP_KEY__",
+            "official",
+            UMConfigure.DEVICE_TYPE_PHONE,
+            ""
+        )
+        UMConfigure.setLogEnabled(true)
+        MobclickAgent.setPageCollectionMode(MobclickAgent.PageMode.AUTO)
 
-            UMCrash.registerUMCrashCallback(UMCrashCallback {
-                android.util.Log.e("ReadTrack", "闪退回调触发")
-                ""
-            })
-
-            android.util.Log.i("ReadTrack", "友盟统计初始化完成（含闪退上报）")
-        } catch (e: Exception) {
-            android.util.Log.e("ReadTrack", "友盟统计初始化失败", e)
-        }
+        android.util.Log.i("ReadTrack", "友盟统计初始化完成")
     }
 
     private var activityRefCount = 0
 
     private inner class UmengSessionTracker : ActivityLifecycleCallbacks {
         override fun onActivityResumed(activity: Activity) {
-            MobclickAgent.onResume(activity)
+            try {
+                MobclickAgent.onResume(activity)
+            } catch (_: Exception) {}
         }
 
         override fun onActivityPaused(activity: Activity) {
-            MobclickAgent.onPause(activity)
+            try {
+                MobclickAgent.onPause(activity)
+            } catch (_: Exception) {}
         }
 
         override fun onActivityStarted(activity: Activity) {
@@ -80,10 +78,6 @@ class ReadTrackApp : Application(), ImageLoaderFactory, Configuration.Provider {
 
         override fun onActivityStopped(activity: Activity) {
             activityRefCount--
-            if (activityRefCount <= 0) {
-                MobclickAgent.onKillProcess(activity)
-                android.util.Log.i("ReadTrack", "App 进入后台，session 已保存")
-            }
         }
 
         override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {}
