@@ -73,6 +73,11 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import com.readtrack.presentation.ui.theme.AbandonedRed
+import com.readtrack.presentation.ui.theme.FinishedBlue
+import com.readtrack.presentation.ui.theme.OnHoldGray
+import com.readtrack.presentation.ui.theme.ReadingOrange
+import com.readtrack.presentation.ui.theme.WantToReadGreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -418,17 +423,17 @@ private fun TimelineRecordItem(
     }
     val statusColor: Color = when (record.recordType) {
         RecordType.STATUS_ADDED -> when (snapshot?.status) {
-            BookStatus.WANT_TO_READ -> Color(0xFF4CAF50)
-            BookStatus.READING -> Color(0xFFFF9800)
-            BookStatus.FINISHED -> Color(0xFF2196F3)
-            BookStatus.ON_HOLD -> Color(0xFF9E9E9E)
-            BookStatus.ABANDONED -> Color(0xFFF44336)
-            else -> Color(0xFF9E9E9E)
+            BookStatus.WANT_TO_READ -> WantToReadGreen
+            BookStatus.READING -> ReadingOrange
+            BookStatus.FINISHED -> FinishedBlue
+            BookStatus.ON_HOLD -> OnHoldGray
+            BookStatus.ABANDONED -> AbandonedRed
+            else -> OnHoldGray
         }
-        RecordType.STATUS_READING -> Color(0xFFFF9800)
-        RecordType.STATUS_FINISHED -> Color(0xFF2196F3)
-        RecordType.STATUS_DROPPED -> Color(0xFFF44336)
-        else -> Color(0xFF2196F3)
+        RecordType.STATUS_READING -> ReadingOrange
+        RecordType.STATUS_FINISHED -> FinishedBlue
+        RecordType.STATUS_DROPPED -> AbandonedRed
+        else -> FinishedBlue
     }
     val statusIcon = when (record.recordType) {
         RecordType.STATUS_ADDED -> Icons.Default.Add
