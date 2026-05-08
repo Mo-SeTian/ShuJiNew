@@ -14,7 +14,6 @@ import androidx.core.view.WindowCompat
 import com.readtrack.data.local.PreferencesManager
 import com.readtrack.presentation.ui.MainNavigation
 import com.readtrack.presentation.ui.theme.ReadTrackTheme
-import com.umeng.analytics.MobclickAgent
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -42,15 +41,5 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        MobclickAgent.onResume(this)
-    }
-
-    override fun onPause() {
-        super.onPause()
-        MobclickAgent.onPause(this)
     }
 }
