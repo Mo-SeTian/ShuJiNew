@@ -53,8 +53,8 @@ jobs:
       - name: Push main branch to Gitee
         run: |
           git remote add gitee "https://mosetian:${{ secrets.GITEE_TOKEN }}@gitee.com/mosetian/shu-ji-new.git"
-          # Try pushing to main first, fall back to master
-          git push gitee main:main 2>/dev/null || git push gitee main:master
+          # Force push main to master (Gitee master may have diverged with README commit)
+          git push gitee main:master --force
           echo "Main branch pushed"
 
       - name: Download release APK
@@ -99,7 +99,7 @@ jobs:
             RESPONSE=$(curl -s -X POST \
               "https://gitee.com/api/v5/repos/mosetian/shu-ji-new/releases?access_token=${{ secrets.GITEE_TOKEN }}" \
               -H "Content-Type: application/json" \
-              -d "{\"tag_name\":\"${TAG_NAME}\",\"name\":\"书迹 ${TAG_NAME}\",\"body\":\"${BODY_URL}\",\"target_commitish\":\"${TAG_NAME}\"}")
+              -d "{\"tag_name\":\"${TAG_NAME}\",\"name\":\"书迹 ${TAG_NAME}\",\"body\":\"${BODY_URL}\",\"target_commitish\":\"master\"}")
             echo "Gitee create response: $RESPONSE"
             RELEASE_ID=$(echo "$RESPONSE" | jq -r '.id')
             echo "RELEASE_ID=$RELEASE_ID" >> $GITHUB_ENV
