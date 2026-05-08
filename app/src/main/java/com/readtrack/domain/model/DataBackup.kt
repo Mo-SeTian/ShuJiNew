@@ -45,13 +45,37 @@ data class PreferencesExport(
  */
 @Serializable
 data class DataBackup(
-    val version: Int = 4,
+    val version: Int = 5,
     val exportTime: Long = System.currentTimeMillis(),
     val appVersion: String = BuildConfig.VERSION_NAME,
     val books: List<BookExport> = emptyList(),
     val readingRecords: List<ReadingRecordExport> = emptyList(),
     val bookLists: List<BookListExport> = emptyList(),
-    val preferences: PreferencesExport? = null   // 用户设置（可空，兼容旧版本）
+    val preferences: PreferencesExport? = null,  // 用户设置（可空，兼容旧版本）
+    /** 标签列表（v5+）*/
+    val tags: List<TagExport> = emptyList(),
+    /** 书籍-标签关联（v5+），tagId 为标签名，bookId 为书籍导入标识键 */
+    val bookTags: List<BookTagExport> = emptyList()
+)
+
+/**
+ * 标签导出模型（v5+）
+ */
+@Serializable
+data class TagExport(
+    val name: String,
+    val color: Long? = null
+)
+
+/**
+ * 书籍-标签关联导出模型（v5+）
+ */
+@Serializable
+data class BookTagExport(
+    /** 书籍标识键，与 BookExport.importIdentityKey 相同 */
+    val bookImportKey: String,
+    /** 标签名，与 TagExport.name 对应 */
+    val tagName: String
 )
 
 /**

@@ -5,6 +5,7 @@ import com.readtrack.data.local.PreferencesManager
 import com.readtrack.data.local.dao.BookDao
 import com.readtrack.data.local.dao.BookListDao
 import com.readtrack.data.local.dao.ReadingRecordDao
+import com.readtrack.data.local.dao.TagDao
 import com.readtrack.data.local.database.ReadTrackDatabase
 import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.data.local.entity.BookListCrossRef
@@ -14,12 +15,15 @@ import com.readtrack.data.local.entity.RecordType
 import com.readtrack.domain.model.BookExport
 import com.readtrack.domain.model.BookListExport
 import com.readtrack.domain.model.BookSnapshot
+import com.readtrack.domain.model.BookTagExport
 import com.readtrack.domain.model.DataBackup
 import com.readtrack.domain.model.ImportPreview
 import com.readtrack.domain.model.ImportResult
 import com.readtrack.domain.model.ReadingRecordExport
+import com.readtrack.domain.model.TagExport
 import com.readtrack.domain.model.buildImportPreview
 import com.readtrack.domain.repository.DataBackupRepository
+import com.readtrack.domain.repository.TagRepository
 import com.readtrack.util.CoverStorageUtil
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
@@ -37,7 +41,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /** 当前备份格式版本，导入低版本时执行迁移 */
-private const val CURRENT_BACKUP_VERSION = 4
+private const val CURRENT_BACKUP_VERSION = 5
 
 @Singleton
 class DataBackupRepositoryImpl @Inject constructor(
@@ -46,8 +50,10 @@ class DataBackupRepositoryImpl @Inject constructor(
     private val bookDao: BookDao,
     private val recordDao: ReadingRecordDao,
     private val bookListDao: BookListDao,
+    private val tagDao: TagDao,
     private val preferencesManager: PreferencesManager,
-    private val coverStorageUtil: CoverStorageUtil
+    private val coverStorageUtil: CoverStorageUtil,
+    private val tagRepository: TagRepository
 ) : DataBackupRepository {
 
     private val json = Json {
@@ -92,6 +98,19 @@ class DataBackupRepositoryImpl @Inject constructor(
                 )
             }
 
+            // 导出标签（v5+）
+            val allTags = tagDao.getAllTags().first()
+            val tagExports = allTags.map { TagExport(name = it.name, color = it.color) }
+
+            // 导出书籍-标签关联
+            val bookTagExports = mutableListOf<BookTagExport>()
+            for (book in books) {
+                val tagsForBook = tagDao.getTagsForBookOnce(book.id)
+                for (tag in tagsForBook) {
+                    bookTagExports.add(BookTagExport(bookImportKey = importIdentityKey(book), tagName = tag.name))
+                }
+            }
+
             // 导出用户设置
             val preferences = preferencesManager.exportPreferences()
 
@@ -99,7 +118,9 @@ class DataBackupRepositoryImpl @Inject constructor(
                 books = bookExports,
                 readingRecords = records,
                 bookLists = bookListExports,
-                preferences = preferences
+                preferences = preferences,
+                tags = tagExports,
+                bookTags = bookTagExports
             )
 
             Result.success(backup)
@@ -226,6 +247,28 @@ class DataBackupRepositoryImpl @Inject constructor(
                     booksImported++
                 } catch (e: Exception) {
                     errors.add("导入书籍《${bookExport.title}》失败: ${e.message}")
+                }
+            }
+
+            // 阶段 2.5（v5+）：导入标签和书籍-标签关联
+            val importedTagNameToId = mutableMapOf<String, Long>()
+            for (tagExport in migrated.tags) {
+                try {
+                    val tagId = tagRepository.createTag(tagExport.name, tagExport.color)
+                    importedTagNameToId[tagExport.name] = tagId
+                } catch (e: Exception) {
+                    errors.add("导入标签「${tagExport.name}」失败: ${e.message}")
+                }
+            }
+            for (bookTagExport in migrated.bookTags) {
+                try {
+                    val tagId = importedTagNameToId[bookTagExport.tagName] ?: continue
+                    val matchedBook = oldIdToNewBook.values.find {
+                        importIdentityKey(it) == bookTagExport.bookImportKey
+                    } ?: continue
+                    tagRepository.addTagToBook(tagId, matchedBook.id)
+                } catch (e: Exception) {
+                    errors.add("导入书籍标签关联失败: ${e.message}")
                 }
             }
 
@@ -455,7 +498,9 @@ class DataBackupRepositoryImpl @Inject constructor(
             books = fixedBooks,
             readingRecords = backup.readingRecords,
             bookLists = fixedBookLists,
-            preferences = backup.preferences
+            preferences = backup.preferences,
+            tags = backup.tags,
+            bookTags = backup.bookTags
         )
     }
 
@@ -495,6 +540,9 @@ class DataBackupRepositoryImpl @Inject constructor(
         }
         if (current.version < 4) {
             // v4: ReadingRecordExport 添加 bookSnapshot 字段
+        }
+        if (current.version < 5) {
+            // v5: 添加 tags 和 bookTags 字段（使用默认值即可，标签可选）
         }
         // 确保版本号更新到当前版本，后续导入不再重复迁移
         if (current.version < CURRENT_BACKUP_VERSION) {

@@ -5,12 +5,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.data.local.entity.ReadingRecordEntity
+import com.readtrack.data.local.entity.TagEntity
 import com.readtrack.data.local.entity.RecordType
 import com.readtrack.domain.model.BookSnapshot
 import com.readtrack.domain.model.BookStatus
 import com.readtrack.domain.model.ProgressType
 import com.readtrack.domain.repository.BookRepository
 import com.readtrack.domain.repository.ReadingRecordRepository
+import com.readtrack.domain.repository.TagRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -25,7 +27,11 @@ data class BookDetailUiState(
     val isLoading: Boolean = true,
     val errorMessage: String? = null,
     /** 阅读趋势数据：按日期累计阅读量（排除状态变更记录） */
-    val trendData: List<TrendPoint> = emptyList()
+    val trendData: List<TrendPoint> = emptyList(),
+    /** 当前书籍的标签 */
+    val tags: List<TagEntity> = emptyList(),
+    /** 所有可选标签 */
+    val allTags: List<TagEntity> = emptyList()
 ) {
     val recentRecords: List<ReadingRecordEntity>
         get() = readingRecords.sortedByDescending { it.date }.take(10)
@@ -42,6 +48,7 @@ data class TrendPoint(
 class BookDetailViewModel @Inject constructor(
     private val bookRepository: BookRepository,
     private val recordRepository: ReadingRecordRepository,
+    private val tagRepository: TagRepository,
     private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -55,6 +62,7 @@ class BookDetailViewModel @Inject constructor(
 
     init {
         loadBookDetail()
+        loadTags()
     }
 
     private fun loadBookDetail() {
@@ -69,7 +77,9 @@ class BookDetailViewModel @Inject constructor(
                         book = book,
                         readingRecords = records,
                         isLoading = false,
-                        trendData = trendData
+                        trendData = trendData,
+                        tags = _uiState.value.tags,
+                        allTags = _uiState.value.allTags
                     )
                 }.collect { state ->
                     _uiState.value = state
@@ -77,6 +87,38 @@ class BookDetailViewModel @Inject constructor(
             } catch (e: Exception) {
                 _uiState.value = BookDetailUiState(isLoading = false, errorMessage = e.message)
             }
+        }
+    }
+
+    private fun loadTags() {
+        viewModelScope.launch {
+            tagRepository.getTagsForBook(bookId).collect { tags ->
+                _uiState.update { it.copy(tags = tags) }
+            }
+        }
+        viewModelScope.launch {
+            tagRepository.getAllTags().collect { allTags ->
+                _uiState.update { it.copy(allTags = allTags) }
+            }
+        }
+    }
+
+    fun addTag(tagId: Long) {
+        viewModelScope.launch {
+            tagRepository.addTagToBook(tagId, bookId)
+        }
+    }
+
+    fun removeTag(tagId: Long) {
+        viewModelScope.launch {
+            tagRepository.removeTagFromBook(tagId, bookId)
+        }
+    }
+
+    fun createTagAndAdd(name: String) {
+        viewModelScope.launch {
+            val tagId = tagRepository.createTag(name.trim())
+            tagRepository.addTagToBook(tagId, bookId)
         }
     }
 

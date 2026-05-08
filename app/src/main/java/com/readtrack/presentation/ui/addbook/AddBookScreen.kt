@@ -526,6 +526,30 @@ fun AddBookScreen(
                 }
             }
 
+            // Tag Selection
+            if (uiState.allTags.isNotEmpty()) {
+                Text(
+                    "标签（可选）",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    uiState.allTags.forEach { tag ->
+                        FilterChip(
+                            selected = tag.id in uiState.selectedTagIds,
+                            onClick = { viewModel.toggleTag(tag.id) },
+                            label = { Text(tag.name, style = MaterialTheme.typography.labelMedium) },
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                    }
+                }
+            }
+
             // Book Status Selection
             Text(
                 "书籍状态",
