@@ -40,6 +40,8 @@ class ReadTrackApp : Application(), ImageLoaderFactory, Configuration.Provider {
         } catch (e: Exception) {
             android.util.Log.e("ReadTrack", "友盟会话追踪注册失败", e)
         }
+
+        Thread.setDefaultUncaughtExceptionHandler(CrashHandler())
     }
 
     private fun initUmeng() {
@@ -54,7 +56,23 @@ class ReadTrackApp : Application(), ImageLoaderFactory, Configuration.Provider {
         UMConfigure.setLogEnabled(true)
         MobclickAgent.setPageCollectionMode(MobclickAgent.PageMode.AUTO)
 
-        android.util.Log.i("ReadTrack", "友盟统计初始化完成")
+        android.util.Log.i("ReadTrack", "友盟统计初始化完成（渠道=official, 自动采集版本/留存）")
+    }
+
+    private inner class CrashHandler : Thread.UncaughtExceptionHandler {
+        private val previous = Thread.getDefaultUncaughtExceptionHandler()
+
+        override fun uncaughtException(thread: Thread, throwable: Throwable) {
+            try {
+                android.util.Log.e("ReadTrack", "未捕获异常", throwable)
+                MobclickAgent.reportError(this@ReadTrackApp, throwable)
+                // 给 1 秒时间让 SDK 异步发送错误报告
+                Thread.sleep(1000)
+            } catch (_: Exception) {
+            } finally {
+                previous?.uncaughtException(thread, throwable)
+            }
+        }
     }
 
     private var activityRefCount = 0
