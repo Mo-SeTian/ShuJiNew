@@ -42,4 +42,7 @@ interface BookDao {
 
     @Query("DELETE FROM books")
     suspend fun deleteAllBooks()
+
+    @Query("SELECT * FROM books WHERE status = 'READING' AND lastReadAt IS NOT NULL ORDER BY lastReadAt DESC LIMIT :limit")
+    suspend fun getRecentReadingBooks(limit: Int): List<BookEntity>
 }

@@ -61,9 +61,19 @@ sealed class Screen(
 }
 
 @Composable
-fun MainNavigation() {
+fun MainNavigation(
+    pendingBookId: Long? = null,
+    onPendingBookIdConsumed: () -> Unit = {}
+) {
     val navController = rememberNavController()
     val bottomNavItems = listOf(Screen.Home, Screen.Books, Screen.Stats, Screen.Settings)
+
+    LaunchedEffect(pendingBookId) {
+        if (pendingBookId != null) {
+            navController.navigate(Screen.BookDetail.createRoute(pendingBookId))
+            onPendingBookIdConsumed()
+        }
+    }
 
     Scaffold(
         bottomBar = {
