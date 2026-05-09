@@ -77,7 +77,7 @@ class WidgetUpdateHelper @Inject constructor(
         if (coverPath == null) return null
         return try {
             val options = BitmapFactory.Options().apply {
-                inSampleSize = 4
+                inSampleSize = 8
             }
             val source = BitmapFactory.decodeFile(coverPath, options) ?: return null
             val palette = Palette.from(source).generate()
@@ -99,10 +99,18 @@ class WidgetUpdateHelper @Inject constructor(
     private fun loadCoverThumbnail(coverPath: String?): Bitmap? {
         if (coverPath == null) return null
         return try {
-            val options = BitmapFactory.Options().apply {
-                inSampleSize = 4
-            }
-            BitmapFactory.decodeFile(coverPath, options)
+            val opts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeFile(coverPath, opts)
+            val maxDim = maxOf(opts.outWidth, opts.outHeight)
+            val targetDim = 240
+            opts.inJustDecodeBounds = false
+            opts.inSampleSize = (maxDim / targetDim).coerceIn(1, 16)
+            val decoded = BitmapFactory.decodeFile(coverPath, opts) ?: return null
+            val w = decoded.width
+            val h = decoded.height
+            val scale = minOf(targetDim.toFloat() / w, targetDim.toFloat() / h)
+            Bitmap.createScaledBitmap(decoded, (w * scale).toInt(), (h * scale).toInt(), true)
+                .also { if (it != decoded) decoded.recycle() }
         } catch (e: Exception) {
             null
         }
@@ -122,16 +130,12 @@ class WidgetUpdateHelper @Inject constructor(
         // 背景取色图
         if (bgBitmap != null) {
             views.setImageViewBitmap(R.id.widget_bg_image, bgBitmap)
-        } else {
-            views.setImageViewResource(R.id.widget_bg_image, R.drawable.widget_cover_placeholder)
         }
 
         if (book != null) {
             // 封面缩略图
             if (coverBitmap != null) {
                 views.setImageViewBitmap(R.id.widget_cover, coverBitmap)
-            } else {
-                views.setImageViewResource(R.id.widget_cover, R.drawable.widget_cover_placeholder)
             }
 
             views.setTextViewText(R.id.widget_book_title, book.title)
@@ -139,14 +143,14 @@ class WidgetUpdateHelper @Inject constructor(
             views.setTextViewText(R.id.widget_progress_text, "$progressPercent%")
             views.setProgressBar(R.id.widget_progress_bar, 100, progressPercent, false)
 
-            // 点击封面区域打开详情
+            // 点击封面/容器打开详情
             val detailIntent = Intent(context, MainActivity::class.java).apply {
                 action = MainActivity.ACTION_OPEN_BOOK_DETAIL
                 putExtra(MainActivity.EXTRA_BOOK_ID, book.id)
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }
             views.setOnClickPendingIntent(R.id.widget_cover,
-                PendingIntent.getActivity(context, appWidgetId, detailIntent,
+                PendingIntent.getActivity(context, appWidgetId + 5000, detailIntent,
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
             views.setOnClickPendingIntent(R.id.widget_container,
                 PendingIntent.getActivity(context, appWidgetId, detailIntent,
@@ -158,7 +162,6 @@ class WidgetUpdateHelper @Inject constructor(
                 PendingIntent.getActivity(context, appWidgetId + 1000, recordIntent,
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
         } else {
-            views.setImageViewResource(R.id.widget_cover, R.drawable.widget_cover_placeholder)
             views.setTextViewText(R.id.widget_book_title, "还没有正在读的书")
             views.setTextViewText(R.id.widget_progress_text, "")
             views.setProgressBar(R.id.widget_progress_bar, 100, 0, false)
@@ -166,14 +169,14 @@ class WidgetUpdateHelper @Inject constructor(
             val openIntent = Intent(context, MainActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK
             }
-            views.setOnClickPendingIntent(R.id.widget_cover,
-                PendingIntent.getActivity(context, appWidgetId, openIntent,
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
             views.setOnClickPendingIntent(R.id.widget_container,
                 PendingIntent.getActivity(context, appWidgetId, openIntent,
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
+            views.setOnClickPendingIntent(R.id.widget_cover,
+                PendingIntent.getActivity(context, appWidgetId + 5000, openIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
             views.setOnClickPendingIntent(R.id.widget_record_button,
-                PendingIntent.getActivity(context, appWidgetId, openIntent,
+                PendingIntent.getActivity(context, appWidgetId + 1000, openIntent,
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
         }
 
