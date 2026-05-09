@@ -102,12 +102,15 @@ class DataBackupRepositoryImpl @Inject constructor(
             val allTags = tagDao.getAllTags().first()
             val tagExports = allTags.map { TagExport(name = it.name, color = it.color) }
 
-            // 导出书籍-标签关联
-            val bookTagExports = mutableListOf<BookTagExport>()
-            for (book in books) {
-                val tagsForBook = tagDao.getTagsForBookOnce(book.id)
-                for (tag in tagsForBook) {
-                    bookTagExports.add(BookTagExport(bookImportKey = importIdentityKey(book), tagName = tag.name))
+            // 导出书籍-标签关联（批量查询替代逐书查询）
+            val bookKeyMap = books.associate { it.id to importIdentityKey(it) }
+            val crossRefs = tagDao.getAllBookTagCrossrefs()
+            val tagIdToName = allTags.associate { it.id to it.name }
+            val bookTagExports = crossRefs.mapNotNull { ref ->
+                bookKeyMap[ref.bookId]?.let { key ->
+                    tagIdToName[ref.tagId]?.let { name ->
+                        BookTagExport(bookImportKey = key, tagName = name)
+                    }
                 }
             }
 
@@ -260,13 +263,12 @@ class DataBackupRepositoryImpl @Inject constructor(
                     errors.add("导入标签「${tagExport.name}」失败: ${e.message}")
                 }
             }
+            val importKeyToBookId = oldIdToNewBook.values.associate { importIdentityKey(it) to it.id }
             for (bookTagExport in migrated.bookTags) {
                 try {
                     val tagId = importedTagNameToId[bookTagExport.tagName] ?: continue
-                    val matchedBook = oldIdToNewBook.values.find {
-                        importIdentityKey(it) == bookTagExport.bookImportKey
-                    } ?: continue
-                    tagRepository.addTagToBook(tagId, matchedBook.id)
+                    val bookId = importKeyToBookId[bookTagExport.bookImportKey] ?: continue
+                    tagRepository.addTagToBook(tagId, bookId)
                 } catch (e: Exception) {
                     errors.add("导入书籍标签关联失败: ${e.message}")
                 }

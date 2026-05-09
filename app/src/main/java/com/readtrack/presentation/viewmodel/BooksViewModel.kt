@@ -141,7 +141,6 @@ class BooksViewModel @Inject constructor(
 
     fun setStatusFilter(status: BookStatus?) {
         selectedStatusFlow.value = status
-        _uiState.update { it.copy(selectedStatus = status) }
     }
 
     fun setSearchQuery(query: String) {
@@ -157,8 +156,6 @@ class BooksViewModel @Inject constructor(
 
     fun setTagFilter(tagId: Long?) {
         selectedTagIdFlow.value = tagId
-        _uiState.update { it.copy(selectedTagId = tagId) }
-        // 更新按标签筛选的书籍ID集合
         viewModelScope.launch {
             taggedBookIdsFlow.value = if (tagId != null) {
                 tagRepository.getBookIdsWithTag(tagId).first().toSet()
