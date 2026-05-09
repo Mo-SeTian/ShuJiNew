@@ -2,21 +2,20 @@ package com.readtrack.presentation.ui.books
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CollectionsBookmark
 import androidx.compose.material.icons.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Sort
-import androidx.compose.material.icons.filled.LocalOffer
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -45,7 +44,8 @@ fun BooksScreen(
     var showSortMenu by remember { mutableStateOf(false) }
     var selectedBookIds by remember { mutableStateOf(setOf<Long>()) }
     var showAddToBookListDialog by remember { mutableStateOf(false) }
-    var showTagFilterSheet by remember { mutableStateOf(false) }
+    var showStatusDropdown by remember { mutableStateOf(false) }
+    var showTagDropdown by remember { mutableStateOf(false) }
 
     val isSelectionMode = selectedBookIds.isNotEmpty()
 
@@ -212,46 +212,102 @@ fun BooksScreen(
                 )
             )
 
-            // Filter Chips Row: Status + Tag
-            LazyRow(
+            // Filter Buttons: Status + Tag (dropdown multi-select)
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(
-                    items = BookStatus.entries,
-                    key = { it.name }
-                ) { status ->
+                // Status filter
+                Box {
+                    val statusCount = uiState.selectedStatuses.size
                     FilterChip(
-                        selected = status in uiState.selectedStatuses,
-                        onClick = { viewModel.toggleStatusFilter(status) },
-                        label = { Text(status.displayName) },
+                        selected = statusCount > 0,
+                        onClick = { showStatusDropdown = true },
+                        label = {
+                            Text(
+                                if (statusCount > 0) "状态($statusCount)"
+                                else "状态筛选"
+                            )
+                        },
+                        trailingIcon = {
+                            Icon(
+                                Icons.Default.KeyboardArrowDown,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = getStatusColor(status),
-                            selectedLabelColor = MaterialTheme.colorScheme.surface
+                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
                         ),
                         shape = RoundedCornerShape(20.dp)
                     )
+                    DropdownMenu(
+                        expanded = showStatusDropdown,
+                        onDismissRequest = { showStatusDropdown = false }
+                    ) {
+                        BookStatus.entries.forEach { status ->
+                            DropdownMenuItem(
+                                text = {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Checkbox(
+                                            checked = status in uiState.selectedStatuses,
+                                            onCheckedChange = null
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(status.displayName)
+                                    }
+                                },
+                                onClick = { viewModel.toggleStatusFilter(status) },
+                                leadingIcon = {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(12.dp)
+                                            .background(
+                                                getStatusColor(status),
+                                                RoundedCornerShape(3.dp)
+                                            )
+                                    )
+                                }
+                            )
+                        }
+                        if (statusCount > 0) {
+                            HorizontalDivider()
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        "清除状态筛选",
+                                        color = MaterialTheme.colorScheme.error
+                                    )
+                                },
+                                onClick = {
+                                    viewModel.clearStatusFilters()
+                                    showStatusDropdown = false
+                                }
+                            )
+                        }
+                    }
                 }
-                // Tag filter chip
-                item(key = "tag-filter") {
-                    val selectedTagCount = uiState.selectedTagIds.size
-                    val hasTagFilter = selectedTagCount > 0
+
+                // Tag filter
+                Box {
+                    val tagCount = uiState.selectedTagIds.size
                     FilterChip(
-                        selected = hasTagFilter,
-                        onClick = { showTagFilterSheet = true },
+                        selected = tagCount > 0,
+                        onClick = { showTagDropdown = true },
                         label = {
                             Text(
-                                if (hasTagFilter) "标签($selectedTagCount)"
-                                else "筛选标签"
+                                if (tagCount > 0) "标签($tagCount)"
+                                else "标签筛选"
                             )
                         },
-                        leadingIcon = {
+                        trailingIcon = {
                             Icon(
-                                Icons.Default.LocalOffer,
+                                Icons.Default.KeyboardArrowDown,
                                 contentDescription = null,
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(18.dp)
                             )
                         },
                         colors = FilterChipDefaults.filterChipColors(
@@ -260,6 +316,54 @@ fun BooksScreen(
                         ),
                         shape = RoundedCornerShape(20.dp)
                     )
+                    DropdownMenu(
+                        expanded = showTagDropdown,
+                        onDismissRequest = { showTagDropdown = false }
+                    ) {
+                        if (uiState.allTags.isEmpty()) {
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        "暂无标签",
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                },
+                                onClick = { },
+                                enabled = false
+                            )
+                        } else {
+                            uiState.allTags.forEach { tag ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Checkbox(
+                                                checked = tag.id in uiState.selectedTagIds,
+                                                onCheckedChange = null
+                                            )
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text(tag.name)
+                                        }
+                                    },
+                                    onClick = { viewModel.toggleTagFilter(tag.id) }
+                                )
+                            }
+                            if (tagCount > 0) {
+                                HorizontalDivider()
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            "清除标签筛选",
+                                            color = MaterialTheme.colorScheme.error
+                                        )
+                                    },
+                                    onClick = {
+                                        viewModel.clearTagFilters()
+                                        showTagDropdown = false
+                                    }
+                                )
+                            }
+                        }
+                    }
                 }
             }
 
@@ -354,17 +458,4 @@ fun BooksScreen(
         )
     }
 
-    if (showTagFilterSheet) {
-        TagFilterSheet(
-            tags = uiState.allTags,
-            selectedTagIds = uiState.selectedTagIds,
-            onTagToggle = { tagId ->
-                viewModel.toggleTagFilter(tagId)
-            },
-            onClearAll = {
-                viewModel.clearTagFilters()
-            },
-            onDismiss = { showTagFilterSheet = false }
-        )
-    }
 }
