@@ -43,6 +43,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import coil.compose.AsyncImage
 import com.readtrack.data.remote.BingImageResult
 import com.readtrack.presentation.ui.components.BookCover
@@ -64,6 +66,7 @@ fun AddBookScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
@@ -76,6 +79,7 @@ fun AddBookScreen(
     var showUrlDialog by remember { mutableStateOf(false) }
     var urlInput by remember { mutableStateOf("") }
     var urlError by remember { mutableStateOf<String?>(null) }
+    var showCreateTagDialog by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
 
     // 使用 rememberSaveable 追踪是否已经初始化过，避免从封面选择器返回时重置状态
@@ -527,27 +531,36 @@ fun AddBookScreen(
             }
 
             // Tag Selection
-            if (uiState.allTags.isNotEmpty()) {
-                Text(
-                    "标签（可选）",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
+            Text(
+                "标签（可选）",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
 
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    uiState.allTags.forEach { tag ->
-                        FilterChip(
-                            selected = tag.id in uiState.selectedTagIds,
-                            onClick = { viewModel.toggleTag(tag.id) },
-                            label = { Text(tag.name, style = MaterialTheme.typography.labelMedium) },
-                            shape = RoundedCornerShape(12.dp)
-                        )
-                    }
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                uiState.allTags.forEach { tag ->
+                    FilterChip(
+                        selected = tag.id in uiState.selectedTagIds,
+                        onClick = { viewModel.toggleTag(tag.id) },
+                        label = { Text(tag.name, style = MaterialTheme.typography.labelMedium) },
+                        shape = RoundedCornerShape(12.dp)
+                    )
                 }
+                // 新建标签按钮
+                FilterChip(
+                    selected = false,
+                    onClick = { showCreateTagDialog = true },
+                    label = { Text("+ 新建标签", style = MaterialTheme.typography.labelMedium) },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                )
             }
 
             // Book Status Selection
@@ -672,6 +685,19 @@ fun AddBookScreen(
             onPreviewImage = { viewModel.previewImage(it) },
             onClearPreview = { viewModel.clearPreview() },
             onLoadMore = { viewModel.loadMoreImages() }
+        )
+    }
+
+    // 创建标签弹窗
+    if (showCreateTagDialog) {
+        CreateTagDialog(
+            onDismiss = { showCreateTagDialog = false },
+            onConfirm = { tagName ->
+                scope.launch {
+                    viewModel.createTagAndSelect(tagName)
+                    showCreateTagDialog = false
+                }
+            }
         )
     }
 }
@@ -1139,4 +1165,41 @@ private fun ImageSearchBottomSheet(
             }
         }
     }
+}
+
+@Composable
+private fun CreateTagDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit
+) {
+    var tagName by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("创建新标签", fontWeight = FontWeight.Bold) },
+        text = {
+            OutlinedTextField(
+                value = tagName,
+                onValueChange = { tagName = it },
+                label = { Text("标签名称") },
+                placeholder = { Text("输入标签名称") },
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            )
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onConfirm(tagName.trim()) },
+                enabled = tagName.isNotBlank()
+            ) {
+                Text("创建")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("取消")
+            }
+        }
+    )
 }
