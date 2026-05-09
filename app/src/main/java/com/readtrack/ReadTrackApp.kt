@@ -45,10 +45,11 @@ class ReadTrackApp : Application(), ImageLoaderFactory, Configuration.Provider {
     }
 
     private fun initUmeng() {
-        UMConfigure.preInit(this, "__UMENG_APP_KEY__", "official")
+        val appKey = BuildConfig.UMENG_APP_KEY.ifEmpty { return }
+        UMConfigure.preInit(this, appKey, "official")
         UMConfigure.init(
             this,
-            "__UMENG_APP_KEY__",
+            appKey,
             "official",
             UMConfigure.DEVICE_TYPE_PHONE,
             ""
