@@ -3,6 +3,7 @@ package com.readtrack.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.readtrack.data.local.PreferencesManager
+import com.readtrack.data.local.StatsUnit
 import com.readtrack.data.local.database.ReadTrackDatabase
 import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.data.local.entity.ReadingRecordEntity
@@ -94,7 +95,13 @@ class AddBookViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             val cookie = preferencesManager.doubanCookie.first()
-            _uiState.update { it.copy(doubanCookie = cookie) }
+            val statsUnit = preferencesManager.statsUnit.first()
+            _uiState.update {
+                it.copy(
+                    doubanCookie = cookie,
+                    progressType = statsUnit.toProgressType()
+                )
+            }
         }
         // 加载所有标签
         viewModelScope.launch {
@@ -500,9 +507,18 @@ class AddBookViewModel @Inject constructor(
 
     fun resetState() {
         loadedBook = null
-        _uiState.update { it.copy(
-            selectedTagIds = emptySet(),
-            allTags = it.allTags  // 保持 allTags 不变
-        ) }
+        viewModelScope.launch {
+            val statsUnit = preferencesManager.statsUnit.first()
+            _uiState.update { it.copy(
+                selectedTagIds = emptySet(),
+                allTags = it.allTags,  // 保持 allTags 不变
+                progressType = statsUnit.toProgressType()
+            ) }
+        }
     }
+}
+
+private fun StatsUnit.toProgressType(): ProgressType = when (this) {
+    StatsUnit.CHAPTER -> ProgressType.CHAPTER
+    StatsUnit.PAGE -> ProgressType.PAGE
 }

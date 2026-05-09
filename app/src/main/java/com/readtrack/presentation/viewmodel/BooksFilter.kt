@@ -19,7 +19,7 @@ enum class BookSortOrder(val displayName: String) {
 
 internal data class BooksFilterInput(
     val books: List<BookEntity>,
-    val status: BookStatus?,
+    val statuses: Set<BookStatus>,
     val query: String,
     val sortOrder: BookSortOrder = BookSortOrder.default()
 )
@@ -30,13 +30,14 @@ internal fun normalizeSearchQuery(query: String): String =
 internal fun filterBooks(input: BooksFilterInput): List<BookEntity> {
     val normalizedQuery = normalizeSearchQuery(input.query)
     val tokens = normalizedQuery.split(' ').filter { it.isNotBlank() }
-    val hasFilter = input.status != null || tokens.isNotEmpty()
+    val hasStatusFilter = input.statuses.isNotEmpty()
+    val hasFilter = hasStatusFilter || tokens.isNotEmpty()
 
     val filtered = if (!hasFilter) {
         input.books
     } else {
         input.books.filter { book ->
-            val matchesStatus = input.status == null || book.status == input.status
+            val matchesStatus = !hasStatusFilter || book.status in input.statuses
             val matchesQuery = tokens.isEmpty() || matchesAllTokens(book, tokens)
             matchesStatus && matchesQuery
         }

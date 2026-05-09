@@ -219,25 +219,13 @@ fun BooksScreen(
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                item(key = "all") {
-                    FilterChip(
-                        selected = uiState.selectedStatus == null,
-                        onClick = { viewModel.setStatusFilter(null) },
-                        label = { Text("全部") },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primary,
-                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary
-                        ),
-                        shape = RoundedCornerShape(20.dp)
-                    )
-                }
                 items(
                     items = BookStatus.entries,
                     key = { it.name }
                 ) { status ->
                     FilterChip(
-                        selected = uiState.selectedStatus == status,
-                        onClick = { viewModel.setStatusFilter(status) },
+                        selected = status in uiState.selectedStatuses,
+                        onClick = { viewModel.toggleStatusFilter(status) },
                         label = { Text(status.displayName) },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = getStatusColor(status),
@@ -248,14 +236,14 @@ fun BooksScreen(
                 }
                 // Tag filter chip
                 item(key = "tag-filter") {
-                    val tagName = uiState.allTags.find { it.id == uiState.selectedTagId }?.name
-                    val hasTagFilter = uiState.selectedTagId != null
+                    val selectedTagCount = uiState.selectedTagIds.size
+                    val hasTagFilter = selectedTagCount > 0
                     FilterChip(
                         selected = hasTagFilter,
                         onClick = { showTagFilterSheet = true },
                         label = {
                             Text(
-                                if (hasTagFilter) tagName!!
+                                if (hasTagFilter) "标签($selectedTagCount)"
                                 else "筛选标签"
                             )
                         },
@@ -299,13 +287,13 @@ fun BooksScreen(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                text = if (uiState.searchQuery.isNotEmpty() || uiState.selectedStatus != null)
+                                text = if (uiState.searchQuery.isNotEmpty() || uiState.selectedStatuses.isNotEmpty() || uiState.selectedTagIds.isNotEmpty())
                                     "没有找到匹配的书籍"
                                 else "还没有添加任何书籍",
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                            if (uiState.searchQuery.isEmpty() && uiState.selectedStatus == null) {
+                            if (uiState.searchQuery.isEmpty() && uiState.selectedStatuses.isEmpty() && uiState.selectedTagIds.isEmpty()) {
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
                                     text = "点击右下角「添加书籍」开始",
@@ -369,9 +357,12 @@ fun BooksScreen(
     if (showTagFilterSheet) {
         TagFilterSheet(
             tags = uiState.allTags,
-            selectedTagId = uiState.selectedTagId,
-            onTagSelected = { tagId ->
-                viewModel.setTagFilter(tagId)
+            selectedTagIds = uiState.selectedTagIds,
+            onTagToggle = { tagId ->
+                viewModel.toggleTagFilter(tagId)
+            },
+            onClearAll = {
+                viewModel.clearTagFilters()
             },
             onDismiss = { showTagFilterSheet = false }
         )

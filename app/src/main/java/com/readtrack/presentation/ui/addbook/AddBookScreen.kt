@@ -394,56 +394,7 @@ fun AddBookScreen(
                 )
             )
 
-            // Progress Type Selection
-            Text(
-                "进度统计方式",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-            
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                FilterChip(
-                    selected = uiState.progressType == ProgressType.PAGE,
-                    onClick = { viewModel.updateProgressType(ProgressType.PAGE) },
-                    label = { 
-                        Box(
-                            modifier = Modifier.fillMaxWidth(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text("按页数统计")
-                        }
-                    },
-                    modifier = Modifier.weight(1f),
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MaterialTheme.colorScheme.primary,
-                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                )
-                FilterChip(
-                    selected = uiState.progressType == ProgressType.CHAPTER,
-                    onClick = { viewModel.updateProgressType(ProgressType.CHAPTER) },
-                    label = { 
-                        Box(
-                            modifier = Modifier.fillMaxWidth(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text("按章节统计")
-                        }
-                    },
-                    modifier = Modifier.weight(1f),
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MaterialTheme.colorScheme.primary,
-                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                )
-            }
-
-            // Progress Fields based on type
+            // Progress Fields (auto-determined by settings)
             if (uiState.progressType == ProgressType.PAGE) {
                 // Page-based progress
                 OutlinedTextField(
