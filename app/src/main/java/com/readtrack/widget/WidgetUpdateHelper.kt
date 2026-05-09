@@ -16,6 +16,7 @@ import android.widget.RemoteViews
 import androidx.palette.graphics.Palette
 import com.readtrack.MainActivity
 import com.readtrack.R
+import com.readtrack.data.local.PreferencesManager
 import com.readtrack.data.local.dao.BookDao
 import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.presentation.ui.widget.WidgetQuickRecordActivity
@@ -26,12 +27,11 @@ import javax.inject.Singleton
 
 @Singleton
 class WidgetUpdateHelper @Inject constructor(
-    private val bookDao: BookDao
+    private val bookDao: BookDao,
+    private val preferencesManager: PreferencesManager
 ) {
 
     companion object {
-        private const val MAX_BOOKS = 1
-
         fun triggerUpdate(context: Context) {
             val intent = Intent(context, ReadingWidgetProvider::class.java).apply {
                 action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
@@ -46,17 +46,23 @@ class WidgetUpdateHelper @Inject constructor(
         val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
         if (appWidgetIds.isEmpty()) return
 
-        val book = withContext(Dispatchers.IO) {
-            bookDao.getRecentReadingBooks(limit = MAX_BOOKS).firstOrNull()
-        }
-        val (gradientBitmap, coverBitmap) = withContext(Dispatchers.IO) {
-            val color = extractCoverColor(book?.coverPath) ?: Color.rgb(38, 36, 64)
-            Pair(createGradientBitmap(color), loadCoverBitmap(book?.coverPath))
-        }
-
         appWidgetIds.forEach { appWidgetId ->
+            val book = withContext(Dispatchers.IO) {
+                val bookId = preferencesManager.getWidgetBookId(appWidgetId)
+                bookId?.let { bookDao.getBookByIdOnce(it) }
+            }
+            val (gradientBitmap, coverBitmap) = withContext(Dispatchers.IO) {
+                val color = extractCoverColor(book?.coverPath) ?: Color.rgb(38, 36, 64)
+                Pair(createGradientBitmap(color), loadCoverBitmap(book?.coverPath))
+            }
             val remoteViews = buildRemoteViews(context, book, appWidgetId, gradientBitmap, coverBitmap)
             appWidgetManager.updateAppWidget(appWidgetId, remoteViews)
+        }
+    }
+
+    suspend fun clearWidgetSelections(appWidgetIds: IntArray) {
+        appWidgetIds.forEach { appWidgetId ->
+            preferencesManager.clearWidgetBookId(appWidgetId)
         }
     }
 
@@ -135,7 +141,7 @@ class WidgetUpdateHelper @Inject constructor(
             )
         } else {
             views.setTextViewText(R.id.widget_book_title, "选择一本书")
-            views.setTextViewText(R.id.widget_progress_text, "点击进入应用选择")
+            views.setTextViewText(R.id.widget_progress_text, "设置 → 桌面小组件")
         }
 
         val openIntent = Intent(context, MainActivity::class.java).apply {

@@ -30,6 +30,7 @@ import com.readtrack.presentation.ui.home.HomeScreen
 import com.readtrack.presentation.ui.settings.BackupSettingsScreen
 import com.readtrack.presentation.ui.settings.AboutScreen
 import com.readtrack.presentation.ui.settings.SettingsScreen
+import com.readtrack.presentation.ui.settings.WidgetSettingsScreen
 import com.readtrack.presentation.ui.stats.StatsScreen
 import com.readtrack.presentation.ui.readinghistory.ReadingHistoryScreen
 import com.readtrack.presentation.viewmodel.AddBookViewModel
@@ -58,6 +59,7 @@ sealed class Screen(
     data object ReadingHistory : Screen("reading_history", "阅读历史", Icons.Filled.DateRange, Icons.Outlined.DateRange)
     data object BackupSettings : Screen("backup_settings", "备份与恢复", Icons.Filled.CloudSync, Icons.Outlined.CloudSync)
     data object About : Screen("about", "关于", Icons.Filled.Info, Icons.Outlined.Info)
+    data object WidgetSettings : Screen("widget_settings", "桌面小组件", Icons.Filled.Widgets, Icons.Outlined.Widgets)
 }
 
 @Composable
@@ -171,6 +173,9 @@ fun MainNavigation(
                     onNavigateToBackupSettings = {
                         navController.navigate(Screen.BackupSettings.route)
                     },
+                    onNavigateToWidgetSettings = {
+                        navController.navigate(Screen.WidgetSettings.route)
+                    },
                     onNavigateToAbout = {
                         navController.navigate(Screen.About.route)
                     }
@@ -257,6 +262,12 @@ fun MainNavigation(
 
             composable(Screen.About.route) {
                 AboutScreen(
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
+
+            composable(Screen.WidgetSettings.route) {
+                WidgetSettingsScreen(
                     onNavigateBack = { navController.popBackStack() }
                 )
             }

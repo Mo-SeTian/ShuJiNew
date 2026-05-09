@@ -76,6 +76,8 @@ class PreferencesManager @Inject constructor(
         val UPDATE_SOURCE = stringPreferencesKey("update_source")
     }
 
+    private fun widgetBookIdKey(appWidgetId: Int) = longPreferencesKey("widget_${appWidgetId}_book_id")
+
     val themeMode: Flow<ThemeMode> = dataStore.data.map { preferences ->
         val themeName = preferences[THEME_MODE] ?: ThemeMode.SYSTEM.name
         runCatching { ThemeMode.valueOf(themeName) }.getOrDefault(ThemeMode.SYSTEM)
@@ -232,6 +234,30 @@ class PreferencesManager @Inject constructor(
     suspend fun setHomeComponentOrder(order: List<String>) {
         dataStore.edit { preferences ->
             preferences[HOME_COMPONENT_ORDER] = order.joinToString(",")
+        }
+    }
+
+    fun widgetBookIds(appWidgetIds: IntArray): Flow<Map<Int, Long?>> {
+        return dataStore.data.map { preferences ->
+            appWidgetIds.associateWith { appWidgetId ->
+                preferences[widgetBookIdKey(appWidgetId)]
+            }
+        }
+    }
+
+    suspend fun getWidgetBookId(appWidgetId: Int): Long? {
+        return dataStore.data.first()[widgetBookIdKey(appWidgetId)]
+    }
+
+    suspend fun setWidgetBookId(appWidgetId: Int, bookId: Long) {
+        dataStore.edit { preferences ->
+            preferences[widgetBookIdKey(appWidgetId)] = bookId
+        }
+    }
+
+    suspend fun clearWidgetBookId(appWidgetId: Int) {
+        dataStore.edit { preferences ->
+            preferences.remove(widgetBookIdKey(appWidgetId))
         }
     }
 
