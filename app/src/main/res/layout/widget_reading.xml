@@ -3,112 +3,63 @@
     android:id="@+id/widget_container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FF1A1A2E">
+    android:background="@drawable/widget_card_clip"
+    android:clipToOutline="true">
 
-    <!-- 取色半透明遮罩，程序设 1x1 取色 Bitmap + centerCrop 拉伸填充 -->
     <ImageView
-        android:id="@+id/widget_scrim"
+        android:id="@+id/widget_gradient_bg"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:scaleType="centerCrop" />
 
-    <!-- 内容区：居中 -->
-    <LinearLayout
+    <ImageView
+        android:id="@+id/widget_cover_blur"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:gravity="center"
-        android:orientation="vertical"
-        android:paddingStart="16dp"
-        android:paddingTop="8dp"
-        android:paddingEnd="16dp"
-        android:paddingBottom="4dp">
+        android:alpha="0.28"
+        android:scaleType="centerCrop" />
 
-        <!-- 封面缩略图 -->
-        <ImageView
-            android:id="@+id/widget_cover"
-            android:layout_width="60dp"
-            android:layout_height="90dp"
-            android:scaleType="centerCrop" />
-
-        <TextView
-            android:id="@+id/widget_book_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:ellipsize="end"
-            android:maxLines="1"
-            android:text="书籍名称"
-            android:textColor="@android:color/white"
-            android:textSize="15sp"
-            android:textStyle="bold" />
-
-        <ProgressBar
-            android:id="@+id/widget_progress_bar"
-            style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="match_parent"
-            android:layout_height="4dp"
-            android:layout_marginTop="6dp"
-            android:progressDrawable="@drawable/widget_progress_drawable" />
-
-        <TextView
-            android:id="@+id/widget_progress_text"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:text="0%"
-            android:textColor="#BFFFFFFF"
-            android:textSize="12sp" />
-
-        <Button
-            android:id="@+id/widget_record_button"
-            android:layout_width="wrap_content"
-            android:layout_height="28dp"
-            android:layout_marginTop="6dp"
-            android:background="@drawable/widget_button_bg"
-            android:minWidth="0dp"
-            android:paddingHorizontal="14dp"
-            android:text="记录进度"
-            android:textColor="@android:color/white"
-            android:textSize="11sp" />
-    </LinearLayout>
-
-    <!-- 底部翻页导航 -->
-    <LinearLayout
+    <TextView
+        android:id="@+id/widget_book_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
-        android:layout_marginBottom="2dp"
+        android:layout_gravity="start|bottom"
+        android:layout_marginStart="18dp"
+        android:layout_marginEnd="62dp"
+        android:layout_marginBottom="50dp"
+        android:ellipsize="end"
+        android:maxLines="2"
+        android:shadowColor="#66000000"
+        android:shadowDx="0"
+        android:shadowDy="1"
+        android:shadowRadius="3"
+        android:text="选择一本书"
+        android:textColor="@android:color/white"
+        android:textSize="17sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/widget_progress_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="start|bottom"
+        android:layout_marginStart="18dp"
+        android:layout_marginBottom="27dp"
+        android:text="点击选择要记录的书籍"
+        android:textColor="#CCFFFFFF"
+        android:textSize="12sp" />
+
+    <TextView
+        android:id="@+id/widget_record_button"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:layout_gravity="end|bottom"
+        android:layout_marginEnd="14dp"
+        android:layout_marginBottom="14dp"
+        android:background="@drawable/widget_plus_bg"
         android:gravity="center"
-        android:orientation="horizontal">
-
-        <TextView
-            android:id="@+id/widget_prev_button"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:gravity="center"
-            android:text="◀"
-            android:textColor="#BFFFFFFF"
-            android:textSize="14sp" />
-
-        <TextView
-            android:id="@+id/widget_page_dots"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:layout_marginEnd="12dp"
-            android:gravity="center"
-            android:text="1/5"
-            android:textColor="#BFFFFFFF"
-            android:textSize="11sp" />
-
-        <TextView
-            android:id="@+id/widget_next_button"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:gravity="center"
-            android:text="▶"
-            android:textColor="#BFFFFFFF"
-            android:textSize="14sp" />
-    </LinearLayout>
+        android:text="+"
+        android:textColor="@android:color/white"
+        android:textSize="26sp" />
 
 </FrameLayout>
