@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="widget_cover_width">60dp</dimen>
+    <dimen name="widget_cover_height">90dp</dimen>
+    <dimen name="widget_corner_radius">4dp</dimen>
+</resources>

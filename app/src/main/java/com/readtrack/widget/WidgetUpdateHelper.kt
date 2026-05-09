@@ -5,7 +5,10 @@ import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.widget.RemoteViews
+import androidx.palette.graphics.Palette
 import com.readtrack.MainActivity
 import com.readtrack.R
 import com.readtrack.data.local.dao.BookDao
@@ -55,8 +58,53 @@ class WidgetUpdateHelper @Inject constructor(
             }
 
             val book = if (bookCount > 0) books[currentPage] else null
-            val remoteViews = buildRemoteViews(context, book, bookCount, currentPage, appWidgetId)
+            val (bgBitmap, coverBitmap) = if (book != null) {
+                withContext(Dispatchers.IO) {
+                    val bg = generateCoverBackground(book.coverPath)
+                    val thumb = loadCoverThumbnail(book.coverPath)
+                    Pair(bg, thumb)
+                }
+            } else {
+                Pair(null, null)
+            }
+
+            val remoteViews = buildRemoteViews(context, book, bookCount, currentPage, appWidgetId, bgBitmap, coverBitmap)
             appWidgetManager.updateAppWidget(appWidgetId, remoteViews)
+        }
+    }
+
+    private fun generateCoverBackground(coverPath: String?): Bitmap? {
+        if (coverPath == null) return null
+        return try {
+            val options = BitmapFactory.Options().apply {
+                inSampleSize = 4
+            }
+            val source = BitmapFactory.decodeFile(coverPath, options) ?: return null
+            val palette = Palette.from(source).generate()
+            val swatch = palette.vibrantSwatch
+                ?: palette.dominantSwatch
+                ?: palette.mutedSwatch
+            source.recycle()
+
+            val color = swatch?.rgb ?: return null
+            val alphaColor = (102 shl 24) or (color and 0x00FFFFFF)
+            val bg = Bitmap.createBitmap(256, 256, Bitmap.Config.ARGB_8888)
+            bg.eraseColor(alphaColor)
+            bg
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private fun loadCoverThumbnail(coverPath: String?): Bitmap? {
+        if (coverPath == null) return null
+        return try {
+            val options = BitmapFactory.Options().apply {
+                inSampleSize = 4
+            }
+            BitmapFactory.decodeFile(coverPath, options)
+        } catch (e: Exception) {
+            null
         }
     }
 
@@ -65,41 +113,62 @@ class WidgetUpdateHelper @Inject constructor(
         book: BookEntity?,
         bookCount: Int,
         currentPage: Int,
-        appWidgetId: Int
+        appWidgetId: Int,
+        bgBitmap: Bitmap?,
+        coverBitmap: Bitmap?
     ): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.widget_reading)
 
+        // 背景取色图
+        if (bgBitmap != null) {
+            views.setImageViewBitmap(R.id.widget_bg_image, bgBitmap)
+        } else {
+            views.setImageViewResource(R.id.widget_bg_image, R.drawable.widget_cover_placeholder)
+        }
+
         if (book != null) {
+            // 封面缩略图
+            if (coverBitmap != null) {
+                views.setImageViewBitmap(R.id.widget_cover, coverBitmap)
+            } else {
+                views.setImageViewResource(R.id.widget_cover, R.drawable.widget_cover_placeholder)
+            }
+
             views.setTextViewText(R.id.widget_book_title, book.title)
-            views.setTextViewText(R.id.widget_book_author, book.author ?: "")
             val progressPercent = calculateProgressPercent(book)
             views.setTextViewText(R.id.widget_progress_text, "$progressPercent%")
             views.setProgressBar(R.id.widget_progress_bar, 100, progressPercent, false)
 
-            // 点击书籍区域打开详情
+            // 点击封面区域打开详情
             val detailIntent = Intent(context, MainActivity::class.java).apply {
                 action = MainActivity.ACTION_OPEN_BOOK_DETAIL
                 putExtra(MainActivity.EXTRA_BOOK_ID, book.id)
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }
+            views.setOnClickPendingIntent(R.id.widget_cover,
+                PendingIntent.getActivity(context, appWidgetId, detailIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
             views.setOnClickPendingIntent(R.id.widget_container,
                 PendingIntent.getActivity(context, appWidgetId, detailIntent,
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
 
-            // 点击记录按钮打开快速记录
+            // 记录按钮
             val recordIntent = WidgetQuickRecordActivity.createIntent(context, book.id)
             views.setOnClickPendingIntent(R.id.widget_record_button,
                 PendingIntent.getActivity(context, appWidgetId + 1000, recordIntent,
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
         } else {
+            views.setImageViewResource(R.id.widget_cover, R.drawable.widget_cover_placeholder)
             views.setTextViewText(R.id.widget_book_title, "还没有正在读的书")
-            views.setTextViewText(R.id.widget_book_author, "去添加一本吧")
             views.setTextViewText(R.id.widget_progress_text, "")
             views.setProgressBar(R.id.widget_progress_bar, 100, 0, false)
 
             val openIntent = Intent(context, MainActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK
             }
+            views.setOnClickPendingIntent(R.id.widget_cover,
+                PendingIntent.getActivity(context, appWidgetId, openIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
             views.setOnClickPendingIntent(R.id.widget_container,
                 PendingIntent.getActivity(context, appWidgetId, openIntent,
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
