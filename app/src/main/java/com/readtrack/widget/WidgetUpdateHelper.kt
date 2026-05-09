@@ -58,39 +58,32 @@ class WidgetUpdateHelper @Inject constructor(
             }
 
             val book = if (bookCount > 0) books[currentPage] else null
-            val (bgBitmap, coverBitmap) = if (book != null) {
+            val (bgColor, coverBitmap) = if (book != null) {
                 withContext(Dispatchers.IO) {
-                    val bg = generateCoverBackground(book.coverPath)
+                    val color = extractCoverColor(book.coverPath)
                     val thumb = loadCoverThumbnail(book.coverPath)
-                    Pair(bg, thumb)
+                    Pair(color, thumb)
                 }
             } else {
                 Pair(null, null)
             }
 
-            val remoteViews = buildRemoteViews(context, book, bookCount, currentPage, appWidgetId, bgBitmap, coverBitmap)
+            val remoteViews = buildRemoteViews(context, book, bookCount, currentPage, appWidgetId, bgColor, coverBitmap)
             appWidgetManager.updateAppWidget(appWidgetId, remoteViews)
         }
     }
 
-    private fun generateCoverBackground(coverPath: String?): Bitmap? {
+    private fun extractCoverColor(coverPath: String?): Int? {
         if (coverPath == null) return null
         return try {
-            val options = BitmapFactory.Options().apply {
-                inSampleSize = 8
-            }
+            val options = BitmapFactory.Options().apply { inSampleSize = 8 }
             val source = BitmapFactory.decodeFile(coverPath, options) ?: return null
             val palette = Palette.from(source).generate()
             val swatch = palette.vibrantSwatch
                 ?: palette.dominantSwatch
                 ?: palette.mutedSwatch
             source.recycle()
-
-            val color = swatch?.rgb ?: return null
-            val alphaColor = (102 shl 24) or (color and 0x00FFFFFF)
-            val bg = Bitmap.createBitmap(256, 256, Bitmap.Config.ARGB_8888)
-            bg.eraseColor(alphaColor)
-            bg
+            swatch?.rgb
         } catch (e: Exception) {
             null
         }
@@ -102,7 +95,7 @@ class WidgetUpdateHelper @Inject constructor(
             val opts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
             BitmapFactory.decodeFile(coverPath, opts)
             val maxDim = maxOf(opts.outWidth, opts.outHeight)
-            val targetDim = 240
+            val targetDim = 180
             opts.inJustDecodeBounds = false
             opts.inSampleSize = (maxDim / targetDim).coerceIn(1, 16)
             val decoded = BitmapFactory.decodeFile(coverPath, opts) ?: return null
@@ -122,18 +115,18 @@ class WidgetUpdateHelper @Inject constructor(
         bookCount: Int,
         currentPage: Int,
         appWidgetId: Int,
-        bgBitmap: Bitmap?,
+        bgColor: Int?,
         coverBitmap: Bitmap?
     ): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.widget_reading)
 
-        // 背景取色图
-        if (bgBitmap != null) {
-            views.setImageViewBitmap(R.id.widget_bg_image, bgBitmap)
+        // 背景取色：通过 setInt 调用 setBackgroundColor，避免 Bitmap IPC
+        if (bgColor != null) {
+            val alphaColor = (102 shl 24) or (bgColor and 0x00FFFFFF)
+            views.setInt(R.id.widget_scrim, "setBackgroundColor", alphaColor)
         }
 
         if (book != null) {
-            // 封面缩略图
             if (coverBitmap != null) {
                 views.setImageViewBitmap(R.id.widget_cover, coverBitmap)
             }

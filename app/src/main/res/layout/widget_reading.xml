@@ -2,16 +2,10 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_container"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="#FF1A1A2E">
 
-    <!-- 背景：程序动态设置取色后的 Bitmap -->
-    <ImageView
-        android:id="@+id/widget_bg_image"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:scaleType="centerCrop" />
-
-    <!-- 半透明暗色遮罩，保证白色文字可读 -->
+    <!-- 取色半透明遮罩，程序通过 setInt("setBackgroundColor") 动态设置 -->
     <View
         android:id="@+id/widget_scrim"
         android:layout_width="match_parent"
@@ -34,8 +28,7 @@
             android:id="@+id/widget_cover"
             android:layout_width="60dp"
             android:layout_height="90dp"
-            android:scaleType="centerCrop"
-            android:background="@drawable/widget_cover_placeholder" />
+            android:scaleType="centerCrop" />
 
         <TextView
             android:id="@+id/widget_book_title"
