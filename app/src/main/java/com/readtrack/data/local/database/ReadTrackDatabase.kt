@@ -23,7 +23,7 @@ import com.readtrack.data.local.entity.TagEntity
         TagEntity::class,
         TagCrossRef::class
     ],
-    version = 11,
+    version = 12,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
