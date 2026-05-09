@@ -24,10 +24,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -38,18 +34,15 @@ import com.readtrack.data.local.entity.TagEntity
 @Composable
 fun TagFilterSheet(
     tags: List<TagEntity>,
-    selectedTagId: Long?,
-    onTagSelected: (Long?) -> Unit,
+    selectedTagIds: Set<Long>,
+    onTagToggle: (Long) -> Unit,
+    onClearAll: () -> Unit,
     onDismiss: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    var tempSelectedId by remember(selectedTagId) { mutableStateOf(selectedTagId) }
 
     ModalBottomSheet(
-        onDismissRequest = {
-            onTagSelected(tempSelectedId)
-            onDismiss()
-        },
+        onDismissRequest = onDismiss,
         sheetState = sheetState,
         containerColor = MaterialTheme.colorScheme.surface
     ) {
@@ -76,29 +69,6 @@ fun TagFilterSheet(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // "All tags" option
-            FilterChip(
-                selected = tempSelectedId == null,
-                onClick = { tempSelectedId = null },
-                label = { Text("全部标签") },
-                leadingIcon = if (tempSelectedId == null) {
-                    {
-                        Icon(
-                            Icons.Default.Check,
-                            contentDescription = null,
-                            modifier = Modifier.height(18.dp)
-                        )
-                    }
-                } else null,
-                colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = MaterialTheme.colorScheme.primary,
-                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary
-                ),
-                shape = RoundedCornerShape(20.dp)
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
             if (tags.isEmpty()) {
                 Text(
                     "暂无标签，可在书籍详情中添加",
@@ -110,11 +80,12 @@ fun TagFilterSheet(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(tags, key = { it.id }) { tag ->
+                        val isSelected = tag.id in selectedTagIds
                         FilterChip(
-                            selected = tempSelectedId == tag.id,
-                            onClick = { tempSelectedId = tag.id },
+                            selected = isSelected,
+                            onClick = { onTagToggle(tag.id) },
                             label = { Text(tag.name) },
-                            leadingIcon = if (tempSelectedId == tag.id) {
+                            leadingIcon = if (isSelected) {
                                 {
                                     Icon(
                                         Icons.Default.Check,
@@ -141,10 +112,10 @@ fun TagFilterSheet(
             ) {
                 TextButton(
                     onClick = {
-                        tempSelectedId = null
-                        onTagSelected(null)
+                        onClearAll()
                         onDismiss()
-                    }
+                    },
+                    enabled = selectedTagIds.isNotEmpty()
                 ) {
                     Text("清除筛选")
                 }

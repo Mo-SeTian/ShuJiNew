@@ -32,13 +32,13 @@ import javax.inject.Inject
 data class BooksUiState(
     val books: List<BookEntity> = emptyList(),
     val filteredBooks: List<BookEntity> = emptyList(),
-    val selectedStatus: BookStatus? = null,
+    val selectedStatuses: Set<BookStatus> = emptySet(),
     val searchQuery: String = "",
     val sortOrder: BookSortOrder = BookSortOrder.default(),
     val isLoading: Boolean = true,
     val errorMessage: String? = null,
     val allTags: List<TagEntity> = emptyList(),
-    val selectedTagId: Long? = null
+    val selectedTagIds: Set<Long> = emptySet()
 )
 
 @OptIn(FlowPreview::class)
@@ -51,10 +51,10 @@ class BooksViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(BooksUiState())
     val uiState: StateFlow<BooksUiState> = _uiState.asStateFlow()
 
-    private val selectedStatusFlow = MutableStateFlow<BookStatus?>(null)
+    private val selectedStatusesFlow = MutableStateFlow<Set<BookStatus>>(emptySet())
     private val searchQueryFlow = MutableStateFlow("")
     private val sortOrderFlow = MutableStateFlow(BookSortOrder.default())
-    private val selectedTagIdFlow = MutableStateFlow<Long?>(null)
+    private val selectedTagIdsFlow = MutableStateFlow<Set<Long>>(emptySet())
     private val taggedBookIdsFlow = MutableStateFlow<Set<Long>>(emptySet())
 
     init {
@@ -64,19 +64,17 @@ class BooksViewModel @Inject constructor(
 
     private fun loadBooks() {
         viewModelScope.launch {
-            // 第一组：5个flow
             val firstCombine = combine(
                 bookRepository.getAllBooks().distinctUntilChanged(),
-                selectedStatusFlow,
+                selectedStatusesFlow,
                 searchQueryFlow
                     .debounce(250)
                     .distinctUntilChanged(),
                 sortOrderFlow,
-                selectedTagIdFlow
-            ) { books, selectedStatus, rawQuery, sortOrder, selectedTagId ->
-                FirstCombineResult(books, selectedStatus, rawQuery, sortOrder, selectedTagId)
+                selectedTagIdsFlow
+            ) { books, selectedStatuses, rawQuery, sortOrder, selectedTagIds ->
+                FirstCombineResult(books, selectedStatuses, rawQuery, sortOrder, selectedTagIds)
             }
-            // 第二组：与第6个flow合并
             combine(
                 firstCombine,
                 taggedBookIdsFlow
@@ -85,25 +83,25 @@ class BooksViewModel @Inject constructor(
                     var filteredBooks = filterBooks(
                         BooksFilterInput(
                             books = first.books,
-                            status = first.selectedStatus,
+                            statuses = first.selectedStatuses,
                             query = first.rawQuery,
                             sortOrder = first.sortOrder
                         )
                     )
-                    // 按标签筛选：只显示包含所选标签的书籍
-                    if (first.selectedTagId != null) {
+                    // 按标签筛选：显示包含任一选中标签的书籍（OR 逻辑）
+                    if (first.selectedTagIds.isNotEmpty()) {
                         filteredBooks = filteredBooks.filter { it.id in taggedBookIds }
                     }
                     BooksUiState(
                         books = first.books,
                         filteredBooks = filteredBooks,
-                        selectedStatus = first.selectedStatus,
+                        selectedStatuses = first.selectedStatuses,
                         searchQuery = first.rawQuery,
                         sortOrder = first.sortOrder,
                         isLoading = false,
                         errorMessage = null,
                         allTags = _uiState.value.allTags,
-                        selectedTagId = first.selectedTagId
+                        selectedTagIds = first.selectedTagIds
                     )
                 }
             }
@@ -125,10 +123,10 @@ class BooksViewModel @Inject constructor(
 
     private data class FirstCombineResult(
         val books: List<BookEntity>,
-        val selectedStatus: BookStatus?,
+        val selectedStatuses: Set<BookStatus>,
         val rawQuery: String,
         val sortOrder: BookSortOrder,
-        val selectedTagId: Long?
+        val selectedTagIds: Set<Long>
     )
 
     private fun loadTags() {
@@ -139,8 +137,16 @@ class BooksViewModel @Inject constructor(
         }
     }
 
-    fun setStatusFilter(status: BookStatus?) {
-        selectedStatusFlow.value = status
+    fun toggleStatusFilter(status: BookStatus) {
+        selectedStatusesFlow.value = if (status in selectedStatusesFlow.value) {
+            selectedStatusesFlow.value - status
+        } else {
+            selectedStatusesFlow.value + status
+        }
+    }
+
+    fun clearStatusFilters() {
+        selectedStatusesFlow.value = emptySet()
     }
 
     fun setSearchQuery(query: String) {
@@ -154,15 +160,25 @@ class BooksViewModel @Inject constructor(
         _uiState.update { it.copy(sortOrder = sortOrder) }
     }
 
-    fun setTagFilter(tagId: Long?) {
-        selectedTagIdFlow.value = tagId
+    fun toggleTagFilter(tagId: Long) {
+        val newSet = if (tagId in selectedTagIdsFlow.value) {
+            selectedTagIdsFlow.value - tagId
+        } else {
+            selectedTagIdsFlow.value + tagId
+        }
+        selectedTagIdsFlow.value = newSet
         viewModelScope.launch {
-            taggedBookIdsFlow.value = if (tagId != null) {
-                tagRepository.getBookIdsWithTag(tagId).first().toSet()
+            taggedBookIdsFlow.value = if (newSet.isNotEmpty()) {
+                newSet.flatMap { tagRepository.getBookIdsWithTag(it).first() }.toSet()
             } else {
                 emptySet()
             }
         }
+    }
+
+    fun clearTagFilters() {
+        selectedTagIdsFlow.value = emptySet()
+        taggedBookIdsFlow.value = emptySet()
     }
 
     fun deleteBook(bookId: Long) {
