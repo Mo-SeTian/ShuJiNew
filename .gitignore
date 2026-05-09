@@ -8,3 +8,17 @@ build/
 .externalNativeBuild
 .cxx
 local.properties
+
+# Signing keys
+*.keystore
+*.jks
+*.p12
+*.pem
+*.cert
+*.crt
+
+# Secrets
+*.env
+credentials*
+secrets*
+google-services.json

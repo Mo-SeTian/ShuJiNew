@@ -1,9 +1,19 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp")
     id("com.google.dagger.hilt.android")
     id("org.jetbrains.kotlin.plugin.serialization")
+}
+
+val localProperties = Properties().apply {
+    val propsFile = rootProject.file("local.properties")
+    if (propsFile.exists()) {
+        FileInputStream(propsFile).use { load(it) }
+    }
 }
 
 android {
@@ -24,14 +34,16 @@ android {
 
         // APK 体积优化：只保留中文和英文语言资源
         resourceConfigurations += listOf("zh", "en")
+
+        buildConfigField("String", "UMENG_APP_KEY", "\"${localProperties.getProperty("UMENG_APP_KEY", "")}\"")
     }
 
     signingConfigs {
         create("release") {
             storeFile = file("readtrack.keystore")
-            storePassword = "__KEYSTORE_PASSWORD__"
+            storePassword = localProperties.getProperty("RELEASE_STORE_PASSWORD", "")
             keyAlias = "readtrack"
-            keyPassword = "__KEYSTORE_PASSWORD__"
+            keyPassword = localProperties.getProperty("RELEASE_KEY_PASSWORD", "")
         }
     }
 
