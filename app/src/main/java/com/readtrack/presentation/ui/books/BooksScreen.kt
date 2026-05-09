@@ -20,6 +20,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -46,6 +49,9 @@ fun BooksScreen(
     var showAddToBookListDialog by remember { mutableStateOf(false) }
     var showStatusDropdown by remember { mutableStateOf(false) }
     var showTagDropdown by remember { mutableStateOf(false) }
+    var searchExpanded by remember { mutableStateOf(uiState.searchQuery.isNotEmpty()) }
+    val focusRequester = remember { FocusRequester() }
+    val focusManager = LocalFocusManager.current
 
     val isSelectionMode = selectedBookIds.isNotEmpty()
 
@@ -175,50 +181,97 @@ fun BooksScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // Search Bar - Modern Style
-            OutlinedTextField(
-                value = uiState.searchQuery,
-                onValueChange = { viewModel.setSearchQuery(it) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 4.dp),
-                placeholder = { Text("搜索书名、作者...") },
-                leadingIcon = { 
-                    Icon(
-                        Icons.Default.Search, 
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    ) 
-                },
-                trailingIcon = {
-                    if (uiState.searchQuery.isNotEmpty()) {
-                        IconButton(
-                            onClick = { viewModel.setSearchQuery("") },
-                            modifier = Modifier.size(18.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.Clear,
-                                contentDescription = "清除搜索",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+            // Search Bar - Expandable (collapsed when not in use)
+            AnimatedVisibility(
+                visible = searchExpanded,
+                enter = expandVertically(animationSpec = tween(200)) + fadeIn(tween(200)),
+                exit = shrinkVertically(animationSpec = tween(150)) + fadeOut(tween(150))
+            ) {
+                OutlinedTextField(
+                    value = uiState.searchQuery,
+                    onValueChange = { viewModel.setSearchQuery(it) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp)
+                        .focusRequester(focusRequester),
+                    placeholder = { Text("搜索书名、作者...") },
+                    leadingIcon = {
+                        Icon(
+                            Icons.Default.Search,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
+                    trailingIcon = {
+                        Row {
+                            if (uiState.searchQuery.isNotEmpty()) {
+                                IconButton(
+                                    onClick = { viewModel.setSearchQuery("") },
+                                    modifier = Modifier.size(18.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.Clear,
+                                        contentDescription = "清除搜索",
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                            IconButton(
+                                onClick = {
+                                    searchExpanded = false
+                                    viewModel.setSearchQuery("")
+                                    focusManager.clearFocus()
+                                },
+                                modifier = Modifier.size(18.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Close,
+                                    contentDescription = "收起搜索",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
-                    }
-                },
-                singleLine = true,
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+                    },
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+                    )
                 )
-            )
+                LaunchedEffect(Unit) {
+                    focusRequester.requestFocus()
+                }
+            }
 
-            // Filter Buttons: Status + Tag (dropdown multi-select)
+            // Filter Row: search trigger (when collapsed) + Status + Tag dropdowns
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                if (!searchExpanded) {
+                    FilterChip(
+                        selected = uiState.searchQuery.isNotEmpty(),
+                        onClick = { searchExpanded = true },
+                        label = {
+                            Text(
+                                if (uiState.searchQuery.isNotEmpty()) uiState.searchQuery
+                                else "搜索"
+                            )
+                        },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.Search,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        },
+                        shape = RoundedCornerShape(20.dp)
+                    )
+                }
+
                 // Status filter
                 Box {
                     val statusCount = uiState.selectedStatuses.size
