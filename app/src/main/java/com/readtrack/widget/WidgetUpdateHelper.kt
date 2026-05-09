@@ -83,13 +83,14 @@ class WidgetUpdateHelper @Inject constructor(
     }
 
     private fun createGradientBitmap(baseColor: Int): Bitmap {
-        val bitmap = Bitmap.createBitmap(32, 32, Bitmap.Config.ARGB_8888)
+        val size = 128
+        val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG)
         val start = Color.argb(170, Color.red(baseColor), Color.green(baseColor), Color.blue(baseColor))
         val end = Color.argb(225, 10, 10, 18)
-        paint.shader = LinearGradient(0f, 0f, 32f, 32f, start, end, Shader.TileMode.CLAMP)
-        canvas.drawRect(0f, 0f, 32f, 32f, paint)
+        paint.shader = LinearGradient(0f, 0f, size.toFloat(), size.toFloat(), start, end, Shader.TileMode.CLAMP)
+        canvas.drawRect(0f, 0f, size.toFloat(), size.toFloat(), paint)
         return bitmap
     }
 
@@ -105,7 +106,7 @@ class WidgetUpdateHelper @Inject constructor(
                 maxDim > 2400 -> 8
                 maxDim > 1200 -> 4
                 maxDim > 600 -> 2
-                else -> 1
+                else -> 2
             }
             BitmapFactory.decodeFile(coverPath, opts)
         } catch (e: Exception) {

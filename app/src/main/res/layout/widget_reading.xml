@@ -3,8 +3,7 @@
     android:id="@+id/widget_container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/widget_card_clip"
-    android:clipToOutline="true">
+    android:background="#1A1824">
 
     <!-- 取色渐变背景 -->
     <ImageView
@@ -19,8 +18,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_margin="10dp"
-        android:scaleType="fitCenter"
-        android:adjustViewBounds="true" />
+        android:scaleType="fitCenter" />
 
     <!-- 底部向上渐变遮罩，保证文字可读 -->
     <View
