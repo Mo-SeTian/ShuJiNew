@@ -58,17 +58,21 @@ class WidgetUpdateHelper @Inject constructor(
             }
 
             val book = if (bookCount > 0) books[currentPage] else null
-            val (bgColor, coverBitmap) = if (book != null) {
+            val (scrimBitmap, coverBitmap) = if (book != null) {
                 withContext(Dispatchers.IO) {
                     val color = extractCoverColor(book.coverPath)
+                    val scrim = if (color != null) {
+                        val alphaColor = (102 shl 24) or (color and 0x00FFFFFF)
+                        Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888).also { it.eraseColor(alphaColor) }
+                    } else null
                     val thumb = loadCoverThumbnail(book.coverPath)
-                    Pair(color, thumb)
+                    Pair(scrim, thumb)
                 }
             } else {
                 Pair(null, null)
             }
 
-            val remoteViews = buildRemoteViews(context, book, bookCount, currentPage, appWidgetId, bgColor, coverBitmap)
+            val remoteViews = buildRemoteViews(context, book, bookCount, currentPage, appWidgetId, scrimBitmap, coverBitmap)
             appWidgetManager.updateAppWidget(appWidgetId, remoteViews)
         }
     }
@@ -115,15 +119,13 @@ class WidgetUpdateHelper @Inject constructor(
         bookCount: Int,
         currentPage: Int,
         appWidgetId: Int,
-        bgColor: Int?,
+        scrimBitmap: Bitmap?,
         coverBitmap: Bitmap?
     ): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.widget_reading)
 
-        // 背景取色：通过 setInt 调用 setBackgroundColor，避免 Bitmap IPC
-        if (bgColor != null) {
-            val alphaColor = (102 shl 24) or (bgColor and 0x00FFFFFF)
-            views.setInt(R.id.widget_scrim, "setBackgroundColor", alphaColor)
+        if (scrimBitmap != null) {
+            views.setImageViewBitmap(R.id.widget_scrim, scrimBitmap)
         }
 
         if (book != null) {

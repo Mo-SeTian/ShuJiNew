@@ -5,12 +5,12 @@
     android:layout_height="match_parent"
     android:background="#FF1A1A2E">
 
-    <!-- 取色半透明遮罩，程序通过 setInt("setBackgroundColor") 动态设置 -->
-    <View
+    <!-- 取色半透明遮罩，程序设 1x1 取色 Bitmap + centerCrop 拉伸填充 -->
+    <ImageView
         android:id="@+id/widget_scrim"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#80000000" />
+        android:scaleType="centerCrop" />
 
     <!-- 内容区：居中 -->
     <LinearLayout
