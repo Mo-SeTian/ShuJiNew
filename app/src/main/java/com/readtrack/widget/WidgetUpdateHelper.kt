@@ -99,15 +99,13 @@ class WidgetUpdateHelper @Inject constructor(
             val opts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
             BitmapFactory.decodeFile(coverPath, opts)
             val maxDim = maxOf(opts.outWidth, opts.outHeight)
-            val targetDim = 160
             opts.inJustDecodeBounds = false
-            opts.inSampleSize = (maxDim / targetDim).coerceIn(1, 16)
-            val decoded = BitmapFactory.decodeFile(coverPath, opts) ?: return null
-            val w = decoded.width
-            val h = decoded.height
-            val scale = minOf(targetDim.toFloat() / w, targetDim.toFloat() / h)
-            Bitmap.createScaledBitmap(decoded, (w * scale).toInt(), (h * scale).toInt(), true)
-                .also { if (it != decoded) decoded.recycle() }
+            opts.inSampleSize = when {
+                maxDim > 1024 -> 4
+                maxDim > 512 -> 2
+                else -> 1
+            }
+            BitmapFactory.decodeFile(coverPath, opts)
         } catch (e: Exception) {
             null
         }
