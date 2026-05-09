@@ -1,9 +1,11 @@
 package com.readtrack.presentation.viewmodel
 
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.readtrack.data.local.PreferencesManager
+import dagger.hilt.android.qualifiers.ApplicationContext
 import com.readtrack.data.local.entity.ReadingRecordEntity
 import com.readtrack.data.local.entity.RecordType
 import com.readtrack.domain.model.BookSnapshot
@@ -11,6 +13,7 @@ import com.readtrack.domain.model.ProgressType
 import com.readtrack.domain.repository.BookRepository
 import com.readtrack.domain.repository.ReadingRecordRepository
 import com.readtrack.util.PerformanceTrace
+import com.readtrack.widget.WidgetUpdateHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,6 +26,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val bookRepository: BookRepository,
     private val recordRepository: ReadingRecordRepository,
     private val preferencesManager: PreferencesManager
@@ -79,6 +83,7 @@ class HomeViewModel @Inject constructor(
                     updatedAt = System.currentTimeMillis()
                 )
                 bookRepository.insertRecordAndUpdateBook(record, updatedBook)
+                WidgetUpdateHelper.triggerUpdate(context)
             } catch (e: Exception) {
                 Log.e(TAG, "快速记录失败: bookId=$bookId, page=$newPage", e)
             }

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:padding="12dp">
+
+    <!-- 书籍图标 -->
+    <ImageView
+        android:id="@+id/widget_book_icon"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="@drawable/widget_button_bg"
+        android:contentDescription="@string/app_name"
+        android:padding="8dp"
+        android:src="@drawable/ic_launcher_foreground" />
+
+    <!-- 书名+作者区域 -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/widget_book_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="书籍名称"
+            android:textColor="@color/md_theme_dark_onSurface"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/widget_book_author"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="作者"
+            android:textColor="@color/md_theme_dark_onSurfaceVariant"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <!-- 进度+按钮区域 -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:gravity="end"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/widget_progress_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0%"
+            android:textColor="@color/md_theme_dark_onSurface"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <ProgressBar
+            android:id="@+id/widget_progress_bar"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="80dp"
+            android:layout_height="4dp"
+            android:layout_marginTop="2dp"
+            android:progressDrawable="@drawable/widget_progress_drawable" />
+
+        <Button
+            android:id="@+id/widget_record_button"
+            android:layout_width="wrap_content"
+            android:layout_height="32dp"
+            android:layout_marginTop="4dp"
+            android:background="@drawable/widget_button_bg"
+            android:minWidth="0dp"
+            android:paddingHorizontal="12dp"
+            android:text="记录"
+            android:textColor="@color/md_theme_dark_onPrimary"
+            android:textSize="12sp" />
+    </LinearLayout>
+</LinearLayout>

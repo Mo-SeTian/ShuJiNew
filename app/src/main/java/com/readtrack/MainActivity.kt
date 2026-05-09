@@ -1,5 +1,6 @@
 package com.readtrack
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -10,6 +11,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -30,17 +32,27 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var preferencesManager: PreferencesManager
 
+    companion object {
+        const val ACTION_OPEN_BOOK_DETAIL = "com.readtrack.ACTION_OPEN_BOOK_DETAIL"
+        const val EXTRA_BOOK_ID = "extra_book_id"
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         enableEdgeToEdge()
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
+        val initialBookId = if (intent.action == ACTION_OPEN_BOOK_DETAIL) {
+            intent.getLongExtra(EXTRA_BOOK_ID, -1L).takeIf { it != -1L }
+        } else null
+
         setContent {
             val settingsViewModel: SettingsViewModel = hiltViewModel()
             val themeMode by preferencesManager.themeMode.collectAsState(initial = com.readtrack.data.local.ThemeMode.SYSTEM)
             val uiState by settingsViewModel.uiState.collectAsState()
             var showUpdateDialog by remember { mutableStateOf(false) }
+            var pendingBookId by remember { mutableLongStateOf(initialBookId ?: -1L) }
 
             LaunchedEffect(Unit) {
                 settingsViewModel.checkForUpdate()
@@ -74,8 +86,23 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    MainNavigation()
+                    MainNavigation(
+                        pendingBookId = pendingBookId.takeIf { it != -1L },
+                        onPendingBookIdConsumed = { pendingBookId = -1L }
+                    )
                 }
+            }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        if (intent.action == ACTION_OPEN_BOOK_DETAIL) {
+            val bookId = intent.getLongExtra(EXTRA_BOOK_ID, -1L)
+            if (bookId != -1L) {
+                // 通过重启 activity 来确保导航到书籍详情
+                intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                startActivity(intent)
             }
         }
     }

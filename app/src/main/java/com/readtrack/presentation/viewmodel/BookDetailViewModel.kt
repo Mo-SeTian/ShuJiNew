@@ -1,5 +1,6 @@
 package com.readtrack.presentation.viewmodel
 
+import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -14,6 +15,8 @@ import com.readtrack.domain.repository.BookRepository
 import com.readtrack.domain.repository.ReadingRecordRepository
 import com.readtrack.domain.repository.TagRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import com.readtrack.widget.WidgetUpdateHelper
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -46,6 +49,7 @@ data class TrendPoint(
 
 @HiltViewModel
 class BookDetailViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val bookRepository: BookRepository,
     private val recordRepository: ReadingRecordRepository,
     private val tagRepository: TagRepository,
@@ -230,6 +234,7 @@ class BookDetailViewModel @Inject constructor(
                 )
                 // 原子操作：记录插入 + 书籍更新在同一个事务中
                 bookRepository.insertRecordAndUpdateBook(record, updatedBook)
+                WidgetUpdateHelper.triggerUpdate(context)
             } catch (e: Exception) {
                 _uiState.update { it.copy(errorMessage = "添加记录失败: ${e.message}") }
             }
@@ -274,6 +279,7 @@ class BookDetailViewModel @Inject constructor(
                 )
                 // 原子操作：记录插入 + 书籍更新在同一个事务中
                 bookRepository.insertRecordAndUpdateBook(record, updatedBook)
+                WidgetUpdateHelper.triggerUpdate(context)
             } catch (e: Exception) {
                 _uiState.update { it.copy(errorMessage = "添加记录失败: ${e.message}") }
             }

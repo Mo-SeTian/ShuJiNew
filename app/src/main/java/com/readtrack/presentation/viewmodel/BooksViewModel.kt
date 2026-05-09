@@ -1,5 +1,6 @@
 package com.readtrack.presentation.viewmodel
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.readtrack.data.local.entity.BookEntity
@@ -12,7 +13,9 @@ import com.readtrack.domain.model.ProgressType
 import com.readtrack.domain.repository.BookRepository
 import com.readtrack.domain.repository.TagRepository
 import com.readtrack.util.PerformanceTrace
+import com.readtrack.widget.WidgetUpdateHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -44,6 +47,7 @@ data class BooksUiState(
 @OptIn(FlowPreview::class)
 @HiltViewModel
 class BooksViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val bookRepository: BookRepository,
     private val tagRepository: TagRepository
 ) : ViewModel() {
@@ -221,6 +225,7 @@ class BooksViewModel @Inject constructor(
                     updatedAt = System.currentTimeMillis()
                 )
                 bookRepository.insertRecordAndUpdateBook(record, updatedBook)
+                WidgetUpdateHelper.triggerUpdate(context)
             } catch (e: Exception) {
                 _uiState.update { it.copy(errorMessage = "记录失败: ${e.message}") }
             }
