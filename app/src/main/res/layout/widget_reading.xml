@@ -27,7 +27,7 @@
         android:layout_width="match_parent"
         android:layout_height="56dp"
         android:layout_gravity="bottom"
-        android:background="@drawable/widget_bottom_gradient" />
+        android:background="#CC000000" />
 
     <TextView
         android:id="@+id/widget_book_title"

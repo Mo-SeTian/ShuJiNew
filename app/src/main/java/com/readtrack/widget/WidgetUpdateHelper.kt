@@ -100,9 +100,11 @@ class WidgetUpdateHelper @Inject constructor(
             BitmapFactory.decodeFile(coverPath, opts)
             val maxDim = maxOf(opts.outWidth, opts.outHeight)
             opts.inJustDecodeBounds = false
+            // 粗采样确保解码后的最大边不超过 300，避免 RemoteViews IPC 超限
             opts.inSampleSize = when {
-                maxDim > 1024 -> 4
-                maxDim > 512 -> 2
+                maxDim > 2400 -> 8
+                maxDim > 1200 -> 4
+                maxDim > 600 -> 2
                 else -> 1
             }
             BitmapFactory.decodeFile(coverPath, opts)
