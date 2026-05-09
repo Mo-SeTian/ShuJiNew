@@ -64,7 +64,7 @@ object DatabaseModule {
                 createdAt INTEGER NOT NULL
             )
         """)
-        db.execSQL("CREATE INDEX IF NOT EXISTS index_tags_name ON tags(name)")
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_tags_name ON tags(name)")
         db.execSQL("""
             CREATE TABLE IF NOT EXISTS book_tag_cross_ref (
                 tagId INTEGER NOT NULL,

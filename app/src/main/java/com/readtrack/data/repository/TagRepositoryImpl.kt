@@ -17,8 +17,13 @@ class TagRepositoryImpl @Inject constructor(
 
     override fun getTagById(tagId: Long): Flow<TagEntity?> = tagDao.getTagById(tagId)
 
+    override suspend fun getTagByName(name: String): TagEntity? =
+        tagDao.getTagByName(name.trim())
+
     override suspend fun createTag(name: String, color: Long?): Long {
-        return tagDao.insertTag(TagEntity(name = name.trim(), color = color))
+        val trimmed = name.trim()
+        tagDao.getTagByName(trimmed)?.let { return it.id }
+        return tagDao.insertTag(TagEntity(name = trimmed, color = color))
     }
 
     override suspend fun deleteTag(tagId: Long) {
@@ -46,9 +51,6 @@ class TagRepositoryImpl @Inject constructor(
         tagDao.isBookTagged(tagId, bookId)
 
     override suspend fun setTagsForBook(bookId: Long, tagIds: List<Long>) {
-        tagDao.removeAllTagsFromBook(bookId)
-        tagIds.forEach { tagId ->
-            tagDao.addTagToBook(TagCrossRef(tagId = tagId, bookId = bookId))
-        }
+        tagDao.setTagsForBook(bookId, tagIds)
     }
 }

@@ -19,7 +19,10 @@ interface TagDao {
     @Query("SELECT * FROM tags WHERE id = :tagId")
     fun getTagById(tagId: Long): Flow<TagEntity?>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Query("SELECT * FROM tags WHERE name = :name LIMIT 1")
+    suspend fun getTagByName(name: String): TagEntity?
+
+    @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertTag(tag: TagEntity): Long
 
     @Delete
@@ -38,6 +41,9 @@ interface TagDao {
     @Query("SELECT ref.bookId FROM book_tag_cross_ref ref WHERE ref.tagId = :tagId")
     fun getBookIdsWithTag(tagId: Long): Flow<List<Long>>
 
+    @Query("SELECT * FROM book_tag_cross_ref")
+    suspend fun getAllBookTagCrossrefs(): List<TagCrossRef>
+
     @Query("SELECT EXISTS(SELECT 1 FROM book_tag_cross_ref WHERE tagId = :tagId AND bookId = :bookId)")
     suspend fun isBookTagged(tagId: Long, bookId: Long): Boolean
 
@@ -49,4 +55,12 @@ interface TagDao {
 
     @Query("DELETE FROM book_tag_cross_ref WHERE bookId = :bookId")
     suspend fun removeAllTagsFromBook(bookId: Long)
+
+    @androidx.room.Transaction
+    suspend fun setTagsForBook(bookId: Long, tagIds: List<Long>) {
+        removeAllTagsFromBook(bookId)
+        tagIds.forEach { tagId ->
+            addTagToBook(TagCrossRef(tagId = tagId, bookId = bookId))
+        }
+    }
 }
