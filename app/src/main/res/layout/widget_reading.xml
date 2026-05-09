@@ -6,49 +6,51 @@
     android:background="@drawable/widget_card_clip"
     android:clipToOutline="true">
 
+    <!-- 取色渐变背景 -->
     <ImageView
         android:id="@+id/widget_gradient_bg"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:scaleType="centerCrop" />
 
+    <!-- 封面：占满整个小组件，fitCenter 保持比例，四周留出渐变背景 -->
     <ImageView
         android:id="@+id/widget_cover"
-        android:layout_width="54dp"
-        android:layout_height="76dp"
-        android:layout_gravity="start|center_vertical"
-        android:layout_marginStart="14dp"
-        android:adjustViewBounds="true"
-        android:background="#24FFFFFF"
-        android:padding="2dp"
-        android:scaleType="fitCenter" />
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_margin="10dp"
+        android:scaleType="fitCenter"
+        android:adjustViewBounds="true" />
+
+    <!-- 底部向上渐变遮罩，保证文字可读 -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_gravity="bottom"
+        android:background="@drawable/widget_bottom_gradient" />
 
     <TextView
         android:id="@+id/widget_book_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="start|center_vertical"
-        android:layout_marginStart="78dp"
-        android:layout_marginEnd="14dp"
-        android:layout_marginBottom="18dp"
+        android:layout_gravity="bottom"
+        android:layout_marginStart="14dp"
+        android:layout_marginEnd="52dp"
+        android:layout_marginBottom="28dp"
         android:ellipsize="end"
-        android:maxLines="2"
-        android:shadowColor="#66000000"
-        android:shadowDx="0"
-        android:shadowDy="1"
-        android:shadowRadius="3"
+        android:maxLines="1"
         android:text="选择一本书"
         android:textColor="@android:color/white"
-        android:textSize="15sp"
+        android:textSize="14sp"
         android:textStyle="bold" />
 
     <TextView
         android:id="@+id/widget_progress_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="start|center_vertical"
-        android:layout_marginStart="78dp"
-        android:layout_marginTop="34dp"
+        android:layout_gravity="bottom"
+        android:layout_marginStart="14dp"
+        android:layout_marginBottom="10dp"
         android:text="设置 → 桌面小组件"
         android:textColor="#CCFFFFFF"
         android:textSize="11sp" />
