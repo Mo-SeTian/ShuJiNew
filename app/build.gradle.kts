@@ -121,6 +121,9 @@ dependencies {
 
     // Coil for images
     implementation("io.coil-kt:coil-compose:2.6.0")
+
+    // Palette — 从封面图片提取主色调
+    implementation("androidx.palette:palette-ktx:1.0.0")
     
     // Kotlin Serialization
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
