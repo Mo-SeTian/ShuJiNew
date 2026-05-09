@@ -33,6 +33,7 @@ import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.SettingsEthernet
 import androidx.compose.material.icons.outlined.Upload
+import androidx.compose.material.icons.outlined.Widgets
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -79,6 +80,7 @@ import java.util.Locale
 @Composable
 fun SettingsScreen(
     onNavigateToBackupSettings: () -> Unit,
+    onNavigateToWidgetSettings: () -> Unit = {},
     onNavigateToAbout: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
@@ -423,6 +425,15 @@ fun SettingsScreen(
                     StatsUnit.CHAPTER -> "章节数"
                     StatsUnit.PAGE -> "页数"
                 }) { showStatsUnitDialog = true }
+            }
+
+            item { Spacer(Modifier.height(8.dp)); SettingsSectionCard("桌面小组件") }
+            item {
+                SettingsClickableCard(
+                    Icons.Outlined.Widgets,
+                    "桌面小组件",
+                    "设置每个桌面小组件对应的书籍"
+                ) { onNavigateToWidgetSettings() }
             }
 
             item { Spacer(Modifier.height(8.dp)); SettingsSectionCard("其他") }

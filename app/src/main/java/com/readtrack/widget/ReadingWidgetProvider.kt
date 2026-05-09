@@ -28,6 +28,13 @@ class ReadingWidgetProvider : AppWidgetProvider() {
         job.cancel()
     }
 
+    override fun onDeleted(context: Context, appWidgetIds: IntArray) {
+        val helper = getWidgetUpdateHelper(context)
+        scope.launch {
+            helper.clearWidgetSelections(appWidgetIds)
+        }
+    }
+
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
         if (intent.action == AppWidgetManager.ACTION_APPWIDGET_UPDATE) {
