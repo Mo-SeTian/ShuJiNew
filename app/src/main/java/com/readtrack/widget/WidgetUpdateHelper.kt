@@ -11,6 +11,7 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.LinearGradient
 import android.graphics.Paint
+import android.graphics.Rect
 import android.graphics.Shader
 import android.widget.RemoteViews
 import androidx.palette.graphics.Palette
@@ -51,11 +52,14 @@ class WidgetUpdateHelper @Inject constructor(
                 val bookId = preferencesManager.getWidgetBookId(appWidgetId)
                 bookId?.let { bookDao.getBookByIdOnce(it) }
             }
-            val (gradientBitmap, coverBitmap) = withContext(Dispatchers.IO) {
+            val compositeBitmap = withContext(Dispatchers.IO) {
                 val color = extractCoverColor(book?.coverPath) ?: Color.rgb(38, 36, 64)
-                Pair(createGradientBitmap(color), loadCoverBitmap(book?.coverPath))
+                val cover = loadCoverBitmap(book?.coverPath)
+                createWidgetComposite(color, cover)?.also {
+                    cover?.recycle()
+                }
             }
-            val remoteViews = buildRemoteViews(context, book, appWidgetId, gradientBitmap, coverBitmap)
+            val remoteViews = buildRemoteViews(context, book, appWidgetId, compositeBitmap)
             appWidgetManager.updateAppWidget(appWidgetId, remoteViews)
         }
     }
@@ -82,16 +86,49 @@ class WidgetUpdateHelper @Inject constructor(
         }
     }
 
-    private fun createGradientBitmap(baseColor: Int): Bitmap {
-        val size = 128
-        val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(bitmap)
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-        val start = Color.argb(170, Color.red(baseColor), Color.green(baseColor), Color.blue(baseColor))
-        val end = Color.argb(225, 10, 10, 18)
-        paint.shader = LinearGradient(0f, 0f, size.toFloat(), size.toFloat(), start, end, Shader.TileMode.CLAMP)
-        canvas.drawRect(0f, 0f, size.toFloat(), size.toFloat(), paint)
-        return bitmap
+    private fun createWidgetComposite(baseColor: Int, coverBitmap: Bitmap?): Bitmap? {
+        return try {
+            val size = 300
+            val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(bitmap)
+
+            // 1. 渐变背景
+            val gradientPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+            val start = Color.argb(170, Color.red(baseColor), Color.green(baseColor), Color.blue(baseColor))
+            val end = Color.argb(225, 10, 10, 18)
+            gradientPaint.shader = LinearGradient(
+                0f, 0f, size.toFloat(), size.toFloat(),
+                start, end, Shader.TileMode.CLAMP
+            )
+            canvas.drawRect(0f, 0f, size.toFloat(), size.toFloat(), gradientPaint)
+
+            // 2. 封面居中，四周留 margin 露出渐变背景
+            coverBitmap?.let { cover ->
+                val margin = (size * 0.10f).toInt()
+                val availW = size - 2 * margin
+                val availH = size - 2 * margin
+                val scale = minOf(availW.toFloat() / cover.width, availH.toFloat() / cover.height)
+                val drawW = (cover.width * scale).toInt()
+                val drawH = (cover.height * scale).toInt()
+                val left = margin + (availW - drawW) / 2
+                val top = margin + (availH - drawH) / 2
+                canvas.drawBitmap(cover, null, Rect(left, top, left + drawW, top + drawH), null)
+            }
+
+            // 3. 底部暗色遮罩
+            val scrimPaint = Paint()
+            scrimPaint.color = Color.argb(204, 0, 0, 0)
+            val scrimHeight = (size * 0.18f).toInt()
+            canvas.drawRect(
+                0f, (size - scrimHeight).toFloat(),
+                size.toFloat(), size.toFloat(),
+                scrimPaint
+            )
+
+            bitmap
+        } catch (e: Exception) {
+            null
+        }
     }
 
     private fun loadCoverBitmap(coverPath: String?): Bitmap? {
@@ -100,12 +137,11 @@ class WidgetUpdateHelper @Inject constructor(
             val opts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
             BitmapFactory.decodeFile(coverPath, opts)
             val maxDim = maxOf(opts.outWidth, opts.outHeight)
+            if (maxDim <= 0) return null
             opts.inJustDecodeBounds = false
-            // 粗采样确保解码后的最大边不超过 300，避免 RemoteViews IPC 超限
             opts.inSampleSize = when {
                 maxDim > 2400 -> 8
                 maxDim > 1200 -> 4
-                maxDim > 600 -> 2
                 else -> 2
             }
             BitmapFactory.decodeFile(coverPath, opts)
@@ -118,13 +154,11 @@ class WidgetUpdateHelper @Inject constructor(
         context: Context,
         book: BookEntity?,
         appWidgetId: Int,
-        gradientBitmap: Bitmap,
-        coverBitmap: Bitmap?
+        compositeBitmap: Bitmap?
     ): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.widget_reading)
-        views.setImageViewBitmap(R.id.widget_gradient_bg, gradientBitmap)
-        if (coverBitmap != null) {
-            views.setImageViewBitmap(R.id.widget_cover, coverBitmap)
+        if (compositeBitmap != null) {
+            views.setImageViewBitmap(R.id.widget_composite_bg, compositeBitmap)
         }
 
         if (book != null) {
