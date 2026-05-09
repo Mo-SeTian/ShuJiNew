@@ -5,27 +5,11 @@
     android:layout_height="match_parent"
     android:background="#1A1824">
 
-    <!-- 取色渐变背景 -->
     <ImageView
-        android:id="@+id/widget_gradient_bg"
+        android:id="@+id/widget_composite_bg"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:scaleType="centerCrop" />
-
-    <!-- 封面：占满整个小组件，fitCenter 保持比例，四周留出渐变背景 -->
-    <ImageView
-        android:id="@+id/widget_cover"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_margin="10dp"
-        android:scaleType="fitCenter" />
-
-    <!-- 底部向上渐变遮罩，保证文字可读 -->
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:layout_gravity="bottom"
-        android:background="#CC000000" />
+        android:scaleType="fitXY" />
 
     <TextView
         android:id="@+id/widget_book_title"
