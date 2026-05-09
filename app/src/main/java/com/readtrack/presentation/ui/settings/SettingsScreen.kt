@@ -90,7 +90,7 @@ fun SettingsScreen(
     var showAutoBackupDialog by remember { mutableStateOf(false) }
     var showUpdateSourceDialog by remember { mutableStateOf(false) }
     var showUpdateResultDialog by remember { mutableStateOf(false) }
-    var showTagManagementDialog by remember { mutableStateOf(false) }
+    var showTagSheet by remember { mutableStateOf(false) }
     var pendingImportUri by remember { mutableStateOf<Uri?>(null) }
     var pendingImportContent by remember { mutableStateOf<String?>(null) }
 
@@ -431,7 +431,7 @@ fun SettingsScreen(
                     Icons.Outlined.CloudUpload,
                     "标签管理",
                     "创建、删除书籍标签"
-                ) { showTagManagementDialog = true }
+                ) { showTagSheet = true }
             }
             item {
                 SettingsClickableCard(
@@ -618,6 +618,11 @@ fun SettingsScreen(
                 TextButton(onClick = { showUpdateSourceDialog = false }) { Text("取消") }
             }
         )
+    }
+
+    if (showTagSheet) {
+        val tagVm: com.readtrack.presentation.viewmodel.TagManagementViewModel = hiltViewModel()
+        TagManagementSheet(onDismiss = { showTagSheet = false }, viewModel = tagVm)
     }
 
     LaunchedEffect(uiState.updateResult) {
@@ -984,11 +989,4 @@ private fun DoubanCookieCard(
         )
     }
 
-    // 标签管理弹窗
-    // TODO: 重新启用标签管理功能
-    // if (showTagManagementDialog) {
-    //     TagManagementSheet(
-    //         onDismiss = { showTagManagementDialog = false }
-    //     )
-    // }
-}
+    }
