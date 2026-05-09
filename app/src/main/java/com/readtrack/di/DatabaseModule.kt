@@ -40,7 +40,7 @@ object DatabaseModule {
             ReadTrackDatabase::class.java,
             "readtrack_database"
         )
-            .addMigrations(MIGRATION_9_10, MIGRATION_10_11)
+            .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12)
             .fallbackToDestructiveMigration()
             .build()
     }
@@ -77,6 +77,14 @@ object DatabaseModule {
         """)
         db.execSQL("CREATE INDEX IF NOT EXISTS index_book_tag_cross_ref_tagId ON book_tag_cross_ref(tagId)")
         db.execSQL("CREATE INDEX IF NOT EXISTS index_book_tag_cross_ref_bookId ON book_tag_cross_ref(bookId)")
+    }
+
+    /**
+     * 从版本 11 迁移到 12：重建 tags.name 索引为 UNIQUE，防止同名标签
+     */
+    private val MIGRATION_11_12 = Migration(11, 12) { db ->
+        db.execSQL("DROP INDEX IF EXISTS index_tags_name")
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_tags_name ON tags(name)")
     }
 
     @Provides
