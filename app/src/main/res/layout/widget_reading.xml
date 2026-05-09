@@ -13,20 +13,24 @@
         android:scaleType="centerCrop" />
 
     <ImageView
-        android:id="@+id/widget_cover_blur"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:alpha="0.28"
-        android:scaleType="centerCrop" />
+        android:id="@+id/widget_cover"
+        android:layout_width="54dp"
+        android:layout_height="76dp"
+        android:layout_gravity="start|center_vertical"
+        android:layout_marginStart="14dp"
+        android:adjustViewBounds="true"
+        android:background="#24FFFFFF"
+        android:padding="2dp"
+        android:scaleType="fitCenter" />
 
     <TextView
         android:id="@+id/widget_book_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="start|bottom"
-        android:layout_marginStart="18dp"
-        android:layout_marginEnd="62dp"
-        android:layout_marginBottom="50dp"
+        android:layout_gravity="start|center_vertical"
+        android:layout_marginStart="78dp"
+        android:layout_marginEnd="14dp"
+        android:layout_marginBottom="18dp"
         android:ellipsize="end"
         android:maxLines="2"
         android:shadowColor="#66000000"
@@ -35,31 +39,31 @@
         android:shadowRadius="3"
         android:text="选择一本书"
         android:textColor="@android:color/white"
-        android:textSize="17sp"
+        android:textSize="15sp"
         android:textStyle="bold" />
 
     <TextView
         android:id="@+id/widget_progress_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="start|bottom"
-        android:layout_marginStart="18dp"
-        android:layout_marginBottom="27dp"
-        android:text="点击选择要记录的书籍"
+        android:layout_gravity="start|center_vertical"
+        android:layout_marginStart="78dp"
+        android:layout_marginTop="34dp"
+        android:text="设置 → 桌面小组件"
         android:textColor="#CCFFFFFF"
-        android:textSize="12sp" />
+        android:textSize="11sp" />
 
     <TextView
         android:id="@+id/widget_record_button"
-        android:layout_width="36dp"
-        android:layout_height="36dp"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
         android:layout_gravity="end|bottom"
-        android:layout_marginEnd="14dp"
-        android:layout_marginBottom="14dp"
+        android:layout_marginEnd="10dp"
+        android:layout_marginBottom="10dp"
         android:background="@drawable/widget_plus_bg"
         android:gravity="center"
         android:text="+"
         android:textColor="@android:color/white"
-        android:textSize="26sp" />
+        android:textSize="23sp" />
 
 </FrameLayout>

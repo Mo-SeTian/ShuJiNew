@@ -105,7 +105,7 @@ class WidgetUpdateHelper @Inject constructor(
             val decoded = BitmapFactory.decodeFile(coverPath, opts) ?: return null
             val w = decoded.width
             val h = decoded.height
-            val scale = maxOf(targetDim.toFloat() / w, targetDim.toFloat() / h)
+            val scale = minOf(targetDim.toFloat() / w, targetDim.toFloat() / h)
             Bitmap.createScaledBitmap(decoded, (w * scale).toInt(), (h * scale).toInt(), true)
                 .also { if (it != decoded) decoded.recycle() }
         } catch (e: Exception) {
@@ -123,7 +123,7 @@ class WidgetUpdateHelper @Inject constructor(
         val views = RemoteViews(context.packageName, R.layout.widget_reading)
         views.setImageViewBitmap(R.id.widget_gradient_bg, gradientBitmap)
         if (coverBitmap != null) {
-            views.setImageViewBitmap(R.id.widget_cover_blur, coverBitmap)
+            views.setImageViewBitmap(R.id.widget_cover, coverBitmap)
         }
 
         if (book != null) {
