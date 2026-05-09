@@ -37,7 +37,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.readtrack.data.local.entity.TagEntity
 import com.readtrack.presentation.viewmodel.TagManagementViewModel
 import kotlinx.coroutines.launch
@@ -46,7 +45,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun TagManagementSheet(
     onDismiss: () -> Unit,
-    viewModel: TagManagementViewModel = hiltViewModel()
+    viewModel: TagManagementViewModel
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val tags by viewModel.tags.collectAsState()
