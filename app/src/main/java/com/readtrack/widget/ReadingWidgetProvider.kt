@@ -21,28 +21,43 @@ class ReadingWidgetProvider : AppWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         appWidgetIds: IntArray
     ) {
-        val helper = getWidgetUpdateHelper(context)
-        scope.launch {
-            helper.updateWidgets(context)
-        }
+        updateAllWidgets(context)
     }
 
     override fun onEnabled(context: Context) {
-        // 第一个小组件被添加时
     }
 
     override fun onDisabled(context: Context) {
-        // 最后一个小组件被移除时
         job.cancel()
     }
 
     override fun onReceive(context: Context, intent: Intent) {
-        super.onReceive(context, intent)
-        if (intent.action == AppWidgetManager.ACTION_APPWIDGET_UPDATE) {
-            val helper = getWidgetUpdateHelper(context)
-            scope.launch {
-                helper.updateWidgets(context)
+        when (intent.action) {
+            ACTION_PREV_PAGE, ACTION_NEXT_PAGE -> {
+                val appWidgetId = intent.getIntExtra(EXTRA_WIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID)
+                if (appWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
+                    val prefs = context.applicationContext.getSharedPreferences(
+                        WidgetUpdateHelper.PREFS_NAME, Context.MODE_PRIVATE
+                    )
+                    val currentPage = prefs.getInt("${WidgetUpdateHelper.PAGE_KEY_PREFIX}$appWidgetId", 0)
+                    val newPage = if (intent.action == ACTION_NEXT_PAGE) currentPage + 1 else currentPage - 1
+                    prefs.edit().putInt("${WidgetUpdateHelper.PAGE_KEY_PREFIX}$appWidgetId", newPage).apply()
+                    updateAllWidgets(context)
+                }
             }
+            else -> {
+                super.onReceive(context, intent)
+                if (intent.action == AppWidgetManager.ACTION_APPWIDGET_UPDATE) {
+                    updateAllWidgets(context)
+                }
+            }
+        }
+    }
+
+    private fun updateAllWidgets(context: Context) {
+        val helper = getWidgetUpdateHelper(context)
+        scope.launch {
+            helper.updateWidgets(context)
         }
     }
 
@@ -52,5 +67,11 @@ class ReadingWidgetProvider : AppWidgetProvider() {
             WidgetEntryPoint::class.java
         )
         return entryPoint.widgetUpdateHelper()
+    }
+
+    companion object {
+        const val ACTION_PREV_PAGE = "com.readtrack.widget.PREV_PAGE"
+        const val ACTION_NEXT_PAGE = "com.readtrack.widget.NEXT_PAGE"
+        const val EXTRA_WIDGET_ID = "extra_widget_id"
     }
 }
