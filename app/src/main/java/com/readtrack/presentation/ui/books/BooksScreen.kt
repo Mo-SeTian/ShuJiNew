@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Sort
+import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -44,6 +45,7 @@ fun BooksScreen(
     var showSortMenu by remember { mutableStateOf(false) }
     var selectedBookIds by remember { mutableStateOf(setOf<Long>()) }
     var showAddToBookListDialog by remember { mutableStateOf(false) }
+    var showTagFilterSheet by remember { mutableStateOf(false) }
 
     val isSelectionMode = selectedBookIds.isNotEmpty()
 
@@ -210,7 +212,7 @@ fun BooksScreen(
                 )
             )
 
-            // Status Filter Chips - Modern Style
+            // Filter Chips Row: Status + Tag
             LazyRow(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -244,47 +246,36 @@ fun BooksScreen(
                         shape = RoundedCornerShape(20.dp)
                     )
                 }
-            }
-
-            // Tag Filter Chips
-            if (uiState.allTags.isNotEmpty()) {
-                LazyRow(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    item(key = "tag-all") {
-                        FilterChip(
-                            selected = uiState.selectedTagId == null,
-                            onClick = { viewModel.setTagFilter(null) },
-                            label = { Text("全部标签") },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = MaterialTheme.colorScheme.secondary,
-                                selectedLabelColor = MaterialTheme.colorScheme.onSecondary
-                            ),
-                            shape = RoundedCornerShape(20.dp)
-                        )
-                    }
-                    items(
-                        items = uiState.allTags,
-                        key = { "tag-${it.id}" }
-                    ) { tag ->
-                        FilterChip(
-                            selected = uiState.selectedTagId == tag.id,
-                            onClick = { viewModel.setTagFilter(tag.id) },
-                            label = { Text(tag.name) },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer
-                            ),
-                            shape = RoundedCornerShape(20.dp)
-                        )
-                    }
+                // Tag filter chip
+                item(key = "tag-filter") {
+                    val tagName = uiState.allTags.find { it.id == uiState.selectedTagId }?.name
+                    val hasTagFilter = uiState.selectedTagId != null
+                    FilterChip(
+                        selected = hasTagFilter,
+                        onClick = { showTagFilterSheet = true },
+                        label = {
+                            Text(
+                                if (hasTagFilter) tagName!!
+                                else "筛选标签"
+                            )
+                        },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.LocalOffer,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onTertiaryContainer
+                        ),
+                        shape = RoundedCornerShape(20.dp)
+                    )
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
             // Book List
             when {
@@ -372,6 +363,17 @@ fun BooksScreen(
                 showAddToBookListDialog = false
                 selectedBookIds = emptySet()
             }
+        )
+    }
+
+    if (showTagFilterSheet) {
+        TagFilterSheet(
+            tags = uiState.allTags,
+            selectedTagId = uiState.selectedTagId,
+            onTagSelected = { tagId ->
+                viewModel.setTagFilter(tagId)
+            },
+            onDismiss = { showTagFilterSheet = false }
         )
     }
 }
