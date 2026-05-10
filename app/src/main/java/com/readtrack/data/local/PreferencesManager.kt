@@ -274,7 +274,7 @@ class PreferencesManager @Inject constructor(
                 themeMode = preferences[THEME_MODE] ?: ThemeMode.SYSTEM.name,
                 statsUnit = preferences[STATS_UNIT] ?: StatsUnit.CHAPTER.name,
                 statsRange = preferences[STATS_RANGE] ?: StatsRange.WEEK.name,
-                doubanCookie = "",  // 安全策略：不导出认证 cookie
+                doubanCookie = preferences[DOUBAN_COOKIE] ?: "",
                 webDavServerUrl = preferences[WEBDAV_SERVER_URL] ?: "",
                 webDavUsername = preferences[WEBDAV_USERNAME] ?: "",
                 // 安全策略：不导出密码明文，避免分享备份文件时泄露
