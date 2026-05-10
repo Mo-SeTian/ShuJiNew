@@ -90,21 +90,10 @@ class WidgetUpdateHelper @Inject constructor(
 
     private fun createWidgetComposite(baseColor: Int, coverBitmap: Bitmap?): Bitmap {
         val size = 400
-        val cornerRadius = size * 0.08f
         val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
 
-        // 先填底色，圆角外的区域不会是透明的黑色
-        canvas.drawColor(Color.parseColor("#1A1824"))
-
-        // 圆角裁剪
-        val clipPath = Path().apply {
-            addRoundRect(RectF(0f, 0f, size.toFloat(), size.toFloat()),
-                cornerRadius, cornerRadius, Path.Direction.CW)
-        }
-        canvas.clipPath(clipPath)
-
-        // 1. 渐变背景，从封面主色过渡到暗色
+        // 1. 渐变背景，从封面主色过渡到暗色（整张位图）
         val gradientPaint = Paint(Paint.ANTI_ALIAS_FLAG)
         val r = Color.red(baseColor)
         val g = Color.green(baseColor)
@@ -117,8 +106,8 @@ class WidgetUpdateHelper @Inject constructor(
         )
         canvas.drawRect(0f, 0f, size.toFloat(), size.toFloat(), gradientPaint)
 
-        // 2. 封面居中 + 光晕柔化边缘
-        val margin = (size * 0.10f).toInt()
+        // 2. 封面居中，四周留 margin 露出渐变背景
+        val margin = (size * 0.12f).toInt()
         coverBitmap?.let { cover ->
             if (!cover.isRecycled && cover.width > 0 && cover.height > 0) {
                 val availW = size - 2 * margin
@@ -128,33 +117,23 @@ class WidgetUpdateHelper @Inject constructor(
                 val drawH = (cover.height * scale).toInt()
                 val left = margin + (availW - drawW) / 2
                 val top = margin + (availH - drawH) / 2
-                val coverRect = Rect(left, top, left + drawW, top + drawH)
-
-                // 光晕：放大一圈 + 半透明，融入背景渐变
-                val glowPaint = Paint(Paint.FILTER_BITMAP_FLAG)
-                glowPaint.alpha = 55
-                val glowPad = 14
                 canvas.drawBitmap(cover, null,
-                    Rect(coverRect.left - glowPad, coverRect.top - glowPad,
-                        coverRect.right + glowPad, coverRect.bottom + glowPad),
-                    glowPaint)
-
-                // 实际封面
-                canvas.drawBitmap(cover, null, coverRect, Paint(Paint.FILTER_BITMAP_FLAG))
+                    Rect(left, top, left + drawW, top + drawH),
+                    Paint(Paint.FILTER_BITMAP_FLAG))
             }
         }
 
-        // 3. 底部渐变遮罩，透明→半透明黑，过渡更自然
+        // 3. 底部渐变遮罩：透明 → 半透明黑
         val scrimHeight = (size * 0.22f).toInt()
-        val scrimStart = (size - scrimHeight).toFloat() - 6f
+        val scrimTop = (size - scrimHeight).toFloat()
         val scrimPaint = Paint(Paint.ANTI_ALIAS_FLAG)
         scrimPaint.shader = LinearGradient(
-            0f, scrimStart, 0f, size.toFloat(),
+            0f, scrimTop, 0f, size.toFloat(),
             intArrayOf(Color.argb(0, 0, 0, 0), Color.argb(190, 0, 0, 0)),
             floatArrayOf(0f, 1f),
             Shader.TileMode.CLAMP
         )
-        canvas.drawRect(0f, scrimStart, size.toFloat(), size.toFloat(), scrimPaint)
+        canvas.drawRect(0f, scrimTop, size.toFloat(), size.toFloat(), scrimPaint)
 
         return bitmap
     }
