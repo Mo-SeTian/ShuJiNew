@@ -29,6 +29,7 @@ import com.readtrack.R
 import com.readtrack.data.local.PreferencesManager
 import com.readtrack.data.local.dao.BookDao
 import com.readtrack.data.local.entity.BookEntity
+import com.readtrack.domain.model.BookStatus
 import com.readtrack.presentation.ui.widget.WidgetQuickRecordActivity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -354,19 +355,6 @@ class WidgetUpdateHelper @Inject constructor(
         views.setViewVisibility(R.id.widget_book_title, android.view.View.GONE)
         views.setViewVisibility(R.id.widget_progress_text, android.view.View.GONE)
 
-        if (book != null) {
-            val recordIntent = WidgetQuickRecordActivity.createIntent(context, book.id)
-            views.setOnClickPendingIntent(
-                R.id.widget_record_button,
-                PendingIntent.getActivity(
-                    context,
-                    appWidgetId * 3 + 1,
-                    recordIntent,
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                )
-            )
-        }
-
         // 主体点击：有书籍→详情页，无书籍→小组件设置页
         val openIntent = if (book != null) {
             Intent(context, MainActivity::class.java).apply {
@@ -387,7 +375,24 @@ class WidgetUpdateHelper @Inject constructor(
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         views.setOnClickPendingIntent(R.id.widget_container, openPendingIntent)
-        if (book == null) {
+
+        // 右下角按钮：阅读中→记录进度，其他→打开详情页
+        if (book != null) {
+            if (book.status == BookStatus.READING) {
+                val recordIntent = WidgetQuickRecordActivity.createIntent(context, book.id)
+                views.setOnClickPendingIntent(
+                    R.id.widget_record_button,
+                    PendingIntent.getActivity(
+                        context,
+                        appWidgetId * 3 + 1,
+                        recordIntent,
+                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                    )
+                )
+            } else {
+                views.setOnClickPendingIntent(R.id.widget_record_button, openPendingIntent)
+            }
+        } else {
             views.setOnClickPendingIntent(R.id.widget_record_button, openPendingIntent)
         }
 
