@@ -54,6 +54,7 @@ fun BooksScreen(
     var showTagDropdown by remember { mutableStateOf(false) }
     var showBookListDropdown by remember { mutableStateOf(false) }
     var searchExpanded by remember { mutableStateOf(uiState.searchQuery.isNotEmpty()) }
+    var searchText by remember { mutableStateOf(uiState.searchQuery) }
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
     val listState = rememberLazyListState()
@@ -204,8 +205,11 @@ fun BooksScreen(
                 exit = shrinkVertically(animationSpec = tween(150)) + fadeOut(tween(150))
             ) {
                 OutlinedTextField(
-                    value = uiState.searchQuery,
-                    onValueChange = { viewModel.setSearchQuery(it) },
+                    value = searchText,
+                    onValueChange = {
+                        searchText = it
+                        viewModel.setSearchQuery(it)
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 4.dp)
@@ -219,9 +223,12 @@ fun BooksScreen(
                         )
                     },
                     trailingIcon = {
-                        if (uiState.searchQuery.isNotEmpty()) {
+                        if (searchText.isNotEmpty()) {
                             IconButton(
-                                onClick = { viewModel.setSearchQuery("") },
+                                onClick = {
+                                    searchText = ""
+                                    viewModel.setSearchQuery("")
+                                },
                                 modifier = Modifier.size(20.dp)
                             ) {
                                 Icon(
