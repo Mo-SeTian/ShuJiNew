@@ -72,6 +72,8 @@ class BooksViewModel @Inject constructor(
     private var bookListFilterManuallyChanged = false
 
     init {
+        // 默认状态筛选为「在读」
+        selectedStatusesFlow.value = setOf(BookStatus.READING)
         loadBooks()
         loadTags()
         loadBookListData()
@@ -175,18 +177,13 @@ class BooksViewModel @Inject constructor(
                 val allIds = bookLists.map { it.id }.toSet()
 
                 if (!bookListDefaultsApplied && bookLists.isNotEmpty()) {
-                    // 默认选中全部书单
-                    selectedBookListIdsFlow.value = allIds
+                    // 默认不筛选书单，展示全部书籍
                     bookListDefaultsApplied = true
                 } else {
-                    // 新书单自动加入筛选，删除的书单自动清理
+                    // 删除的书单自动清理
                     val current = selectedBookListIdsFlow.value
-                    val synced = current.filter { it in allIds }.toMutableSet()
-                    if (!bookListFilterManuallyChanged) {
-                        synced.addAll(allIds)
-                    }
-                    if (synced != current) {
-                        selectedBookListIdsFlow.value = synced
+                    if (current.any { it !in allIds }) {
+                        selectedBookListIdsFlow.value = current.filter { it in allIds }.toSet()
                     }
                 }
             }
@@ -232,7 +229,8 @@ class BooksViewModel @Inject constructor(
         selectedTagIdsFlow.value = newSet
         viewModelScope.launch {
             taggedBookIdsFlow.value = if (newSet.isNotEmpty()) {
-                newSet.flatMap { tagRepository.getBookIdsWithTag(it).first() }.toSet()
+                val bookIdsPerTag = newSet.map { tagRepository.getBookIdsWithTag(it).first().toSet() }
+                bookIdsPerTag.reduce { acc, ids -> acc.intersect(ids) }
             } else {
                 emptySet()
             }

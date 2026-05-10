@@ -7,6 +7,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -55,6 +56,18 @@ fun BooksScreen(
     var searchExpanded by remember { mutableStateOf(uiState.searchQuery.isNotEmpty()) }
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
+    val listState = rememberLazyListState()
+
+    // 筛选条件变化时，列表回到顶部
+    LaunchedEffect(
+        uiState.selectedStatuses,
+        uiState.selectedTagIds,
+        uiState.selectedBookListIds,
+        uiState.searchQuery,
+        uiState.sortOrder
+    ) {
+        listState.animateScrollToItem(0)
+    }
 
     val isSelectionMode = selectedBookIds.isNotEmpty()
 
@@ -206,26 +219,24 @@ fun BooksScreen(
                         )
                     },
                     trailingIcon = {
-                        Row {
-                            if (uiState.searchQuery.isNotEmpty()) {
-                                IconButton(
-                                    onClick = { viewModel.setSearchQuery("") },
-                                    modifier = Modifier.size(18.dp)
-                                ) {
-                                    Icon(
-                                        Icons.Default.Clear,
-                                        contentDescription = "清除搜索",
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
+                        if (uiState.searchQuery.isNotEmpty()) {
+                            IconButton(
+                                onClick = { viewModel.setSearchQuery("") },
+                                modifier = Modifier.size(20.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Clear,
+                                    contentDescription = "清除搜索",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                             }
+                        } else {
                             IconButton(
                                 onClick = {
                                     searchExpanded = false
-                                    viewModel.setSearchQuery("")
                                     focusManager.clearFocus()
                                 },
-                                modifier = Modifier.size(18.dp)
+                                modifier = Modifier.size(20.dp)
                             ) {
                                 Icon(
                                     Icons.Default.Close,
@@ -543,6 +554,7 @@ fun BooksScreen(
 
                 else -> {
                     LazyColumn(
+                        state = listState,
                         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 80.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
