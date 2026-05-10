@@ -193,17 +193,19 @@ class WidgetUpdateHelper @Inject constructor(
                 val srcTop = (cover.height - srcH) / 2
                 val srcRect = Rect(srcLeft, srcTop, srcLeft + srcW, srcTop + srcH)
 
-                // 阴影/光晕层：略大、低透明度，制造边缘柔化过渡
-                val shadowPaint = Paint(Paint.FILTER_BITMAP_FLAG)
-                shadowPaint.alpha = 50
-                val shadowPad = 24
-                val shadowRect = Rect(
-                    dstRect.left - shadowPad,
-                    dstRect.top - shadowPad,
-                    dstRect.right + shadowPad,
-                    dstRect.bottom + shadowPad
-                )
-                canvas.drawBitmap(cover, srcRect, shadowRect, shadowPaint)
+                // 封面阴影（暗色多层叠加，避免浅色封面产生白光圈）
+                val shadowLayers = listOf(16 to 16, 10 to 28, 5 to 14)
+                for ((pad, alpha) in shadowLayers) {
+                    val sp = Paint(Paint.ANTI_ALIAS_FLAG)
+                    sp.color = Color.argb(alpha, 0, 0, 0)
+                    canvas.drawRect(
+                        (dstRect.left - pad).toFloat(),
+                        (dstRect.top - pad).toFloat(),
+                        (dstRect.right + pad).toFloat(),
+                        (dstRect.bottom + pad).toFloat(),
+                        sp
+                    )
+                }
 
                 // 实际封面
                 canvas.drawBitmap(cover, srcRect, dstRect, Paint(Paint.FILTER_BITMAP_FLAG))
@@ -221,8 +223,8 @@ class WidgetUpdateHelper @Inject constructor(
         canvas.drawRect(0f, size * 0.58f, size.toFloat(), size.toFloat(), scrimPaint)
 
         // 4. 右侧多列竖排文字：从左到右排布，书名在左，进度在右
-        // 封面右边缘(含阴影) ≈ 256，文字从此之后开始避免重叠
-        val textLeftX = size * 0.66f
+        val textTopY = size * 0.08f
+        val textLeftX = size * 0.68f
         val columnWidth = 38f
 
         if (book != null) {
@@ -235,7 +237,7 @@ class WidgetUpdateHelper @Inject constructor(
                 isFakeBoldText = true
             }
             drawMultiColumnVerticalTextAt(
-                canvas, title, textLeftX, size * 0.06f, titlePaint, columnWidth
+                canvas, title, textLeftX, textTopY, titlePaint, columnWidth
             )
 
             val progressPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -246,7 +248,7 @@ class WidgetUpdateHelper @Inject constructor(
             drawMultiColumnVerticalTextAt(
                 canvas,
                 normalizeVerticalText("${calculateProgressPercent(book)}%"),
-                progressLeftX, size * 0.18f, progressPaint, columnWidth
+                progressLeftX, textTopY, progressPaint, columnWidth
             )
         } else {
             val emptyPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -255,7 +257,7 @@ class WidgetUpdateHelper @Inject constructor(
                 isFakeBoldText = true
             }
             drawMultiColumnVerticalTextAt(
-                canvas, "选择一本书", textLeftX, size * 0.1f, emptyPaint, columnWidth
+                canvas, "选择一本书", textLeftX, textTopY, emptyPaint, columnWidth
             )
 
             val hintPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -263,7 +265,7 @@ class WidgetUpdateHelper @Inject constructor(
                 textSize = 18f
             }
             drawMultiColumnVerticalTextAt(
-                canvas, "设置", textLeftX + columnWidth + 18f, size * 0.1f, hintPaint, columnWidth
+                canvas, "设置", textLeftX + columnWidth + 18f, textTopY, hintPaint, columnWidth
             )
         }
 
