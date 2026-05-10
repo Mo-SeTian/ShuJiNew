@@ -12,7 +12,12 @@ import android.graphics.Color
 import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.Rect
+import android.graphics.RectF
 import android.graphics.Shader
+import android.text.Layout
+import android.text.StaticLayout
+import android.text.TextPaint
+import android.text.TextUtils
 import android.widget.RemoteViews
 import androidx.core.graphics.drawable.toBitmap
 import androidx.palette.graphics.Palette
@@ -170,25 +175,25 @@ class WidgetUpdateHelper @Inject constructor(
         val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
 
-        // 1. 高可见度渐变背景
+        // 1. 柔和渐变背景
         val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG)
         bgPaint.shader = LinearGradient(
             0f, 0f, size.toFloat(), size.toFloat(),
-            intArrayOf(brightenColor(baseColor, 1.6f), darkenColor(baseColor, 0.15f)),
+            intArrayOf(brightenColor(baseColor, 1.4f), darkenColor(baseColor, 0.25f)),
             floatArrayOf(0f, 1f),
             Shader.TileMode.CLAMP
         )
         canvas.drawRect(0f, 0f, size.toFloat(), size.toFloat(), bgPaint)
 
-        // 2. 封面：centerCrop 裁剪，portrait 比例（接近 2:3），偏左上
+        // 2. 封面：左侧偏上，48% × 68%
+        val coverLeft = (size * 0.06f).toInt()
+        val coverTop = (size * 0.10f).toInt()
+        val coverW = (size * 0.48f).toInt()
+        val coverH = (size * 0.68f).toInt()
+        val coverDstRect = Rect(coverLeft, coverTop, coverLeft + coverW, coverTop + coverH)
+
         coverBitmap?.let { cover ->
             if (!cover.isRecycled && cover.width > 0 && cover.height > 0) {
-                val coverW = (size * 0.52f).toInt()
-                val coverH = (size * 0.74f).toInt()
-                val coverLeft = (size * 0.06f).toInt()
-                val coverTop = (size * 0.08f).toInt()
-                val dstRect = Rect(coverLeft, coverTop, coverLeft + coverW, coverTop + coverH)
-
                 val scale = maxOf(coverW.toFloat() / cover.width, coverH.toFloat() / cover.height)
                 val srcW = (coverW / scale).toInt()
                 val srcH = (coverH / scale).toInt()
@@ -196,123 +201,143 @@ class WidgetUpdateHelper @Inject constructor(
                 val srcTop = (cover.height - srcH) / 2
                 val srcRect = Rect(srcLeft, srcTop, srcLeft + srcW, srcTop + srcH)
 
-                // 封面阴影（暗色多层叠加，避免浅色封面产生白光圈）
-                val shadowLayers = listOf(16 to 16, 10 to 28, 5 to 14)
+                // 封面阴影
+                val shadowLayers = listOf(14 to 20, 8 to 28, 3 to 16)
                 for ((pad, alpha) in shadowLayers) {
                     val sp = Paint(Paint.ANTI_ALIAS_FLAG)
                     sp.color = Color.argb(alpha, 0, 0, 0)
                     canvas.drawRect(
-                        (dstRect.left - pad).toFloat(),
-                        (dstRect.top - pad).toFloat(),
-                        (dstRect.right + pad).toFloat(),
-                        (dstRect.bottom + pad).toFloat(),
+                        (coverDstRect.left - pad).toFloat(),
+                        (coverDstRect.top - pad).toFloat(),
+                        (coverDstRect.right + pad).toFloat(),
+                        (coverDstRect.bottom + pad).toFloat(),
                         sp
                     )
                 }
 
-                // 实际封面
-                canvas.drawBitmap(cover, srcRect, dstRect, Paint(Paint.FILTER_BITMAP_FLAG))
+                // 封面圆角裁剪
+                val cornerRadius = 10f
+                canvas.save()
+                canvas.clipPath(android.graphics.Path().apply {
+                    addRoundRect(
+                        RectF(coverDstRect), cornerRadius, cornerRadius,
+                        android.graphics.Path.Direction.CW
+                    )
+                })
+                canvas.drawBitmap(cover, srcRect, coverDstRect, Paint(Paint.FILTER_BITMAP_FLAG))
+                canvas.restore()
             }
         }
 
-        // 3. 底部渐变遮罩
+        // 3. 右侧横排文字信息
+        val textStartX = (coverLeft + coverW + (size * 0.05f).toInt()).toFloat()
+        val textMaxWidth = (size - textStartX - (size * 0.04f).toInt()).toInt()
+
+        if (book != null) {
+            // 书名（最多2行）
+            val titlePaint = TextPaint().apply {
+                color = Color.WHITE
+                textSize = 30f
+                isFakeBoldText = true
+                isAntiAlias = true
+            }
+            val titleLayout = StaticLayout.Builder.obtain(
+                book.title, 0, book.title.length, titlePaint, textMaxWidth
+            ).setMaxLines(2).setEllipsize(TextUtils.TruncateAt.END).build()
+
+            canvas.save()
+            canvas.translate(textStartX, coverTop.toFloat())
+            titleLayout.draw(canvas)
+            canvas.restore()
+
+            // 作者
+            var textBottom = coverTop + titleLayout.height + 6
+            if (!book.author.isNullOrBlank()) {
+                val authorPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = Color.argb(180, 255, 255, 255)
+                    textSize = 22f
+                }
+                canvas.drawText(
+                    book.author,
+                    textStartX,
+                    textBottom + authorPaint.textSize,
+                    authorPaint
+                )
+                textBottom += authorPaint.textSize.toInt() + 12
+            }
+
+            // 进度百分比
+            val percent = calculateProgressPercent(book)
+            val percentPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = Color.WHITE
+                textSize = 40f
+                isFakeBoldText = true
+            }
+            canvas.drawText(
+                "$percent%",
+                textStartX,
+                textBottom + percentPaint.textSize,
+                percentPaint
+            )
+
+            // 4. 底部进度条
+            val barLeft = coverLeft.toFloat()
+            val barRight = (size * 0.92f).toInt().toFloat()
+            val barTop = (coverTop + coverH + (size * 0.04f).toInt()).toFloat()
+            val barHeight = 5f
+            val barCorner = barHeight / 2
+
+            // 进度条背景
+            val trackPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = Color.argb(60, 255, 255, 255)
+            }
+            canvas.drawRoundRect(barLeft, barTop, barRight, barTop + barHeight, barCorner, barCorner, trackPaint)
+
+            // 进度条填充
+            if (percent > 0) {
+                val fillWidth = (barRight - barLeft) * (percent / 100f)
+                val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE }
+                canvas.drawRoundRect(
+                    barLeft, barTop, barLeft + fillWidth, barTop + barHeight,
+                    barCorner, barCorner, fillPaint
+                )
+            }
+        } else {
+            // 空状态：居中提示
+            val emptyPaint = TextPaint().apply {
+                color = Color.WHITE
+                textSize = 28f
+                isFakeBoldText = true
+                isAntiAlias = true
+            }
+            val emptyLayout = StaticLayout.Builder.obtain(
+                "选择一本书", 0, 5, emptyPaint, textMaxWidth
+            ).setMaxLines(2).build()
+
+            canvas.save()
+            canvas.translate(textStartX, coverTop.toFloat())
+            emptyLayout.draw(canvas)
+            canvas.restore()
+
+            val hintTop = coverTop + emptyLayout.height + 8
+            val hintPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = Color.argb(180, 255, 255, 255)
+                textSize = 22f
+            }
+            canvas.drawText("点击设置", textStartX, hintTop + hintPaint.textSize, hintPaint)
+        }
+
+        // 5. 底部渐变遮罩（更轻柔）
         val scrimPaint = Paint(Paint.ANTI_ALIAS_FLAG)
         scrimPaint.shader = LinearGradient(
-            0f, size * 0.58f, 0f, size.toFloat(),
-            intArrayOf(Color.argb(0, 0, 0, 0), Color.argb(210, 0, 0, 0)),
+            0f, size * 0.72f, 0f, size.toFloat(),
+            intArrayOf(Color.argb(0, 0, 0, 0), Color.argb(160, 0, 0, 0)),
             floatArrayOf(0f, 1f),
             Shader.TileMode.CLAMP
         )
-        canvas.drawRect(0f, size * 0.58f, size.toFloat(), size.toFloat(), scrimPaint)
-
-        // 4. 右侧多列竖排文字：从左到右排布，书名在左，进度在右
-        val textTopY = size * 0.08f
-        val textLeftX = size * 0.68f
-        val columnWidth = 38f
-
-        if (book != null) {
-            val title = normalizeVerticalText(book.title).take(20)
-            val titleColumns = if (title.length <= 8) 1 else 2
-
-            val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = Color.WHITE
-                textSize = 26f
-                isFakeBoldText = true
-            }
-            drawMultiColumnVerticalTextAt(
-                canvas, title, textLeftX, textTopY, titlePaint, columnWidth
-            )
-
-            val progressPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = Color.argb(204, 255, 255, 255)
-                textSize = 20f
-            }
-            val progressLeftX = textLeftX + titleColumns * columnWidth + 18f
-            drawMultiColumnVerticalTextAt(
-                canvas,
-                normalizeVerticalText("${calculateProgressPercent(book)}%"),
-                progressLeftX, textTopY, progressPaint, columnWidth
-            )
-        } else {
-            val emptyPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = Color.WHITE
-                textSize = 24f
-                isFakeBoldText = true
-            }
-            drawMultiColumnVerticalTextAt(
-                canvas, "选择一本书", textLeftX, textTopY, emptyPaint, columnWidth
-            )
-
-            val hintPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = Color.argb(204, 255, 255, 255)
-                textSize = 18f
-            }
-            drawMultiColumnVerticalTextAt(
-                canvas, "设置", textLeftX + columnWidth + 18f, textTopY, hintPaint, columnWidth
-            )
-        }
+        canvas.drawRect(0f, size * 0.72f, size.toFloat(), size.toFloat(), scrimPaint)
 
         return bitmap
-    }
-
-    /** 移除竖排中无意义的标点符号和空格，使竖排文字紧凑整齐 */
-    private fun normalizeVerticalText(text: String): String {
-        // 竖排中每字符独占一行，标点符号会留下一行窄空白，非常不美观，直接过滤
-        val skipChars = setOf(
-            '：', '，', '、', '；', '！', '？', '（', '）', '。', '．',
-            '…', '—', '～', '‘', '’', '“', '”',
-            '《', '》', '　',
-            ':', ';', '!', '?', '(', ')', ',', '\'', '"', '-', '~',
-            ' '
-        )
-        return buildString(text.length) {
-            for (ch in text) {
-                if (ch !in skipChars) append(ch)
-            }
-        }
-    }
-
-    /** 从指定最左列开始向右绘制多列竖排文字 */
-    private fun drawMultiColumnVerticalTextAt(
-        canvas: Canvas,
-        text: String,
-        leftmostColX: Float,
-        topY: Float,
-        paint: Paint,
-        columnWidth: Float
-    ) {
-        val lineHeight = paint.textSize * 1.25f
-        val maxCharsPerColumn = ((340 - topY) / lineHeight).toInt().coerceAtLeast(1)
-
-        text.forEachIndexed { index, char ->
-            val column = index / maxCharsPerColumn
-            val row = index % maxCharsPerColumn
-            val colX = leftmostColX + column * columnWidth
-            val charY = topY + row * lineHeight + paint.textSize
-            val charStr = char.toString()
-            val charW = paint.measureText(charStr)
-            canvas.drawText(charStr, colX - charW / 2, charY, paint)
-        }
     }
 
     private fun buildRemoteViews(
