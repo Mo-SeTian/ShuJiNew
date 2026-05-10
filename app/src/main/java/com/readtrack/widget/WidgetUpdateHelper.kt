@@ -201,22 +201,25 @@ class WidgetUpdateHelper @Inject constructor(
                 val srcTop = (cover.height - srcH) / 2
                 val srcRect = Rect(srcLeft, srcTop, srcLeft + srcW, srcTop + srcH)
 
-                // 封面阴影
+                // 封面阴影（圆角矩形，与封面匹配）
+                val cornerRadius = 10f
                 val shadowLayers = listOf(14 to 20, 8 to 28, 3 to 16)
                 for ((pad, alpha) in shadowLayers) {
                     val sp = Paint(Paint.ANTI_ALIAS_FLAG)
                     sp.color = Color.argb(alpha, 0, 0, 0)
-                    canvas.drawRect(
-                        (coverDstRect.left - pad).toFloat(),
-                        (coverDstRect.top - pad).toFloat(),
-                        (coverDstRect.right + pad).toFloat(),
-                        (coverDstRect.bottom + pad).toFloat(),
-                        sp
+                    val shadowRadius = cornerRadius + pad
+                    canvas.drawRoundRect(
+                        RectF(
+                            (coverDstRect.left - pad).toFloat(),
+                            (coverDstRect.top - pad).toFloat(),
+                            (coverDstRect.right + pad).toFloat(),
+                            (coverDstRect.bottom + pad).toFloat()
+                        ),
+                        shadowRadius, shadowRadius, sp
                     )
                 }
 
                 // 封面圆角裁剪
-                val cornerRadius = 10f
                 canvas.save()
                 canvas.clipPath(android.graphics.Path().apply {
                     addRoundRect(
@@ -304,6 +307,7 @@ class WidgetUpdateHelper @Inject constructor(
             }
         } else {
             // 空状态：居中提示
+            val emptyText = "选择一本书"
             val emptyPaint = TextPaint().apply {
                 color = Color.WHITE
                 textSize = 28f
@@ -311,7 +315,7 @@ class WidgetUpdateHelper @Inject constructor(
                 isAntiAlias = true
             }
             val emptyLayout = StaticLayout.Builder.obtain(
-                "选择一本书", 0, 5, emptyPaint, textMaxWidth
+                emptyText, 0, emptyText.length, emptyPaint, textMaxWidth
             ).setMaxLines(2).build()
 
             canvas.save()
