@@ -232,12 +232,12 @@ class WidgetUpdateHelper @Inject constructor(
             }
         }
 
-        // 3. 右侧横排文字信息
+        // 3. 右侧横排文字：封面右侧到控件边缘之间垂直居中
         val textStartX = (coverLeft + coverW + (size * 0.05f).toInt()).toFloat()
         val textMaxWidth = (size - textStartX - (size * 0.04f).toInt()).toInt()
 
         if (book != null) {
-            // 书名（最多2行）
+            // 书名（最多2行，居中，省略号）
             val titlePaint = TextPaint().apply {
                 color = Color.WHITE
                 textSize = 30f
@@ -246,65 +246,64 @@ class WidgetUpdateHelper @Inject constructor(
             }
             val titleLayout = StaticLayout.Builder.obtain(
                 book.title, 0, book.title.length, titlePaint, textMaxWidth
-            ).setMaxLines(2).setEllipsize(TextUtils.TruncateAt.END).build()
+            ).setAlignment(Layout.Alignment.ALIGN_CENTER)
+                .setMaxLines(2)
+                .setEllipsize(TextUtils.TruncateAt.END).build()
 
-            canvas.save()
-            canvas.translate(textStartX, coverTop.toFloat())
-            titleLayout.draw(canvas)
-            canvas.restore()
-
-            // 作者
-            var textBottom = coverTop + titleLayout.height + 6
-            if (!book.author.isNullOrBlank()) {
-                val authorPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            // 作者（最多1行，居中，省略号）
+            val authorLayout = if (!book.author.isNullOrBlank()) {
+                val authorTextPaint = TextPaint().apply {
                     color = Color.argb(180, 255, 255, 255)
                     textSize = 22f
+                    isAntiAlias = true
                 }
-                canvas.drawText(
-                    book.author,
-                    textStartX,
-                    textBottom + authorPaint.textSize,
-                    authorPaint
-                )
-                textBottom += authorPaint.textSize.toInt() + 12
-            }
+                StaticLayout.Builder.obtain(
+                    book.author, 0, book.author.length, authorTextPaint, textMaxWidth
+                ).setAlignment(Layout.Alignment.ALIGN_CENTER)
+                    .setMaxLines(1)
+                    .setEllipsize(TextUtils.TruncateAt.END).build()
+            } else null
 
             // 进度百分比
             val percent = calculateProgressPercent(book)
+            val percentText = "$percent%"
             val percentPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 color = Color.WHITE
                 textSize = 40f
                 isFakeBoldText = true
             }
-            canvas.drawText(
-                "$percent%",
-                textStartX,
-                textBottom + percentPaint.textSize,
-                percentPaint
-            )
+            val percentW = percentPaint.measureText(percentText)
+            val percentH = percentPaint.textSize.toInt()
 
-            // 4. 底部进度条
-            val barLeft = coverLeft.toFloat()
-            val barRight = (size * 0.92f).toInt().toFloat()
-            val barTop = (coverTop + coverH + (size * 0.04f).toInt()).toFloat()
-            val barHeight = 5f
-            val barCorner = barHeight / 2
+            // 计算文字块总高度，在封面高度内垂直居中
+            val gapTitleAuthor = if (authorLayout != null) 6 else 0
+            val gapAuthorPercent = if (authorLayout != null) 12 else 6
+            val authorH = authorLayout?.height ?: 0
+            val totalTextH = titleLayout.height + gapTitleAuthor + authorH + gapAuthorPercent + percentH
+            val textTopY = coverTop + (coverH - totalTextH) / 2
 
-            // 进度条背景
-            val trackPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = Color.argb(60, 255, 255, 255)
+            // 绘制书名
+            canvas.save()
+            canvas.translate(textStartX, textTopY.toFloat())
+            titleLayout.draw(canvas)
+            canvas.restore()
+
+            var y = textTopY + titleLayout.height + gapTitleAuthor
+
+            // 绘制作者
+            if (authorLayout != null) {
+                canvas.save()
+                canvas.translate(textStartX, y.toFloat())
+                authorLayout.draw(canvas)
+                canvas.restore()
+                y += authorLayout.height + gapAuthorPercent
+            } else {
+                y += gapAuthorPercent
             }
-            canvas.drawRoundRect(barLeft, barTop, barRight, barTop + barHeight, barCorner, barCorner, trackPaint)
 
-            // 进度条填充
-            if (percent > 0) {
-                val fillWidth = (barRight - barLeft) * (percent / 100f)
-                val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE }
-                canvas.drawRoundRect(
-                    barLeft, barTop, barLeft + fillWidth, barTop + barHeight,
-                    barCorner, barCorner, fillPaint
-                )
-            }
+            // 绘制进度百分比（居中）
+            val percentX = textStartX + (textMaxWidth - percentW) / 2
+            canvas.drawText(percentText, percentX, y + percentPaint.textSize, percentPaint)
         } else {
             // 空状态：居中提示
             val emptyText = "选择一本书"
