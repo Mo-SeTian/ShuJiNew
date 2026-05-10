@@ -220,7 +220,7 @@ class WidgetUpdateHelper @Inject constructor(
         )
         canvas.drawRect(0f, size * 0.58f, size.toFloat(), size.toFloat(), scrimPaint)
 
-        // 4. 右侧竖排文字（书名 + 进度）
+        // 4. 右侧多列竖排文字（书名 + 进度）
         val coverRight = (size * 0.06f + size * 0.52f).toInt()
         val textCenterX = coverRight + (size - coverRight) / 2f
 
@@ -230,48 +230,83 @@ class WidgetUpdateHelper @Inject constructor(
                 textSize = 26f
                 isFakeBoldText = true
             }
-            val title = book.title.take(6)
-            drawVerticalText(canvas, title, textCenterX, size * 0.08f, titlePaint)
+            val title = book.title.take(20)
+            // 根据字数决定列数：1列≤8字，2列≤16字，3列>16字
+            val titleColumns = when {
+                title.length <= 8 -> 1
+                title.length <= 16 -> 2
+                else -> 3
+            }
+            val titleBottom = drawMultiColumnVerticalText(
+                canvas, title, textCenterX, size * 0.06f, titlePaint, titleColumns, 38f
+            )
 
             val progressPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 color = Color.argb(204, 255, 255, 255)
                 textSize = 20f
             }
-            val titleHeight = title.length * 26f * 1.25f
             val progress = "${calculateProgressPercent(book)}%"
-            drawVerticalText(canvas, progress, textCenterX, size * 0.08f + titleHeight + 20f, progressPaint)
+            drawMultiColumnVerticalText(
+                canvas, progress, textCenterX, titleBottom + 16f, progressPaint, 1, 38f
+            )
         } else {
             val emptyPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 color = Color.WHITE
                 textSize = 24f
                 isFakeBoldText = true
             }
-            drawVerticalText(canvas, "选择一本书", textCenterX, size * 0.12f, emptyPaint)
+            drawMultiColumnVerticalText(
+                canvas, "选择一本书", textCenterX, size * 0.1f, emptyPaint, 1, 38f
+            )
 
             val hintPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 color = Color.argb(204, 255, 255, 255)
                 textSize = 18f
             }
-            drawVerticalText(canvas, "设置", textCenterX, size * 0.12f + 5 * 24f * 1.25f + 16f, hintPaint)
+            drawMultiColumnVerticalText(
+                canvas, "设置", textCenterX, size * 0.1f + 5 * 24f * 1.25f + 12f, hintPaint, 1, 38f
+            )
         }
 
         return bitmap
     }
 
-    private fun drawVerticalText(
+    /**
+     * 多列竖排文字绘制
+     * @return 绘制区域的底部 Y 坐标
+     */
+    private fun drawMultiColumnVerticalText(
         canvas: Canvas,
         text: String,
         centerX: Float,
         topY: Float,
-        paint: Paint
-    ) {
+        paint: Paint,
+        columns: Int,
+        columnWidth: Float
+    ): Float {
         val lineHeight = paint.textSize * 1.25f
+        // 每列最大字数（基于可用高度，留一些底部边距）
+        val maxCharsPerColumn = ((340 - topY) / lineHeight).toInt().coerceAtLeast(1)
+        val actualColumns = columns.coerceAtMost((text.length + maxCharsPerColumn - 1) / maxCharsPerColumn)
+
+        // 从右向左排布列（最右列是第一个字符列）
+        val totalWidth = actualColumns * columnWidth
+        val rightmostColX = centerX + totalWidth / 2f - columnWidth / 2f
+
+        var maxBottom = topY
+
         text.forEachIndexed { index, char ->
+            val column = index / maxCharsPerColumn
+            val row = index % maxCharsPerColumn
+            val colX = rightmostColX - column * columnWidth
+            val charY = topY + row * lineHeight + paint.textSize
             val charStr = char.toString()
-            val charWidth = paint.measureText(charStr)
-            val y = topY + index * lineHeight + paint.textSize
-            canvas.drawText(charStr, centerX - charWidth / 2, y, paint)
+            val charW = paint.measureText(charStr)
+            canvas.drawText(charStr, colX - charW / 2, charY, paint)
+            maxBottom = maxOf(maxBottom, charY)
         }
+
+        return maxBottom
     }
 
     private fun buildRemoteViews(
