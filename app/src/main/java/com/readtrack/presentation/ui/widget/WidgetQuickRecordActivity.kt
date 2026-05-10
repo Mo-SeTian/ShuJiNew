@@ -62,19 +62,21 @@ class WidgetQuickRecordActivity : ComponentActivity() {
                     var errorText by remember { mutableStateOf<String?>(null) }
 
                     LaunchedEffect(Unit) {
-                        book = bookRepository.getBookById(bookId).firstOrNull()
-                        if (book == null) {
+                        val loaded = bookRepository.getBookById(bookId).firstOrNull()
+                        if (loaded == null) {
                             finish()
                             return@LaunchedEffect
                         }
-                        if (book!!.status != BookStatus.READING) {
+                        if (loaded.status != BookStatus.READING) {
                             Toast.makeText(
                                 this@WidgetQuickRecordActivity,
                                 "只有阅读中的书籍可以记录进度",
                                 Toast.LENGTH_SHORT
                             ).show()
                             finish()
+                            return@LaunchedEffect
                         }
+                        book = loaded
                     }
 
                     val currentBook = book
