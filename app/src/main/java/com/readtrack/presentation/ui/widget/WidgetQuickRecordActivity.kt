@@ -29,6 +29,7 @@ import androidx.lifecycle.lifecycleScope
 import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.data.local.entity.ReadingRecordEntity
 import com.readtrack.domain.model.BookSnapshot
+import com.readtrack.domain.model.BookStatus
 import com.readtrack.domain.model.ProgressType
 import com.readtrack.domain.repository.BookRepository
 import com.readtrack.presentation.ui.theme.ReadTrackTheme
@@ -63,6 +64,15 @@ class WidgetQuickRecordActivity : ComponentActivity() {
                     LaunchedEffect(Unit) {
                         book = bookRepository.getBookById(bookId).firstOrNull()
                         if (book == null) {
+                            finish()
+                            return@LaunchedEffect
+                        }
+                        if (book!!.status != BookStatus.READING) {
+                            Toast.makeText(
+                                this@WidgetQuickRecordActivity,
+                                "只有阅读中的书籍可以记录进度",
+                                Toast.LENGTH_SHORT
+                            ).show()
                             finish()
                         }
                     }
