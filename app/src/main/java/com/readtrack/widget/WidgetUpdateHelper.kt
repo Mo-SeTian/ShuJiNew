@@ -59,7 +59,7 @@ class WidgetUpdateHelper @Inject constructor(
             val compositeBitmap = withContext(Dispatchers.IO) {
                 val color = extractCoverColor(context, book?.coverPath) ?: Color.rgb(80, 100, 180)
                 val cover = loadCoverBitmap(context, book?.coverPath)
-                createWidgetComposite(color, cover).also {
+                createWidgetComposite(color, cover, book).also {
                     cover?.recycle()
                 }
             }
@@ -162,7 +162,7 @@ class WidgetUpdateHelper @Inject constructor(
         )
     }
 
-    private fun createWidgetComposite(baseColor: Int, coverBitmap: Bitmap?): Bitmap {
+    private fun createWidgetComposite(baseColor: Int, coverBitmap: Bitmap?, book: BookEntity?): Bitmap {
         val size = 400
         val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
@@ -177,7 +177,7 @@ class WidgetUpdateHelper @Inject constructor(
         )
         canvas.drawRect(0f, 0f, size.toFloat(), size.toFloat(), bgPaint)
 
-        // 2. 封面：centerCrop 裁剪，portrait 比例（接近 2:3）
+        // 2. 封面：centerCrop 裁剪，portrait 比例（接近 2:3），偏左上
         coverBitmap?.let { cover ->
             if (!cover.isRecycled && cover.width > 0 && cover.height > 0) {
                 val coverW = (size * 0.52f).toInt()
@@ -220,7 +220,58 @@ class WidgetUpdateHelper @Inject constructor(
         )
         canvas.drawRect(0f, size * 0.58f, size.toFloat(), size.toFloat(), scrimPaint)
 
+        // 4. 右侧竖排文字（书名 + 进度）
+        val coverRight = (size * 0.06f + size * 0.52f).toInt()
+        val textCenterX = coverRight + (size - coverRight) / 2f
+
+        if (book != null) {
+            val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = Color.WHITE
+                textSize = 26f
+                isFakeBoldText = true
+            }
+            val title = book.title.take(6)
+            drawVerticalText(canvas, title, textCenterX, size * 0.08f, titlePaint)
+
+            val progressPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = Color.argb(204, 255, 255, 255)
+                textSize = 20f
+            }
+            val titleHeight = title.length * 26f * 1.25f
+            val progress = "${calculateProgressPercent(book)}%"
+            drawVerticalText(canvas, progress, textCenterX, size * 0.08f + titleHeight + 20f, progressPaint)
+        } else {
+            val emptyPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = Color.WHITE
+                textSize = 24f
+                isFakeBoldText = true
+            }
+            drawVerticalText(canvas, "选择一本书", textCenterX, size * 0.12f, emptyPaint)
+
+            val hintPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = Color.argb(204, 255, 255, 255)
+                textSize = 18f
+            }
+            drawVerticalText(canvas, "设置", textCenterX, size * 0.12f + 5 * 24f * 1.25f + 16f, hintPaint)
+        }
+
         return bitmap
+    }
+
+    private fun drawVerticalText(
+        canvas: Canvas,
+        text: String,
+        centerX: Float,
+        topY: Float,
+        paint: Paint
+    ) {
+        val lineHeight = paint.textSize * 1.25f
+        text.forEachIndexed { index, char ->
+            val charStr = char.toString()
+            val charWidth = paint.measureText(charStr)
+            val y = topY + index * lineHeight + paint.textSize
+            canvas.drawText(charStr, centerX - charWidth / 2, y, paint)
+        }
     }
 
     private fun buildRemoteViews(
@@ -232,9 +283,11 @@ class WidgetUpdateHelper @Inject constructor(
         val views = RemoteViews(context.packageName, R.layout.widget_reading)
         views.setImageViewBitmap(R.id.widget_composite_bg, compositeBitmap)
 
+        // 书名与进度已绘制在 composite bitmap 上，隐藏原 TextView 避免重叠
+        views.setViewVisibility(R.id.widget_book_title, android.view.View.GONE)
+        views.setViewVisibility(R.id.widget_progress_text, android.view.View.GONE)
+
         if (book != null) {
-            views.setTextViewText(R.id.widget_book_title, book.title)
-            views.setTextViewText(R.id.widget_progress_text, "${calculateProgressPercent(book)}%")
             val recordIntent = WidgetQuickRecordActivity.createIntent(context, book.id)
             views.setOnClickPendingIntent(
                 R.id.widget_record_button,
@@ -245,9 +298,6 @@ class WidgetUpdateHelper @Inject constructor(
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
             )
-        } else {
-            views.setTextViewText(R.id.widget_book_title, "选择一本书")
-            views.setTextViewText(R.id.widget_progress_text, "设置 → 桌面小组件")
         }
 
         val openIntent = Intent(context, MainActivity::class.java).apply {

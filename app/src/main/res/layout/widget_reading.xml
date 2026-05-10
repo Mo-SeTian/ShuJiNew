@@ -25,7 +25,8 @@
         android:text="选择一本书"
         android:textColor="@android:color/white"
         android:textSize="14sp"
-        android:textStyle="bold" />
+        android:textStyle="bold"
+        android:visibility="gone" />
 
     <TextView
         android:id="@+id/widget_progress_text"
@@ -36,7 +37,8 @@
         android:layout_marginBottom="10dp"
         android:text="设置 → 桌面小组件"
         android:textColor="#CCFFFFFF"
-        android:textSize="11sp" />
+        android:textSize="11sp"
+        android:visibility="gone" />
 
     <TextView
         android:id="@+id/widget_record_button"
