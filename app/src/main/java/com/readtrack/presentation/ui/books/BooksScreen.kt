@@ -6,7 +6,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
@@ -461,20 +463,26 @@ fun BooksScreen(
                                 enabled = false
                             )
                         } else {
-                            uiState.allBookLists.forEach { bookList ->
-                                DropdownMenuItem(
-                                    text = {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Checkbox(
-                                                checked = bookList.id in uiState.selectedBookListIds,
-                                                onCheckedChange = null
-                                            )
-                                            Spacer(modifier = Modifier.width(4.dp))
-                                            Text(bookList.name)
-                                        }
-                                    },
-                                    onClick = { viewModel.toggleBookListFilter(bookList.id) }
-                                )
+                            Column(
+                                modifier = Modifier
+                                    .heightIn(max = 280.dp)
+                                    .verticalScroll(rememberScrollState())
+                            ) {
+                                uiState.allBookLists.forEach { bookList ->
+                                    DropdownMenuItem(
+                                        text = {
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Checkbox(
+                                                    checked = bookList.id in uiState.selectedBookListIds,
+                                                    onCheckedChange = null
+                                                )
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text(bookList.name)
+                                            }
+                                        },
+                                        onClick = { viewModel.toggleBookListFilter(bookList.id) }
+                                    )
+                                }
                             }
                             if (bookListCount > 0) {
                                 HorizontalDivider()

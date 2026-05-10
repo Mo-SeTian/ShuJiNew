@@ -52,6 +52,15 @@ class BookListDetailViewModel @Inject constructor(
                     _uiState.value = state
                 }
         }
+
+        // 加载不在当前书单中的书籍（用于快捷添加）
+        viewModelScope.launch {
+            bookListRepository.getBooksNotInBookList(bookListId)
+                .catch {  }
+                .collect { books ->
+                    _uiState.update { it.copy(booksNotInList = books) }
+                }
+        }
     }
 
     fun removeBookFromList(bookId: Long) {
@@ -135,19 +144,6 @@ class BookListDetailViewModel @Inject constructor(
             } catch (e: Exception) {
                 _uiState.update { it.copy(errorMessage = "移除封面失败: ${e.message}") }
             }
-        }
-    }
-
-    /**
-     * 加载不在当前书单中的所有书籍（用于快捷添加对话框）
-     */
-    fun loadBooksNotInList() {
-        if (currentBookListId <= 0) return
-        viewModelScope.launch {
-            bookListRepository.getBooksNotInBookList(currentBookListId)
-                .collect { books ->
-                    _uiState.update { it.copy(booksNotInList = books) }
-                }
         }
     }
 
