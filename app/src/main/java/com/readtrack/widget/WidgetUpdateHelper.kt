@@ -338,8 +338,18 @@ class WidgetUpdateHelper @Inject constructor(
             )
         }
 
-        val openIntent = Intent(context, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        // 主体点击：有书籍→详情页，无书籍→小组件设置页
+        val openIntent = if (book != null) {
+            Intent(context, MainActivity::class.java).apply {
+                action = MainActivity.ACTION_OPEN_BOOK_DETAIL
+                putExtra(MainActivity.EXTRA_BOOK_ID, book.id)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            }
+        } else {
+            Intent(context, MainActivity::class.java).apply {
+                action = MainActivity.ACTION_OPEN_WIDGET_SETTINGS
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            }
         }
         val openPendingIntent = PendingIntent.getActivity(
             context,

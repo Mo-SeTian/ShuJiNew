@@ -34,6 +34,7 @@ class MainActivity : ComponentActivity() {
 
     companion object {
         const val ACTION_OPEN_BOOK_DETAIL = "com.readtrack.ACTION_OPEN_BOOK_DETAIL"
+        const val ACTION_OPEN_WIDGET_SETTINGS = "com.readtrack.ACTION_OPEN_WIDGET_SETTINGS"
         const val EXTRA_BOOK_ID = "extra_book_id"
     }
 
@@ -46,6 +47,7 @@ class MainActivity : ComponentActivity() {
         val initialBookId = if (intent.action == ACTION_OPEN_BOOK_DETAIL) {
             intent.getLongExtra(EXTRA_BOOK_ID, -1L).takeIf { it != -1L }
         } else null
+        val initialWidgetSettings = intent.action == ACTION_OPEN_WIDGET_SETTINGS
 
         setContent {
             val settingsViewModel: SettingsViewModel = hiltViewModel()
@@ -53,6 +55,7 @@ class MainActivity : ComponentActivity() {
             val uiState by settingsViewModel.uiState.collectAsState()
             var showUpdateDialog by remember { mutableStateOf(false) }
             var pendingBookId by remember { mutableLongStateOf(initialBookId ?: -1L) }
+            var pendingWidgetSettings by remember { mutableStateOf(initialWidgetSettings) }
 
             LaunchedEffect(Unit) {
                 settingsViewModel.checkForUpdate()
@@ -88,7 +91,9 @@ class MainActivity : ComponentActivity() {
                 ) {
                     MainNavigation(
                         pendingBookId = pendingBookId.takeIf { it != -1L },
-                        onPendingBookIdConsumed = { pendingBookId = -1L }
+                        onPendingBookIdConsumed = { pendingBookId = -1L },
+                        pendingWidgetSettings = pendingWidgetSettings,
+                        onPendingWidgetSettingsConsumed = { pendingWidgetSettings = false }
                     )
                 }
             }
@@ -97,10 +102,15 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        if (intent.action == ACTION_OPEN_BOOK_DETAIL) {
-            val bookId = intent.getLongExtra(EXTRA_BOOK_ID, -1L)
-            if (bookId != -1L) {
-                // 通过重启 activity 来确保导航到书籍详情
+        when (intent.action) {
+            ACTION_OPEN_BOOK_DETAIL -> {
+                val bookId = intent.getLongExtra(EXTRA_BOOK_ID, -1L)
+                if (bookId != -1L) {
+                    intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                    startActivity(intent)
+                }
+            }
+            ACTION_OPEN_WIDGET_SETTINGS -> {
                 intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
                 startActivity(intent)
             }

@@ -65,7 +65,9 @@ sealed class Screen(
 @Composable
 fun MainNavigation(
     pendingBookId: Long? = null,
-    onPendingBookIdConsumed: () -> Unit = {}
+    onPendingBookIdConsumed: () -> Unit = {},
+    pendingWidgetSettings: Boolean = false,
+    onPendingWidgetSettingsConsumed: () -> Unit = {}
 ) {
     val navController = rememberNavController()
     val bottomNavItems = listOf(Screen.Home, Screen.Books, Screen.Stats, Screen.Settings)
@@ -74,6 +76,13 @@ fun MainNavigation(
         if (pendingBookId != null) {
             navController.navigate(Screen.BookDetail.createRoute(pendingBookId))
             onPendingBookIdConsumed()
+        }
+    }
+
+    LaunchedEffect(pendingWidgetSettings) {
+        if (pendingWidgetSettings) {
+            navController.navigate(Screen.WidgetSettings.route)
+            onPendingWidgetSettingsConsumed()
         }
     }
 
