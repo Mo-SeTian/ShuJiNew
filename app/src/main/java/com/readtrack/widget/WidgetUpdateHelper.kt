@@ -270,31 +270,19 @@ class WidgetUpdateHelper @Inject constructor(
         return bitmap
     }
 
-    /** 将全角标点转为紧凑半角，使竖排文字更整齐 */
+    /** 移除竖排中无意义的标点符号和空格，使竖排文字紧凑整齐 */
     private fun normalizeVerticalText(text: String): String {
+        // 竖排中每字符独占一行，标点符号会留下一行窄空白，非常不美观，直接过滤
+        val skipChars = setOf(
+            '：', '，', '、', '；', '！', '？', '（', '）', '。', '．',
+            '…', '—', '～', '‘', '’', '“', '”',
+            '《', '》', '　',
+            ':', ';', '!', '?', '(', ')', ',', '\'', '"', '-', '~',
+            ' '
+        )
         return buildString(text.length) {
             for (ch in text) {
-                when (ch) {
-                    '：' -> append(':')
-                    '，' -> append(',')
-                    '、' -> append(',')
-                    '；' -> append(';')
-                    '！' -> append('!')
-                    '？' -> append('?')
-                    '（' -> append('(')
-                    '）' -> append(')')
-                    '。' -> append('.')
-                    '．' -> append('.')
-                    '…' -> append('.')
-                    '—' -> append('-')
-                    '～' -> append('~')
-                    '‘' -> append('\'')
-                    '’' -> append('\'')
-                    '“' -> append('"')
-                    '”' -> append('"')
-                    '《', '》', '　' -> { /* 移除书名号、全角空格 */ }
-                    else -> append(ch)
-                }
+                if (ch !in skipChars) append(ch)
             }
         }
     }
