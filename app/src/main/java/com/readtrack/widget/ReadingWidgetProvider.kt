@@ -7,14 +7,13 @@ import android.content.Intent
 import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class ReadingWidgetProvider : AppWidgetProvider() {
-
-    private val job = SupervisorJob()
-    private val scope = CoroutineScope(Dispatchers.Main + job)
 
     override fun onUpdate(
         context: Context,
@@ -25,13 +24,15 @@ class ReadingWidgetProvider : AppWidgetProvider() {
     }
 
     override fun onDisabled(context: Context) {
-        job.cancel()
+        widgetScope.cancel()
     }
 
     override fun onDeleted(context: Context, appWidgetIds: IntArray) {
         val helper = getWidgetUpdateHelper(context)
-        scope.launch {
-            helper.clearWidgetSelections(appWidgetIds)
+        widgetScope.launch {
+            withContext(NonCancellable) {
+                helper.clearWidgetSelections(appWidgetIds)
+            }
         }
     }
 
@@ -44,7 +45,7 @@ class ReadingWidgetProvider : AppWidgetProvider() {
 
     private fun updateAllWidgets(context: Context) {
         val helper = getWidgetUpdateHelper(context)
-        scope.launch {
+        widgetScope.launch {
             helper.updateWidgets(context)
         }
     }
@@ -55,5 +56,10 @@ class ReadingWidgetProvider : AppWidgetProvider() {
             WidgetEntryPoint::class.java
         )
         return entryPoint.widgetUpdateHelper()
+    }
+
+    companion object {
+        // 进程级单例 scope，避免 BroadcastReceiver 多实例导致 scope 泄漏
+        private val widgetScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     }
 }

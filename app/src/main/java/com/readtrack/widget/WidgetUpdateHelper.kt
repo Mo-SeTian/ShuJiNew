@@ -65,6 +65,7 @@ class WidgetUpdateHelper @Inject constructor(
             }
             val remoteViews = buildRemoteViews(context, book, appWidgetId, compositeBitmap)
             appWidgetManager.updateAppWidget(appWidgetId, remoteViews)
+            compositeBitmap.recycle()
         }
     }
 
@@ -79,16 +80,18 @@ class WidgetUpdateHelper @Inject constructor(
         // 跳过特殊协议封面
         if (coverPath.startsWith("emoji://") || coverPath.startsWith("color://")) return null
 
+        var source: Bitmap? = null
         return try {
-            val source = loadImageAsBitmap(context, coverPath, 64) ?: return null
+            source = loadImageAsBitmap(context, coverPath, 64) ?: return null
             val palette = Palette.from(source).generate()
             val swatch = palette.vibrantSwatch
                 ?: palette.dominantSwatch
                 ?: palette.mutedSwatch
-            if (!source.isRecycled) source.recycle()
             swatch?.rgb
         } catch (e: Exception) {
             null
+        } finally {
+            source?.let { if (!it.isRecycled) it.recycle() }
         }
     }
 
@@ -331,7 +334,7 @@ class WidgetUpdateHelper @Inject constructor(
                 R.id.widget_record_button,
                 PendingIntent.getActivity(
                     context,
-                    appWidgetId + 1000,
+                    appWidgetId * 3 + 1,
                     recordIntent,
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
@@ -353,7 +356,7 @@ class WidgetUpdateHelper @Inject constructor(
         }
         val openPendingIntent = PendingIntent.getActivity(
             context,
-            appWidgetId,
+            appWidgetId * 3 + 2,
             openIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
