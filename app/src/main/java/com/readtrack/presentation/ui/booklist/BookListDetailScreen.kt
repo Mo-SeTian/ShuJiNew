@@ -205,7 +205,8 @@ fun BookListDetailScreen(
                         content = {
                             BookCard(
                                 book = book,
-                                onClick = { onBookClick(book.id) }
+                                onClick = { onBookClick(book.id) },
+                                tags = uiState.bookTagMap[book.id] ?: emptyList()
                             )
                         }
                     )

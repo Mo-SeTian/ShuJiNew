@@ -24,6 +24,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import com.readtrack.data.local.entity.BookEntity
+import com.readtrack.data.local.entity.TagEntity
 import com.readtrack.util.toDateString
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -39,7 +40,9 @@ fun BookCard(
     /** 快速记录阅读进度回调，参数为 bookId */
     onQuickRecord: ((Long) -> Unit)? = null,
     /** 标记读完回调，参数为 bookId */
-    onQuickFinish: ((Long) -> Unit)? = null
+    onQuickFinish: ((Long) -> Unit)? = null,
+    /** 书籍标签列表 */
+    tags: List<TagEntity> = emptyList()
 ) {
     val statusColor = statusColorOf(book.status)
     val progressModel = remember(book) { book.toBookProgressUiModel() }
@@ -177,6 +180,35 @@ fun BookCard(
                                 style = MaterialTheme.typography.labelSmall,
                                 color = Color(0xFFFFB400),
                                 fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                }
+
+                // Tags
+                if (tags.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        tags.take(4).forEach { tag ->
+                            Surface(
+                                shape = RoundedCornerShape(4.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
+                            ) {
+                                Text(
+                                    text = tag.name,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                        if (tags.size > 4) {
+                            Text(
+                                text = "+${tags.size - 4}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }

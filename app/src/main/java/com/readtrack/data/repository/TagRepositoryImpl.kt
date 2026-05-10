@@ -39,6 +39,9 @@ class TagRepositoryImpl @Inject constructor(
     override suspend fun getCrossRefsForBooks(bookIds: List<Long>): List<TagCrossRef> =
         tagDao.getCrossRefsForBooks(bookIds)
 
+    override fun getAllTagCrossRefsFlow(): Flow<List<TagCrossRef>> =
+        tagDao.getAllBookTagCrossRefsFlow()
+
     override fun getBookIdsWithTag(tagId: Long): Flow<List<Long>> =
         tagDao.getBookIdsWithTag(tagId)
 
