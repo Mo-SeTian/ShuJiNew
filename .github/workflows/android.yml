@@ -10,7 +10,7 @@ jobs:
   build:
     name: 构建 Debug APK
     runs-on: macos-latest
-    
+
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
@@ -39,6 +39,26 @@ jobs:
           echo "=== 构建完成 ==="
           ls -la app/build/outputs/apk/debug/ 2>/dev/null || echo "APK目录不存在"
 
+      - name: 获取版本号
+        id: version
+        run: |
+          VERSION=$(grep 'versionName' app/build.gradle.kts | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "版本号: $VERSION"
+
+      - name: 计算 APK MD5 并重命名
+        id: rename
+        run: |
+          APK_PATH="app/build/outputs/apk/debug/app-debug.apk"
+          MD5=$(md5 -q "$APK_PATH" | cut -c1-7)
+          NEW_NAME="ReadTrack-v${{ steps.version.outputs.version }}-CI-${MD5}.apk"
+          cp "$APK_PATH" "app/build/outputs/apk/debug/$NEW_NAME"
+          echo "md5=$MD5" >> "$GITHUB_OUTPUT"
+          echo "new_name=$NEW_NAME" >> "$GITHUB_OUTPUT"
+          echo "MD5 前缀: $MD5"
+          echo "新文件名: $NEW_NAME"
+          ls -lh "app/build/outputs/apk/debug/$NEW_NAME"
+
       - name: 上传构建日志
         if: always()
         uses: actions/upload-artifact@v4
@@ -51,7 +71,7 @@ jobs:
         run: |
           echo "=== 检查 APK ==="
           echo "当前目录: $(pwd)"
-          APK_PATH="app/build/outputs/apk/debug/app-debug.apk"
+          APK_PATH="app/build/outputs/apk/debug/${{ steps.rename.outputs.new_name }}"
           if [ -f "$APK_PATH" ]; then
             echo "✅ APK 文件存在!"
             ls -lh "$APK_PATH"
@@ -67,6 +87,6 @@ jobs:
       - name: 上传 APK
         uses: actions/upload-artifact@v4
         with:
-          name: readtrack-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: ReadTrack-v${{ steps.version.outputs.version }}-CI-${{ steps.rename.outputs.md5 }}
+          path: app/build/outputs/apk/debug/${{ steps.rename.outputs.new_name }}
           retention-days: 30
