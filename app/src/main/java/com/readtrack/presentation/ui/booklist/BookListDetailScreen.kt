@@ -48,11 +48,6 @@ fun BookListDetailScreen(
         viewModel.loadBookList(bookListId)
     }
 
-    // 加载不在书单中的书籍（用于添加快捷添加）
-    LaunchedEffect(bookListId) {
-        viewModel.loadBooksNotInList()
-    }
-
     Scaffold(
         floatingActionButton = {
             if (uiState.books.isNotEmpty()) {
