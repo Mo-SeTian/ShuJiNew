@@ -114,15 +114,11 @@ class BooksViewModel @Inject constructor(
                     if (first.selectedTagIds.isNotEmpty()) {
                         filteredBooks = filteredBooks.filter { it.id in taggedBookIds }
                     }
-                    // 按书单筛选
+                    // 按书单筛选：仅展示属于选中书单的书籍
                     if (selectedBookListIds.isNotEmpty()) {
                         filteredBooks = filteredBooks.filter { book ->
                             val bookListIds = crossRefs[book.id]
-                            if (bookListIds == null || bookListIds.isEmpty()) {
-                                true
-                            } else {
-                                bookListIds.any { it in selectedBookListIds }
-                            }
+                            bookListIds != null && bookListIds.any { it in selectedBookListIds }
                         }
                     }
                     BooksUiState(
@@ -177,21 +173,21 @@ class BooksViewModel @Inject constructor(
             bookListRepository.getAllBookLists().collect { bookLists ->
                 _uiState.update { it.copy(allBookLists = bookLists) }
                 val allIds = bookLists.map { it.id }.toSet()
-                val shownIds = bookLists.filter { it.showInBooksPage }.map { it.id }.toSet()
 
                 if (!bookListDefaultsApplied && bookLists.isNotEmpty()) {
-                    selectedBookListIdsFlow.value = shownIds
+                    // 默认选中全部书单
+                    selectedBookListIdsFlow.value = allIds
                     bookListDefaultsApplied = true
-                } else if (bookListDefaultsApplied && !bookListFilterManuallyChanged) {
-                    // 书单展示设置变化时，自动同步筛选（仅在用户未手动操作时）
-                    if (selectedBookListIdsFlow.value != shownIds) {
-                        selectedBookListIdsFlow.value = shownIds
+                } else {
+                    // 新书单自动加入筛选，删除的书单自动清理
+                    val current = selectedBookListIdsFlow.value
+                    val synced = current.filter { it in allIds }.toMutableSet()
+                    if (!bookListFilterManuallyChanged) {
+                        synced.addAll(allIds)
                     }
-                }
-                // 清理已删除书单的 ID
-                val current = selectedBookListIdsFlow.value
-                if (current.any { it !in allIds }) {
-                    selectedBookListIdsFlow.value = current.filter { it in allIds }.toSet()
+                    if (synced != current) {
+                        selectedBookListIdsFlow.value = synced
+                    }
                 }
             }
         }

@@ -23,7 +23,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.readtrack.data.local.entity.BookEntity
-import com.readtrack.data.local.entity.BookListEntity
 import com.readtrack.presentation.ui.components.BookCard
 import com.readtrack.presentation.viewmodel.BookListDetailViewModel
 
@@ -39,7 +38,6 @@ fun BookListDetailScreen(
     var showClearDialog by remember { mutableStateOf(false) }
     var showRemoveDialog by remember { mutableStateOf(false) }
     var showEditCoverDialog by remember { mutableStateOf(false) }
-    var showSettingsDialog by remember { mutableStateOf(false) }
     var showAddBooksDialog by remember { mutableStateOf(false) }
     var showSettingsMenu by remember { mutableStateOf(false) }
     var bookIdToRemove by remember { mutableStateOf<Long?>(null) }
@@ -101,23 +99,13 @@ fun BookListDetailScreen(
                             onDismissRequest = { showSettingsMenu = false }
                         ) {
                             DropdownMenuItem(
-                                text = { Text("书单设置") },
+                                text = { Text("添加书籍") },
                                 onClick = {
                                     showSettingsMenu = false
-                                    showSettingsDialog = true
+                                    showAddBooksDialog = true
                                 },
-                                leadingIcon = { Icon(Icons.Default.Settings, contentDescription = null) }
+                                leadingIcon = { Icon(Icons.Default.Add, contentDescription = null) }
                             )
-                            if (uiState.books.isEmpty()) {
-                                DropdownMenuItem(
-                                    text = { Text("添加书籍") },
-                                    onClick = {
-                                        showSettingsMenu = false
-                                        showAddBooksDialog = true
-                                    },
-                                    leadingIcon = { Icon(Icons.Default.Add, contentDescription = null) }
-                                )
-                            }
                         }
                     }
                 },
@@ -303,17 +291,6 @@ fun BookListDetailScreen(
         )
     }
 
-    // Settings dialog
-    if (showSettingsDialog) {
-        BookListSettingsDialog(
-            bookList = uiState.bookList,
-            onDismiss = { showSettingsDialog = false },
-            onToggleShowInBooksPage = { show ->
-                viewModel.updateShowInBooksPage(show)
-            }
-        )
-    }
-
     // Add books dialog
     if (showAddBooksDialog) {
         AddBooksToListDialog(
@@ -453,52 +430,6 @@ fun EditBookListCoverDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) { Text("关闭") }
-        }
-    )
-}
-
-@Composable
-private fun BookListSettingsDialog(
-    bookList: BookListEntity?,
-    onDismiss: () -> Unit,
-    onToggleShowInBooksPage: (Boolean) -> Unit
-) {
-    var showInBooksPage by remember { mutableStateOf(bookList?.showInBooksPage ?: true) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("书单设置") },
-        text = {
-            Column {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            "在我的书籍页面展示",
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                        Text(
-                            "关闭后，该书单中的书籍默认不会出现在「我的书籍」列表",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Switch(
-                        checked = showInBooksPage,
-                        onCheckedChange = {
-                            showInBooksPage = it
-                            onToggleShowInBooksPage(it)
-                        }
-                    )
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) { Text("完成") }
         }
     )
 }
