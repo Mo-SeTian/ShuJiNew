@@ -11,7 +11,9 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.LinearGradient
 import android.graphics.Paint
+import android.graphics.Path
 import android.graphics.Rect
+import android.graphics.RectF
 import android.graphics.Shader
 import android.widget.RemoteViews
 import androidx.palette.graphics.Palette
@@ -55,7 +57,7 @@ class WidgetUpdateHelper @Inject constructor(
             val compositeBitmap = withContext(Dispatchers.IO) {
                 val color = extractCoverColor(book?.coverPath) ?: Color.rgb(38, 36, 64)
                 val cover = loadCoverBitmap(book?.coverPath)
-                createWidgetComposite(color, cover)?.also {
+                createWidgetComposite(color, cover).also {
                     cover?.recycle()
                 }
             }
@@ -86,25 +88,36 @@ class WidgetUpdateHelper @Inject constructor(
         }
     }
 
-    private fun createWidgetComposite(baseColor: Int, coverBitmap: Bitmap?): Bitmap? {
-        return try {
-            val size = 300
-            val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
-            val canvas = Canvas(bitmap)
+    private fun createWidgetComposite(baseColor: Int, coverBitmap: Bitmap?): Bitmap {
+        val size = 400
+        val cornerRadius = size * 0.07f
+        val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
 
-            // 1. 渐变背景
-            val gradientPaint = Paint(Paint.ANTI_ALIAS_FLAG)
-            val start = Color.argb(170, Color.red(baseColor), Color.green(baseColor), Color.blue(baseColor))
-            val end = Color.argb(225, 10, 10, 18)
-            gradientPaint.shader = LinearGradient(
-                0f, 0f, size.toFloat(), size.toFloat(),
-                start, end, Shader.TileMode.CLAMP
-            )
-            canvas.drawRect(0f, 0f, size.toFloat(), size.toFloat(), gradientPaint)
+        // 圆角裁剪
+        val clipPath = Path().apply {
+            addRoundRect(RectF(0f, 0f, size.toFloat(), size.toFloat()),
+                cornerRadius, cornerRadius, Path.Direction.CW)
+        }
+        canvas.clipPath(clipPath)
 
-            // 2. 封面居中，四周留 margin 露出渐变背景
-            coverBitmap?.let { cover ->
-                val margin = (size * 0.10f).toInt()
+        // 1. 渐变背景（完全不透明，让颜色可见）
+        val gradientPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+        val r = Color.red(baseColor)
+        val g = Color.green(baseColor)
+        val b = Color.blue(baseColor)
+        gradientPaint.shader = LinearGradient(
+            0f, 0f, size.toFloat(), size.toFloat(),
+            intArrayOf(Color.rgb(r, g, b), Color.rgb((r * 0.3f).toInt(), (g * 0.3f).toInt(), (b * 0.3f).toInt())),
+            floatArrayOf(0f, 1f),
+            Shader.TileMode.CLAMP
+        )
+        canvas.drawRect(0f, 0f, size.toFloat(), size.toFloat(), gradientPaint)
+
+        // 2. 封面居中，四周留 margin 露出渐变背景
+        coverBitmap?.let { cover ->
+            if (!cover.isRecycled && cover.width > 0 && cover.height > 0) {
+                val margin = (size * 0.08f).toInt()
                 val availW = size - 2 * margin
                 val availH = size - 2 * margin
                 val scale = minOf(availW.toFloat() / cover.width, availH.toFloat() / cover.height)
@@ -112,23 +125,25 @@ class WidgetUpdateHelper @Inject constructor(
                 val drawH = (cover.height * scale).toInt()
                 val left = margin + (availW - drawW) / 2
                 val top = margin + (availH - drawH) / 2
-                canvas.drawBitmap(cover, null, Rect(left, top, left + drawW, top + drawH), null)
+                canvas.drawBitmap(cover, null,
+                    Rect(left, top, left + drawW, top + drawH),
+                    Paint(Paint.FILTER_BITMAP_FLAG))
             }
-
-            // 3. 底部暗色遮罩
-            val scrimPaint = Paint()
-            scrimPaint.color = Color.argb(204, 0, 0, 0)
-            val scrimHeight = (size * 0.18f).toInt()
-            canvas.drawRect(
-                0f, (size - scrimHeight).toFloat(),
-                size.toFloat(), size.toFloat(),
-                scrimPaint
-            )
-
-            bitmap
-        } catch (e: Exception) {
-            null
         }
+
+        // 3. 底部渐变遮罩：从透明过渡到半透明黑
+        val scrimHeight = (size * 0.20f).toInt()
+        val scrimTop = (size - scrimHeight).toFloat()
+        val scrimPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+        scrimPaint.shader = LinearGradient(
+            0f, scrimTop, 0f, size.toFloat(),
+            intArrayOf(Color.argb(0, 0, 0, 0), Color.argb(210, 0, 0, 0)),
+            floatArrayOf(0f, 1f),
+            Shader.TileMode.CLAMP
+        )
+        canvas.drawRect(0f, scrimTop, size.toFloat(), size.toFloat(), scrimPaint)
+
+        return bitmap
     }
 
     private fun loadCoverBitmap(coverPath: String?): Bitmap? {
@@ -142,7 +157,8 @@ class WidgetUpdateHelper @Inject constructor(
             opts.inSampleSize = when {
                 maxDim > 2400 -> 8
                 maxDim > 1200 -> 4
-                else -> 2
+                maxDim > 600 -> 2
+                else -> 1
             }
             BitmapFactory.decodeFile(coverPath, opts)
         } catch (e: Exception) {
