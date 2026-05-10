@@ -38,7 +38,18 @@ class BookRepositoryImpl @Inject constructor(
 
     override suspend fun updateBook(book: BookEntity) = bookDao.updateBook(book)
 
-    override suspend fun deleteBook(id: Long) = bookDao.deleteBookById(id)
+    override suspend fun deleteBook(id: Long) {
+        // 删书前，为旧记录补充快照（避免删书后封面、书名丢失）
+        val book = bookDao.getBookByIdOnce(id)
+        if (book != null) {
+            val records = readingRecordDao.getRecordsByBookIdOnce(id)
+            val snapshot = BookSnapshot.from(book, book.status)
+            records.filter { it.bookSnapshot == null }.forEach { record ->
+                readingRecordDao.insertRecord(record.copy(bookSnapshot = snapshot))
+            }
+        }
+        bookDao.deleteBookById(id)
+    }
 
     override suspend fun insertRecordAndUpdateBook(record: ReadingRecordEntity, book: BookEntity) {
         database.withTransaction {
