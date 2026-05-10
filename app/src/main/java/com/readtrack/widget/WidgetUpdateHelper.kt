@@ -182,8 +182,8 @@ class WidgetUpdateHelper @Inject constructor(
             if (!cover.isRecycled && cover.width > 0 && cover.height > 0) {
                 val coverW = (size * 0.52f).toInt()
                 val coverH = (size * 0.74f).toInt()
-                val coverLeft = (size - coverW) / 2
-                val coverTop = (size - coverH) / 2 - 8
+                val coverLeft = (size * 0.06f).toInt()
+                val coverTop = (size * 0.08f).toInt()
                 val dstRect = Rect(coverLeft, coverTop, coverLeft + coverW, coverTop + coverH)
 
                 val scale = maxOf(coverW.toFloat() / cover.width, coverH.toFloat() / cover.height)
