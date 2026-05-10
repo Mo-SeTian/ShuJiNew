@@ -69,6 +69,7 @@ class BooksViewModel @Inject constructor(
     private val selectedBookListIdsFlow = MutableStateFlow<Set<Long>>(emptySet())
     private val allCrossRefsFlow = MutableStateFlow<Map<Long, Set<Long>>>(emptyMap())
     private var bookListDefaultsApplied = false
+    private var bookListFilterManuallyChanged = false
 
     init {
         loadBooks()
@@ -175,9 +176,22 @@ class BooksViewModel @Inject constructor(
         viewModelScope.launch {
             bookListRepository.getAllBookLists().collect { bookLists ->
                 _uiState.update { it.copy(allBookLists = bookLists) }
+                val allIds = bookLists.map { it.id }.toSet()
+                val shownIds = bookLists.filter { it.showInBooksPage }.map { it.id }.toSet()
+
                 if (!bookListDefaultsApplied && bookLists.isNotEmpty()) {
-                    selectedBookListIdsFlow.value = bookLists.filter { it.showInBooksPage }.map { it.id }.toSet()
+                    selectedBookListIdsFlow.value = shownIds
                     bookListDefaultsApplied = true
+                } else if (bookListDefaultsApplied && !bookListFilterManuallyChanged) {
+                    // 书单展示设置变化时，自动同步筛选（仅在用户未手动操作时）
+                    if (selectedBookListIdsFlow.value != shownIds) {
+                        selectedBookListIdsFlow.value = shownIds
+                    }
+                }
+                // 清理已删除书单的 ID
+                val current = selectedBookListIdsFlow.value
+                if (current.any { it !in allIds }) {
+                    selectedBookListIdsFlow.value = current.filter { it in allIds }.toSet()
                 }
             }
         }
@@ -235,6 +249,7 @@ class BooksViewModel @Inject constructor(
     }
 
     fun toggleBookListFilter(bookListId: Long) {
+        bookListFilterManuallyChanged = true
         val newSet = if (bookListId in selectedBookListIdsFlow.value) {
             selectedBookListIdsFlow.value - bookListId
         } else {
@@ -244,6 +259,7 @@ class BooksViewModel @Inject constructor(
     }
 
     fun clearBookListFilters() {
+        bookListFilterManuallyChanged = true
         selectedBookListIdsFlow.value = emptySet()
     }
 
