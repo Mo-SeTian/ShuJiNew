@@ -221,7 +221,8 @@ class WidgetUpdateHelper @Inject constructor(
         canvas.drawRect(0f, size * 0.58f, size.toFloat(), size.toFloat(), scrimPaint)
 
         // 4. 右侧多列竖排文字：从左到右排布，书名在左，进度在右
-        val textLeftX = size * 0.58f
+        // 封面右边缘(含阴影) ≈ 256，文字从此之后开始避免重叠
+        val textLeftX = size * 0.66f
         val columnWidth = 38f
 
         if (book != null) {
@@ -254,7 +255,7 @@ class WidgetUpdateHelper @Inject constructor(
                 isFakeBoldText = true
             }
             drawMultiColumnVerticalTextAt(
-                canvas, "选\n择\n一\n本\n书", textLeftX, size * 0.1f, emptyPaint, columnWidth
+                canvas, "选择一本书", textLeftX, size * 0.1f, emptyPaint, columnWidth
             )
 
             val hintPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -262,7 +263,7 @@ class WidgetUpdateHelper @Inject constructor(
                 textSize = 18f
             }
             drawMultiColumnVerticalTextAt(
-                canvas, "设\n置", textLeftX + columnWidth + 18f, size * 0.1f, hintPaint, columnWidth
+                canvas, "设置", textLeftX + columnWidth + 18f, size * 0.1f, hintPaint, columnWidth
             )
         }
 
@@ -271,25 +272,31 @@ class WidgetUpdateHelper @Inject constructor(
 
     /** 将全角标点转为紧凑半角，使竖排文字更整齐 */
     private fun normalizeVerticalText(text: String): String {
-        return text
-            .replace("‘", "'")   // '
-            .replace("’", "'")   // '
-            .replace("“", "\"")  // "
-            .replace("”", "\"")  // "
-            .replace("《", "")    // 《 → 移除（书名号竖排无用）
-            .replace("》", "")    // 》 → 移除
-            .replace("：", ":")   // ：
-            .replace("，", ",")   // ，
-            .replace("、", ",")   // 、
-            .replace("；", ";")   // ；
-            .replace("！", "!")   // ！
-            .replace("？", "?")   // ？
-            .replace("（", "(")   // （
-            .replace("）", ")")   // ）
-            .replace("。", ".")   // 。
-            .replace("…", ".")   // …
-            .replace("—", "-")   // —
-            .replace("～", "~")   // ～
+        return buildString(text.length) {
+            for (ch in text) {
+                when (ch) {
+                    '：' -> append(':')
+                    '，' -> append(',')
+                    '、' -> append(',')
+                    '；' -> append(';')
+                    '！' -> append('!')
+                    '？' -> append('?')
+                    '（' -> append('(')
+                    '）' -> append(')')
+                    '。' -> append('.')
+                    '．' -> append('.')
+                    '…' -> append('.')
+                    '—' -> append('-')
+                    '～' -> append('~')
+                    '‘' -> append('\'')
+                    '’' -> append('\'')
+                    '“' -> append('"')
+                    '”' -> append('"')
+                    '《', '》', '　' -> { /* 移除书名号、全角空格 */ }
+                    else -> append(ch)
+                }
+            }
+        }
     }
 
     /** 从指定最左列开始向右绘制多列竖排文字 */
