@@ -40,6 +40,16 @@ jobs:
         run: |
           ./gradlew assembleRelease --no-daemon 2>&1
 
+      - name: 获取版本号并重命名 APK
+        run: |
+          VERSION=$(grep 'versionName' app/build.gradle.kts | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          APK_PATH="app/build/outputs/apk/release/app-release.apk"
+          NEW_NAME="ReadTrack-v${VERSION}-Release.apk"
+          cp "$APK_PATH" "app/build/outputs/apk/release/$NEW_NAME"
+          echo "版本号: $VERSION"
+          echo "新文件名: $NEW_NAME"
+          ls -lh "app/build/outputs/apk/release/$NEW_NAME"
+
       - name: 检查 APK
         run: |
           ls -lh app/build/outputs/apk/release/
@@ -47,7 +57,7 @@ jobs:
       - name: 创建 GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: app/build/outputs/apk/release/app-release.apk
+          files: app/build/outputs/apk/release/ReadTrack-v*-Release.apk
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
