@@ -35,7 +35,9 @@ android {
         // APK 体积优化：只保留中文和英文语言资源
         resourceConfigurations += listOf("zh", "en")
 
-        buildConfigField("String", "UMENG_APP_KEY", "\"${localProperties.getProperty("UMENG_APP_KEY", "")}\"")
+        val umengAppKey = localProperties.getProperty("UMENG_APP_KEY")
+            ?: System.getenv("UMENG_APP_KEY") ?: ""
+        buildConfigField("String", "UMENG_APP_KEY", "\"$umengAppKey\"")
     }
 
     signingConfigs {

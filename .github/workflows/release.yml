@@ -33,6 +33,8 @@ jobs:
           chmod +x gradlew
 
       - name: 构建 Release APK
+        env:
+          UMENG_APP_KEY: ${{ secrets.UMENG_APP_KEY }}
         run: |
           ./gradlew assembleRelease --no-daemon 2>&1
 
