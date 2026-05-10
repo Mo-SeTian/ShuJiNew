@@ -177,13 +177,13 @@ class WidgetUpdateHelper @Inject constructor(
         )
         canvas.drawRect(0f, 0f, size.toFloat(), size.toFloat(), bgPaint)
 
-        // 2. 封面：centerCrop 裁剪，portrait 比例
+        // 2. 封面：centerCrop 裁剪，portrait 比例（接近 2:3）
         coverBitmap?.let { cover ->
             if (!cover.isRecycled && cover.width > 0 && cover.height > 0) {
-                val coverW = (size * 0.68f).toInt()
-                val coverH = (size * 0.76f).toInt()
+                val coverW = (size * 0.52f).toInt()
+                val coverH = (size * 0.74f).toInt()
                 val coverLeft = (size - coverW) / 2
-                val coverTop = (size - coverH) / 2 - 16
+                val coverTop = (size - coverH) / 2 - 8
                 val dstRect = Rect(coverLeft, coverTop, coverLeft + coverW, coverTop + coverH)
 
                 val scale = maxOf(coverW.toFloat() / cover.width, coverH.toFloat() / cover.height)
@@ -193,6 +193,19 @@ class WidgetUpdateHelper @Inject constructor(
                 val srcTop = (cover.height - srcH) / 2
                 val srcRect = Rect(srcLeft, srcTop, srcLeft + srcW, srcTop + srcH)
 
+                // 阴影/光晕层：略大、低透明度，制造边缘柔化过渡
+                val shadowPaint = Paint(Paint.FILTER_BITMAP_FLAG)
+                shadowPaint.alpha = 50
+                val shadowPad = 24
+                val shadowRect = Rect(
+                    dstRect.left - shadowPad,
+                    dstRect.top - shadowPad,
+                    dstRect.right + shadowPad,
+                    dstRect.bottom + shadowPad
+                )
+                canvas.drawBitmap(cover, srcRect, shadowRect, shadowPaint)
+
+                // 实际封面
                 canvas.drawBitmap(cover, srcRect, dstRect, Paint(Paint.FILTER_BITMAP_FLAG))
             }
         }
