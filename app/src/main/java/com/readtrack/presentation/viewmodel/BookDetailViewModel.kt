@@ -128,54 +128,33 @@ class BookDetailViewModel @Inject constructor(
 
     /**
      * 计算阅读趋势数据：
-     * - 按天聚合阅读记录（排除状态变更记录）
-     * - 返回每日累计阅读量，用于折线图绘制
+     * - 按 7 天一周聚合阅读记录（排除状态变更记录）
+     * - 返回每周累计阅读量，用于折线图绘制
      */
     private fun computeTrendData(records: List<ReadingRecordEntity>): List<TrendPoint> {
         val normalRecords = records.filter { it.recordType == RecordType.NORMAL }
         if (normalRecords.isEmpty()) return emptyList()
 
-        val calendar = Calendar.getInstance()
+        val sortedRecords = normalRecords.sortedBy { it.date }
+        val firstDateMs = sortedRecords.first().date
         val dateFormatter = SimpleDateFormat("M/d", Locale.CHINESE)
-        val dayKeyFormatter = SimpleDateFormat("yyyy-MM-dd", Locale.CHINESE)
+        val weekMs = 7L * 24 * 60 * 60 * 1000
 
-        // 按天聚合每日阅读量（按日期字符串分组，避免时间戳精度问题）
-        val dailyPages = normalRecords
-            .groupBy { record ->
-                calendar.timeInMillis = record.date
-                calendar.set(Calendar.HOUR_OF_DAY, 0)
-                calendar.set(Calendar.MINUTE, 0)
-                calendar.set(Calendar.SECOND, 0)
-                calendar.set(Calendar.MILLISECOND, 0)
-                dayKeyFormatter.format(Date(calendar.timeInMillis))
-            }
-            .map { (dateKey, dayRecords) ->
-                val dateMs = dayRecords.first().date
-                calendar.timeInMillis = dateMs
-                calendar.set(Calendar.HOUR_OF_DAY, 0)
-                calendar.set(Calendar.MINUTE, 0)
-                calendar.set(Calendar.SECOND, 0)
-                calendar.set(Calendar.MILLISECOND, 0)
-                val normalizedDateMs = calendar.timeInMillis
-                val total = dayRecords.sumOf { it.pagesRead }
-                dateKey to (normalizedDateMs to total)
-            }
-            .toMap()
-
-        // 构建日期范围（从第一次阅读到最后一次阅读）
-        val sortedDays = dailyPages.keys.sorted()
-        if (sortedDays.isEmpty()) return emptyList()
+        // 按周聚合
+        val weeklyPages = sortedRecords.groupBy { record ->
+            (record.date - firstDateMs) / weekMs
+        }
 
         // 转为累计曲线点
         val result = mutableListOf<TrendPoint>()
         var cumulative = 0.0
-        for (dayKey in sortedDays) {
-            val (dateMs, dailyTotal) = dailyPages[dayKey]!!
-            cumulative += dailyTotal
+        weeklyPages.entries.sortedBy { it.key }.forEach { (weekIndex, weekRecords) ->
+            cumulative += weekRecords.sumOf { it.pagesRead }
+            val bucketStartMs = firstDateMs + weekIndex * weekMs
             result.add(
                 TrendPoint(
-                    dateLabel = dateFormatter.format(Date(dateMs)),
-                    dateMs = dateMs,
+                    dateLabel = dateFormatter.format(Date(bucketStartMs)),
+                    dateMs = bucketStartMs,
                     cumulative = cumulative
                 )
             )
