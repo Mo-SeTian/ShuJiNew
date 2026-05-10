@@ -90,7 +90,6 @@ fun SettingsScreen(
     var showStatsUnitDialog by remember { mutableStateOf(false) }
     var showWebDavConfigDialog by remember { mutableStateOf(false) }
     var showAutoBackupDialog by remember { mutableStateOf(false) }
-    var showUpdateSourceDialog by remember { mutableStateOf(false) }
     var showUpdateResultDialog by remember { mutableStateOf(false) }
     var showTagSheet by remember { mutableStateOf(false) }
     var pendingImportUri by remember { mutableStateOf<Uri?>(null) }
@@ -406,61 +405,75 @@ fun SettingsScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            item { Spacer(Modifier.height(8.dp)); SettingsSectionCard("书籍搜索") }
-            item { DoubanCookieCard(viewModel, uiState) }
-
-            item { Spacer(Modifier.height(8.dp)); SettingsSectionCard("数据管理") }
-            item { SettingsClickableCard(Icons.Outlined.CloudSync, "备份与恢复", "本地备份与 WebDAV 云备份") { onNavigateToBackupSettings() } }
-
-            item { Spacer(Modifier.height(8.dp)); SettingsSectionCard("外观") }
+            // 外观与偏好
             item {
-                SettingsClickableCard(Icons.Outlined.DarkMode, "主题模式", when (uiState.themeMode) {
-                    ThemeMode.SYSTEM -> "跟随系统"
-                    ThemeMode.LIGHT -> "浅色模式"
-                    ThemeMode.DARK -> "深色模式"
-                }) { showThemeDialog = true }
-            }
-            item {
-                SettingsClickableCard(Icons.Outlined.Analytics, "统计单位", when (uiState.statsUnit) {
-                    StatsUnit.CHAPTER -> "章节数"
-                    StatsUnit.PAGE -> "页数"
-                }) { showStatsUnitDialog = true }
-            }
-
-            item { Spacer(Modifier.height(8.dp)); SettingsSectionCard("桌面小组件") }
-            item {
-                SettingsClickableCard(
-                    Icons.Outlined.Widgets,
-                    "桌面小组件",
-                    "设置每个桌面小组件对应的书籍"
-                ) { onNavigateToWidgetSettings() }
-            }
-
-            item { Spacer(Modifier.height(8.dp)); SettingsSectionCard("其他") }
-            item {
-                SettingsClickableCard(
-                    Icons.Outlined.CloudUpload,
-                    "标签管理",
-                    "创建、删除书籍标签"
-                ) { showTagSheet = true }
-            }
-            item {
-                SettingsClickableCard(
-                    Icons.Outlined.SettingsEthernet,
-                    "更新源",
-                    if (uiState.updateSource == "gitee") "Gitee" else "GitHub"
-                ) { showUpdateSourceDialog = true }
-            }
-            item {
-                SettingsClickableCard(
-                    Icons.Outlined.Download,
-                    "检查更新",
-                    if (uiState.isCheckingUpdate) "正在检查..." else "当前版本 ${BuildConfig.VERSION_NAME}"
-                ) {
-                    viewModel.checkForUpdate()
+                SettingsGroup("外观与偏好") {
+                    SettingsItem(
+                        Icons.Outlined.DarkMode, "主题模式",
+                        when (uiState.themeMode) {
+                            ThemeMode.SYSTEM -> "跟随系统"
+                            ThemeMode.LIGHT -> "浅色模式"
+                            ThemeMode.DARK -> "深色模式"
+                        }
+                    ) { showThemeDialog = true }
+                    SettingsItemDivider()
+                    SettingsItem(
+                        Icons.Outlined.Analytics, "统计单位",
+                        when (uiState.statsUnit) {
+                            StatsUnit.CHAPTER -> "章节数"
+                            StatsUnit.PAGE -> "页数"
+                        }
+                    ) { showStatsUnitDialog = true }
                 }
             }
-            item { SettingsClickableCard(Icons.Outlined.Info, "关于", "应用信息与隐私声明") { onNavigateToAbout() } }
+
+            // 数据管理
+            item {
+                SettingsGroup("数据管理") {
+                    SettingsItem(
+                        Icons.Outlined.CloudSync, "备份与恢复",
+                        "本地备份与 WebDAV 云备份"
+                    ) { onNavigateToBackupSettings() }
+                }
+            }
+
+            // 搜索
+            item {
+                SettingsGroup("搜索") {
+                    DoubanCookieRow(viewModel, uiState)
+                }
+            }
+
+            // 工具
+            item {
+                SettingsGroup("工具") {
+                    SettingsItem(
+                        Icons.Outlined.Widgets, "桌面小组件",
+                        "设置每个桌面小组件对应的书籍"
+                    ) { onNavigateToWidgetSettings() }
+                    SettingsItemDivider()
+                    SettingsItem(
+                        Icons.Outlined.CloudUpload, "标签管理",
+                        "创建、删除书籍标签"
+                    ) { showTagSheet = true }
+                }
+            }
+
+            // 关于
+            item {
+                val updateSubtitle = if (uiState.isCheckingUpdate) "正在检查..." else "当前版本 ${BuildConfig.VERSION_NAME}（${if (uiState.updateSource == "gitee") "Gitee" else "GitHub"}）"
+                SettingsGroup("关于") {
+                    SettingsItem(
+                        Icons.Outlined.Download, "检查更新",
+                        updateSubtitle
+                    ) { viewModel.checkForUpdate() }
+                    SettingsItemDivider()
+                    SettingsItem(
+                        Icons.Outlined.Info, "关于",
+                        "应用信息与开源许可"
+                    ) { onNavigateToAbout() }
+                }
+            }
         }
     }
 
@@ -591,42 +604,6 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showAutoBackupDialog = false }) { Text("取消") }
-            }
-        )
-    }
-
-    if (showUpdateSourceDialog) {
-        AlertDialog(
-            onDismissRequest = { showUpdateSourceDialog = false },
-            title = { Text("选择更新源") },
-            text = {
-                Column {
-                    listOf("github" to "GitHub", "gitee" to "Gitee").forEach { (value, label) ->
-                        Row(
-                            Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    viewModel.setUpdateSource(value)
-                                    showUpdateSourceDialog = false
-                                }
-                                .padding(vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            RadioButton(
-                                selected = uiState.updateSource == value,
-                                onClick = {
-                                    viewModel.setUpdateSource(value)
-                                    showUpdateSourceDialog = false
-                                }
-                            )
-                            Spacer(Modifier.width(12.dp))
-                            Text(label)
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showUpdateSourceDialog = false }) { Text("取消") }
             }
         )
     }
@@ -871,7 +848,7 @@ private fun WebDavConfigDialog(
 }
 
 @Composable
-private fun DoubanCookieCard(
+private fun DoubanCookieRow(
     viewModel: SettingsViewModel,
     uiState: SettingsUiState
 ) {
@@ -882,31 +859,24 @@ private fun DoubanCookieCard(
         cookieInput = uiState.doubanCookie
     }
 
-    Card(
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { showCookieDialog = true },
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            .clickable { showCookieDialog = true }
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(imageVector = Icons.Default.Cookie, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-            Spacer(Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text("豆瓣 Cookie（可选）", style = MaterialTheme.typography.bodyLarge)
-                Text(
-                    if (uiState.doubanCookie.isNotBlank()) "已配置，可提升兼容性" else "未配置，搜索也可直接使用",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (uiState.doubanCookie.isNotBlank()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
+        Icon(imageVector = Icons.Default.Cookie, contentDescription = null, modifier = Modifier.size(22.dp), tint = MaterialTheme.colorScheme.primary)
+        Spacer(Modifier.width(14.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text("豆瓣 Cookie", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+            Text(
+                if (uiState.doubanCookie.isNotBlank()) "已配置" else "未配置",
+                style = MaterialTheme.typography.bodySmall,
+                color = if (uiState.doubanCookie.isNotBlank()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
+        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f), modifier = Modifier.size(18.dp))
     }
 
     if (showCookieDialog) {
