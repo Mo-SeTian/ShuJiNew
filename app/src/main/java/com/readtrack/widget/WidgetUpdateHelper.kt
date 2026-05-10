@@ -220,49 +220,41 @@ class WidgetUpdateHelper @Inject constructor(
         )
         canvas.drawRect(0f, size * 0.58f, size.toFloat(), size.toFloat(), scrimPaint)
 
-        // 4. 右侧多列竖排文字：书名在左，进度在右，各自独立列
-        val coverRight = (size * 0.06f + size * 0.52f).toInt()
-        val textCenterX = coverRight + (size - coverRight) / 2f
+        // 4. 右侧多列竖排文字：从左到右排布，书名在左，进度在右
+        val textLeftX = size * 0.58f
         val columnWidth = 38f
 
         if (book != null) {
-            val title = book.title
-            // 书名列数：≤8字1列，>8字2列
+            val title = normalizeVerticalText(book.title).take(20)
             val titleColumns = if (title.length <= 8) 1 else 2
-            val totalColumns = titleColumns + 1 // +1 是进度列
-            val totalWidth = totalColumns * columnWidth
-            val rightmostColX = textCenterX + totalWidth / 2f - columnWidth / 2f
 
             val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 color = Color.WHITE
                 textSize = 26f
                 isFakeBoldText = true
             }
-            // 书名在进度左侧
-            val titleRightmostColX = rightmostColX - columnWidth
             drawMultiColumnVerticalTextAt(
-                canvas, title, titleRightmostColX, size * 0.06f, titlePaint, columnWidth
+                canvas, title, textLeftX, size * 0.06f, titlePaint, columnWidth
             )
 
             val progressPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 color = Color.argb(204, 255, 255, 255)
                 textSize = 20f
             }
-            // 进度在最右列
+            val progressLeftX = textLeftX + titleColumns * columnWidth + 18f
             drawMultiColumnVerticalTextAt(
-                canvas, "${calculateProgressPercent(book)}%", rightmostColX, size * 0.06f, progressPaint, columnWidth
+                canvas,
+                normalizeVerticalText("${calculateProgressPercent(book)}%"),
+                progressLeftX, size * 0.18f, progressPaint, columnWidth
             )
         } else {
-            val totalWidth = 2 * columnWidth
-            val rightmostColX = textCenterX + totalWidth / 2f - columnWidth / 2f
-
             val emptyPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 color = Color.WHITE
                 textSize = 24f
                 isFakeBoldText = true
             }
             drawMultiColumnVerticalTextAt(
-                canvas, "选择一本书", rightmostColX - columnWidth, size * 0.1f, emptyPaint, columnWidth
+                canvas, "选\n择\n一\n本\n书", textLeftX, size * 0.1f, emptyPaint, columnWidth
             )
 
             val hintPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -270,21 +262,41 @@ class WidgetUpdateHelper @Inject constructor(
                 textSize = 18f
             }
             drawMultiColumnVerticalTextAt(
-                canvas, "设置", rightmostColX, size * 0.1f, hintPaint, columnWidth
+                canvas, "设\n置", textLeftX + columnWidth + 18f, size * 0.1f, hintPaint, columnWidth
             )
         }
 
         return bitmap
     }
 
-    /**
-     * 从指定最右列开始向左绘制多列竖排文字
-     * @param rightmostColX 最右列中心 X 坐标
-     */
+    /** 将全角标点转为紧凑半角，使竖排文字更整齐 */
+    private fun normalizeVerticalText(text: String): String {
+        return text
+            .replace("‘", "'")   // '
+            .replace("’", "'")   // '
+            .replace("“", "\"")  // "
+            .replace("”", "\"")  // "
+            .replace("《", "")    // 《 → 移除（书名号竖排无用）
+            .replace("》", "")    // 》 → 移除
+            .replace("：", ":")   // ：
+            .replace("，", ",")   // ，
+            .replace("、", ",")   // 、
+            .replace("；", ";")   // ；
+            .replace("！", "!")   // ！
+            .replace("？", "?")   // ？
+            .replace("（", "(")   // （
+            .replace("）", ")")   // ）
+            .replace("。", ".")   // 。
+            .replace("…", ".")   // …
+            .replace("—", "-")   // —
+            .replace("～", "~")   // ～
+    }
+
+    /** 从指定最左列开始向右绘制多列竖排文字 */
     private fun drawMultiColumnVerticalTextAt(
         canvas: Canvas,
         text: String,
-        rightmostColX: Float,
+        leftmostColX: Float,
         topY: Float,
         paint: Paint,
         columnWidth: Float
@@ -295,7 +307,7 @@ class WidgetUpdateHelper @Inject constructor(
         text.forEachIndexed { index, char ->
             val column = index / maxCharsPerColumn
             val row = index % maxCharsPerColumn
-            val colX = rightmostColX - column * columnWidth
+            val colX = leftmostColX + column * columnWidth
             val charY = topY + row * lineHeight + paint.textSize
             val charStr = char.toString()
             val charW = paint.measureText(charStr)
