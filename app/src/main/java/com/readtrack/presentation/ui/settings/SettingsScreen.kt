@@ -90,6 +90,7 @@ fun SettingsScreen(
     var showStatsUnitDialog by remember { mutableStateOf(false) }
     var showWebDavConfigDialog by remember { mutableStateOf(false) }
     var showAutoBackupDialog by remember { mutableStateOf(false) }
+    var showUpdateSourceDialog by remember { mutableStateOf(false) }
     var showUpdateResultDialog by remember { mutableStateOf(false) }
     var showTagSheet by remember { mutableStateOf(false) }
     var pendingImportUri by remember { mutableStateOf<Uri?>(null) }
@@ -608,6 +609,41 @@ fun SettingsScreen(
         )
     }
 
+    if (showUpdateSourceDialog) {
+        AlertDialog(
+            onDismissRequest = { showUpdateSourceDialog = false },
+            title = { Text("切换更新源") },
+            text = {
+                Column {
+                    listOf("github" to "GitHub", "gitee" to "Gitee").forEach { (value, label) ->
+                        val isSelected = uiState.updateSource == value
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    viewModel.setUpdateSource(value)
+                                    showUpdateSourceDialog = false
+                                }
+                                .padding(vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = isSelected,
+                                onClick = {
+                                    viewModel.setUpdateSource(value)
+                                    showUpdateSourceDialog = false
+                                }
+                            )
+                            Spacer(Modifier.width(12.dp))
+                            Text(label)
+                        }
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { showUpdateSourceDialog = false }) { Text("关闭") } }
+        )
+    }
+
     if (showTagSheet) {
         val tagVm: com.readtrack.presentation.viewmodel.TagManagementViewModel = hiltViewModel()
         TagManagementSheet(onDismiss = { showTagSheet = false }, viewModel = tagVm)
@@ -632,6 +668,10 @@ fun SettingsScreen(
                 context.startActivity(intent)
                 showUpdateResultDialog = false
                 viewModel.clearUpdateResult()
+            },
+            onSwitchSource = {
+                showUpdateResultDialog = false
+                showUpdateSourceDialog = true
             }
         )
     }
@@ -641,7 +681,8 @@ fun SettingsScreen(
 fun UpdateDialog(
     result: com.readtrack.remote.UpdateResult,
     onDismiss: () -> Unit,
-    onOpenDownload: () -> Unit
+    onOpenDownload: () -> Unit,
+    onSwitchSource: () -> Unit = {}
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -683,9 +724,14 @@ fun UpdateDialog(
             }
         },
         dismissButton = {
-            if (result.hasUpdate) {
-                TextButton(onClick = onDismiss) {
-                    Text("稍后再说")
+            Row {
+                TextButton(onClick = onSwitchSource) {
+                    Text("切换源")
+                }
+                if (result.hasUpdate) {
+                    TextButton(onClick = onDismiss) {
+                        Text("稍后再说")
+                    }
                 }
             }
         }
