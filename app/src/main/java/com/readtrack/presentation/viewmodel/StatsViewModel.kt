@@ -210,11 +210,13 @@ class StatsViewModel @Inject constructor(
                     .filter { it.recordType == RecordType.NORMAL }
                     .groupBy { it.bookId ?: -1L }
                     .mapNotNull { (bookId, recs) ->
-                        val book = booksMap[bookId] ?: return@mapNotNull null
-                        val isChapterBook = book.progressType == ProgressType.CHAPTER
+                        val book = booksMap[bookId]
+                        val snapshot = recs.firstOrNull()?.bookSnapshot
+                        val title = book?.title ?: snapshot?.title ?: "已删除图书"
+                        val isChapterBook = (book?.progressType ?: snapshot?.progressType) == ProgressType.CHAPTER
                         BookReadingBreakdown(
                             bookId = bookId,
-                            bookTitle = book.title,
+                            bookTitle = title,
                             pages = recs.sumOf { it.pagesRead },
                             chapters = if (isChapterBook) recs.sumOf { (it.chaptersRead ?: 0).toDouble() } else 0.0
                         )
