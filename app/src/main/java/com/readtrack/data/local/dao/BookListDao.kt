@@ -104,4 +104,21 @@ interface BookListDao {
      */
     @Query("DELETE FROM book_list_cross_ref WHERE bookListId = :bookListId")
     suspend fun clearBookList(bookListId: Long)
+
+    /**
+     * 获取不在指定书单中的所有书籍
+     */
+    @Query("""
+        SELECT * FROM books WHERE id NOT IN (
+            SELECT bookId FROM book_list_cross_ref WHERE bookListId = :bookListId
+        )
+        ORDER BY updatedAt DESC
+    """)
+    fun getBooksNotInBookList(bookListId: Long): Flow<List<BookEntity>>
+
+    /**
+     * 获取所有书单-书籍关联记录
+     */
+    @Query("SELECT * FROM book_list_cross_ref")
+    fun getAllCrossRefs(): Flow<List<BookListCrossRef>>
 }

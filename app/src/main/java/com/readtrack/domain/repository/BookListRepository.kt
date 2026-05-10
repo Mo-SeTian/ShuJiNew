@@ -1,6 +1,7 @@
 package com.readtrack.domain.repository
 
 import com.readtrack.data.local.entity.BookEntity
+import com.readtrack.data.local.entity.BookListCrossRef
 import com.readtrack.data.local.entity.BookListEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -21,4 +22,6 @@ interface BookListRepository {
     suspend fun isBookInBookList(bookListId: Long, bookId: Long): Boolean
     suspend fun addBooksToList(bookListId: Long, bookIds: List<Long>)
     suspend fun clearBookList(bookListId: Long)
+    fun getBooksNotInBookList(bookListId: Long): Flow<List<BookEntity>>
+    fun getAllCrossRefs(): Flow<List<BookListCrossRef>>
 }
