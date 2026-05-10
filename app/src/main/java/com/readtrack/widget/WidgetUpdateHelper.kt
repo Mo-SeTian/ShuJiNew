@@ -275,12 +275,10 @@ class WidgetUpdateHelper @Inject constructor(
             val percentW = percentPaint.measureText(percentText)
             val percentH = percentPaint.textSize.toInt()
 
-            // 计算文字块总高度，在封面高度内垂直居中
+            // 书名顶部与封面上沿对齐
             val gapTitleAuthor = if (authorLayout != null) 6 else 0
             val gapAuthorPercent = if (authorLayout != null) 12 else 6
-            val authorH = authorLayout?.height ?: 0
-            val totalTextH = titleLayout.height + gapTitleAuthor + authorH + gapAuthorPercent + percentH
-            val textTopY = coverTop + (coverH - totalTextH) / 2
+            val textTopY = coverTop
 
             // 绘制书名
             canvas.save()
