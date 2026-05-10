@@ -49,7 +49,7 @@ class BookListDetailViewModel @Inject constructor(
                     _uiState.update { it.copy(isLoading = false, errorMessage = "加载失败: ${e.message}") }
                 }
                 .collect { state ->
-                    _uiState.value = state
+                    _uiState.update { it.copy(bookList = state.bookList, books = state.books, isLoading = false) }
                 }
         }
 
