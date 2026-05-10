@@ -297,7 +297,6 @@ fun BookListDetailScreen(
     if (showAddBooksDialog) {
         AddBooksToListDialog(
             books = uiState.booksNotInList,
-            allTags = uiState.allTags,
             bookTagMap = uiState.bookTagMap,
             onDismiss = { showAddBooksDialog = false },
             onConfirm = { bookIds ->
@@ -441,7 +440,6 @@ fun EditBookListCoverDialog(
 @Composable
 private fun AddBooksToListDialog(
     books: List<BookEntity>,
-    allTags: List<TagEntity>,
     bookTagMap: Map<Long, List<TagEntity>>,
     onDismiss: () -> Unit,
     onConfirm: (List<Long>) -> Unit
