@@ -19,7 +19,6 @@ data class BookListDetailUiState(
     val booksNotInList: List<BookEntity> = emptyList(),
     val isLoading: Boolean = true,
     val errorMessage: String? = null,
-    val allTags: List<TagEntity> = emptyList(),
     val bookTagMap: Map<Long, List<TagEntity>> = emptyMap()
 )
 
@@ -58,21 +57,20 @@ class BookListDetailViewModel @Inject constructor(
                 }
         }
 
-        // 加载所有标签
-        viewModelScope.launch {
-            tagRepository.getAllTags().collect { tags ->
-                _uiState.update { it.copy(allTags = tags) }
-            }
-        }
-
-        // 加载不在当前书单中的书籍（用于快捷添加）
+        // 加载不在当前书单中的书籍及其标签（用于快捷添加）
         viewModelScope.launch {
             bookListRepository.getBooksNotInBookList(bookListId)
                 .catch {  }
                 .collect { books ->
-                    val tagMap = mutableMapOf<Long, List<TagEntity>>()
-                    for (book in books) {
-                        tagMap[book.id] = tagRepository.getTagsForBookOnce(book.id)
+                    val tagMap = if (books.isEmpty()) {
+                        emptyMap()
+                    } else {
+                        val allTags = tagRepository.getAllTags().first()
+                        val crossRefs = tagRepository.getCrossRefsForBooks(books.map { it.id })
+                        books.associate { book ->
+                            val tagIds = crossRefs.filter { it.bookId == book.id }.map { it.tagId }.toSet()
+                            book.id to allTags.filter { it.id in tagIds }
+                        }
                     }
                     _uiState.update { it.copy(booksNotInList = books, bookTagMap = tagMap) }
                 }

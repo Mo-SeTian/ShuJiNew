@@ -53,11 +53,19 @@ fun BooksScreen(
     var showStatusDropdown by remember { mutableStateOf(false) }
     var showTagDropdown by remember { mutableStateOf(false) }
     var showBookListDropdown by remember { mutableStateOf(false) }
-    var searchExpanded by remember { mutableStateOf(uiState.searchQuery.isNotEmpty()) }
-    var searchText by remember { mutableStateOf(uiState.searchQuery) }
+    var searchExpanded by remember { mutableStateOf(false) }
+    var searchText by remember { mutableStateOf("") }
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
     val listState = rememberLazyListState()
+
+    // 展开搜索框时同步状态并自动聚焦
+    LaunchedEffect(searchExpanded) {
+        if (searchExpanded) {
+            searchText = uiState.searchQuery
+            focusRequester.requestFocus()
+        }
+    }
 
     // 筛选条件变化时，列表回到顶部
     LaunchedEffect(
@@ -241,6 +249,8 @@ fun BooksScreen(
                             IconButton(
                                 onClick = {
                                     searchExpanded = false
+                                    searchText = ""
+                                    viewModel.setSearchQuery("")
                                     focusManager.clearFocus()
                                 },
                                 modifier = Modifier.size(20.dp)
@@ -260,9 +270,6 @@ fun BooksScreen(
                         unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
                     )
                 )
-                LaunchedEffect(Unit) {
-                    focusRequester.requestFocus()
-                }
             }
 
             // Filter Row: search trigger (when collapsed) + Status + Tag + Booklist dropdowns

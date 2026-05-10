@@ -69,7 +69,6 @@ class BooksViewModel @Inject constructor(
     private val selectedBookListIdsFlow = MutableStateFlow<Set<Long>>(emptySet())
     private val allCrossRefsFlow = MutableStateFlow<Map<Long, Set<Long>>>(emptyMap())
     private var bookListDefaultsApplied = false
-    private var bookListFilterManuallyChanged = false
 
     init {
         // 默认状态筛选为「在读」
@@ -243,7 +242,6 @@ class BooksViewModel @Inject constructor(
     }
 
     fun toggleBookListFilter(bookListId: Long) {
-        bookListFilterManuallyChanged = true
         val newSet = if (bookListId in selectedBookListIdsFlow.value) {
             selectedBookListIdsFlow.value - bookListId
         } else {
@@ -253,7 +251,6 @@ class BooksViewModel @Inject constructor(
     }
 
     fun clearBookListFilters() {
-        bookListFilterManuallyChanged = true
         selectedBookListIdsFlow.value = emptySet()
     }
 
