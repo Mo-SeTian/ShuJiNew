@@ -183,34 +183,27 @@ fun BookCard(
                             )
                         }
                     }
-                }
 
-                // Tags
-                if (tags.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        tags.take(4).forEach { tag ->
-                            Surface(
-                                shape = RoundedCornerShape(4.dp),
-                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
-                            ) {
-                                Text(
-                                    text = tag.name,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
-                                )
-                            }
-                        }
-                        if (tags.size > 4) {
+                    // Tags
+                    tags.take(3).forEach { tag ->
+                        Surface(
+                            shape = RoundedCornerShape(4.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
+                        ) {
                             Text(
-                                text = "+${tags.size - 4}",
+                                text = tag.name,
                                 style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
                             )
                         }
+                    }
+                    if (tags.size > 3) {
+                        Text(
+                            text = "+${tags.size - 3}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
 
