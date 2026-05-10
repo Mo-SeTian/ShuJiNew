@@ -45,6 +45,7 @@ data class BooksUiState(
     val errorMessage: String? = null,
     val allTags: List<TagEntity> = emptyList(),
     val selectedTagIds: Set<Long> = emptySet(),
+    val bookTagMap: Map<Long, List<TagEntity>> = emptyMap(),
     val allBookLists: List<BookListEntity> = emptyList(),
     val selectedBookListIds: Set<Long> = emptySet()
 )
@@ -132,6 +133,7 @@ class BooksViewModel @Inject constructor(
                         errorMessage = null,
                         allTags = _uiState.value.allTags,
                         selectedTagIds = first.selectedTagIds,
+                        bookTagMap = _uiState.value.bookTagMap,
                         allBookLists = _uiState.value.allBookLists,
                         selectedBookListIds = selectedBookListIds
                     )
@@ -165,6 +167,15 @@ class BooksViewModel @Inject constructor(
         viewModelScope.launch {
             tagRepository.getAllTags().collect { tags ->
                 _uiState.update { it.copy(allTags = tags) }
+            }
+        }
+        viewModelScope.launch {
+            tagRepository.getAllTagCrossRefsFlow().collect { crossRefs ->
+                val tags = _uiState.value.allTags
+                val tagById = tags.associateBy { it.id }
+                val map = crossRefs.groupBy({ it.bookId }, { it.tagId })
+                    .mapValues { (_, tagIds) -> tagIds.mapNotNull { tagById[it] } }
+                _uiState.update { it.copy(bookTagMap = map) }
             }
         }
     }

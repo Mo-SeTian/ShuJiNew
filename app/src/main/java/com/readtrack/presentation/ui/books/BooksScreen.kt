@@ -606,7 +606,8 @@ fun BooksScreen(
                                 },
                                 onLongClick = if (!isSelectionMode && book.id !in selectedBookIds) {
                                     { selectedBookIds = selectedBookIds + book.id }
-                                } else null
+                                } else null,
+                                tags = uiState.bookTagMap[book.id] ?: emptyList()
                             )
                         }
                         // Bottom spacing for FAB

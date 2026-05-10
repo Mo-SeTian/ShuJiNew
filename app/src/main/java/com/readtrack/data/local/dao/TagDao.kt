@@ -47,6 +47,9 @@ interface TagDao {
     @Query("SELECT * FROM book_tag_cross_ref WHERE bookId IN (:bookIds)")
     suspend fun getCrossRefsForBooks(bookIds: List<Long>): List<TagCrossRef>
 
+    @Query("SELECT * FROM book_tag_cross_ref")
+    fun getAllBookTagCrossRefsFlow(): Flow<List<TagCrossRef>>
+
     @Query("SELECT EXISTS(SELECT 1 FROM book_tag_cross_ref WHERE tagId = :tagId AND bookId = :bookId)")
     suspend fun isBookTagged(tagId: Long, bookId: Long): Boolean
 
