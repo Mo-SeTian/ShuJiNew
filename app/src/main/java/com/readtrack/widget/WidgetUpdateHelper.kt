@@ -376,7 +376,7 @@ class WidgetUpdateHelper @Inject constructor(
         )
         views.setOnClickPendingIntent(R.id.widget_container, openPendingIntent)
 
-        // 右下角按钮：阅读中→记录进度，其他→打开详情页
+        // 右下角按钮：阅读中→记录进度，其他→提示不可记录
         if (book != null) {
             if (book.status == BookStatus.READING) {
                 val recordIntent = WidgetQuickRecordActivity.createIntent(context, book.id)
@@ -390,7 +390,16 @@ class WidgetUpdateHelper @Inject constructor(
                     )
                 )
             } else {
-                views.setOnClickPendingIntent(R.id.widget_record_button, openPendingIntent)
+                // 非在读书籍也走 WidgetQuickRecordActivity，由其内部 toast 提醒用户
+                views.setOnClickPendingIntent(
+                    R.id.widget_record_button,
+                    PendingIntent.getActivity(
+                        context,
+                        appWidgetId * 3 + 1,
+                        WidgetQuickRecordActivity.createIntent(context, book.id),
+                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                    )
+                )
             }
         } else {
             views.setOnClickPendingIntent(R.id.widget_record_button, openPendingIntent)
