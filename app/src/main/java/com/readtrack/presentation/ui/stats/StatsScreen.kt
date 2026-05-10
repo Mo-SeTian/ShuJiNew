@@ -75,10 +75,52 @@ fun StatsScreen(
             title = { Text(day.dayOfWeek, fontWeight = FontWeight.Bold) },
             text = {
                 Column {
-                    Text("阅读量: ${value.toInt()} ${uiState.statsUnit.label()}")
+                    Text("当天总阅读量: ${value.toInt()} ${uiState.statsUnit.label()}")
                     if (day.chapters > 0 && day.pages > 0) {
                         Text(
                             "包含 ${day.chapters.toInt()} 章 / ${day.pages.toInt()} 页",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    if (day.bookBreakdowns.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        HorizontalDivider()
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            "阅读明细",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        day.bookBreakdowns.forEach { book ->
+                            val bookValue = if (uiState.statsUnit == StatsUnit.CHAPTER) book.chapters else book.pages
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 2.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = book.bookTitle,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    modifier = Modifier.weight(1f),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(
+                                    text = "${bookValue.toInt()} ${uiState.statsUnit.label()}",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
+                    } else if (value <= 0) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            "暂无阅读记录",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

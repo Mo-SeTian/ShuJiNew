@@ -127,35 +127,43 @@ class BookDetailViewModel @Inject constructor(
     }
 
     /**
-     * 计算阅读趋势数据：
-     * - 按 7 天一周聚合阅读记录（排除状态变更记录）
-     * - 返回每周累计阅读量，用于折线图绘制
+     * 计算最近 7 天阅读趋势：
+     * - 今天往前推 6 天，共 7 天
+     * - 每天一个数据点，为该天当前书的 NORMAL 记录阅读量
+     * - 无记录的天显示 0
      */
     private fun computeTrendData(records: List<ReadingRecordEntity>): List<TrendPoint> {
         val normalRecords = records.filter { it.recordType == RecordType.NORMAL }
-        if (normalRecords.isEmpty()) return emptyList()
-
-        val sortedRecords = normalRecords.sortedBy { it.date }
-        val firstDateMs = sortedRecords.first().date
         val dateFormatter = SimpleDateFormat("M/d", Locale.CHINESE)
-        val weekMs = 7L * 24 * 60 * 60 * 1000
+        val dayMs = 24L * 60 * 60 * 1000
 
-        // 按周聚合
-        val weeklyPages = sortedRecords.groupBy { record ->
-            (record.date - firstDateMs) / weekMs
-        }
+        val calendar = Calendar.getInstance()
+        calendar.set(Calendar.HOUR_OF_DAY, 0)
+        calendar.set(Calendar.MINUTE, 0)
+        calendar.set(Calendar.SECOND, 0)
+        calendar.set(Calendar.MILLISECOND, 0)
+        val todayStartMs = calendar.timeInMillis
 
-        // 转为累计曲线点
+        // 按天聚合阅读量
+        val dailyPages = normalRecords.groupBy { record ->
+            calendar.timeInMillis = record.date
+            calendar.set(Calendar.HOUR_OF_DAY, 0)
+            calendar.set(Calendar.MINUTE, 0)
+            calendar.set(Calendar.SECOND, 0)
+            calendar.set(Calendar.MILLISECOND, 0)
+            calendar.timeInMillis
+        }.mapValues { (_, dayRecords) -> dayRecords.sumOf { it.pagesRead } }
+
+        // 生成最近 7 天数据点（从远到近）
         val result = mutableListOf<TrendPoint>()
-        var cumulative = 0.0
-        weeklyPages.entries.sortedBy { it.key }.forEach { (weekIndex, weekRecords) ->
-            cumulative += weekRecords.sumOf { it.pagesRead }
-            val bucketStartMs = firstDateMs + weekIndex * weekMs
+        for (dayOffset in 6 downTo 0) {
+            val dayStartMs = todayStartMs - dayOffset * dayMs
+            val amount = dailyPages[dayStartMs] ?: 0.0
             result.add(
                 TrendPoint(
-                    dateLabel = dateFormatter.format(Date(bucketStartMs)),
-                    dateMs = bucketStartMs,
-                    cumulative = cumulative
+                    dateLabel = dateFormatter.format(Date(dayStartMs)),
+                    dateMs = dayStartMs,
+                    cumulative = amount
                 )
             )
         }

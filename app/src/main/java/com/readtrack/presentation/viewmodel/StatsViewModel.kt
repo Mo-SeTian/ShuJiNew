@@ -43,7 +43,15 @@ data class DailyReading(
     val date: Long,
     val pages: Double,
     val chapters: Double,
-    val dayOfWeek: String
+    val dayOfWeek: String,
+    val bookBreakdowns: List<BookReadingBreakdown> = emptyList()
+)
+
+data class BookReadingBreakdown(
+    val bookId: Long,
+    val bookTitle: String,
+    val pages: Double,
+    val chapters: Double
 )
 
 data class RecordWithBook(
@@ -197,11 +205,27 @@ class StatsViewModel @Inject constructor(
             monthValue = if (statsUnit == StatsUnit.CHAPTER) monthChapters else monthPages,
             totalValue = if (statsUnit == StatsUnit.CHAPTER) totalChapters else totalPages,
             weeklyReadingData = weeklyBuckets.map { (date, _) ->
+                val dayRecords = recordsByDay[date] ?: emptyList()
+                val breakdowns = dayRecords
+                    .filter { it.recordType == RecordType.NORMAL }
+                    .groupBy { it.bookId ?: -1L }
+                    .mapNotNull { (bookId, recs) ->
+                        val book = booksMap[bookId] ?: return@mapNotNull null
+                        val isChapterBook = book.progressType == ProgressType.CHAPTER
+                        BookReadingBreakdown(
+                            bookId = bookId,
+                            bookTitle = book.title,
+                            pages = recs.sumOf { it.pagesRead },
+                            chapters = if (isChapterBook) recs.sumOf { (it.chaptersRead ?: 0).toDouble() } else 0.0
+                        )
+                    }
+                    .sortedByDescending { it.pages + it.chapters }
                 DailyReading(
                     date = date,
                     pages = recordsByDayPage[date] ?: 0.0,
                     chapters = recordsByDayChapter[date] ?: 0.0,
-                    dayOfWeek = dayLabel(date)
+                    dayOfWeek = dayLabel(date),
+                    bookBreakdowns = breakdowns
                 )
             },
             recentRecords = filteredRecords,
