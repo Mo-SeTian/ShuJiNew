@@ -160,17 +160,4 @@ class BookListDetailViewModel @Inject constructor(
         }
     }
 
-    /**
-     * 切换"在我的书籍页面展示"开关
-     */
-    fun updateShowInBooksPage(show: Boolean) {
-        viewModelScope.launch {
-            try {
-                val bookList = _uiState.value.bookList ?: return@launch
-                bookListRepository.updateBookList(bookList.copy(showInBooksPage = show))
-            } catch (e: Exception) {
-                _uiState.update { it.copy(errorMessage = "更新失败: ${e.message}") }
-            }
-        }
-    }
 }
