@@ -494,45 +494,69 @@ private fun HeroSummaryCard(uiState: HomeUiState) {
             else -> "书架已有 ${uiState.totalBooks} 本书，挑一本继续开始吧"
         }
     }
+    val primaryContainer = MaterialTheme.colorScheme.primaryContainer
+    val surface = MaterialTheme.colorScheme.surface
+    val gradientBrush = remember(primaryContainer, surface) {
+        Brush.verticalGradient(colors = listOf(primaryContainer, surface))
+    }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(42.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(Icons.Default.AutoGraph, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+        Box(modifier = Modifier.fillMaxWidth().background(gradientBrush)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(42.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Default.AutoGraph, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    }
+                    Spacer(Modifier.width(12.dp))
+                    Column {
+                        Text("阅读仪表盘", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text(summaryText, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 }
-                Spacer(Modifier.width(12.dp))
-                Column {
-                    Text("阅读仪表盘", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Text(summaryText, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("完读率", style = MaterialTheme.typography.bodyMedium)
-                    Text("${uiState.completionRate}%", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
-                }
-                LinearProgressIndicator(
-                    progress = { progress },
+
+                // 完读率大字 + 进度条
+                Column(
                     modifier = Modifier.fillMaxWidth(),
-                    color = MaterialTheme.colorScheme.primary,
-                    trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
-                )
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "${uiState.completionRate}%",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    LinearProgressIndicator(
+                        progress = { progress },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(8.dp)
+                            .clip(RoundedCornerShape(4.dp)),
+                        color = MaterialTheme.colorScheme.primary,
+                        trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                    )
+                    Text(
+                        text = "完读率",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
     }
@@ -584,16 +608,20 @@ private fun ReadingInsightCard(uiState: HomeUiState) {
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    Icons.Default.Schedule,
-                    contentDescription = null,
+                Box(
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(42.dp)
                         .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.18f))
-                        .padding(8.dp),
-                    tint = MaterialTheme.colorScheme.secondary
-                )
+                        .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.18f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Default.Schedule,
+                        contentDescription = null,
+                        modifier = Modifier.size(22.dp),
+                        tint = MaterialTheme.colorScheme.secondary
+                    )
+                }
                 Spacer(Modifier.width(14.dp))
                 Column {
                     Text("阅读洞察", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
@@ -641,15 +669,16 @@ private fun InsightMetricCard(
 ) {
     Card(
         modifier = modifier,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f))
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(18.dp))
+            Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(22.dp))
             Text(value, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
             Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
@@ -658,9 +687,15 @@ private fun InsightMetricCard(
 
 @Composable
 private fun StatusOverviewCard(uiState: HomeUiState) {
+    val statusOrder = remember {
+        listOf(BookStatus.WANT_TO_READ, BookStatus.READING, BookStatus.FINISHED, BookStatus.ON_HOLD, BookStatus.ABANDONED)
+    }
+    val total = remember(uiState.totalBooks) { uiState.totalBooks.coerceAtLeast(1) }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp)
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column(
             modifier = Modifier
@@ -668,11 +703,74 @@ private fun StatusOverviewCard(uiState: HomeUiState) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text("阅读概览", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                StatusItem(count = uiState.totalBooks, label = "总书籍", color = MaterialTheme.colorScheme.primary)
-                StatusItem(count = uiState.readingBooks, label = "在读", color = statusColor(BookStatus.READING))
-                StatusItem(count = uiState.finishedBooks, label = "已读", color = statusColor(BookStatus.FINISHED))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("阅读概览", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text(
+                    text = "共 ${uiState.totalBooks} 本",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            // 5 状态分布条
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(6.dp)
+                    .clip(RoundedCornerShape(3.dp))
+            ) {
+                statusOrder.forEach { status ->
+                    val count = uiState.statusCounts[status] ?: 0
+                    if (count > 0) {
+                        Box(
+                            modifier = Modifier
+                                .weight(count.toFloat())
+                                .fillMaxWidth()
+                                .height(6.dp)
+                                .background(statusColor(status))
+                        )
+                    }
+                }
+            }
+
+            // 5 状态计数
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                statusOrder.forEach { status ->
+                    val count = uiState.statusCounts[status] ?: 0
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .clip(CircleShape)
+                                    .background(statusColor(status))
+                            )
+                            Text(
+                                text = "$count",
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        Text(
+                            text = status.displayName,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
             }
         }
     }
@@ -723,7 +821,7 @@ private fun StatCardModern(
     valueColor: Color? = null
 ) {
     val gradientBrush = remember(gradientColors) {
-        Brush.horizontalGradient(colors = gradientColors.map { it.copy(alpha = 0.15f) })
+        Brush.horizontalGradient(colors = gradientColors.map { it.copy(alpha = 0.25f) })
     }
     val resolvedValueColor = remember(valueColor, gradientColors) { valueColor ?: gradientColors[0] }
 
@@ -731,17 +829,18 @@ private fun StatCardModern(
         modifier = modifier,
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(brush = gradientBrush)
-                .padding(16.dp)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Box(
                 modifier = Modifier
-                    .size(36.dp)
+                    .size(42.dp)
                     .clip(CircleShape)
                     .background(gradientColors[0].copy(alpha = 0.2f)),
                 contentAlignment = Alignment.Center
@@ -750,50 +849,28 @@ private fun StatCardModern(
                     icon,
                     contentDescription = null,
                     tint = gradientColors[0],
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(22.dp)
                 )
             }
-            Spacer(modifier = Modifier.height(12.dp))
             Text(
                 text = value,
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 color = resolvedValueColor
             )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
-    }
-}
-
-@Composable
-private fun StatusItem(
-    count: Int,
-    label: String,
-    color: Color
-) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(
-            text = "$count",
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-            color = color
-        )
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
     }
 }
 
@@ -803,12 +880,4 @@ private fun statusColor(status: BookStatus): Color = when (status) {
     BookStatus.FINISHED -> FinishedBlue
     BookStatus.ON_HOLD -> OnHoldGray
     BookStatus.ABANDONED -> AbandonedRed
-}
-
-private fun statusLabel(status: BookStatus): String = when (status) {
-    BookStatus.WANT_TO_READ -> "想读"
-    BookStatus.READING -> "在读"
-    BookStatus.FINISHED -> "已读"
-    BookStatus.ON_HOLD -> "暂停"
-    BookStatus.ABANDONED -> "放弃"
 }
