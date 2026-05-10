@@ -823,7 +823,12 @@ private fun StatCardModern(
     valueColor: Color? = null
 ) {
     val gradientBrush = remember(gradientColors) {
-        Brush.horizontalGradient(colors = gradientColors.map { it.copy(alpha = 0.25f) })
+        Brush.verticalGradient(
+            colors = listOf(
+                gradientColors.last().copy(alpha = 0.18f),
+                gradientColors.last().copy(alpha = 0.04f)
+            )
+        )
     }
     val resolvedValueColor = remember(valueColor, gradientColors) { valueColor ?: gradientColors[0] }
 
