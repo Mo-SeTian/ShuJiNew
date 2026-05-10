@@ -4,7 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.data.local.entity.BookListEntity
+import com.readtrack.data.local.entity.TagEntity
 import com.readtrack.domain.repository.BookListRepository
+import com.readtrack.domain.repository.TagRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
@@ -16,12 +18,15 @@ data class BookListDetailUiState(
     val books: List<BookEntity> = emptyList(),
     val booksNotInList: List<BookEntity> = emptyList(),
     val isLoading: Boolean = true,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val allTags: List<TagEntity> = emptyList(),
+    val bookTagMap: Map<Long, List<TagEntity>> = emptyMap()
 )
 
 @HiltViewModel
 class BookListDetailViewModel @Inject constructor(
-    private val bookListRepository: BookListRepository
+    private val bookListRepository: BookListRepository,
+    private val tagRepository: TagRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(BookListDetailUiState())
@@ -53,12 +58,23 @@ class BookListDetailViewModel @Inject constructor(
                 }
         }
 
+        // 加载所有标签
+        viewModelScope.launch {
+            tagRepository.getAllTags().collect { tags ->
+                _uiState.update { it.copy(allTags = tags) }
+            }
+        }
+
         // 加载不在当前书单中的书籍（用于快捷添加）
         viewModelScope.launch {
             bookListRepository.getBooksNotInBookList(bookListId)
                 .catch {  }
                 .collect { books ->
-                    _uiState.update { it.copy(booksNotInList = books) }
+                    val tagMap = mutableMapOf<Long, List<TagEntity>>()
+                    for (book in books) {
+                        tagMap[book.id] = tagRepository.getTagsForBookOnce(book.id)
+                    }
+                    _uiState.update { it.copy(booksNotInList = books, bookTagMap = tagMap) }
                 }
         }
     }

@@ -23,7 +23,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.readtrack.data.local.entity.BookEntity
+import com.readtrack.data.local.entity.TagEntity
 import com.readtrack.presentation.ui.components.BookCard
+import com.readtrack.presentation.ui.components.getStatusColor
 import com.readtrack.presentation.viewmodel.BookListDetailViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -295,6 +297,8 @@ fun BookListDetailScreen(
     if (showAddBooksDialog) {
         AddBooksToListDialog(
             books = uiState.booksNotInList,
+            allTags = uiState.allTags,
+            bookTagMap = uiState.bookTagMap,
             onDismiss = { showAddBooksDialog = false },
             onConfirm = { bookIds ->
                 viewModel.addBooksToList(bookIds)
@@ -437,6 +441,8 @@ fun EditBookListCoverDialog(
 @Composable
 private fun AddBooksToListDialog(
     books: List<BookEntity>,
+    allTags: List<TagEntity>,
+    bookTagMap: Map<Long, List<TagEntity>>,
     onDismiss: () -> Unit,
     onConfirm: (List<Long>) -> Unit
 ) {
@@ -555,6 +561,47 @@ private fun AddBooksToListDialog(
                                                 maxLines = 1,
                                                 overflow = TextOverflow.Ellipsis
                                             )
+                                        }
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Row(
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            // 状态标签
+                                            val statusColor = getStatusColor(book.status)
+                                            Surface(
+                                                shape = RoundedCornerShape(4.dp),
+                                                color = statusColor.copy(alpha = 0.15f)
+                                            ) {
+                                                Text(
+                                                    text = book.status.displayName,
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = statusColor,
+                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                                )
+                                            }
+                                            // 标签
+                                            val bookTags = bookTagMap[book.id] ?: emptyList()
+                                            bookTags.take(3).forEach { tag ->
+                                                Surface(
+                                                    shape = RoundedCornerShape(4.dp),
+                                                    color = MaterialTheme.colorScheme.surfaceVariant
+                                                ) {
+                                                    Text(
+                                                        text = tag.name,
+                                                        style = MaterialTheme.typography.labelSmall,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                                    )
+                                                }
+                                            }
+                                            if (bookTags.size > 3) {
+                                                Text(
+                                                    text = "+${bookTags.size - 3}",
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
                                         }
                                     }
                                 }
