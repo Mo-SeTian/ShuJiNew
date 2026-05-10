@@ -67,9 +67,12 @@ class BookListDetailViewModel @Inject constructor(
                     } else {
                         val allTags = tagRepository.getAllTags().first()
                         val crossRefs = tagRepository.getCrossRefsForBooks(books.map { it.id })
+                        val crossRefsByBook = crossRefs.groupBy({ it.bookId }, { it.tagId })
+                            .mapValues { it.value.toSet() }
+                        val tagById = allTags.associateBy { it.id }
                         books.associate { book ->
-                            val tagIds = crossRefs.filter { it.bookId == book.id }.map { it.tagId }.toSet()
-                            book.id to allTags.filter { it.id in tagIds }
+                            val tagIds = crossRefsByBook[book.id] ?: emptySet()
+                            book.id to tagIds.mapNotNull { tagById[it] }
                         }
                     }
                     _uiState.update { it.copy(booksNotInList = books, bookTagMap = tagMap) }
