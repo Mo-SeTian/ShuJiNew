@@ -1,5 +1,6 @@
 package com.readtrack.domain.repository
 
+import com.readtrack.data.local.entity.TagCrossRef
 import com.readtrack.data.local.entity.TagEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -11,7 +12,7 @@ interface TagRepository {
     suspend fun deleteTag(tagId: Long)
     fun getTagsForBook(bookId: Long): Flow<List<TagEntity>>
     suspend fun getTagsForBookOnce(bookId: Long): List<TagEntity>
-    suspend fun getCrossRefsForBooks(bookIds: List<Long>): List<com.readtrack.data.local.entity.TagCrossRef>
+    suspend fun getCrossRefsForBooks(bookIds: List<Long>): List<TagCrossRef>
     fun getBookIdsWithTag(tagId: Long): Flow<List<Long>>
     suspend fun addTagToBook(tagId: Long, bookId: Long)
     suspend fun removeTagFromBook(tagId: Long, bookId: Long)
