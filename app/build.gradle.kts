@@ -43,9 +43,11 @@ android {
     signingConfigs {
         create("release") {
             storeFile = file("readtrack.keystore")
-            storePassword = localProperties.getProperty("RELEASE_STORE_PASSWORD", "")
+            storePassword = localProperties.getProperty("RELEASE_STORE_PASSWORD")
+                ?: System.getenv("RELEASE_STORE_PASSWORD") ?: ""
             keyAlias = "readtrack"
-            keyPassword = localProperties.getProperty("RELEASE_KEY_PASSWORD", "")
+            keyPassword = localProperties.getProperty("RELEASE_KEY_PASSWORD")
+                ?: System.getenv("RELEASE_KEY_PASSWORD") ?: ""
         }
     }
 
