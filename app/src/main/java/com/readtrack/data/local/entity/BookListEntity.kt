@@ -24,6 +24,7 @@ data class BookListEntity(
     /** 封面来源书籍ID（封面自动更新时参考），可由用户自定义覆盖 coverPath */
     val coverBookId: Long? = null,
     val bookCount: Int = 0,                // 缓存：书单内书籍数量，用于列表快速展示
+    val showInBooksPage: Boolean = true,    // 是否在我的书籍页面展示该书单中的书籍
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()
 )

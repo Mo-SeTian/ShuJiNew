@@ -88,6 +88,12 @@ class BookListRepositoryImpl @Inject constructor(
         }
     }
 
+    override fun getBooksNotInBookList(bookListId: Long): Flow<List<BookEntity>> =
+        bookListDao.getBooksNotInBookList(bookListId)
+
+    override fun getAllCrossRefs(): Flow<List<BookListCrossRef>> =
+        bookListDao.getAllCrossRefs()
+
     /**
      * 如果书单还没有封面，自动设置为第一本有封面的书的封面
      */

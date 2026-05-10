@@ -93,6 +93,7 @@ class DataBackupRepositoryImpl @Inject constructor(
                     coverPath = bookList.coverPath,
                     coverBookId = bookList.coverBookId,
                     bookIds = booksInList.map { it.id },
+                    showInBooksPage = bookList.showInBooksPage,
                     createdAt = bookList.createdAt,
                     updatedAt = bookList.updatedAt
                 )
@@ -337,6 +338,7 @@ class DataBackupRepositoryImpl @Inject constructor(
                         description = bookListExport.description,
                         coverPath = bookListExport.coverPath,
                         coverBookId = mappedCoverBookId,
+                        showInBooksPage = bookListExport.showInBooksPage,
                         bookCount = 0,
                         createdAt = bookListExport.createdAt,
                         updatedAt = bookListExport.updatedAt

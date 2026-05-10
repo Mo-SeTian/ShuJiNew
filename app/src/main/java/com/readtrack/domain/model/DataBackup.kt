@@ -18,6 +18,7 @@ data class BookListExport(
     val coverPath: String? = null,
     val coverBookId: Long? = null,
     val bookIds: List<Long> = emptyList(),
+    val showInBooksPage: Boolean = true,
     val createdAt: Long,
     val updatedAt: Long
 )

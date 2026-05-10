@@ -49,6 +49,7 @@ fun BooksScreen(
     var showAddToBookListDialog by remember { mutableStateOf(false) }
     var showStatusDropdown by remember { mutableStateOf(false) }
     var showTagDropdown by remember { mutableStateOf(false) }
+    var showBookListDropdown by remember { mutableStateOf(false) }
     var searchExpanded by remember { mutableStateOf(uiState.searchQuery.isNotEmpty()) }
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
@@ -418,6 +419,81 @@ fun BooksScreen(
                         }
                     }
                 }
+
+                // Booklist filter
+                Box {
+                    val bookListCount = uiState.selectedBookListIds.size
+                    FilterChip(
+                        selected = bookListCount > 0,
+                        onClick = { showBookListDropdown = true },
+                        label = {
+                            Text(
+                                if (bookListCount > 0) "书单($bookListCount)"
+                                else "书单筛选"
+                            )
+                        },
+                        trailingIcon = {
+                            Icon(
+                                Icons.Default.KeyboardArrowDown,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer
+                        ),
+                        shape = RoundedCornerShape(20.dp)
+                    )
+                    DropdownMenu(
+                        expanded = showBookListDropdown,
+                        onDismissRequest = { showBookListDropdown = false }
+                    ) {
+                        if (uiState.allBookLists.isEmpty()) {
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        "暂无书单",
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                },
+                                onClick = { },
+                                enabled = false
+                            )
+                        } else {
+                            uiState.allBookLists.forEach { bookList ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Checkbox(
+                                                checked = bookList.id in uiState.selectedBookListIds,
+                                                onCheckedChange = null
+                                            )
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text(bookList.name)
+                                        }
+                                    },
+                                    onClick = { viewModel.toggleBookListFilter(bookList.id) }
+                                )
+                            }
+                            if (bookListCount > 0) {
+                                HorizontalDivider()
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            "清除书单筛选",
+                                            color = MaterialTheme.colorScheme.error
+                                        )
+                                    },
+                                    onClick = {
+                                        viewModel.clearBookListFilters()
+                                        showBookListDropdown = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(4.dp))
@@ -444,13 +520,13 @@ fun BooksScreen(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                text = if (uiState.searchQuery.isNotEmpty() || uiState.selectedStatuses.isNotEmpty() || uiState.selectedTagIds.isNotEmpty())
+                                text = if (uiState.searchQuery.isNotEmpty() || uiState.selectedStatuses.isNotEmpty() || uiState.selectedTagIds.isNotEmpty() || uiState.selectedBookListIds.isNotEmpty())
                                     "没有找到匹配的书籍"
                                 else "还没有添加任何书籍",
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                            if (uiState.searchQuery.isEmpty() && uiState.selectedStatuses.isEmpty() && uiState.selectedTagIds.isEmpty()) {
+                            if (uiState.searchQuery.isEmpty() && uiState.selectedStatuses.isEmpty() && uiState.selectedTagIds.isEmpty() && uiState.selectedBookListIds.isEmpty()) {
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
                                     text = "点击右下角「添加书籍」开始",

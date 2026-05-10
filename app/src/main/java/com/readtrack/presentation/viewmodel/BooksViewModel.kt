@@ -4,12 +4,15 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.readtrack.data.local.entity.BookEntity
+import com.readtrack.data.local.entity.BookListCrossRef
+import com.readtrack.data.local.entity.BookListEntity
 import com.readtrack.data.local.entity.TagEntity
 import com.readtrack.domain.model.BookSnapshot
 import com.readtrack.data.local.entity.ReadingRecordEntity
 import com.readtrack.data.local.entity.RecordType
 import com.readtrack.domain.model.BookStatus
 import com.readtrack.domain.model.ProgressType
+import com.readtrack.domain.repository.BookListRepository
 import com.readtrack.domain.repository.BookRepository
 import com.readtrack.domain.repository.TagRepository
 import com.readtrack.util.PerformanceTrace
@@ -41,7 +44,9 @@ data class BooksUiState(
     val isLoading: Boolean = true,
     val errorMessage: String? = null,
     val allTags: List<TagEntity> = emptyList(),
-    val selectedTagIds: Set<Long> = emptySet()
+    val selectedTagIds: Set<Long> = emptySet(),
+    val allBookLists: List<BookListEntity> = emptyList(),
+    val selectedBookListIds: Set<Long> = emptySet()
 )
 
 @OptIn(FlowPreview::class)
@@ -49,7 +54,8 @@ data class BooksUiState(
 class BooksViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val bookRepository: BookRepository,
-    private val tagRepository: TagRepository
+    private val tagRepository: TagRepository,
+    private val bookListRepository: BookListRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(BooksUiState())
@@ -60,10 +66,14 @@ class BooksViewModel @Inject constructor(
     private val sortOrderFlow = MutableStateFlow(BookSortOrder.default())
     private val selectedTagIdsFlow = MutableStateFlow<Set<Long>>(emptySet())
     private val taggedBookIdsFlow = MutableStateFlow<Set<Long>>(emptySet())
+    private val selectedBookListIdsFlow = MutableStateFlow<Set<Long>>(emptySet())
+    private val allCrossRefsFlow = MutableStateFlow<Map<Long, Set<Long>>>(emptyMap())
+    private var bookListDefaultsApplied = false
 
     init {
         loadBooks()
         loadTags()
+        loadBookListData()
     }
 
     private fun loadBooks() {
@@ -79,10 +89,17 @@ class BooksViewModel @Inject constructor(
             ) { books, selectedStatuses, rawQuery, sortOrder, selectedTagIds ->
                 FirstCombineResult(books, selectedStatuses, rawQuery, sortOrder, selectedTagIds)
             }
-            combine(
+            val secondCombine = combine(
                 firstCombine,
+                selectedBookListIdsFlow,
+                allCrossRefsFlow
+            ) { first, selectedBookListIds, crossRefs ->
+                Triple(first, selectedBookListIds, crossRefs)
+            }
+            combine(
+                secondCombine,
                 taggedBookIdsFlow
-            ) { first: FirstCombineResult, taggedBookIds: Set<Long> ->
+            ) { (first, selectedBookListIds, crossRefs), taggedBookIds ->
                 PerformanceTrace.measure("books.filter") {
                     var filteredBooks = filterBooks(
                         BooksFilterInput(
@@ -96,6 +113,17 @@ class BooksViewModel @Inject constructor(
                     if (first.selectedTagIds.isNotEmpty()) {
                         filteredBooks = filteredBooks.filter { it.id in taggedBookIds }
                     }
+                    // 按书单筛选
+                    if (selectedBookListIds.isNotEmpty()) {
+                        filteredBooks = filteredBooks.filter { book ->
+                            val bookListIds = crossRefs[book.id]
+                            if (bookListIds == null || bookListIds.isEmpty()) {
+                                true
+                            } else {
+                                bookListIds.any { it in selectedBookListIds }
+                            }
+                        }
+                    }
                     BooksUiState(
                         books = first.books,
                         filteredBooks = filteredBooks,
@@ -105,7 +133,9 @@ class BooksViewModel @Inject constructor(
                         isLoading = false,
                         errorMessage = null,
                         allTags = _uiState.value.allTags,
-                        selectedTagIds = first.selectedTagIds
+                        selectedTagIds = first.selectedTagIds,
+                        allBookLists = _uiState.value.allBookLists,
+                        selectedBookListIds = selectedBookListIds
                     )
                 }
             }
@@ -137,6 +167,25 @@ class BooksViewModel @Inject constructor(
         viewModelScope.launch {
             tagRepository.getAllTags().collect { tags ->
                 _uiState.update { it.copy(allTags = tags) }
+            }
+        }
+    }
+
+    private fun loadBookListData() {
+        viewModelScope.launch {
+            bookListRepository.getAllBookLists().collect { bookLists ->
+                _uiState.update { it.copy(allBookLists = bookLists) }
+                if (!bookListDefaultsApplied && bookLists.isNotEmpty()) {
+                    selectedBookListIdsFlow.value = bookLists.filter { it.showInBooksPage }.map { it.id }.toSet()
+                    bookListDefaultsApplied = true
+                }
+            }
+        }
+        viewModelScope.launch {
+            bookListRepository.getAllCrossRefs().collect { crossRefs ->
+                allCrossRefsFlow.value = crossRefs
+                    .groupBy { it.bookId }
+                    .mapValues { (_, refs) -> refs.map { it.bookListId }.toSet() }
             }
         }
     }
@@ -183,6 +232,19 @@ class BooksViewModel @Inject constructor(
     fun clearTagFilters() {
         selectedTagIdsFlow.value = emptySet()
         taggedBookIdsFlow.value = emptySet()
+    }
+
+    fun toggleBookListFilter(bookListId: Long) {
+        val newSet = if (bookListId in selectedBookListIdsFlow.value) {
+            selectedBookListIdsFlow.value - bookListId
+        } else {
+            selectedBookListIdsFlow.value + bookListId
+        }
+        selectedBookListIdsFlow.value = newSet
+    }
+
+    fun clearBookListFilters() {
+        selectedBookListIdsFlow.value = emptySet()
     }
 
     fun deleteBook(bookId: Long) {

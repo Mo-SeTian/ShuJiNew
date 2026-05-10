@@ -14,6 +14,7 @@ import javax.inject.Inject
 data class BookListDetailUiState(
     val bookList: BookListEntity? = null,
     val books: List<BookEntity> = emptyList(),
+    val booksNotInList: List<BookEntity> = emptyList(),
     val isLoading: Boolean = true,
     val errorMessage: String? = null
 )
@@ -133,6 +134,46 @@ class BookListDetailViewModel @Inject constructor(
                 )
             } catch (e: Exception) {
                 _uiState.update { it.copy(errorMessage = "移除封面失败: ${e.message}") }
+            }
+        }
+    }
+
+    /**
+     * 加载不在当前书单中的所有书籍（用于快捷添加对话框）
+     */
+    fun loadBooksNotInList() {
+        if (currentBookListId <= 0) return
+        viewModelScope.launch {
+            bookListRepository.getBooksNotInBookList(currentBookListId)
+                .collect { books ->
+                    _uiState.update { it.copy(booksNotInList = books) }
+                }
+        }
+    }
+
+    /**
+     * 批量添加书籍到当前书单
+     */
+    fun addBooksToList(bookIds: List<Long>) {
+        viewModelScope.launch {
+            try {
+                bookListRepository.addBooksToList(currentBookListId, bookIds)
+            } catch (e: Exception) {
+                _uiState.update { it.copy(errorMessage = "添加失败: ${e.message}") }
+            }
+        }
+    }
+
+    /**
+     * 切换"在我的书籍页面展示"开关
+     */
+    fun updateShowInBooksPage(show: Boolean) {
+        viewModelScope.launch {
+            try {
+                val bookList = _uiState.value.bookList ?: return@launch
+                bookListRepository.updateBookList(bookList.copy(showInBooksPage = show))
+            } catch (e: Exception) {
+                _uiState.update { it.copy(errorMessage = "更新失败: ${e.message}") }
             }
         }
     }

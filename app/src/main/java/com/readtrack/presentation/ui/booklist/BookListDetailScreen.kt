@@ -17,11 +17,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.readtrack.data.local.entity.BookEntity
+import com.readtrack.data.local.entity.BookListEntity
 import com.readtrack.presentation.ui.components.BookCard
 import com.readtrack.presentation.viewmodel.BookListDetailViewModel
 
@@ -37,13 +39,32 @@ fun BookListDetailScreen(
     var showClearDialog by remember { mutableStateOf(false) }
     var showRemoveDialog by remember { mutableStateOf(false) }
     var showEditCoverDialog by remember { mutableStateOf(false) }
+    var showSettingsDialog by remember { mutableStateOf(false) }
+    var showAddBooksDialog by remember { mutableStateOf(false) }
+    var showSettingsMenu by remember { mutableStateOf(false) }
     var bookIdToRemove by remember { mutableStateOf<Long?>(null) }
 
     LaunchedEffect(bookListId) {
         viewModel.loadBookList(bookListId)
     }
 
+    // 加载不在书单中的书籍（用于添加快捷添加）
+    LaunchedEffect(bookListId) {
+        viewModel.loadBooksNotInList()
+    }
+
     Scaffold(
+        floatingActionButton = {
+            if (uiState.books.isNotEmpty()) {
+                SmallFloatingActionButton(
+                    onClick = { showAddBooksDialog = true },
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "添加书籍")
+                }
+            }
+        },
         topBar = {
             TopAppBar(
                 title = {
@@ -71,6 +92,37 @@ fun BookListDetailScreen(
                                 contentDescription = "清空书单",
                                 tint = MaterialTheme.colorScheme.error
                             )
+                        }
+                    }
+                    Box {
+                        IconButton(onClick = { showSettingsMenu = true }) {
+                            Icon(
+                                Icons.Default.MoreVert,
+                                contentDescription = "更多设置"
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = showSettingsMenu,
+                            onDismissRequest = { showSettingsMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("书单设置") },
+                                onClick = {
+                                    showSettingsMenu = false
+                                    showSettingsDialog = true
+                                },
+                                leadingIcon = { Icon(Icons.Default.Settings, contentDescription = null) }
+                            )
+                            if (uiState.books.isEmpty()) {
+                                DropdownMenuItem(
+                                    text = { Text("添加书籍") },
+                                    onClick = {
+                                        showSettingsMenu = false
+                                        showAddBooksDialog = true
+                                    },
+                                    leadingIcon = { Icon(Icons.Default.Add, contentDescription = null) }
+                                )
+                            }
                         }
                     }
                 },
@@ -255,6 +307,29 @@ fun BookListDetailScreen(
             }
         )
     }
+
+    // Settings dialog
+    if (showSettingsDialog) {
+        BookListSettingsDialog(
+            bookList = uiState.bookList,
+            onDismiss = { showSettingsDialog = false },
+            onToggleShowInBooksPage = { show ->
+                viewModel.updateShowInBooksPage(show)
+            }
+        )
+    }
+
+    // Add books dialog
+    if (showAddBooksDialog) {
+        AddBooksToListDialog(
+            books = uiState.booksNotInList,
+            onDismiss = { showAddBooksDialog = false },
+            onConfirm = { bookIds ->
+                viewModel.addBooksToList(bookIds)
+                showAddBooksDialog = false
+            }
+        )
+    }
 }
 
 @Composable
@@ -386,3 +461,194 @@ fun EditBookListCoverDialog(
         }
     )
 }
+
+@Composable
+private fun BookListSettingsDialog(
+    bookList: BookListEntity?,
+    onDismiss: () -> Unit,
+    onToggleShowInBooksPage: (Boolean) -> Unit
+) {
+    var showInBooksPage by remember { mutableStateOf(bookList?.showInBooksPage ?: true) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("书单设置") },
+        text = {
+            Column {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            "在我的书籍页面展示",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                        Text(
+                            "关闭后，该书单中的书籍默认不会出现在「我的书籍」列表",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Switch(
+                        checked = showInBooksPage,
+                        onCheckedChange = {
+                            showInBooksPage = it
+                            onToggleShowInBooksPage(it)
+                        }
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("完成") }
+        }
+    )
+}
+
+@Composable
+private fun AddBooksToListDialog(
+    books: List<BookEntity>,
+    onDismiss: () -> Unit,
+    onConfirm: (List<Long>) -> Unit
+) {
+    var selectedIds by remember { mutableStateOf(setOf<Long>()) }
+    var searchQuery by remember { mutableStateOf("") }
+
+    val filteredBooks = remember(books, searchQuery) {
+        if (searchQuery.isBlank()) books
+        else {
+            val q = searchQuery.lowercase().trim()
+            books.filter {
+                it.title.lowercase().contains(q) ||
+                    (it.author?.lowercase()?.contains(q) == true)
+            }
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                if (selectedIds.isEmpty()) "选择要添加的书籍"
+                else "已选 ${selectedIds.size} 本"
+            )
+        },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = { Text("搜索书名、作者...") },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+
+                if (books.isEmpty()) {
+                    Text(
+                        "所有书籍都已在此书单中",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else if (filteredBooks.isEmpty()) {
+                    Text(
+                        "没有匹配的书籍",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.heightIn(max = 400.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        items(
+                            items = filteredBooks,
+                            key = { it.id }
+                        ) { book ->
+                            Surface(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        selectedIds = if (book.id in selectedIds) {
+                                            selectedIds - book.id
+                                        } else {
+                                            selectedIds + book.id
+                                        }
+                                    },
+                                shape = RoundedCornerShape(12.dp),
+                                color = if (book.id in selectedIds) {
+                                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                                } else {
+                                    MaterialTheme.colorScheme.surface
+                                }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Checkbox(
+                                        checked = book.id in selectedIds,
+                                        onCheckedChange = {
+                                            selectedIds = if (book.id in selectedIds) {
+                                                selectedIds - book.id
+                                            } else {
+                                                selectedIds + book.id
+                                            }
+                                        }
+                                    )
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    if (book.coverPath != null) {
+                                        AsyncImage(
+                                            model = book.coverPath,
+                                            contentDescription = null,
+                                            modifier = Modifier
+                                                .size(40.dp, 56.dp)
+                                                .clip(RoundedCornerShape(6.dp)),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                        Spacer(modifier = Modifier.width(12.dp))
+                                    }
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = book.title,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.Medium,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                        if (!book.author.isNullOrBlank()) {
+                                            Text(
+                                                text = book.author,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onConfirm(selectedIds.toList()) },
+                enabled = selectedIds.isNotEmpty()
+            ) {
+                Text("添加${if (selectedIds.isNotEmpty()) "(${selectedIds.size})" else ""}")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("取消") }
+        }
+    )
+}
+

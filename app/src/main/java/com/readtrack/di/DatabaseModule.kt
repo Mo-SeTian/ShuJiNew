@@ -40,7 +40,7 @@ object DatabaseModule {
             ReadTrackDatabase::class.java,
             "readtrack_database"
         )
-            .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12)
+            .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13)
             .fallbackToDestructiveMigration()
             .build()
     }
@@ -85,6 +85,13 @@ object DatabaseModule {
     private val MIGRATION_11_12 = Migration(11, 12) { db ->
         db.execSQL("DROP INDEX IF EXISTS index_tags_name")
         db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_tags_name ON tags(name)")
+    }
+
+    /**
+     * 从版本 12 迁移到 13：为 book_lists 表新增 showInBooksPage 列（默认 1/true）
+     */
+    private val MIGRATION_12_13 = Migration(12, 13) { db ->
+        db.execSQL("ALTER TABLE book_lists ADD COLUMN showInBooksPage INTEGER NOT NULL DEFAULT 1")
     }
 
     @Provides
