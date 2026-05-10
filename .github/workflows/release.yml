@@ -35,6 +35,8 @@ jobs:
       - name: 构建 Release APK
         env:
           UMENG_APP_KEY: ${{ secrets.UMENG_APP_KEY }}
+          RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
         run: |
           ./gradlew assembleRelease --no-daemon 2>&1
 
