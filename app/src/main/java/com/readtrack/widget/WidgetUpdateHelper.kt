@@ -14,7 +14,11 @@ import android.graphics.Paint
 import android.graphics.Rect
 import android.graphics.Shader
 import android.widget.RemoteViews
+import androidx.core.graphics.drawable.toBitmap
 import androidx.palette.graphics.Palette
+import coil.ImageLoaderFactory
+import coil.request.ImageRequest
+import coil.request.SuccessResult
 import com.readtrack.MainActivity
 import com.readtrack.R
 import com.readtrack.data.local.PreferencesManager
@@ -53,8 +57,8 @@ class WidgetUpdateHelper @Inject constructor(
                 bookId?.let { bookDao.getBookByIdOnce(it) }
             }
             val compositeBitmap = withContext(Dispatchers.IO) {
-                val color = extractCoverColor(book?.coverPath) ?: Color.rgb(80, 100, 180)
-                val cover = loadCoverBitmap(book?.coverPath)
+                val color = extractCoverColor(context, book?.coverPath) ?: Color.rgb(80, 100, 180)
+                val cover = loadCoverBitmap(context, book?.coverPath)
                 createWidgetComposite(color, cover).also {
                     cover?.recycle()
                 }
@@ -70,19 +74,75 @@ class WidgetUpdateHelper @Inject constructor(
         }
     }
 
-    private fun extractCoverColor(coverPath: String?): Int? {
-        if (coverPath == null) return null
+    private suspend fun extractCoverColor(context: Context, coverPath: String?): Int? {
+        if (coverPath.isNullOrBlank()) return null
+        // 跳过特殊协议封面
+        if (coverPath.startsWith("emoji://") || coverPath.startsWith("color://")) return null
+
         return try {
-            val options = BitmapFactory.Options().apply { inSampleSize = 8 }
-            val source = BitmapFactory.decodeFile(coverPath, options) ?: return null
+            val source = loadImageAsBitmap(context, coverPath, 64) ?: return null
             val palette = Palette.from(source).generate()
             val swatch = palette.vibrantSwatch
                 ?: palette.dominantSwatch
                 ?: palette.mutedSwatch
-            source.recycle()
+            if (!source.isRecycled) source.recycle()
             swatch?.rgb
         } catch (e: Exception) {
             null
+        }
+    }
+
+    private suspend fun loadCoverBitmap(context: Context, coverPath: String?): Bitmap? {
+        if (coverPath.isNullOrBlank()) return null
+        // 跳过特殊协议封面
+        if (coverPath.startsWith("emoji://") || coverPath.startsWith("color://")) return null
+
+        return try {
+            loadImageAsBitmap(context, coverPath, 300)
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    /**
+     * 统一加载图片：本地文件用 BitmapFactory，网络/URI 用 Coil
+     */
+    private suspend fun loadImageAsBitmap(context: Context, path: String, size: Int): Bitmap? {
+        return when {
+            path.startsWith("http://") || path.startsWith("https://") -> {
+                loadWithCoil(context, path, size)
+            }
+            path.startsWith("content://") || path.startsWith("file://") -> {
+                loadWithCoil(context, path, size)
+            }
+            else -> {
+                // 本地绝对路径
+                val opts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                BitmapFactory.decodeFile(path, opts)
+                val maxDim = maxOf(opts.outWidth, opts.outHeight)
+                if (maxDim <= 0) return null
+                opts.inJustDecodeBounds = false
+                opts.inSampleSize = when {
+                    maxDim > 2400 -> 8
+                    maxDim > 1200 -> 4
+                    maxDim > 600 -> 2
+                    else -> 1
+                }
+                BitmapFactory.decodeFile(path, opts)
+            }
+        }
+    }
+
+    private suspend fun loadWithCoil(context: Context, url: String, size: Int): Bitmap? {
+        val request = ImageRequest.Builder(context)
+            .data(url)
+            .size(size)
+            .allowHardware(false)
+            .build()
+        val imageLoader = (context.applicationContext as ImageLoaderFactory).newImageLoader()
+        return when (val result = imageLoader.execute(request)) {
+            is SuccessResult -> result.drawable.toBitmap()
+            else -> null
         }
     }
 
@@ -107,7 +167,7 @@ class WidgetUpdateHelper @Inject constructor(
         val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
 
-        // 1. 高可见度渐变背景（ brighten 1.6x 确保颜色明显）
+        // 1. 高可见度渐变背景
         val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG)
         bgPaint.shader = LinearGradient(
             0f, 0f, size.toFloat(), size.toFloat(),
@@ -117,17 +177,15 @@ class WidgetUpdateHelper @Inject constructor(
         )
         canvas.drawRect(0f, 0f, size.toFloat(), size.toFloat(), bgPaint)
 
-        // 2. 封面：centerCrop 裁剪，portrait 比例，像书籍列表那样
+        // 2. 封面：centerCrop 裁剪，portrait 比例
         coverBitmap?.let { cover ->
             if (!cover.isRecycled && cover.width > 0 && cover.height > 0) {
-                // 封面显示区域：portrait，占 widget 中间大部分
                 val coverW = (size * 0.68f).toInt()
                 val coverH = (size * 0.76f).toInt()
                 val coverLeft = (size - coverW) / 2
                 val coverTop = (size - coverH) / 2 - 16
                 val dstRect = Rect(coverLeft, coverTop, coverLeft + coverW, coverTop + coverH)
 
-                // CenterCrop：按目标区域比例缩放，从中心裁剪
                 val scale = maxOf(coverW.toFloat() / cover.width, coverH.toFloat() / cover.height)
                 val srcW = (coverW / scale).toInt()
                 val srcH = (coverH / scale).toInt()
@@ -139,7 +197,7 @@ class WidgetUpdateHelper @Inject constructor(
             }
         }
 
-        // 3. 底部渐变遮罩：从 60% 位置开始渐变到纯黑，保证文字可读
+        // 3. 底部渐变遮罩
         val scrimPaint = Paint(Paint.ANTI_ALIAS_FLAG)
         scrimPaint.shader = LinearGradient(
             0f, size * 0.58f, 0f, size.toFloat(),
@@ -150,26 +208,6 @@ class WidgetUpdateHelper @Inject constructor(
         canvas.drawRect(0f, size * 0.58f, size.toFloat(), size.toFloat(), scrimPaint)
 
         return bitmap
-    }
-
-    private fun loadCoverBitmap(coverPath: String?): Bitmap? {
-        if (coverPath == null) return null
-        return try {
-            val opts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-            BitmapFactory.decodeFile(coverPath, opts)
-            val maxDim = maxOf(opts.outWidth, opts.outHeight)
-            if (maxDim <= 0) return null
-            opts.inJustDecodeBounds = false
-            opts.inSampleSize = when {
-                maxDim > 2400 -> 8
-                maxDim > 1200 -> 4
-                maxDim > 600 -> 2
-                else -> 1
-            }
-            BitmapFactory.decodeFile(coverPath, opts)
-        } catch (e: Exception) {
-            null
-        }
     }
 
     private fun buildRemoteViews(
