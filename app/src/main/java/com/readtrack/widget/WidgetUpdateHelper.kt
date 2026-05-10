@@ -233,7 +233,7 @@ class WidgetUpdateHelper @Inject constructor(
             }
         }
 
-        // 3. 右侧横排文字：封面右侧到控件边缘之间垂直居中
+        // 3. 右侧横排文字：封面右侧到控件边缘，顶部与封面上沿对齐
         val textStartX = (coverLeft + coverW + (size * 0.05f).toInt()).toFloat()
         val textMaxWidth = (size - textStartX - (size * 0.04f).toInt()).toInt()
 
@@ -274,7 +274,6 @@ class WidgetUpdateHelper @Inject constructor(
                 isFakeBoldText = true
             }
             val percentW = percentPaint.measureText(percentText)
-            val percentH = percentPaint.textSize.toInt()
 
             // 书名顶部与封面上沿对齐
             val gapTitleAuthor = if (authorLayout != null) 6 else 0
