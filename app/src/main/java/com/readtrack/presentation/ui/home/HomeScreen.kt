@@ -166,18 +166,18 @@ fun HomeScreen(
                         HomeComponent.RECENT.id -> {
                             if (uiState.recentBooks.isNotEmpty()) {
                                 item(key = "recent-header") {
-                                    Box {
-                                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                            Row(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                horizontalArrangement = Arrangement.SpaceBetween,
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                Text(
-                                                    text = "最近阅读",
-                                                    style = MaterialTheme.typography.titleMedium,
-                                                    fontWeight = FontWeight.Bold
-                                                )
+                                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                text = "最近阅读",
+                                                style = MaterialTheme.typography.titleMedium,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                            Box {
                                                 IconButton(onClick = { showSortMenu = true }) {
                                                     Icon(
                                                         Icons.AutoMirrored.Filled.Sort,
@@ -185,33 +185,33 @@ fun HomeScreen(
                                                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                                                     )
                                                 }
+                                                DropdownMenu(
+                                                    expanded = showSortMenu,
+                                                    onDismissRequest = { showSortMenu = false }
+                                                ) {
+                                                    DropdownMenuItem(
+                                                        text = { Text("按修改时间" + if (recentSortOrder == RecentSortOrder.BY_TIME) " ✓" else "") },
+                                                        onClick = {
+                                                            recentSortOrder = RecentSortOrder.BY_TIME
+                                                            showSortMenu = false
+                                                        }
+                                                    )
+                                                    DropdownMenuItem(
+                                                        text = { Text("按书名" + if (recentSortOrder == RecentSortOrder.BY_TITLE) " ✓" else "") },
+                                                        onClick = {
+                                                            recentSortOrder = RecentSortOrder.BY_TITLE
+                                                            showSortMenu = false
+                                                        }
+                                                    )
+                                                }
                                             }
-                                            Text(
-                                                text = uiState.latestReadingBookTitle?.let { "最近翻阅：$it" }
-                                                    ?: "继续你的阅读节奏",
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
                                         }
-                                        DropdownMenu(
-                                            expanded = showSortMenu,
-                                            onDismissRequest = { showSortMenu = false }
-                                        ) {
-                                            DropdownMenuItem(
-                                                text = { Text("按修改时间" + if (recentSortOrder == RecentSortOrder.BY_TIME) " ✓" else "") },
-                                                onClick = {
-                                                    recentSortOrder = RecentSortOrder.BY_TIME
-                                                    showSortMenu = false
-                                                }
-                                            )
-                                            DropdownMenuItem(
-                                                text = { Text("按书名" + if (recentSortOrder == RecentSortOrder.BY_TITLE) " ✓" else "") },
-                                                onClick = {
-                                                    recentSortOrder = RecentSortOrder.BY_TITLE
-                                                    showSortMenu = false
-                                                }
-                                            )
-                                        }
+                                        Text(
+                                            text = uiState.latestReadingBookTitle?.let { "最近翻阅：$it" }
+                                                ?: "继续你的阅读节奏",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
                                     }
                                 }
                                 items(
