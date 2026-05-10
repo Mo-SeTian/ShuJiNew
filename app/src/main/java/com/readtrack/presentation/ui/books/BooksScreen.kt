@@ -3,6 +3,7 @@ package com.readtrack.presentation.ui.books
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -12,6 +13,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CollectionsBookmark
 import androidx.compose.material.icons.filled.PlaylistAdd
@@ -331,44 +333,49 @@ fun BooksScreen(
                         onDismissRequest = { showStatusDropdown = false }
                     ) {
                         BookStatus.entries.forEach { status ->
-                            DropdownMenuItem(
-                                text = {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Checkbox(
-                                            checked = status in uiState.selectedStatuses,
-                                            onCheckedChange = null
+                            val isSelected = status in uiState.selectedStatuses
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { viewModel.toggleStatusFilter(status) }
+                                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(10.dp)
+                                        .background(
+                                            getStatusColor(status),
+                                            RoundedCornerShape(5.dp)
                                         )
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Text(status.displayName)
-                                    }
-                                },
-                                onClick = { viewModel.toggleStatusFilter(status) },
-                                leadingIcon = {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(12.dp)
-                                            .background(
-                                                getStatusColor(status),
-                                                RoundedCornerShape(3.dp)
-                                            )
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(
+                                    text = status.displayName,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                if (isSelected) {
+                                    Icon(
+                                        Icons.Default.Check,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(18.dp)
                                     )
                                 }
-                            )
+                            }
                         }
                         if (statusCount > 0) {
-                            HorizontalDivider()
-                            DropdownMenuItem(
-                                text = {
-                                    Text(
-                                        "清除状态筛选",
-                                        color = MaterialTheme.colorScheme.error
-                                    )
-                                },
+                            HorizontalDivider(modifier = Modifier.padding(horizontal = 12.dp))
+                            TextButton(
                                 onClick = {
                                     viewModel.clearStatusFilters()
                                     showStatusDropdown = false
-                                }
-                            )
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("清除状态筛选", color = MaterialTheme.colorScheme.error)
+                            }
                         }
                     }
                 }
@@ -403,46 +410,48 @@ fun BooksScreen(
                         onDismissRequest = { showTagDropdown = false }
                     ) {
                         if (uiState.allTags.isEmpty()) {
-                            DropdownMenuItem(
-                                text = {
-                                    Text(
-                                        "暂无标签",
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                },
-                                onClick = { },
-                                enabled = false
+                            Text(
+                                text = "暂无标签",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
                             )
                         } else {
                             uiState.allTags.forEach { tag ->
-                                DropdownMenuItem(
-                                    text = {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Checkbox(
-                                                checked = tag.id in uiState.selectedTagIds,
-                                                onCheckedChange = null
-                                            )
-                                            Spacer(modifier = Modifier.width(4.dp))
-                                            Text(tag.name)
-                                        }
-                                    },
-                                    onClick = { viewModel.toggleTagFilter(tag.id) }
-                                )
+                                val isSelected = tag.id in uiState.selectedTagIds
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { viewModel.toggleTagFilter(tag.id) }
+                                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "# ${tag.name}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    if (isSelected) {
+                                        Icon(
+                                            Icons.Default.Check,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                }
                             }
                             if (tagCount > 0) {
-                                HorizontalDivider()
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(
-                                            "清除标签筛选",
-                                            color = MaterialTheme.colorScheme.error
-                                        )
-                                    },
+                                HorizontalDivider(modifier = Modifier.padding(horizontal = 12.dp))
+                                TextButton(
                                     onClick = {
                                         viewModel.clearTagFilters()
                                         showTagDropdown = false
-                                    }
-                                )
+                                    },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text("清除标签筛选", color = MaterialTheme.colorScheme.error)
+                                }
                             }
                         }
                     }
@@ -478,46 +487,48 @@ fun BooksScreen(
                         onDismissRequest = { showBookListDropdown = false }
                     ) {
                         if (uiState.allBookLists.isEmpty()) {
-                            DropdownMenuItem(
-                                text = {
-                                    Text(
-                                        "暂无书单",
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                },
-                                onClick = { },
-                                enabled = false
+                            Text(
+                                text = "暂无书单",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
                             )
                         } else {
                             uiState.allBookLists.forEach { bookList ->
-                                DropdownMenuItem(
-                                    text = {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Checkbox(
-                                                checked = bookList.id in uiState.selectedBookListIds,
-                                                onCheckedChange = null
-                                            )
-                                            Spacer(modifier = Modifier.width(4.dp))
-                                            Text(bookList.name)
-                                        }
-                                    },
-                                    onClick = { viewModel.toggleBookListFilter(bookList.id) }
-                                )
+                                val isSelected = bookList.id in uiState.selectedBookListIds
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { viewModel.toggleBookListFilter(bookList.id) }
+                                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = bookList.name,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    if (isSelected) {
+                                        Icon(
+                                            Icons.Default.Check,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                }
                             }
                             if (bookListCount > 0) {
-                                HorizontalDivider()
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(
-                                            "清除书单筛选",
-                                            color = MaterialTheme.colorScheme.error
-                                        )
-                                    },
+                                HorizontalDivider(modifier = Modifier.padding(horizontal = 12.dp))
+                                TextButton(
                                     onClick = {
                                         viewModel.clearBookListFilters()
                                         showBookListDropdown = false
-                                    }
-                                )
+                                    },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text("清除书单筛选", color = MaterialTheme.colorScheme.error)
+                                }
                             }
                         }
                     }
