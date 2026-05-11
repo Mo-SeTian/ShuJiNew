@@ -679,12 +679,17 @@ fun SettingsScreen(
 @Composable
 private fun cleanMarkdown(text: String): String {
     return text
+        .lines()
+        .map { it.trim() }
+        .filter { it.isNotBlank() && it != "---" }
+        .joinToString("\n")
         .replace(Regex("^#{1,3}\\s*", RegexOption.MULTILINE), "")
         .replace(Regex("\\*\\*(.+?)\\*\\*"), "$1")
         .replace(Regex("\\*(.+?)\\*"), "$1")
         .replace(Regex("`(.+?)`"), "$1")
         .replace(Regex("^[-*]\\s", RegexOption.MULTILINE), "• ")
         .replace(Regex("\\[(.+?)]\\(.+?\\)"), "$1")
+        .replace(Regex("\n{3,}"), "\n\n")
         .trim()
 }
 
