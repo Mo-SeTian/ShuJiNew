@@ -3,6 +3,7 @@ package com.readtrack.presentation.viewmodel
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.readtrack.BuildConfig
 import com.readtrack.data.local.AutoBackupFrequency
 import com.readtrack.data.local.PreferencesManager
 import com.readtrack.data.local.StatsUnit
@@ -962,6 +963,14 @@ class SettingsViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(
                             isCheckingUpdate = false,
+                            updateResult = com.readtrack.remote.UpdateResult(
+                                hasUpdate = false,
+                                latestVersion = "",
+                                currentVersion = BuildConfig.VERSION_NAME,
+                                releaseNotes = "检查失败: ${e.message}",
+                                downloadUrl = "",
+                                releasePageUrl = ""
+                            ),
                             errorMessage = "检查更新失败: ${e.message}"
                         )
                     }

@@ -113,7 +113,6 @@ fun HomeScreen(
     Scaffold(
         topBar = {
             SmallTopAppBar(
-                modifier = Modifier.statusBarsPadding(),
                 title = {
                     Text(
                         "ReadTrack",
