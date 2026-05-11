@@ -152,7 +152,10 @@ class BookDetailViewModel @Inject constructor(
             calendar.set(Calendar.SECOND, 0)
             calendar.set(Calendar.MILLISECOND, 0)
             calendar.timeInMillis
-        }.mapValues { (_, dayRecords) -> dayRecords.sumOf { it.pagesRead } }
+        }.mapValues { (_, dayRecords) -> dayRecords.sumOf { r ->
+                val c = r.chaptersRead ?: 0
+                if (c > 0) c.toDouble() else r.pagesRead
+            } }
 
         // 生成最近 7 天数据点（从远到近）
         val result = mutableListOf<TrendPoint>()

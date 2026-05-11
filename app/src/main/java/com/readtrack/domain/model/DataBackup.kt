@@ -18,6 +18,7 @@ data class BookListExport(
     val coverPath: String? = null,
     val coverBookId: Long? = null,
     val bookIds: List<Long> = emptyList(),
+    val bookAddedAts: Map<Long, Long> = emptyMap(),
     val showInBooksPage: Boolean = true,
     val createdAt: Long,
     val updatedAt: Long
@@ -38,7 +39,8 @@ data class PreferencesExport(
     val webDavRemotePath: String = "ReadTrack",
     val webDavAutoBackupFrequency: String = "OFF",
     val updateSource: String = "github",
-    val homeComponentOrder: List<String> = emptyList()
+    val homeComponentOrder: List<String> = emptyList(),
+    val widgetBookMap: Map<String, Long> = emptyMap()
 )
 
 /**
