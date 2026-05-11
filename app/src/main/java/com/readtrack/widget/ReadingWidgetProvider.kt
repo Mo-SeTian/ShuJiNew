@@ -7,11 +7,9 @@ import android.content.Intent
 import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class ReadingWidgetProvider : AppWidgetProvider() {
 
@@ -28,11 +26,9 @@ class ReadingWidgetProvider : AppWidgetProvider() {
     }
 
     override fun onDeleted(context: Context, appWidgetIds: IntArray) {
-        val helper = getWidgetUpdateHelper(context)
-        widgetScope.launch {
-            withContext(NonCancellable) {
-                helper.clearWidgetSelections(appWidgetIds)
-            }
+        // 直接同步清理，避免协程被取消导致映射残留
+        kotlinx.coroutines.runBlocking {
+            getWidgetUpdateHelper(context).clearWidgetSelections(appWidgetIds)
         }
     }
 
