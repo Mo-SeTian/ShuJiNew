@@ -106,6 +106,11 @@ class WidgetSettingsViewModel @Inject constructor(
     private fun loadWidgetIds(): IntArray {
         val appWidgetManager = AppWidgetManager.getInstance(context)
         val componentName = ComponentName(context, ReadingWidgetProvider::class.java)
-        return appWidgetManager.getAppWidgetIds(componentName)
+        val ids = appWidgetManager.getAppWidgetIds(componentName)
+        // 清理已删除小组件的残留映射
+        viewModelScope.launch {
+            preferencesManager.pruneStaleWidgetEntries(ids.toSet())
+        }
+        return ids
     }
 }

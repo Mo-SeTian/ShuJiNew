@@ -286,6 +286,17 @@ class PreferencesManager @Inject constructor(
         writeWidgetEntries(entries)
     }
 
+    /** 清理已删除小组件的残留映射 */
+    suspend fun pruneStaleWidgetEntries(existingIds: Set<Int>) {
+        val entries = readWidgetEntries()
+        val stale = entries.filter { it.widgetId !in existingIds }
+        if (stale.isEmpty()) return
+        dataStore.edit { preferences ->
+            stale.forEach { preferences.remove(widgetBookIdKey(it.widgetId)) }
+        }
+        writeWidgetEntries(entries.filter { it.widgetId in existingIds })
+    }
+
     suspend fun clearAll() {
         dataStore.edit { preferences -> preferences.clear() }
     }
