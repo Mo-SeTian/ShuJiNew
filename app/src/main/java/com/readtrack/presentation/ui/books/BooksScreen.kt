@@ -89,7 +89,6 @@ fun BooksScreen(
             if (isSelectionMode) {
                 // Selection mode top bar
                 TopAppBar(
-                    modifier = Modifier.statusBarsPadding(),
                     title = {
                         Text("${selectedBookIds.size} 本已选择")
                     },
@@ -116,7 +115,6 @@ fun BooksScreen(
             } else {
                 // Normal top bar
                 SmallTopAppBar(
-                    modifier = Modifier.statusBarsPadding(),
                     title = {
                         Text(
                             "我的书籍",

@@ -13,9 +13,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -41,7 +44,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.LargeTopAppBar
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
@@ -385,16 +388,12 @@ fun SettingsScreen(
 
     Scaffold(
         topBar = {
-            LargeTopAppBar(
+            TopAppBar(
                 title = {
-                    Column {
-                        Text("设置", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-                        Text("个性化你的阅读体验", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
+                    Text("设置", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 },
-                colors = TopAppBarDefaults.largeTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    scrolledContainerColor = MaterialTheme.colorScheme.surface
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface
                 )
             )
         }
@@ -678,6 +677,18 @@ fun SettingsScreen(
 }
 
 @Composable
+private fun cleanMarkdown(text: String): String {
+    return text
+        .replace(Regex("^#{1,3}\\s*", RegexOption.MULTILINE), "")
+        .replace(Regex("\\*\\*(.+?)\\*\\*"), "$1")
+        .replace(Regex("\\*(.+?)\\*"), "$1")
+        .replace(Regex("`(.+?)`"), "$1")
+        .replace(Regex("^[-*]\\s", RegexOption.MULTILINE), "• ")
+        .replace(Regex("\\[(.+?)]\\(.+?\\)"), "$1")
+        .trim()
+}
+
+@Composable
 fun UpdateDialog(
     result: com.readtrack.remote.UpdateResult,
     onDismiss: () -> Unit,
@@ -690,7 +701,10 @@ fun UpdateDialog(
             Text(if (result.hasUpdate) "发现新版本" else "已是最新版本")
         },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(
+                modifier = Modifier.heightIn(max = 400.dp).verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 if (result.hasUpdate) {
                     Text("最新版本：v${result.latestVersion}")
                     Text("当前版本：v${result.currentVersion}")
@@ -702,13 +716,13 @@ fun UpdateDialog(
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            result.releaseNotes.take(500),
+                            cleanMarkdown(result.releaseNotes),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 } else {
-                    Text("当前已是最新版本 v${result.currentVersion}")
+                    Text(result.releaseNotes.ifBlank { "当前已是最新版本 v${result.currentVersion}" })
                 }
             }
         },
