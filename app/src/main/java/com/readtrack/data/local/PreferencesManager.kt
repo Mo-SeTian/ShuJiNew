@@ -12,9 +12,15 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import com.readtrack.domain.model.PreferencesExport
 import javax.inject.Inject
 import javax.inject.Singleton
+
+@Serializable
+private data class WidgetBookEntry(val widgetId: Int, val bookId: Long)
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
@@ -74,6 +80,7 @@ class PreferencesManager @Inject constructor(
         val WEBDAV_LAST_ERROR = stringPreferencesKey("webdav_last_error")
         val HOME_COMPONENT_ORDER = stringPreferencesKey("home_component_order")
         val UPDATE_SOURCE = stringPreferencesKey("update_source")
+        val WIDGET_BOOK_MAP = stringPreferencesKey("widget_book_map")
     }
 
     private fun widgetBookIdKey(appWidgetId: Int) = longPreferencesKey("widget_${appWidgetId}_book_id")
@@ -249,16 +256,34 @@ class PreferencesManager @Inject constructor(
         return dataStore.data.first()[widgetBookIdKey(appWidgetId)]
     }
 
+    private suspend fun readWidgetEntries(): List<WidgetBookEntry> {
+        val raw = dataStore.data.first()[WIDGET_BOOK_MAP] ?: return emptyList()
+        return try { Json.decodeFromString<List<WidgetBookEntry>>(raw) } catch (_: Exception) { emptyList() }
+    }
+
+    private suspend fun writeWidgetEntries(entries: List<WidgetBookEntry>) {
+        dataStore.edit { preferences ->
+            preferences[WIDGET_BOOK_MAP] = Json.encodeToString(entries)
+        }
+    }
+
     suspend fun setWidgetBookId(appWidgetId: Int, bookId: Long) {
         dataStore.edit { preferences ->
             preferences[widgetBookIdKey(appWidgetId)] = bookId
         }
+        val entries = readWidgetEntries().toMutableList()
+        entries.removeAll { it.widgetId == appWidgetId }
+        entries.add(WidgetBookEntry(appWidgetId, bookId))
+        writeWidgetEntries(entries)
     }
 
     suspend fun clearWidgetBookId(appWidgetId: Int) {
         dataStore.edit { preferences ->
             preferences.remove(widgetBookIdKey(appWidgetId))
         }
+        val entries = readWidgetEntries().toMutableList()
+        entries.removeAll { it.widgetId == appWidgetId }
+        writeWidgetEntries(entries)
     }
 
     suspend fun clearAll() {
@@ -282,7 +307,15 @@ class PreferencesManager @Inject constructor(
                 webDavRemotePath = preferences[WEBDAV_REMOTE_PATH] ?: "ReadTrack",
                 webDavAutoBackupFrequency = preferences[WEBDAV_AUTO_BACKUP_FREQUENCY] ?: AutoBackupFrequency.OFF.name,
                 updateSource = preferences[UPDATE_SOURCE] ?: "github",
-                homeComponentOrder = (preferences[HOME_COMPONENT_ORDER] ?: "").split(",").filter { it.isNotBlank() }
+                homeComponentOrder = (preferences[HOME_COMPONENT_ORDER] ?: "").split(",").filter { it.isNotBlank() },
+                widgetBookMap = run {
+                    val raw = preferences[WIDGET_BOOK_MAP] ?: ""
+                    if (raw.isBlank()) emptyMap()
+                    else try {
+                        Json.decodeFromString<List<WidgetBookEntry>>(raw)
+                            .associate { it.widgetId.toString() to it.bookId }
+                    } catch (_: Exception) { emptyMap() }
+                }
             )
         }
     }
@@ -305,6 +338,16 @@ class PreferencesManager @Inject constructor(
             preferences[WEBDAV_AUTO_BACKUP_FREQUENCY] = prefs.webDavAutoBackupFrequency.takeIf { v -> runCatching { AutoBackupFrequency.valueOf(v) }.isSuccess } ?: AutoBackupFrequency.OFF.name
             preferences[UPDATE_SOURCE] = prefs.updateSource.takeIf { it == "github" || it == "gitee" } ?: "github"
             preferences[HOME_COMPONENT_ORDER] = prefs.homeComponentOrder.filter { id -> HomeComponent.entries.any { it.id == id } }.joinToString(",")
+            if (prefs.widgetBookMap.isNotEmpty()) {
+                val entries = prefs.widgetBookMap.mapNotNull { (keyStr, bookId) ->
+                    keyStr.toIntOrNull()?.let { WidgetBookEntry(it, bookId) }
+                }
+                preferences[WIDGET_BOOK_MAP] = Json.encodeToString(entries)
+                // Also restore individual keys for compatibility
+                entries.forEach { entry ->
+                    preferences[widgetBookIdKey(entry.widgetId)] = entry.bookId
+                }
+            }
         }
     }
 }

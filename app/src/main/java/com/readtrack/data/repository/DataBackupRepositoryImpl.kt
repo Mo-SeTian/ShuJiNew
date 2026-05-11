@@ -84,8 +84,12 @@ class DataBackupRepositoryImpl @Inject constructor(
 
             // 导出书单
             val allBookLists = bookListDao.getAllBookLists().first()
+            val allCrossRefs = bookListDao.getAllCrossRefs().first()
             val bookListExports = allBookLists.map { bookList ->
                 val booksInList = bookListDao.getBooksInBookList(bookList.id).first()
+                val addedAts = allCrossRefs
+                    .filter { it.bookListId == bookList.id }
+                    .associate { it.bookId to it.addedAt }
                 BookListExport(
                     id = bookList.id,
                     name = bookList.name,
@@ -93,6 +97,7 @@ class DataBackupRepositoryImpl @Inject constructor(
                     coverPath = bookList.coverPath,
                     coverBookId = bookList.coverBookId,
                     bookIds = booksInList.map { it.id },
+                    bookAddedAts = addedAts,
                     showInBooksPage = bookList.showInBooksPage,
                     createdAt = bookList.createdAt,
                     updatedAt = bookList.updatedAt
@@ -348,7 +353,12 @@ class DataBackupRepositoryImpl @Inject constructor(
 
                     val validBookIds = bookListExport.bookIds.mapNotNull { oldBookId -> oldIdToNewId[oldBookId] }
                     if (validBookIds.isNotEmpty()) {
-                        val crossRefs = validBookIds.map { BookListCrossRef(newBookListId, it) }
+                        val crossRefs = validBookIds.map { newBookId ->
+                            val addedAt = bookListExport.bookAddedAts
+                                .entries.firstOrNull { (oldId, _) -> oldIdToNewId[oldId] == newBookId }
+                                ?.value ?: System.currentTimeMillis()
+                            BookListCrossRef(bookListId = newBookListId, bookId = newBookId, addedAt = addedAt)
+                        }
                         bookListDao.addBooksToList(crossRefs)
                         bookListDao.updateBookCount(newBookListId)
                     }
