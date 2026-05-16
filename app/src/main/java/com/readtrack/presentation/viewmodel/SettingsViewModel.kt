@@ -13,8 +13,10 @@ import com.readtrack.data.remote.WebDavService
 import com.readtrack.domain.model.DataBackup
 import com.readtrack.domain.model.ImportPreview
 import com.readtrack.domain.model.ImportResult
+import com.readtrack.domain.repository.BookRepository
 import com.readtrack.domain.repository.DataBackupRepository
 import com.readtrack.remote.UpdateChecker
+import com.readtrack.util.BookCsvExporter
 import com.readtrack.remote.UpdateResult
 import com.readtrack.util.CoverStorageUtil
 import com.readtrack.worker.WebDavBackupScheduler
@@ -25,6 +27,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -74,7 +77,9 @@ data class SettingsUiState(
     // 更新检测
     val updateSource: String = "github",
     val isCheckingUpdate: Boolean = false,
-    val updateResult: UpdateResult? = null
+    val updateResult: UpdateResult? = null,
+    // CSV 导出
+    val exportCsvContent: String? = null
 ) {
     val isWebDavConfigured: Boolean
         get() =
@@ -95,6 +100,7 @@ class SettingsViewModel @Inject constructor(
     @ApplicationContext private val applicationContext: Context,
     private val dataBackupRepository: DataBackupRepository,
     private val preferencesManager: PreferencesManager,
+    private val bookRepository: BookRepository,
     private val okHttpClient: OkHttpClient,
     private val webDavService: WebDavService,
     private val webDavBackupScheduler: WebDavBackupScheduler,
@@ -981,5 +987,22 @@ class SettingsViewModel @Inject constructor(
 
     fun clearUpdateResult() {
         _uiState.update { it.copy(updateResult = null) }
+    }
+
+    fun exportAllBooksToCsv() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isExporting = true) }
+            try {
+                val books = bookRepository.getAllBooks().first()
+                val csv = BookCsvExporter.exportToCsv(books)
+                _uiState.update { it.copy(exportCsvContent = csv, isExporting = false) }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(errorMessage = "导出失败: ${e.message}", isExporting = false) }
+            }
+        }
+    }
+
+    fun clearExportCsv() {
+        _uiState.update { it.copy(exportCsvContent = null) }
     }
 }

@@ -34,7 +34,11 @@ data class BookDetailUiState(
     /** 当前书籍的标签 */
     val tags: List<TagEntity> = emptyList(),
     /** 所有可选标签 */
-    val allTags: List<TagEntity> = emptyList()
+    val allTags: List<TagEntity> = emptyList(),
+    /** 阅读热力图数据 */
+    val heatmapMonths: List<HeatmapMonth> = emptyList(),
+    /** 已读书籍阅读时间线 */
+    val readingPeriods: List<ReadingPeriod> = emptyList()
 ) {
     val recentRecords: List<ReadingRecordEntity>
         get() = readingRecords.sortedByDescending { it.date }.take(10)
@@ -42,9 +46,39 @@ data class BookDetailUiState(
 
 /** 趋势图数据点 */
 data class TrendPoint(
-    val dateLabel: String,    // 显示用如 "6/12"
-    val dateMs: Long,        // 排序用
-    val cumulative: Double    // 累计阅读量
+    val dateLabel: String,
+    val dateMs: Long,
+    val cumulative: Double
+)
+
+/** 热力图单日数据 */
+data class HeatmapDay(
+    val dateMs: Long,
+    val year: Int,
+    val month: Int,
+    val dayOfMonth: Int,
+    val dayOfWeek: Int,
+    val chaptersRead: Double,
+    val pagesRead: Double
+)
+
+/** 热力图单月数据 */
+data class HeatmapMonth(
+    val year: Int,
+    val month: Int,
+    val label: String,
+    val days: List<HeatmapDay>,
+    val totalValue: Double
+)
+
+/** 已读书籍的阅读周期 */
+data class ReadingPeriod(
+    val startDate: Long,
+    val endDate: Long,
+    val totalPagesRead: Double,
+    val totalChaptersRead: Double,
+    val pagesPerDay: Double,
+    val chaptersPerDay: Double
 )
 
 @HiltViewModel
@@ -77,11 +111,15 @@ class BookDetailViewModel @Inject constructor(
                     recordRepository.getRecordsByBookId(bookId).catch { emit(emptyList()) }
                 ) { book, records ->
                     val trendData = computeTrendData(records)
+                    val heatmapMonths = computeHeatmapData(records)
+                    val readingPeriods = if (book?.status == BookStatus.FINISHED) computeReadingPeriods(records) else emptyList()
                     BookDetailUiState(
                         book = book,
                         readingRecords = records,
                         isLoading = false,
                         trendData = trendData,
+                        heatmapMonths = heatmapMonths,
+                        readingPeriods = readingPeriods,
                         tags = _uiState.value.tags,
                         allTags = _uiState.value.allTags
                     )
@@ -171,6 +209,130 @@ class BookDetailViewModel @Inject constructor(
             )
         }
         return result
+    }
+
+    private fun computeHeatmapData(records: List<ReadingRecordEntity>): List<HeatmapMonth> {
+        val normalRecords = records.filter { it.recordType == RecordType.NORMAL }
+        if (normalRecords.isEmpty()) return emptyList()
+
+        val dayMs = 24L * 60 * 60 * 1000
+        val calendar = Calendar.getInstance()
+
+        // 按天聚合
+        val dailyMap = linkedMapOf<Long, HeatmapDay>()
+        normalRecords.forEach { record ->
+            calendar.timeInMillis = record.date
+            val year = calendar.get(Calendar.YEAR)
+            val month = calendar.get(Calendar.MONTH)
+            val day = calendar.get(Calendar.DAY_OF_MONTH)
+            val dow = calendar.get(Calendar.DAY_OF_WEEK) // 1=Sun..7=Sat
+            calendar.set(Calendar.HOUR_OF_DAY, 0)
+            calendar.set(Calendar.MINUTE, 0)
+            calendar.set(Calendar.SECOND, 0)
+            calendar.set(Calendar.MILLISECOND, 0)
+            val dayStart = calendar.timeInMillis
+
+            val existing = dailyMap[dayStart]
+            if (existing != null) {
+                dailyMap[dayStart] = existing.copy(
+                    chaptersRead = existing.chaptersRead + (record.chaptersRead ?: 0).toDouble(),
+                    pagesRead = existing.pagesRead + record.pagesRead
+                )
+            } else {
+                dailyMap[dayStart] = HeatmapDay(
+                    dateMs = dayStart,
+                    year = year,
+                    month = month,
+                    dayOfMonth = day,
+                    dayOfWeek = dow,
+                    chaptersRead = (record.chaptersRead ?: 0).toDouble(),
+                    pagesRead = record.pagesRead
+                )
+            }
+        }
+
+        // 填充缺失日（最早记录日到今天）
+        val earliest = dailyMap.keys.min()
+        calendar.timeInMillis = earliest
+        val todayStart = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+
+        var currentDay = earliest
+        while (currentDay <= todayStart) {
+            if (!dailyMap.containsKey(currentDay)) {
+                calendar.timeInMillis = currentDay
+                dailyMap[currentDay] = HeatmapDay(
+                    dateMs = currentDay,
+                    year = calendar.get(Calendar.YEAR),
+                    month = calendar.get(Calendar.MONTH),
+                    dayOfMonth = calendar.get(Calendar.DAY_OF_MONTH),
+                    dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK),
+                    chaptersRead = 0.0,
+                    pagesRead = 0.0
+                )
+            }
+            currentDay += dayMs
+        }
+
+        // 按月分组，按日期排序
+        val sortedDays = dailyMap.values.sortedBy { it.dateMs }
+        return sortedDays.groupBy { it.year to it.month }.map { (key, days) ->
+            val (year, month) = key
+            HeatmapMonth(
+                year = year,
+                month = month,
+                label = "${year}年${month + 1}月",
+                days = days,
+                totalValue = days.sumOf { it.pagesRead + it.chaptersRead }
+            )
+        }.sortedWith(compareBy({ it.year }, { it.month }))
+    }
+
+    private fun computeReadingPeriods(records: List<ReadingRecordEntity>): List<ReadingPeriod> {
+        val statusRecords = records.filter {
+            it.recordType == RecordType.STATUS_READING || it.recordType == RecordType.STATUS_FINISHED
+        }.sortedBy { it.date }
+
+        val normalRecords = records.filter { it.recordType == RecordType.NORMAL }
+
+        val periods = mutableListOf<ReadingPeriod>()
+        val readingStack = ArrayDeque<ReadingRecordEntity>()
+
+        for (record in statusRecords) {
+            when (record.recordType) {
+                RecordType.STATUS_READING -> readingStack.addLast(record)
+                RecordType.STATUS_FINISHED -> {
+                    if (readingStack.isNotEmpty()) {
+                        val start = readingStack.removeFirst()
+                        val startDate = start.date
+                        val endDate = record.date
+
+                        val periodRecords = normalRecords.filter {
+                            it.date in startDate..endDate
+                        }
+                        val totalPages = periodRecords.sumOf { it.pagesRead }
+                        val totalChapters = periodRecords.sumOf { (it.chaptersRead ?: 0).toDouble() }
+                        val days = ((endDate - startDate) / (24L * 60 * 60 * 1000) + 1).coerceAtLeast(1)
+
+                        periods.add(
+                            ReadingPeriod(
+                                startDate = startDate,
+                                endDate = endDate,
+                                totalPagesRead = totalPages,
+                                totalChaptersRead = totalChapters,
+                                pagesPerDay = totalPages / days,
+                                chaptersPerDay = totalChapters / days
+                            )
+                        )
+                    }
+                }
+                else -> {}
+            }
+        }
+
+        return periods.sortedByDescending { it.startDate }
     }
 
     fun updateStatus(status: BookStatus) {
