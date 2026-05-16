@@ -1,9 +1,12 @@
 package com.readtrack.presentation.ui.share
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.view.View
+import android.view.ViewGroup
+import android.widget.FrameLayout
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.ComposeView
@@ -19,20 +22,17 @@ fun shareComposable(
     filename: String,
     content: @Composable () -> Unit
 ) {
-    val bitmap = captureComposable(context, content)
-    val file = saveBitmap(context, bitmap, filename)
-    bitmap.recycle()
-    shareBitmap(context, file)
-}
+    val activity = context as? Activity
+    if (activity == null) {
+        context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, "分享阅读成就 —— 书迹 App")
+        }, "分享阅读成就"))
+        return
+    }
 
-private fun captureComposable(
-    context: Context,
-    content: @Composable () -> Unit
-): Bitmap {
-    val composeView = ComposeView(context).apply {
+    val composeView = ComposeView(activity).apply {
         setContent {
-            // 不能使用 ReadTrackTheme——其内部 SideEffect 强制转换 view.context as Activity，
-            // 独立 ComposeView 无 Activity 窗口时必然 ClassCastException 闪退。
             MaterialTheme(
                 colorScheme = LightColorScheme,
                 typography = Typography,
@@ -42,21 +42,40 @@ private fun captureComposable(
         }
     }
 
-    val widthSpec = View.MeasureSpec.makeMeasureSpec(1080, View.MeasureSpec.AT_MOST)
-    val heightSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
-    composeView.measure(widthSpec, heightSpec)
-    composeView.layout(0, 0, composeView.measuredWidth, composeView.measuredHeight)
+    val root = activity.window.decorView.findViewById<ViewGroup>(android.R.id.content)
+        ?: (activity.window.decorView as ViewGroup)
 
-    val bitmap = Bitmap.createBitmap(
-        composeView.measuredWidth.coerceAtLeast(1),
-        composeView.measuredHeight.coerceAtLeast(1),
-        Bitmap.Config.ARGB_8888
+    val params = FrameLayout.LayoutParams(
+        ViewGroup.LayoutParams.WRAP_CONTENT,
+        ViewGroup.LayoutParams.WRAP_CONTENT
     )
-    val canvas = android.graphics.Canvas(bitmap)
-    canvas.drawColor(android.graphics.Color.WHITE)
-    composeView.draw(canvas)
+    params.leftMargin = -10000
+    root.addView(composeView, params)
 
-    return bitmap
+    // post 等待 Compose 组合+布局完成，避免 runBlocking 主线程死锁
+    composeView.post {
+        try {
+            val widthSpec = View.MeasureSpec.makeMeasureSpec(1080, View.MeasureSpec.AT_MOST)
+            val heightSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+            composeView.measure(widthSpec, heightSpec)
+            composeView.layout(0, 0, composeView.measuredWidth, composeView.measuredHeight)
+
+            val bitmap = Bitmap.createBitmap(
+                composeView.measuredWidth.coerceAtLeast(1),
+                composeView.measuredHeight.coerceAtLeast(1),
+                Bitmap.Config.ARGB_8888
+            )
+            val canvas = android.graphics.Canvas(bitmap)
+            canvas.drawColor(android.graphics.Color.WHITE)
+            composeView.draw(canvas)
+
+            val file = saveBitmap(activity, bitmap, filename)
+            bitmap.recycle()
+            shareBitmap(activity, file)
+        } finally {
+            root.removeView(composeView)
+        }
+    }
 }
 
 private fun saveBitmap(context: Context, bitmap: Bitmap, filename: String): File {
