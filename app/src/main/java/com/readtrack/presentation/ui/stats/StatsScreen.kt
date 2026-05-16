@@ -258,25 +258,10 @@ fun StatsScreen(
 
                 // 分享成就
                 item {
-                    val recentBooksWithAmounts = remember(uiState.recentRecordsWithBooks) {
-                        uiState.recentRecordsWithBooks
-                            .filter { it.record.recordType == com.readtrack.data.local.entity.RecordType.NORMAL }
-                            .groupBy { it.bookSnapshot?.title ?: it.record.bookSnapshot?.title ?: "已删除图书" }
-                            .map { (title, records) ->
-                                com.readtrack.domain.model.BookReadingItem(
-                                    title = title,
-                                    amount = records.sumOf { r ->
-                                        if (uiState.statsUnit == StatsUnit.CHAPTER) (r.record.chaptersRead ?: 0).toDouble()
-                                        else r.record.pagesRead
-                                    }
-                                )
-                            }
-                            .sortedByDescending { it.amount }
-                            .take(5)
-                    }
                     ShareSection(
                         weekValue = uiState.weekValue,
                         statsUnit = uiState.statsUnit,
+                        weeklyBookBreakdown = uiState.weeklyBookBreakdown,
                         monthlyBreakdown = uiState.monthlyBreakdown,
                         monthlyBookBreakdown = uiState.monthlyBookBreakdown,
                         activeDays = uiState.recentRecordsWithBooks
@@ -286,8 +271,7 @@ fun StatsScreen(
                         streakDays = uiState.recentRecordsWithBooks
                             .map { it.record.date }
                             .distinct()
-                            .count(),
-                        recentBooks = recentBooksWithAmounts
+                            .count()
                     )
                 }
 
@@ -821,11 +805,11 @@ fun ReadingRecordItem(recordWithBook: RecordWithBook) {
 private fun ShareSection(
     weekValue: Double,
     statsUnit: StatsUnit,
+    weeklyBookBreakdown: List<com.readtrack.domain.model.BookReadingItem>,
     monthlyBreakdown: Map<Int, Double>,
     monthlyBookBreakdown: Map<Int, List<com.readtrack.domain.model.BookReadingItem>>,
     activeDays: Int,
-    streakDays: Int,
-    recentBooks: List<com.readtrack.domain.model.BookReadingItem>
+    streakDays: Int
 ) {
     val context = LocalContext.current
     val unitLabel = if (statsUnit == StatsUnit.CHAPTER) "章" else "页"
@@ -908,7 +892,7 @@ private fun ShareSection(
                     unitLabel = unitLabel,
                     activeDays = activeDays,
                     streakDays = streakDays,
-                    recentBooks = recentBooks
+                    recentBooks = weeklyBookBreakdown
                 )
             }
         )
