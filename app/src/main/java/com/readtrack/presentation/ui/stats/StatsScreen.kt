@@ -4,8 +4,10 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -251,58 +253,6 @@ fun StatsScreen(
                     }
                 }
 
-                // 年度报告入口横幅
-                item {
-                    val currentYear = Calendar.getInstance().get(Calendar.YEAR)
-                    Card(
-                        onClick = { onYearlyReportClick(currentYear) },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color(0xFF6366F1).copy(alpha = 0.08f)
-                        )
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Surface(
-                                shape = RoundedCornerShape(12.dp),
-                                color = Color(0xFF6366F1)
-                            ) {
-                                Icon(
-                                    Icons.Default.CalendarMonth,
-                                    contentDescription = null,
-                                    tint = Color.White,
-                                    modifier = Modifier
-                                        .size(40.dp)
-                                        .padding(8.dp)
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    "$currentYear 年度阅读报告",
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    "查看你的年度阅读总结",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            Icon(
-                                Icons.Default.KeyboardArrowRight,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                }
-
                 // 分享成就
                 item {
                     val recentTitles = remember(uiState.recentRecordsWithBooks) {
@@ -342,6 +292,58 @@ fun StatsScreen(
                         totalBooks = uiState.totalBooks,
                         booksByStatus = uiState.booksByStatus
                     )
+                }
+
+                // 年度阅读报告入口
+                item {
+                    val currentYear = Calendar.getInstance().get(Calendar.YEAR)
+                    Card(
+                        onClick = { onYearlyReportClick(currentYear) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color(0xFF6366F1).copy(alpha = 0.08f)
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = Color(0xFF6366F1)
+                            ) {
+                                Icon(
+                                    Icons.Default.CalendarMonth,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .padding(8.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    "年度阅读报告",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    "查看你的年度阅读总结",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Icon(
+                                Icons.Default.KeyboardArrowRight,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
                 }
 
                 // 查看全部按钮
@@ -859,7 +861,9 @@ private fun ShareSection(
                     Text("选择月份", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(12.dp))
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         monthLabels.forEachIndexed { i, label ->
@@ -874,7 +878,9 @@ private fun ShareSection(
                     MonthlyAchievementCard(
                         month = selectedMonth,
                         monthValue = monthValue,
-                        unitLabel = unitLabel
+                        unitLabel = unitLabel,
+                        activeDays = activeDays,
+                        recentBooks = recentBookTitles
                     )
                 }
             }
@@ -886,8 +892,18 @@ private fun ShareSection(
 private fun MonthlyAchievementCard(
     month: Int,
     monthValue: Double,
-    unitLabel: String
+    unitLabel: String,
+    activeDays: Int = 0,
+    recentBooks: List<String> = emptyList()
 ) {
+    val daysInMonth = remember(month) {
+        Calendar.getInstance().apply {
+            set(Calendar.MONTH, month - 1)
+            set(Calendar.DAY_OF_MONTH, 1)
+        }.getActualMaximum(Calendar.DAY_OF_MONTH)
+    }
+    val dailyAvg = if (daysInMonth > 0) monthValue / daysInMonth else 0.0
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -904,6 +920,24 @@ private fun MonthlyAchievementCard(
             Text("${monthValue.toInt()}", fontSize = 48.sp, fontWeight = FontWeight.Bold, color = Color.White)
             Spacer(modifier = Modifier.width(4.dp))
             Text(unitLabel, fontSize = 24.sp, color = Color.White.copy(alpha = 0.8f), modifier = Modifier.padding(bottom = 6.dp))
+        }
+        Spacer(modifier = Modifier.height(12.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("$activeDays", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Text("活跃天数", fontSize = 11.sp, color = Color.White.copy(alpha = 0.7f))
+            }
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("%.1f".format(dailyAvg), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Text("日均$unitLabel", fontSize = 11.sp, color = Color.White.copy(alpha = 0.7f))
+            }
+        }
+        if (recentBooks.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Text("最近在读", color = Color.White.copy(alpha = 0.8f), fontSize = 12.sp)
+            recentBooks.take(3).forEach { book ->
+                Text("· $book", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
+            }
         }
         Spacer(modifier = Modifier.height(24.dp))
         Text("—— 书迹 App ——", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.5f))

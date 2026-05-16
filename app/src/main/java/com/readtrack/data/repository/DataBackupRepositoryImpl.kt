@@ -162,6 +162,12 @@ class DataBackupRepositoryImpl @Inject constructor(
                     if (isLocalCoverPath(path)) coverPathsToInclude.add(path)
                 }
             }
+            // 阅读记录快照中的封面（已删除书籍的阅读记录依赖快照显示封面）
+            backup.readingRecords.forEach { record ->
+                record.bookSnapshot?.coverPath?.let { path ->
+                    if (isLocalCoverPath(path)) coverPathsToInclude.add(path)
+                }
+            }
 
             // 打包 ZIP
             val zipFile = File(tempDir, "readtrack_backup_${System.currentTimeMillis()}.zip")
@@ -505,12 +511,24 @@ class DataBackupRepositoryImpl @Inject constructor(
             listExport.copy(coverPath = fixedCoverPath)
         }
 
+        // 修复阅读记录快照中的封面路径
+        val fixedReadingRecords = backup.readingRecords.map { recordExport ->
+            val fixedSnapshot = recordExport.bookSnapshot?.let { snapshot ->
+                val fixedCoverPath = snapshot.coverPath?.let { originalPath ->
+                    val fileName = File(originalPath).name
+                    fileNameToNewPath[fileName] ?: originalPath
+                }
+                snapshot.copy(coverPath = fixedCoverPath)
+            }
+            recordExport.copy(bookSnapshot = fixedSnapshot)
+        }
+
         return DataBackup(
             version = backup.version,
             exportTime = backup.exportTime,
             appVersion = backup.appVersion,
             books = fixedBooks,
-            readingRecords = backup.readingRecords,
+            readingRecords = fixedReadingRecords,
             bookLists = fixedBookLists,
             preferences = backup.preferences,
             tags = backup.tags,
