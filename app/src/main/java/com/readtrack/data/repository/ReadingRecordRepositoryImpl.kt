@@ -18,6 +18,9 @@ class ReadingRecordRepositoryImpl @Inject constructor(
     override fun getAllRecords(): Flow<List<ReadingRecordEntity>> =
         readingRecordDao.getAllRecords()
 
+    override fun getRecordsByYearRange(yearStart: Long, yearEnd: Long): Flow<List<ReadingRecordEntity>> =
+        readingRecordDao.getRecordsByYearRange(yearStart, yearEnd)
+
     override fun getTotalPagesReadSince(startTime: Long): Flow<Double?> =
         readingRecordDao.getTotalPagesReadSince(startTime)
 

@@ -32,8 +32,11 @@ import com.readtrack.presentation.ui.settings.AboutScreen
 import com.readtrack.presentation.ui.settings.SettingsScreen
 import com.readtrack.presentation.ui.settings.WidgetSettingsScreen
 import com.readtrack.presentation.ui.stats.StatsScreen
+import com.readtrack.presentation.ui.stats.YearlyReportScreen
 import com.readtrack.presentation.ui.readinghistory.ReadingHistoryScreen
 import com.readtrack.presentation.viewmodel.AddBookViewModel
+
+import java.util.Calendar
 
 sealed class Screen(
     val route: String,
@@ -60,6 +63,9 @@ sealed class Screen(
     data object BackupSettings : Screen("backup_settings", "备份与恢复", Icons.Filled.CloudSync, Icons.Outlined.CloudSync)
     data object About : Screen("about", "关于", Icons.Filled.Info, Icons.Outlined.Info)
     data object WidgetSettings : Screen("widget_settings", "桌面小组件", Icons.Filled.Widgets, Icons.Outlined.Widgets)
+    data object YearlyReport : Screen("yearly_report/{year}", "年度报告", Icons.Filled.DateRange, Icons.Outlined.DateRange) {
+        fun createRoute(year: Int) = "yearly_report/$year"
+    }
 }
 
 @Composable
@@ -173,6 +179,9 @@ fun MainNavigation(
                 StatsScreen(
                     onReadingHistoryClick = {
                         navController.navigate(Screen.ReadingHistory.route)
+                    },
+                    onYearlyReportClick = { year ->
+                        navController.navigate(Screen.YearlyReport.createRoute(year))
                     }
                 )
             }
@@ -277,6 +286,17 @@ fun MainNavigation(
 
             composable(Screen.WidgetSettings.route) {
                 WidgetSettingsScreen(
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
+
+            composable(
+                route = Screen.YearlyReport.route,
+                arguments = listOf(navArgument("year") { type = NavType.IntType })
+            ) { backStackEntry ->
+                val year = backStackEntry.arguments?.getInt("year") ?: Calendar.getInstance().get(Calendar.YEAR)
+                YearlyReportScreen(
+                    initialYear = year,
                     onNavigateBack = { navController.popBackStack() }
                 )
             }

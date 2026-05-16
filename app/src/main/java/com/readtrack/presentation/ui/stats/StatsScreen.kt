@@ -16,6 +16,8 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -43,6 +45,9 @@ import com.readtrack.presentation.ui.components.statusColorOf
 import com.readtrack.presentation.ui.components.statusLabelOf
 import com.readtrack.presentation.ui.components.ShimmerStatCard
 import com.readtrack.presentation.ui.theme.*
+import com.readtrack.presentation.ui.share.DailyAchievementCard
+import com.readtrack.presentation.ui.share.WeeklyAchievementCard
+import com.readtrack.presentation.ui.share.shareComposable
 import com.readtrack.presentation.viewmodel.DailyReading
 import com.readtrack.domain.model.ProgressType
 import com.readtrack.presentation.viewmodel.StatsViewModel
@@ -54,6 +59,9 @@ import com.readtrack.presentation.ui.theme.FinishedBlue
 import com.readtrack.presentation.ui.theme.OnHoldGray
 import com.readtrack.presentation.ui.theme.ReadingOrange
 import com.readtrack.presentation.ui.theme.WantToReadGreen
+import java.util.Calendar
+import android.content.Context
+import androidx.compose.ui.platform.LocalContext
 
 private fun StatsUnit.label(): String = if (this == StatsUnit.CHAPTER) "章" else "页"
 private fun StatsUnit.subLabel(): String = if (this == StatsUnit.CHAPTER) "页" else "章"
@@ -62,6 +70,7 @@ private fun StatsUnit.subLabel(): String = if (this == StatsUnit.CHAPTER) "页" 
 @Composable
 fun StatsScreen(
     onReadingHistoryClick: () -> Unit,
+    onYearlyReportClick: (Int) -> Unit = {},
     viewModel: StatsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -236,6 +245,73 @@ fun StatsScreen(
                             modifier = Modifier.weight(1f)
                         )
                     }
+                }
+
+                // 年度报告入口横幅
+                item {
+                    val currentYear = Calendar.getInstance().get(Calendar.YEAR)
+                    Card(
+                        onClick = { onYearlyReportClick(currentYear) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color(0xFF6366F1).copy(alpha = 0.08f)
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = Color(0xFF6366F1)
+                            ) {
+                                Icon(
+                                    Icons.Default.CalendarMonth,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .padding(8.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    "$currentYear 年度阅读报告",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    "查看你的年度阅读总结",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Icon(
+                                Icons.Default.KeyboardArrowRight,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+
+                // 分享成就
+                item {
+                    ShareSection(
+                        todayValue = uiState.todayValue,
+                        weekValue = uiState.weekValue,
+                        statsUnit = uiState.statsUnit,
+                        activeDays = uiState.recentRecordsWithBooks
+                            .map { it.record.date }
+                            .distinct()
+                            .count(),
+                        streakDays = 0,
+                        recentBookTitles = emptyList()
+                    )
                 }
 
                 // Weekly Chart
@@ -689,6 +765,71 @@ fun ReadingRecordItem(recordWithBook: RecordWithBook) {
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                     )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ShareSection(
+    todayValue: Double,
+    weekValue: Double,
+    statsUnit: StatsUnit,
+    activeDays: Int,
+    streakDays: Int,
+    recentBookTitles: List<String>
+) {
+    val context = LocalContext.current
+    val unitLabel = if (statsUnit == StatsUnit.CHAPTER) "章" else "页"
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("分享成就", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Icon(Icons.Default.Share, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(
+                    onClick = {
+                        shareComposable(context, "daily_achievement") {
+                            DailyAchievementCard(
+                                todayValue = todayValue,
+                                unitLabel = unitLabel,
+                                bookTitle = null,
+                                progressPercent = 0
+                            )
+                        }
+                    },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text("今日成就", style = MaterialTheme.typography.labelMedium)
+                }
+                OutlinedButton(
+                    onClick = {
+                        shareComposable(context, "weekly_achievement") {
+                            WeeklyAchievementCard(
+                                weekValue = weekValue,
+                                unitLabel = unitLabel,
+                                activeDays = activeDays,
+                                streakDays = streakDays,
+                                recentBooks = recentBookTitles
+                            )
+                        }
+                    },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text("本周概览", style = MaterialTheme.typography.labelMedium)
                 }
             }
         }
