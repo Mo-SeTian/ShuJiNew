@@ -1,6 +1,7 @@
 package com.readtrack.presentation.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -23,9 +24,7 @@ import com.readtrack.presentation.viewmodel.HeatmapDay
 import com.readtrack.presentation.viewmodel.HeatmapMonth
 import com.readtrack.util.toDateString
 
-/** Calendar.DAY_OF_WEEK (1=Sun) → 周一=0 … 周日=6 */
-private fun monDow(dow: Int) = (dow + 5) % 7
-
+private fun monDow(dow: Int) = (dow + 5) % 7 // Calendar.DAY_OF_WEEK(1=Sun) → Mon=0..Sun=6
 private val WEEK_LABELS = listOf("一", "二", "三", "四", "五", "六", "日")
 
 @Composable
@@ -53,19 +52,19 @@ fun ReadingHeatmapCard(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         IconButton(
                             onClick = { if (currentMonthIndex > 0) currentMonthIndex-- },
-                            modifier = Modifier.size(28.dp),
+                            modifier = Modifier.size(32.dp),
                             enabled = currentMonthIndex > 0
-                        ) { Icon(Icons.Default.ChevronLeft, "上月", modifier = Modifier.size(20.dp)) }
+                        ) { Icon(Icons.Default.ChevronLeft, "上月", modifier = Modifier.size(22.dp)) }
                         Text(
                             months.getOrNull(currentMonthIndex)?.label ?: "",
                             style = MaterialTheme.typography.labelLarge,
-                            modifier = Modifier.padding(horizontal = 4.dp)
+                            modifier = Modifier.padding(horizontal = 8.dp)
                         )
                         IconButton(
                             onClick = { if (currentMonthIndex < months.size - 1) currentMonthIndex++ },
-                            modifier = Modifier.size(28.dp),
+                            modifier = Modifier.size(32.dp),
                             enabled = currentMonthIndex < months.size - 1
-                        ) { Icon(Icons.Default.ChevronRight, "下月", modifier = Modifier.size(20.dp)) }
+                        ) { Icon(Icons.Default.ChevronRight, "下月", modifier = Modifier.size(22.dp)) }
                     }
                 }
             }
@@ -84,80 +83,96 @@ fun ReadingHeatmapCard(
             val p50 = if (sorted.size >= 4) sorted[(sorted.size * 0.5).toInt()] else maxVal * 0.5
             val p75 = if (sorted.size >= 4) sorted[(sorted.size * 0.75).toInt()] else maxVal * 0.75
 
-            val emptyColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-            fun heatColor(v: Double) = when {
-                v <= 0 -> emptyColor
+            val borderColor = MaterialTheme.colorScheme.outlineVariant
+            val emptyFill = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+            fun cellColor(v: Double) = when {
+                v <= 0 -> emptyFill
                 v <= p25 -> Color(0xFFC8E6C9)
                 v <= p50 -> Color(0xFF81C784)
                 v <= p75 -> Color(0xFF4CAF50)
                 else -> Color(0xFF2E7D32)
             }
 
-            val cell = 14.dp
-            val gap = 3.dp
-
-            // 按周分组：每周 7 天（周一~周日）
-            val startDow = monDow(days.first().dayOfWeek) // 本月1号是周几
+            // 固定网格：7列（周一~周日），N行（周数）
+            val startDow = monDow(days.first().dayOfWeek)
             val weeks = mutableListOf<List<HeatmapDay?>>()
             var week = mutableListOf<HeatmapDay?>()
-            repeat(startDow) { week.add(null) } // 第一周前补空白
+            repeat(startDow) { week.add(null) }
             for (day in days) {
                 week.add(day)
                 if (week.size == 7) { weeks.add(week.toList()); week = mutableListOf() }
             }
             if (week.isNotEmpty()) {
-                repeat(7 - week.size) { week.add(null) } // 最后一周后补空白
+                repeat(7 - week.size) { week.add(null) }
                 weeks.add(week.toList())
             }
 
             Row(modifier = Modifier.horizontalScroll(rememberScrollState())) {
                 Column {
-                    // 顶部星期标签
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    // 表头：星期标签
+                    Row {
                         WEEK_LABELS.forEachIndexed { i, label ->
-                            Box(modifier = Modifier.size(cell), contentAlignment = Alignment.Center) {
-                                Text(label, fontSize = 9.sp,
-                                    color = if (i == 6) Color(0xFFE57373)
-                                        else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                            Box(
+                                modifier = Modifier.width(28.dp).height(18.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(label, fontSize = 10.sp,
+                                    color = if (i == 6) MaterialTheme.colorScheme.error
+                                        else MaterialTheme.colorScheme.onSurfaceVariant,
                                     textAlign = TextAlign.Center)
                             }
-                            if (i < 6) Spacer(modifier = Modifier.width(gap))
+                            if (i < 6) Spacer(modifier = Modifier.width(2.dp))
                         }
                     }
                     Spacer(modifier = Modifier.height(2.dp))
 
-                    // 每周一行
+                    // 数据行
                     weeks.forEach { weekDays ->
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Row {
                             weekDays.forEachIndexed { i, day ->
                                 if (day != null) {
                                     val v = if (isChapterBased) day.chaptersRead else day.pagesRead
-                                    Box(modifier = Modifier.size(cell).padding(1.dp)
-                                        .clip(RoundedCornerShape(2.dp))
-                                        .background(heatColor(v))
-                                        .clickable { selectedDay = day })
+                                    Box(
+                                        modifier = Modifier
+                                            .size(28.dp)
+                                            .padding(1.dp)
+                                            .border(1.dp, borderColor, RoundedCornerShape(3.dp))
+                                            .clip(RoundedCornerShape(3.dp))
+                                            .background(cellColor(v))
+                                            .clickable { selectedDay = day },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            "${day.dayOfMonth}",
+                                            fontSize = 9.sp,
+                                            color = if (v > 0 && v >= p50) Color.White
+                                                else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                            textAlign = TextAlign.Center
+                                        )
+                                    }
                                 } else {
-                                    Spacer(modifier = Modifier.size(cell))
+                                    Spacer(modifier = Modifier.width(28.dp))
                                 }
-                                if (i < 6) Spacer(modifier = Modifier.width(gap))
+                                if (i < 6) Spacer(modifier = Modifier.width(2.dp))
                             }
                         }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             // 图例
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically) {
-                Text("少", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("少", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(modifier = Modifier.width(4.dp))
-                listOf(emptyColor, Color(0xFFC8E6C9), Color(0xFF81C784), Color(0xFF4CAF50), Color(0xFF2E7D32)).forEach {
-                    Box(modifier = Modifier.size(10.dp).clip(RoundedCornerShape(2.dp)).background(it))
+                listOf(emptyFill, Color(0xFFC8E6C9), Color(0xFF81C784), Color(0xFF4CAF50), Color(0xFF2E7D32)).forEach {
+                    Box(modifier = Modifier.size(12.dp).border(1.dp, borderColor, RoundedCornerShape(2.dp))
+                        .clip(RoundedCornerShape(2.dp)).background(it))
                     Spacer(modifier = Modifier.width(2.dp))
                 }
-                Text("多", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("多", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
