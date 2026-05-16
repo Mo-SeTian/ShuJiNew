@@ -63,6 +63,7 @@ fun YearlyReportScreen(
                         Icon(Icons.Default.Share, contentDescription = "分享")
                     }
                 },
+                windowInsets = WindowInsets(0, 0, 0, 0),
                 colors = TopAppBarDefaults.smallTopAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
