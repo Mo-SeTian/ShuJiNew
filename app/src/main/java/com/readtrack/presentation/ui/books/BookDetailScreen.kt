@@ -555,7 +555,7 @@ private fun TimelineShareCard(
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        "共 $days 天 · 阅读 $totalRead $unit · 日均 %.1f $unit".format(perDay),
+                        "共 $days 天 · 活跃 ${period.activeDays} 天 · 阅读 $totalRead $unit · 日均 %.1f $unit".format(perDay),
                         style = MaterialTheme.typography.bodySmall,
                         color = Color(0xFF888888)
                     )

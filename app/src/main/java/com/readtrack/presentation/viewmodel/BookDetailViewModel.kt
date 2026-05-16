@@ -16,6 +16,7 @@ import com.readtrack.domain.repository.ReadingRecordRepository
 import com.readtrack.domain.repository.TagRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import com.readtrack.util.getStartOfDay
 import com.readtrack.widget.WidgetUpdateHelper
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -79,6 +80,7 @@ data class ReadingPeriod(
     val endLabel: String,
     val totalPagesRead: Double,
     val totalChaptersRead: Double,
+    val activeDays: Int,
     val pagesPerDay: Double,
     val chaptersPerDay: Double,
     val isOpenEnded: Boolean = false  // 在读中，未结束
@@ -359,7 +361,8 @@ class BookDetailViewModel @Inject constructor(
         val periodRecords = normalRecords.filter { it.date in startDate..endDate }
         val totalPages = periodRecords.sumOf { it.pagesRead }
         val totalChapters = periodRecords.sumOf { (it.chaptersRead ?: 0).toDouble() }
-        val days = ((endDate - startDate) / ONE_DAY_MILLIS + 1).coerceAtLeast(1)
+        // 活跃天数：区间内有实际阅读记录的不同天数
+        val activeDays = periodRecords.map { getStartOfDay(it.date) }.distinct().count().coerceAtLeast(1)
         return ReadingPeriod(
             startDate = startDate,
             endDate = endDate,
@@ -367,8 +370,9 @@ class BookDetailViewModel @Inject constructor(
             endLabel = if (endRecord != null) recordTypeLabel(endRecord.recordType, endRecord.bookSnapshot?.status) else "至今",
             totalPagesRead = totalPages,
             totalChaptersRead = totalChapters,
-            pagesPerDay = totalPages / days,
-            chaptersPerDay = totalChapters / days
+            activeDays = activeDays,
+            pagesPerDay = totalPages / activeDays,
+            chaptersPerDay = totalChapters / activeDays
         )
     }
 
