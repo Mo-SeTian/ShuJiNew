@@ -125,7 +125,10 @@ class YearlyReportViewModel @Inject constructor(
         val averageRating = if (ratedBooks.isNotEmpty()) ratedBooks.map { it.rating!! }.average().toFloat() else 0f
 
         val favoriteBook = ratedBooks.maxByOrNull { it.rating ?: 0f }
-        val thickestBook = yearBooks.maxByOrNull { it.totalPages }
+        val thickestBook = yearBooks.maxByOrNull { book ->
+            if (book.progressType == ProgressType.CHAPTER) (book.totalChapters ?: 0).toDouble()
+            else book.totalPages
+        }
         val longestBook = yearBooks
             .filter { it.lastReadAt != null && it.lastReadAt > 0 && it.createdAt > 0 }
             .maxByOrNull { (it.lastReadAt ?: 0L) - it.createdAt }

@@ -3,12 +3,12 @@ package com.readtrack.presentation.ui.share
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
-import android.view.ContextThemeWrapper
 import android.view.View
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.ComposeView
 import androidx.core.content.FileProvider
-import com.readtrack.R
+import com.readtrack.data.local.ThemeMode
+import com.readtrack.presentation.ui.theme.ReadTrackTheme
 import java.io.File
 import java.io.FileOutputStream
 
@@ -27,10 +27,12 @@ private fun captureComposable(
     context: Context,
     content: @Composable () -> Unit
 ): Bitmap {
-    val themedContext = ContextThemeWrapper(context, R.style.Theme_ReadTrack)
-
-    val composeView = ComposeView(themedContext).apply {
-        setContent(content)
+    val composeView = ComposeView(context).apply {
+        setContent {
+            ReadTrackTheme(themeMode = ThemeMode.SYSTEM, dynamicColor = false) {
+                content()
+            }
+        }
     }
 
     val widthSpec = View.MeasureSpec.makeMeasureSpec(1080, View.MeasureSpec.AT_MOST)

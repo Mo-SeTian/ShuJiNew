@@ -307,7 +307,9 @@ private fun RankingCard(report: YearlyReportData) {
                 Spacer(modifier = Modifier.height(8.dp))
             }
             report.thickestBook?.let { book ->
-                RankItem("最厚之书", book.title, "${book.totalPages.toInt()} 页")
+                val detail = if (book.progressType == com.readtrack.domain.model.ProgressType.CHAPTER)
+                    "${book.totalChapters ?: 0} 章" else "${book.totalPages.toInt()} 页"
+                RankItem("最厚之书", book.title, detail)
                 Spacer(modifier = Modifier.height(8.dp))
             }
             report.longestBook?.let { book ->
