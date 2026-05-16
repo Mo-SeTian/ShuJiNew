@@ -291,8 +291,10 @@ class BookDetailViewModel @Inject constructor(
     }
 
     private fun computeReadingPeriods(records: List<ReadingRecordEntity>): List<ReadingPeriod> {
+        // STATUS_ADDED（添加书籍时选择了在读）也视为阅读起点
+        val startTypes = setOf(RecordType.STATUS_READING, RecordType.STATUS_ADDED)
         val statusRecords = records.filter {
-            it.recordType == RecordType.STATUS_READING || it.recordType == RecordType.STATUS_FINISHED
+            it.recordType in startTypes || it.recordType == RecordType.STATUS_FINISHED
         }.sortedBy { it.date }
 
         val normalRecords = records.filter { it.recordType == RecordType.NORMAL }
@@ -302,7 +304,7 @@ class BookDetailViewModel @Inject constructor(
 
         for (record in statusRecords) {
             when (record.recordType) {
-                RecordType.STATUS_READING -> readingStack.addLast(record)
+                in startTypes -> readingStack.addLast(record)
                 RecordType.STATUS_FINISHED -> {
                     if (readingStack.isNotEmpty()) {
                         val start = readingStack.removeFirst()
