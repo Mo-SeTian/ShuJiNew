@@ -71,14 +71,15 @@ data class HeatmapMonth(
     val totalValue: Double
 )
 
-/** 已读书籍的阅读周期 */
+/** 阅读周期（适用于已读、在读、闲置、放弃的书籍） */
 data class ReadingPeriod(
     val startDate: Long,
     val endDate: Long,
     val totalPagesRead: Double,
     val totalChaptersRead: Double,
     val pagesPerDay: Double,
-    val chaptersPerDay: Double
+    val chaptersPerDay: Double,
+    val isOpenEnded: Boolean = false  // 在读中，未结束
 )
 
 @HiltViewModel
@@ -112,7 +113,8 @@ class BookDetailViewModel @Inject constructor(
                 ) { book, records ->
                     val trendData = computeTrendData(records)
                     val heatmapMonths = computeHeatmapData(records)
-                    val readingPeriods = if (book?.status == BookStatus.FINISHED) computeReadingPeriods(records) else emptyList()
+                    val readingPeriods = if (book?.status != null && book.status != BookStatus.WANT_TO_READ)
+                        computeReadingPeriods(records) else emptyList()
                     BookDetailUiState(
                         book = book,
                         readingRecords = records,
@@ -291,10 +293,11 @@ class BookDetailViewModel @Inject constructor(
     }
 
     private fun computeReadingPeriods(records: List<ReadingRecordEntity>): List<ReadingPeriod> {
-        // STATUS_ADDED（添加书籍时选择了在读）也视为阅读起点
         val startTypes = setOf(RecordType.STATUS_READING, RecordType.STATUS_ADDED)
+        val endTypes = setOf(RecordType.STATUS_FINISHED, RecordType.STATUS_DROPPED)
+
         val statusRecords = records.filter {
-            it.recordType in startTypes || it.recordType == RecordType.STATUS_FINISHED
+            it.recordType in startTypes || it.recordType in endTypes
         }.sortedBy { it.date }
 
         val normalRecords = records.filter { it.recordType == RecordType.NORMAL }
@@ -304,37 +307,57 @@ class BookDetailViewModel @Inject constructor(
 
         for (record in statusRecords) {
             when (record.recordType) {
-                in startTypes -> readingStack.addLast(record)
-                RecordType.STATUS_FINISHED -> {
+                in startTypes -> {
+                    // 新阅读开始：如果已有未结束周期，先以当前记录时间结束
+                    if (readingStack.isNotEmpty()) {
+                        val previous = readingStack.removeFirst()
+                        periods.add(buildPeriod(previous.date, record.date, normalRecords))
+                    }
+                    readingStack.addLast(record)
+                }
+                in endTypes -> {
                     if (readingStack.isNotEmpty()) {
                         val start = readingStack.removeFirst()
-                        val startDate = start.date
-                        val endDate = record.date
-
-                        val periodRecords = normalRecords.filter {
-                            it.date in startDate..endDate
-                        }
-                        val totalPages = periodRecords.sumOf { it.pagesRead }
-                        val totalChapters = periodRecords.sumOf { (it.chaptersRead ?: 0).toDouble() }
-                        val days = ((endDate - startDate) / (24L * 60 * 60 * 1000) + 1).coerceAtLeast(1)
-
-                        periods.add(
-                            ReadingPeriod(
-                                startDate = startDate,
-                                endDate = endDate,
-                                totalPagesRead = totalPages,
-                                totalChaptersRead = totalChapters,
-                                pagesPerDay = totalPages / days,
-                                chaptersPerDay = totalChapters / days
-                            )
-                        )
+                        periods.add(buildPeriod(start.date, record.date, normalRecords))
                     }
                 }
                 else -> {}
             }
         }
 
+        // 剩余的未结束周期 → 至今（在读中）
+        if (readingStack.isNotEmpty()) {
+            val start = readingStack.removeFirst()
+            val now = System.currentTimeMillis()
+            periods.add(
+                buildPeriod(start.date, now, normalRecords).copy(isOpenEnded = true)
+            )
+        }
+
         return periods.sortedByDescending { it.startDate }
+    }
+
+    private fun buildPeriod(
+        startDate: Long,
+        endDate: Long,
+        normalRecords: List<ReadingRecordEntity>
+    ): ReadingPeriod {
+        val periodRecords = normalRecords.filter { it.date in startDate..endDate }
+        val totalPages = periodRecords.sumOf { it.pagesRead }
+        val totalChapters = periodRecords.sumOf { (it.chaptersRead ?: 0).toDouble() }
+        val days = ((endDate - startDate) / ONE_DAY_MILLIS + 1).coerceAtLeast(1)
+        return ReadingPeriod(
+            startDate = startDate,
+            endDate = endDate,
+            totalPagesRead = totalPages,
+            totalChaptersRead = totalChapters,
+            pagesPerDay = totalPages / days,
+            chaptersPerDay = totalChapters / days
+        )
+    }
+
+    companion object {
+        private const val ONE_DAY_MILLIS = 24L * 60 * 60 * 1000L
     }
 
     fun updateStatus(status: BookStatus) {

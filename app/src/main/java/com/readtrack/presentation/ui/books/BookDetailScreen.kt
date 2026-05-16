@@ -133,8 +133,8 @@ fun BookDetailScreen(
                         ProgressInfoCard(book = book)
                     }
 
-                    // 阅读时间线（仅已读书籍，放在进度下方）
-                    if (book.status == BookStatus.FINISHED && uiState.readingPeriods.isNotEmpty()) {
+                    // 阅读时间线（想读以外的书籍都展示）
+                    if (book.status != BookStatus.WANT_TO_READ && uiState.readingPeriods.isNotEmpty()) {
                         item {
                             ReadingTimelineCard(
                                 periods = uiState.readingPeriods,
@@ -533,8 +533,10 @@ private fun TimelineShareCard(
             ) {
                 // 左侧：日期范围
                 Column(modifier = Modifier.weight(1f)) {
+                    val endStr = if (period.isOpenEnded) "至今"
+                        else period.endDate.toDateString("yyyy.MM.dd")
                     Text(
-                        "${period.startDate.toDateString("yyyy.MM.dd")} — ${period.endDate.toDateString("yyyy.MM.dd")}",
+                        "${period.startDate.toDateString("yyyy.MM.dd")} — $endStr",
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium,
                         color = Color(0xFF333333)
