@@ -488,13 +488,14 @@ class AddBookViewModel @Inject constructor(
                             date = now,
                             recordType = RecordType.STATUS_ADDED
                         ))
-                        // 初始选「在读」时追加 STATUS_READING，供阅读时间线使用
-                        if (newBook.status == BookStatus.READING) {
+                        // 根据初始状态追加对应记录（在读→STATUS_READING等）
+                        val statusRecordType = bookStatusToRecordType(newBook.status)
+                        if (statusRecordType != null) {
                             database.readingRecordDao().insertRecord(ReadingRecordEntity(
                                 bookId = id, bookSnapshot = snapshot,
                                 pagesRead = 0.0, fromPage = 0.0, toPage = 0.0,
                                 date = now,
-                                recordType = RecordType.STATUS_READING
+                                recordType = statusRecordType
                             ))
                         }
                         id
@@ -527,4 +528,11 @@ class AddBookViewModel @Inject constructor(
 private fun StatsUnit.toProgressType(): ProgressType = when (this) {
     StatsUnit.CHAPTER -> ProgressType.CHAPTER
     StatsUnit.PAGE -> ProgressType.PAGE
+}
+
+private fun bookStatusToRecordType(status: BookStatus): RecordType? = when (status) {
+    BookStatus.READING -> RecordType.STATUS_READING
+    BookStatus.FINISHED -> RecordType.STATUS_FINISHED
+    BookStatus.ON_HOLD, BookStatus.ABANDONED -> RecordType.STATUS_DROPPED
+    BookStatus.WANT_TO_READ -> null
 }
