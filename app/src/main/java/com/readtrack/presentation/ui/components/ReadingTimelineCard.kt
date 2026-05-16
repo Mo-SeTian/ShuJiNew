@@ -96,7 +96,7 @@ fun ReadingTimelineCard(
                             Spacer(modifier = Modifier.height(4.dp))
                             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                                 Text(
-                                    "共 $days 天",
+                                    "共 $days 天 · 活跃 ${period.activeDays} 天",
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
