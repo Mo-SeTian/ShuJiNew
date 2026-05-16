@@ -311,7 +311,8 @@ private fun RankingCard(report: YearlyReportData) {
                 Spacer(modifier = Modifier.height(8.dp))
             }
             report.longestBook?.let { book ->
-                RankItem("陪伴最久之书", book.title, "从 ${book.createdAt} 至今")
+                val dateStr = remember(book.createdAt) { YearlyReportViewModel.formatTimestamp(book.createdAt) }
+                RankItem("陪伴最久之书", book.title, "从 $dateStr 至今")
             }
         }
     }

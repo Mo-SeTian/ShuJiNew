@@ -3,14 +3,12 @@ package com.readtrack.presentation.ui.share
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
-import android.graphics.PixelFormat
+import android.view.ContextThemeWrapper
 import android.view.View
-import android.view.ViewGroup
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.AbstractComposeView
 import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.platform.ViewRootForInspector
 import androidx.core.content.FileProvider
+import com.readtrack.R
 import java.io.File
 import java.io.FileOutputStream
 
@@ -29,25 +27,24 @@ private fun captureComposable(
     context: Context,
     content: @Composable () -> Unit
 ): Bitmap {
-    val composeView = ComposeView(context).apply {
-        setContent(content)
-        // 测量和布局
-        val widthSpec = View.MeasureSpec.makeMeasureSpec(1080, View.MeasureSpec.AT_MOST)
-        val heightSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
-        measure(widthSpec, heightSpec)
-        layout(0, 0, measuredWidth, measuredHeight)
+    val themedContext = ContextThemeWrapper(context, R.style.Theme_ReadTrack)
 
-        // 设置固定大小 LayoutParams
-        layoutParams = ViewGroup.LayoutParams(measuredWidth, measuredHeight)
+    val composeView = ComposeView(themedContext).apply {
+        setContent(content)
     }
 
-    // 创建 bitmap 并绘制
+    val widthSpec = View.MeasureSpec.makeMeasureSpec(1080, View.MeasureSpec.AT_MOST)
+    val heightSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+    composeView.measure(widthSpec, heightSpec)
+    composeView.layout(0, 0, composeView.measuredWidth, composeView.measuredHeight)
+
     val bitmap = Bitmap.createBitmap(
         composeView.measuredWidth.coerceAtLeast(1),
         composeView.measuredHeight.coerceAtLeast(1),
         Bitmap.Config.ARGB_8888
     )
     val canvas = android.graphics.Canvas(bitmap)
+    canvas.drawColor(android.graphics.Color.WHITE)
     composeView.draw(canvas)
 
     return bitmap

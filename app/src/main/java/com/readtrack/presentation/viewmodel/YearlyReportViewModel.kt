@@ -3,26 +3,30 @@ package com.readtrack.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.readtrack.data.local.PreferencesManager
-import com.readtrack.data.local.StatsUnit
 import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.data.local.entity.ReadingRecordEntity
 import com.readtrack.data.local.entity.RecordType
 import com.readtrack.domain.model.BookStatus
-import com.readtrack.domain.model.BookType
 import com.readtrack.domain.model.ProgressType
 import com.readtrack.domain.model.YearlyReportData
 import com.readtrack.domain.repository.BookRepository
 import com.readtrack.domain.repository.ReadingRecordRepository
 import com.readtrack.util.getStartOfDay
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Locale
 import javax.inject.Inject
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class YearlyReportViewModel @Inject constructor(
     private val bookRepository: BookRepository,
@@ -32,12 +36,26 @@ class YearlyReportViewModel @Inject constructor(
 
     private val selectedYear = MutableStateFlow(Calendar.getInstance().get(Calendar.YEAR))
 
-    val uiState: StateFlow<YearlyReportData?> = combine(
-        selectedYear,
-        preferencesManager.statsUnit
-    ) { year, _ -> year }.combine(bookRepository.getAllBooks()) { year, books -> year to books }
-        .combine(recordRepository.getAllRecords()) { (year, books), records ->
-            buildReport(year, books, records)
+    private val availableYears = MutableStateFlow(listOf(Calendar.getInstance().get(Calendar.YEAR)))
+
+    init {
+        viewModelScope.launch {
+            recordRepository.getAllRecords().collect { records ->
+                availableYears.value = buildAvailableYears(records)
+            }
+        }
+    }
+
+    val uiState: StateFlow<YearlyReportData?> = selectedYear
+        .flatMapLatest { year ->
+            val (yearStart, yearEnd) = yearBoundaries(year)
+            combine(
+                bookRepository.getAllBooks(),
+                recordRepository.getRecordsByYearRange(yearStart, yearEnd),
+                availableYears
+            ) { books, records, years ->
+                buildReport(year, books, records, years)
+            }
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
@@ -50,25 +68,28 @@ class YearlyReportViewModel @Inject constructor(
 
     val currentYear: Int get() = selectedYear.value
 
-    private fun buildReport(
-        year: Int,
-        books: List<BookEntity>,
-        records: List<ReadingRecordEntity>
-    ): YearlyReportData {
+    private fun yearBoundaries(year: Int): Pair<Long, Long> {
         val calendar = Calendar.getInstance()
         calendar.set(year, Calendar.JANUARY, 1, 0, 0, 0)
         calendar.set(Calendar.MILLISECOND, 0)
         val yearStart = calendar.timeInMillis
-
         calendar.set(year + 1, Calendar.JANUARY, 1, 0, 0, 0)
         val yearEnd = calendar.timeInMillis
+        return yearStart to yearEnd
+    }
 
-        val yearRecords = records.filter { it.date in yearStart until yearEnd }
-        val normalRecords = yearRecords.filter { it.recordType == RecordType.NORMAL }
+    private fun buildReport(
+        year: Int,
+        books: List<BookEntity>,
+        records: List<ReadingRecordEntity>,
+        years: List<Int>
+    ): YearlyReportData {
+        val (yearStart, yearEnd) = yearBoundaries(year)
         val booksMap = books.associateBy { it.id }
+        val normalRecords = records.filter { it.recordType == RecordType.NORMAL }
 
         val bookIdsWithRecords = normalRecords.mapNotNull { it.bookId }.toSet()
-        val yearBooks = books.filter { it.id in bookIdsWithRecords || (it.createdAt in yearStart until yearEnd) }
+        val yearBooks = books.filter { it.id in bookIdsWithRecords || it.createdAt in yearStart until yearEnd }
 
         val finishedInYear = yearBooks.count { it.status == BookStatus.FINISHED }
 
@@ -105,7 +126,8 @@ class YearlyReportViewModel @Inject constructor(
 
         val favoriteBook = ratedBooks.maxByOrNull { it.rating ?: 0f }
         val thickestBook = yearBooks.maxByOrNull { it.totalPages }
-        val longestBook = yearBooks.filter { it.lastReadAt != null && it.createdAt > 0 }
+        val longestBook = yearBooks
+            .filter { it.lastReadAt != null && it.lastReadAt > 0 && it.createdAt > 0 }
             .maxByOrNull { (it.lastReadAt ?: 0L) - it.createdAt }
 
         val genreCounts = yearBooks.groupBy { it.bookType }
@@ -119,8 +141,6 @@ class YearlyReportViewModel @Inject constructor(
             val merged = FloatArray(12) { monthlyPages[it] + monthlyChapters[it].toDouble().toFloat() }
             merged.indices.maxByOrNull { merged[it] } ?: 0
         } else 0
-
-        val availableYears = buildAvailableYears(records)
 
         return YearlyReportData(
             year = year,
@@ -138,20 +158,20 @@ class YearlyReportViewModel @Inject constructor(
             maxStreakDays = maxStreakDays,
             activeDays = activeDays.size,
             favoriteMonth = favoriteMonth,
-            availableYears = availableYears
+            availableYears = years
         )
     }
 
     private fun getMonth(timestamp: Long): Int {
         val c = Calendar.getInstance().apply { timeInMillis = timestamp }
-        return c.get(Calendar.MONTH) // 0-11
+        return c.get(Calendar.MONTH)
     }
 
     private fun buildAvailableYears(records: List<ReadingRecordEntity>): List<Int> {
         if (records.isEmpty()) return listOf(Calendar.getInstance().get(Calendar.YEAR))
         val years = HashSet<Int>()
-        records.forEach {
-            val c = Calendar.getInstance().apply { timeInMillis = it.date }
+        records.forEach { record ->
+            val c = Calendar.getInstance().apply { timeInMillis = record.date }
             years.add(c.get(Calendar.YEAR))
         }
         val currentYear = Calendar.getInstance().get(Calendar.YEAR)
@@ -161,6 +181,11 @@ class YearlyReportViewModel @Inject constructor(
 
     companion object {
         private const val ONE_DAY_MILLIS = 24L * 60L * 60L * 1000L
+
+        fun formatTimestamp(timestamp: Long): String {
+            val sdf = SimpleDateFormat("yyyy年M月", Locale.getDefault())
+            return sdf.format(java.util.Date(timestamp))
+        }
 
         private fun calculateMaxStreak(dates: List<Long>): Int {
             if (dates.isEmpty()) return 0
