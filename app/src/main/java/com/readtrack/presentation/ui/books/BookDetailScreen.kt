@@ -545,10 +545,10 @@ private fun TimelineShareCard(
             ) {
                 // 左侧：日期范围
                 Column(modifier = Modifier.weight(1f)) {
-                    val endStr = if (period.isOpenEnded) "至今"
+                    val endDateText = if (period.isOpenEnded) "至今"
                         else period.endDate.toDateString("yyyy.MM.dd")
                     Text(
-                        "${period.startDate.toDateString("yyyy.MM.dd")} — $endStr",
+                        "${period.startDate.toDateString("yyyy.MM.dd")}(${period.startLabel}) — $endDateText${if (!period.isOpenEnded) "(${period.endLabel})" else ""}",
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium,
                         color = Color(0xFF333333)

@@ -84,10 +84,10 @@ fun ReadingTimelineCard(
 
                         // 内容
                         Column(modifier = Modifier.weight(1f)) {
-                            val endText = if (period.isOpenEnded) "至今"
+                            val endDateText = if (period.isOpenEnded) "至今"
                                 else period.endDate.toDateString("yyyy.MM.dd")
                             Text(
-                                "${period.startDate.toDateString("yyyy.MM.dd")} — $endText",
+                                "${period.startDate.toDateString("yyyy.MM.dd")}(${period.startLabel}) — $endDateText${if (!period.isOpenEnded) "(${period.endLabel})" else ""}",
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Medium,
                                 color = if (period.isOpenEnded) MaterialTheme.colorScheme.primary

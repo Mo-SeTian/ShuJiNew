@@ -75,6 +75,8 @@ data class HeatmapMonth(
 data class ReadingPeriod(
     val startDate: Long,
     val endDate: Long,
+    val startLabel: String,
+    val endLabel: String,
     val totalPagesRead: Double,
     val totalChaptersRead: Double,
     val pagesPerDay: Double,
@@ -317,14 +319,14 @@ class BookDetailViewModel @Inject constructor(
                 startType -> {
                     if (readingStack.isNotEmpty()) {
                         val previous = readingStack.removeFirst()
-                        periods.add(buildPeriod(previous.date, record.date, normalRecords))
+                        periods.add(buildPeriod(previous, record, normalRecords))
                     }
                     readingStack.addLast(record)
                 }
                 in endTypes -> {
                     if (readingStack.isNotEmpty()) {
                         val start = readingStack.removeFirst()
-                        periods.add(buildPeriod(start.date, record.date, normalRecords))
+                        periods.add(buildPeriod(start, record, normalRecords))
                     }
                 }
                 else -> {}
@@ -336,7 +338,11 @@ class BookDetailViewModel @Inject constructor(
             val start = readingStack.removeFirst()
             val now = System.currentTimeMillis()
             periods.add(
-                buildPeriod(start.date, now, normalRecords).copy(isOpenEnded = true)
+                buildPeriod(start, null, normalRecords).copy(
+                    endDate = now,
+                    endLabel = "至今",
+                    isOpenEnded = true
+                )
             )
         }
 
@@ -344,10 +350,12 @@ class BookDetailViewModel @Inject constructor(
     }
 
     private fun buildPeriod(
-        startDate: Long,
-        endDate: Long,
+        startRecord: ReadingRecordEntity,
+        endRecord: ReadingRecordEntity?,
         normalRecords: List<ReadingRecordEntity>
     ): ReadingPeriod {
+        val startDate = startRecord.date
+        val endDate = endRecord?.date ?: System.currentTimeMillis()
         val periodRecords = normalRecords.filter { it.date in startDate..endDate }
         val totalPages = periodRecords.sumOf { it.pagesRead }
         val totalChapters = periodRecords.sumOf { (it.chaptersRead ?: 0).toDouble() }
@@ -355,11 +363,25 @@ class BookDetailViewModel @Inject constructor(
         return ReadingPeriod(
             startDate = startDate,
             endDate = endDate,
+            startLabel = recordTypeLabel(startRecord.recordType, startRecord.bookSnapshot?.status),
+            endLabel = if (endRecord != null) recordTypeLabel(endRecord.recordType, endRecord.bookSnapshot?.status) else "至今",
             totalPagesRead = totalPages,
             totalChaptersRead = totalChapters,
             pagesPerDay = totalPages / days,
             chaptersPerDay = totalChapters / days
         )
+    }
+
+    private fun recordTypeLabel(type: RecordType, status: BookStatus?): String = when (type) {
+        RecordType.STATUS_READING -> "在读"
+        RecordType.STATUS_ADDED -> "添加"
+        RecordType.STATUS_FINISHED -> "已读"
+        RecordType.STATUS_DROPPED -> when (status) {
+            BookStatus.ON_HOLD -> "闲置"
+            BookStatus.ABANDONED -> "放弃"
+            else -> "暂停"
+        }
+        else -> ""
     }
 
     companion object {
