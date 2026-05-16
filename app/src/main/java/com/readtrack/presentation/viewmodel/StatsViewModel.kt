@@ -38,6 +38,7 @@ data class StatsUiState(
     val recentRecordsWithBooks: List<RecordWithBook> = emptyList(),
     val monthlyBreakdown: Map<Int, Double> = emptyMap(),
     val monthlyBookBreakdown: Map<Int, List<com.readtrack.domain.model.BookReadingItem>> = emptyMap(),
+    val weeklyBookBreakdown: List<com.readtrack.domain.model.BookReadingItem> = emptyList(),
     val isLoading: Boolean = true
 )
 
@@ -224,6 +225,23 @@ class StatsViewModel @Inject constructor(
             }.sortedByDescending { it.amount }
         }
 
+        // 本周（周一~周日）书籍阅读明细
+        val weeklyBookBreakdown = normalRecords.filter { it.date >= boundaries.startOfWeek }
+            .groupBy { r ->
+                r.bookSnapshot?.title
+                    ?: r.bookId?.let { booksMap[it]?.title }
+                    ?: "已删除图书"
+            }.map { (title, recs) ->
+                com.readtrack.domain.model.BookReadingItem(
+                    title = title,
+                    amount = recs.sumOf { r ->
+                        val isChapter = r.bookSnapshot?.progressType == ProgressType.CHAPTER
+                            ?: (r.bookId?.let { booksMap[it]?.progressType } == ProgressType.CHAPTER)
+                        if (isChapter) (r.chaptersRead ?: 0).toDouble() else r.pagesRead
+                    }
+                )
+            }.sortedByDescending { it.amount }
+
         return StatsUiState(
             totalBooks = books.size,
             booksByStatus = booksByStatus,
@@ -235,6 +253,7 @@ class StatsViewModel @Inject constructor(
             totalValue = if (statsUnit == StatsUnit.CHAPTER) totalChapters else totalPages,
             monthlyBreakdown = monthlyBreakdown,
             monthlyBookBreakdown = monthlyBookBreakdown,
+            weeklyBookBreakdown = weeklyBookBreakdown,
             weeklyReadingData = weeklyBuckets.map { (date, _) ->
                 val dayRecords = recordsByDay[date] ?: emptyList()
                 val breakdowns = dayRecords
