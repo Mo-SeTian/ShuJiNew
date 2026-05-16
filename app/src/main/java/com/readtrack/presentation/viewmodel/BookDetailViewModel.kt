@@ -293,24 +293,28 @@ class BookDetailViewModel @Inject constructor(
     }
 
     private fun computeReadingPeriods(records: List<ReadingRecordEntity>): List<ReadingPeriod> {
-        // STATUS_ADDED 仅作为「添加」标记，不视为阅读起点。
-        // 真正的阅读从 STATUS_READING 开始，避免 ADDED→READING 间空窗期。
-        val startTypes = setOf(RecordType.STATUS_READING)
         val endTypes = setOf(RecordType.STATUS_FINISHED, RecordType.STATUS_DROPPED)
+        val normalRecords = records.filter { it.recordType == RecordType.NORMAL }
+
+        val hasReadingRecord = records.any { it.recordType == RecordType.STATUS_READING }
+        val hasNormalRecords = normalRecords.isNotEmpty()
+
+        // 确定起点类型：优先 STATUS_READING；若无但存在 NORMAL 阅读量，回退到 STATUS_ADDED
+        val startType = if (hasReadingRecord || !hasNormalRecords)
+            RecordType.STATUS_READING
+        else
+            RecordType.STATUS_ADDED
 
         val statusRecords = records.filter {
-            it.recordType in startTypes || it.recordType in endTypes
+            it.recordType == startType || it.recordType in endTypes
         }.sortedBy { it.date }
-
-        val normalRecords = records.filter { it.recordType == RecordType.NORMAL }
 
         val periods = mutableListOf<ReadingPeriod>()
         val readingStack = ArrayDeque<ReadingRecordEntity>()
 
         for (record in statusRecords) {
             when (record.recordType) {
-                in startTypes -> {
-                    // 新阅读开始：如果已有未结束周期，先以当前记录时间结束
+                startType -> {
                     if (readingStack.isNotEmpty()) {
                         val previous = readingStack.removeFirst()
                         periods.add(buildPeriod(previous.date, record.date, normalRecords))

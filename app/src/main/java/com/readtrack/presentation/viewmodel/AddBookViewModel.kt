@@ -481,19 +481,22 @@ class AddBookViewModel @Inject constructor(
                     bookId = database.withTransaction {
                         val id = database.bookDao().insertBook(newBook)
                         val snapshot = BookSnapshot.from(newBook, newBook.status)
-                        // 初始添加时若选「在读」则记STATUS_READING，否则STATUS_ADDED
-                        val initialRecordType = if (newBook.status == BookStatus.READING)
-                            RecordType.STATUS_READING else RecordType.STATUS_ADDED
-                        val statusRecord = ReadingRecordEntity(
-                            bookId = id,
-                            bookSnapshot = snapshot,
-                            pagesRead = 0.0,
-                            fromPage = 0.0,
-                            toPage = 0.0,
+                        // 先记 STATUS_ADDED
+                        database.readingRecordDao().insertRecord(ReadingRecordEntity(
+                            bookId = id, bookSnapshot = snapshot,
+                            pagesRead = 0.0, fromPage = 0.0, toPage = 0.0,
                             date = now,
-                            recordType = initialRecordType
-                        )
-                        database.readingRecordDao().insertRecord(statusRecord)
+                            recordType = RecordType.STATUS_ADDED
+                        ))
+                        // 初始选「在读」时追加 STATUS_READING，供阅读时间线使用
+                        if (newBook.status == BookStatus.READING) {
+                            database.readingRecordDao().insertRecord(ReadingRecordEntity(
+                                bookId = id, bookSnapshot = snapshot,
+                                pagesRead = 0.0, fromPage = 0.0, toPage = 0.0,
+                                date = now,
+                                recordType = RecordType.STATUS_READING
+                            ))
+                        }
                         id
                     }
                 }
