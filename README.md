@@ -6,7 +6,7 @@
 [![Kotlin](https://img.shields.io/badge/Kotlin-1.9.x-blue)](https://kotlinlang.org/)
 [![Compose](https://img.shields.io/badge/Compose-Material%203-orange)](https://developer.android.com/compose)
 [![License](https://img.shields.io/badge/License-MIT-lightgrey)](LICENSE)
-[![Version](https://img.shields.io/badge/Version-1.9.5-blue)](https://github.com/Mo-SeTian/ShuJiNew/releases)
+[![Version](https://img.shields.io/badge/Version-2.3.0-blue)](https://github.com/Mo-SeTian/ShuJiNew/releases)
 
 ## 下载
 
@@ -18,43 +18,73 @@
 ## 功能特性
 
 ### 书籍管理
-- 添加、编辑、删除书籍，支持设置封面
-- 豆瓣 / Bing 封面搜索一键设置
-- 支持按书名/作者搜索和筛选
+- 添加、编辑、删除书籍，支持设置封面（本地/URL/Emoji/纯色）
+- 豆瓣搜索一键填充书籍信息（书名、作者、出版社、封面）
+- 支持按书名/作者搜索、按状态/类型/书单/标签多条件筛选
+- 自定义排序（最近阅读/最近添加/书名/评分）
 
 ### 阅读追踪
-- 记录每日阅读进度（页数/章节）
-- 可视化阅读趋势图表
-- 阅读时间线展示
+- 双模式进度：页数模式 / 章节模式
+- 快速记录进度（首页卡片 / 桌面小组件）
+- 阅读热力图（GitHub 风格月度日历，点击格子查看当日详情）
+- 7 天阅读趋势折线图
+- 阅读时间线：展示在读→已读/闲置/放弃的完整周期，支持多周期
 
 ### 五大状态
 
 | 状态 | 说明 |
 |------|------|
 | 想读 | 计划阅读的书籍 |
-| 阅读中 | 正在阅读的书籍 |
+| 在读 | 正在阅读的书籍 |
 | 已读 | 已完成的书籍 |
 | 闲置 | 暂时搁置的书籍 |
 | 放弃 | 决定不再阅读的书籍 |
 
-### 统计中心
-- 阅读趋势、书籍分布、数据统计
-- 按书单分类统计
+### 标签系统
+- 自定义标签创建/删除，支持颜色标记
+- 书籍多标签关联，标签筛选
 
-### 书单管理
-- 创建自定义书单，批量管理书籍
+### 统计中心
+- 今日/本周/本月/累计阅读量
+- 近 7 天阅读趋势柱状图（点击查看日明细）
+- 书籍状态分布可视化
+- 阅读历史时间线，支持时间范围筛选
+
+### 年度阅读报告
+- Spotify Wrapped 风格年度总结
+- 年度数据总结、月度趋势折线图、趣味排行榜、阅读习惯画像
+- 支持年份切换，生成图片分享
+
+### 书单收藏夹
+- 创建/编辑/删除书单，批量添加书籍
+- 书单封面自动/手动设置
+- 书单筛选
+
+### 桌面小组件
+- 添加桌面小部件，绑定指定书籍
+- 显示封面、书名、作者、进度
+- 点击快捷记录阅读进度
+
+### 分享成就
+- 本周概览 / 月度概览（年月可选）生成精美图片
+- 年度报告长图分享
+- 阅读时间线分享
+- 通过系统分享面板发送到社交平台
 
 ### 数据备份
 - 本地 ZIP 备份（含封面图片）
-- WebDAV 云端自动同步
-- 导入/导出预览、增量导入
+- JSON 纯数据导出
+- CSV 表格导出全部书籍信息
+- WebDAV 云端自动同步（每日/每周）
+- 导入预览、清空导入/追加导入
 
 ### 主题切换
 - 跟随系统 / 浅色 / 深色模式
+- Material You 动态取色（Android 12+）
 
 ### 应用更新
 - 应用内检测新版本
-- 支持 GitHub / Gitee 更新源切换
+- 支持 GitHub / Gitee 更新源切换，离线可切换
 
 ### 隐私保护
 - 使用友盟统计，仅收集匿名活跃数据
@@ -92,11 +122,23 @@ app/src/main/java/com/readtrack/
 │   ├── model/          # 领域模型、备份模型
 │   └── repository/     # Repository 接口
 ├── presentation/
-│   ├── ui/             # Compose 页面
+│   ├── ui/
+│   │   ├── addbook/    # 添加/编辑书籍
+│   │   ├── booklist/   # 书单
+│   │   ├── books/      # 书籍列表、详情、阅读记录
+│   │   ├── components/ # 通用组件（热力图、趋势图、卡片等）
+│   │   ├── home/       # 首页仪表盘
+│   │   ├── readinghistory/ # 阅读历史
+│   │   ├── settings/   # 设置、备份、关于、小组件
+│   │   ├── share/      # 分享卡片和截图工具
+│   │   ├── stats/      # 统计、年度报告
+│   │   ├── timeline/   # 时间线
+│   │   └── theme/      # 颜色、主题、字体
 │   └── viewmodel/      # ViewModels
-├── remote/             # 更新检测、ReleaseInfo
+├── remote/             # 更新检测
+├── util/               # 工具类（CSV导出、封面存储等）
+├── widget/             # 桌面小组件
 ├── worker/             # WorkManager 后台任务
-├── util/               # 工具类
 ├── MainActivity.kt
 └── ReadTrackApp.kt
 ```
