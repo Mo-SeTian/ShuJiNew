@@ -40,6 +40,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.readtrack.presentation.viewmodel.TrendPoint
 import com.readtrack.presentation.ui.components.BookCover
 import com.readtrack.presentation.ui.components.BookCoverQuality
+import com.readtrack.presentation.ui.components.ReadingHeatmapCard
+import com.readtrack.presentation.ui.components.ReadingRecordRow
+import com.readtrack.presentation.ui.components.ReadingTimelineCard
+import com.readtrack.presentation.ui.share.SharePreviewDialog
 import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.data.local.entity.ReadingRecordEntity
 import com.readtrack.data.local.entity.RecordType
@@ -49,6 +53,8 @@ import com.readtrack.presentation.ui.components.statusLabelOf
 import com.readtrack.presentation.viewmodel.BookDetailViewModel
 import com.readtrack.domain.model.ProgressType
 import com.readtrack.presentation.ui.booklist.AddToBookListDialog
+import com.readtrack.util.getDaysBetween
+import com.readtrack.util.toDateString
 import java.text.SimpleDateFormat
 import java.util.*
 import com.readtrack.presentation.ui.theme.AbandonedRed
@@ -63,6 +69,7 @@ fun BookDetailScreen(
     bookId: Long,
     onNavigateBack: () -> Unit,
     onEditBook: () -> Unit,
+    onViewAllRecords: () -> Unit = {},
     viewModel: BookDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -71,6 +78,7 @@ fun BookDetailScreen(
     var showEditRecordDialog by remember { mutableStateOf(false) }
     var showAddToBookListDialog by remember { mutableStateOf(false) }
     var showAddTagDialog by remember { mutableStateOf(false) }
+    var showTimelineShareDialog by remember { mutableStateOf(false) }
     var recordToEdit by remember { mutableStateOf<ReadingRecordEntity?>(null) }
     var recordToDelete by remember { mutableStateOf<ReadingRecordEntity?>(null) }
 
@@ -133,6 +141,16 @@ fun BookDetailScreen(
                         }
                     }
 
+                    // 阅读热力图
+                    if (uiState.heatmapMonths.isNotEmpty()) {
+                        item {
+                            ReadingHeatmapCard(
+                                months = uiState.heatmapMonths,
+                                isChapterBased = book.progressType == ProgressType.CHAPTER
+                            )
+                        }
+                    }
+
                     // 状态选择
                     item {
                         StatusCard(book = book, onStatusChange = { viewModel.updateStatus(it) })
@@ -144,6 +162,17 @@ fun BookDetailScreen(
                             rating = book.rating,
                             onRatingChange = { viewModel.updateRating(it) }
                         )
+                    }
+
+                    // 阅读时间线（仅已读书籍）
+                    if (book.status == BookStatus.FINISHED && uiState.readingPeriods.isNotEmpty()) {
+                        item {
+                            ReadingTimelineCard(
+                                periods = uiState.readingPeriods,
+                                isChapterBased = book.progressType == ProgressType.CHAPTER,
+                                onShareClick = { showTimelineShareDialog = true }
+                            )
+                        }
                     }
 
                     // 标签
@@ -179,48 +208,22 @@ fun BookDetailScreen(
                         }
                     }
                     
-                    // 阅读记录标题
+                    // 查看全部阅读记录
                     item {
-                        Text(
-                            "阅读记录",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(top = 8.dp)
-                        )
-                    }
-                    
-                    // 阅读记录列表
-                    if (uiState.readingRecords.isEmpty()) {
-                        item {
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
-                                shape = RoundedCornerShape(16.dp)
-                            ) {
-                                Box(
-                                    modifier = Modifier.fillMaxWidth().padding(32.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Text("📖", style = MaterialTheme.typography.displaySmall)
-                                        Spacer(modifier = Modifier.height(8.dp))
-                                        Text("暂无阅读记录", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    }
-                                }
-                            }
-                        }
-                    } else {
-                        val isChapterBased = book.progressType == ProgressType.CHAPTER
-                        items(
-                            items = uiState.readingRecords,
-                            key = { it.id }
-                        ) { record ->
-                            ReadingRecordRow(
-                                record = record,
-                                isChapterBased = isChapterBased,
-                                onEdit = { recordToEdit = record; showEditRecordDialog = true },
-                                onDelete = { recordToDelete = record }
+                        OutlinedButton(
+                            onClick = onViewAllRecords,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 8.dp),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Book,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
                             )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("查看全部阅读记录")
                         }
                     }
                     
@@ -464,6 +467,54 @@ fun BookDetailScreen(
             },
             dismissButton = { TextButton(onClick = { showAddRecordDialog = false }) { Text("取消") } }
         )
+    }
+
+    // 阅读时间线分享
+    if (showTimelineShareDialog && uiState.book != null) {
+        val book = uiState.book!!
+        val periods = uiState.readingPeriods
+        SharePreviewDialog(
+            filename = "timeline_${book.title}",
+            onDismiss = { showTimelineShareDialog = false },
+            content = { TimelineShareCard(book = book, periods = periods) }
+        )
+    }
+}
+
+@Composable
+private fun TimelineShareCard(
+    book: BookEntity,
+    periods: List<com.readtrack.presentation.viewmodel.ReadingPeriod>
+) {
+    val isChapterBased = book.progressType == ProgressType.CHAPTER
+    val unit = if (isChapterBased) "章" else "页"
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.background)
+            .padding(16.dp)
+    ) {
+        Text("《${book.title}》阅读时间线", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+        if (book.author != null) {
+            Text(book.author, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Spacer(modifier = Modifier.height(12.dp))
+        periods.forEach { period ->
+            val days = com.readtrack.util.getDaysBetween(period.startDate, period.endDate) + 1
+            val perDay = if (isChapterBased) period.chaptersPerDay else period.pagesPerDay
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    "${period.startDate.toDateString("yyyy.MM.dd")} — ${period.endDate.toDateString("yyyy.MM.dd")}",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Text("$days 天 · %.1f $unit/天".format(perDay), color = MaterialTheme.colorScheme.primary)
+            }
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+        Text("—— 书迹 App ——", modifier = Modifier.fillMaxWidth(), textAlign = androidx.compose.ui.text.style.TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
     }
 }
 

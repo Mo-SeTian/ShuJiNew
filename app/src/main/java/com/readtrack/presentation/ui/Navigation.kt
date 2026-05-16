@@ -25,6 +25,7 @@ import com.readtrack.presentation.ui.addbook.AddBookScreen
 import com.readtrack.presentation.ui.booklist.BookListDetailScreen
 import com.readtrack.presentation.ui.booklist.BookListScreen
 import com.readtrack.presentation.ui.books.BookDetailScreen
+import com.readtrack.presentation.ui.books.BookRecordsScreen
 import com.readtrack.presentation.ui.books.BooksScreen
 import com.readtrack.presentation.ui.home.HomeScreen
 import com.readtrack.presentation.ui.settings.BackupSettingsScreen
@@ -63,6 +64,9 @@ sealed class Screen(
     data object BackupSettings : Screen("backup_settings", "备份与恢复", Icons.Filled.CloudSync, Icons.Outlined.CloudSync)
     data object About : Screen("about", "关于", Icons.Filled.Info, Icons.Outlined.Info)
     data object WidgetSettings : Screen("widget_settings", "桌面小组件", Icons.Filled.Widgets, Icons.Outlined.Widgets)
+    data object BookRecords : Screen("book_records/{bookId}", "阅读记录", Icons.Filled.Book, Icons.Outlined.Book) {
+        fun createRoute(bookId: Long) = "book_records/$bookId"
+    }
     data object YearlyReport : Screen("yearly_report/{year}", "年度报告", Icons.Filled.DateRange, Icons.Outlined.DateRange) {
         fun createRoute(year: Int) = "yearly_report/$year"
     }
@@ -233,6 +237,9 @@ fun MainNavigation(
                     onNavigateBack = { navController.popBackStack() },
                     onEditBook = {
                         navController.navigate(Screen.EditBook.createRoute(bookId))
+                    },
+                    onViewAllRecords = {
+                        navController.navigate(Screen.BookRecords.createRoute(bookId))
                     }
                 )
             }
@@ -286,6 +293,17 @@ fun MainNavigation(
 
             composable(Screen.WidgetSettings.route) {
                 WidgetSettingsScreen(
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
+
+            composable(
+                route = Screen.BookRecords.route,
+                arguments = listOf(navArgument("bookId") { type = NavType.LongType })
+            ) { backStackEntry ->
+                val bookId = backStackEntry.arguments?.getLong("bookId") ?: return@composable
+                BookRecordsScreen(
+                    bookId = bookId,
                     onNavigateBack = { navController.popBackStack() }
                 )
             }

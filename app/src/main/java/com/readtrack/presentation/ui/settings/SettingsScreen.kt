@@ -144,8 +144,19 @@ fun SettingsScreen(
         }
     }
 
+    // CSV 导出：保存到用户指定位置
+    val csvExportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("text/csv")
+    ) { uri ->
+        val csv = uiState.exportCsvContent
+        viewModel.clearExportCsv()
+        if (uri != null && csv != null) {
+            context.contentResolver.openOutputStream(uri)?.bufferedWriter()?.use { writer -> writer.write(csv) }
+        }
+    }
+
     // 导出结果准备好后，自动弹出系统文件保存面板
-    LaunchedEffect(uiState.exportZipPath, uiState.exportJson) {
+    LaunchedEffect(uiState.exportZipPath, uiState.exportJson, uiState.exportCsvContent) {
         when {
             uiState.exportZipPath != null -> {
                 val ts = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
@@ -154,6 +165,10 @@ fun SettingsScreen(
             uiState.exportJson != null -> {
                 val ts = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
                 jsonExportLauncher.launch("readtrack_backup_$ts.json")
+            }
+            uiState.exportCsvContent != null -> {
+                val ts = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+                csvExportLauncher.launch("readtrack_books_$ts.csv")
             }
         }
     }
@@ -434,6 +449,11 @@ fun SettingsScreen(
                         Icons.Outlined.CloudSync, "备份与恢复",
                         "本地备份与 WebDAV 云备份"
                     ) { onNavigateToBackupSettings() }
+                    SettingsItemDivider()
+                    SettingsItem(
+                        Icons.Outlined.CloudDownload, "导出书籍为表格",
+                        "将全部书籍信息导出为 CSV 文件"
+                    ) { viewModel.exportAllBooksToCsv() }
                 }
             }
 
