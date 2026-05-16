@@ -26,9 +26,13 @@ class ReadingWidgetProvider : AppWidgetProvider() {
     }
 
     override fun onDeleted(context: Context, appWidgetIds: IntArray) {
-        // 直接同步清理，避免协程被取消导致映射残留
-        kotlinx.coroutines.runBlocking {
-            getWidgetUpdateHelper(context).clearWidgetSelections(appWidgetIds)
+        val pendingResult = goAsync()
+        widgetScope.launch {
+            try {
+                getWidgetUpdateHelper(context).clearWidgetSelections(appWidgetIds)
+            } finally {
+                pendingResult.finish()
+            }
         }
     }
 
@@ -55,7 +59,6 @@ class ReadingWidgetProvider : AppWidgetProvider() {
     }
 
     companion object {
-        // 进程级单例 scope，避免 BroadcastReceiver 多实例导致 scope 泄漏
-        private val widgetScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+        private val widgetScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     }
 }

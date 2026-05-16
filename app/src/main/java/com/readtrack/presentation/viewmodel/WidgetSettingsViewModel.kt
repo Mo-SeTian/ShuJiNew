@@ -82,7 +82,9 @@ class WidgetSettingsViewModel @Inject constructor(
     )
 
     fun refreshWidgets() {
-        widgetIds.value = loadWidgetIds()
+        val ids = loadWidgetIds()
+        widgetIds.value = ids
+        pruneStaleEntries(ids.toSet())
     }
 
     fun updateSearchQuery(query: String) {
@@ -106,11 +108,12 @@ class WidgetSettingsViewModel @Inject constructor(
     private fun loadWidgetIds(): IntArray {
         val appWidgetManager = AppWidgetManager.getInstance(context)
         val componentName = ComponentName(context, ReadingWidgetProvider::class.java)
-        val ids = appWidgetManager.getAppWidgetIds(componentName)
-        // 清理已删除小组件的残留映射
+        return appWidgetManager.getAppWidgetIds(componentName)
+    }
+
+    private fun pruneStaleEntries(existingIds: Set<Int>) {
         viewModelScope.launch {
-            preferencesManager.pruneStaleWidgetEntries(ids.toSet())
+            preferencesManager.pruneStaleWidgetEntries(existingIds)
         }
-        return ids
     }
 }

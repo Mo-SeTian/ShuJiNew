@@ -291,10 +291,11 @@ class PreferencesManager @Inject constructor(
         val entries = readWidgetEntries()
         val stale = entries.filter { it.widgetId !in existingIds }
         if (stale.isEmpty()) return
+        val keep = entries.filter { it.widgetId in existingIds }
         dataStore.edit { preferences ->
             stale.forEach { preferences.remove(widgetBookIdKey(it.widgetId)) }
+            preferences[WIDGET_BOOK_MAP] = Json.encodeToString(keep)
         }
-        writeWidgetEntries(entries.filter { it.widgetId in existingIds })
     }
 
     suspend fun clearAll() {
