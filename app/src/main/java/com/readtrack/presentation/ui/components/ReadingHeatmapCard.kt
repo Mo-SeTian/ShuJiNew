@@ -23,10 +23,10 @@ import com.readtrack.presentation.viewmodel.HeatmapDay
 import com.readtrack.presentation.viewmodel.HeatmapMonth
 import com.readtrack.util.toDateString
 
-/**
- * dayOfWeek 从 Calendar.DAY_OF_WEEK (1=Sun..7=Sat) 转为周一=0..周日=6
- */
-private fun HeatmapDay.mondayBasedDow(): Int = (dayOfWeek + 5) % 7
+/** Calendar.DAY_OF_WEEK (1=Sun) → 周一=0 … 周日=6 */
+private fun monDow(dow: Int) = (dow + 5) % 7
+
+private val WEEK_LABELS = listOf("一", "二", "三", "四", "五", "六", "日")
 
 @Composable
 fun ReadingHeatmapCard(
@@ -42,6 +42,7 @@ fun ReadingHeatmapCard(
         shape = RoundedCornerShape(16.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
+            // 标题 + 月份切换
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -54,9 +55,7 @@ fun ReadingHeatmapCard(
                             onClick = { if (currentMonthIndex > 0) currentMonthIndex-- },
                             modifier = Modifier.size(28.dp),
                             enabled = currentMonthIndex > 0
-                        ) {
-                            Icon(Icons.Default.ChevronLeft, contentDescription = "上月", modifier = Modifier.size(20.dp))
-                        }
+                        ) { Icon(Icons.Default.ChevronLeft, "上月", modifier = Modifier.size(20.dp)) }
                         Text(
                             months.getOrNull(currentMonthIndex)?.label ?: "",
                             style = MaterialTheme.typography.labelLarge,
@@ -66,9 +65,7 @@ fun ReadingHeatmapCard(
                             onClick = { if (currentMonthIndex < months.size - 1) currentMonthIndex++ },
                             modifier = Modifier.size(28.dp),
                             enabled = currentMonthIndex < months.size - 1
-                        ) {
-                            Icon(Icons.Default.ChevronRight, contentDescription = "下月", modifier = Modifier.size(20.dp))
-                        }
+                        ) { Icon(Icons.Default.ChevronRight, "下月", modifier = Modifier.size(20.dp)) }
                     }
                 }
             }
@@ -82,94 +79,68 @@ fun ReadingHeatmapCard(
             // 颜色等级
             val nonZero = days.map { it.pagesRead + it.chaptersRead }.filter { it > 0 }
             val maxVal = nonZero.maxOrNull() ?: 1.0
-            val p25 = if (nonZero.size >= 4) nonZero.sorted()[(nonZero.size * 0.25).toInt()] else maxVal * 0.25
-            val p50 = if (nonZero.size >= 4) nonZero.sorted()[(nonZero.size * 0.5).toInt()] else maxVal * 0.5
-            val p75 = if (nonZero.size >= 4) nonZero.sorted()[(nonZero.size * 0.75).toInt()] else maxVal * 0.75
+            val sorted = nonZero.sorted()
+            val p25 = if (sorted.size >= 4) sorted[(sorted.size * 0.25).toInt()] else maxVal * 0.25
+            val p50 = if (sorted.size >= 4) sorted[(sorted.size * 0.5).toInt()] else maxVal * 0.5
+            val p75 = if (sorted.size >= 4) sorted[(sorted.size * 0.75).toInt()] else maxVal * 0.75
 
-            val baseColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-            fun heatColor(value: Double): Color = when {
-                value <= 0 -> baseColor
-                value <= p25 -> Color(0xFFC8E6C9)
-                value <= p50 -> Color(0xFF81C784)
-                value <= p75 -> Color(0xFF4CAF50)
+            val emptyColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+            fun heatColor(v: Double) = when {
+                v <= 0 -> emptyColor
+                v <= p25 -> Color(0xFFC8E6C9)
+                v <= p50 -> Color(0xFF81C784)
+                v <= p75 -> Color(0xFF4CAF50)
                 else -> Color(0xFF2E7D32)
             }
 
-            // 按周一=0..周日=6 构建网格：7列 × N行
-            val cellSize = 14
-            val gap = 2
-            val weekLabels = listOf("一", "二", "三", "四", "五", "六", "日")
-            val firstDay = days.first()
-            val lastDay = days.last()
-            val startDow = firstDay.mondayBasedDow() // 本月第一天是周几（周一=0）
-            val endDow = lastDay.mondayBasedDow()
+            val cell = 14.dp
+            val gap = 3.dp
 
-            // 补齐第一周前面空白天
-            val paddedDays = mutableListOf<HeatmapDay?>()
-            repeat(startDow) { paddedDays.add(null) }
-            paddedDays.addAll(days)
-            // 补齐最后一周后面空白天
-            val trailing = (7 - (paddedDays.size % 7)) % 7
-            repeat(trailing) { paddedDays.add(null) }
+            // 按周分组：每周 7 天（周一~周日）
+            val startDow = monDow(days.first().dayOfWeek) // 本月1号是周几
+            val weeks = mutableListOf<List<HeatmapDay?>>()
+            var week = mutableListOf<HeatmapDay?>()
+            repeat(startDow) { week.add(null) } // 第一周前补空白
+            for (day in days) {
+                week.add(day)
+                if (week.size == 7) { weeks.add(week.toList()); week = mutableListOf() }
+            }
+            if (week.isNotEmpty()) {
+                repeat(7 - week.size) { week.add(null) } // 最后一周后补空白
+                weeks.add(week.toList())
+            }
 
-            val rows = paddedDays.chunked(7)
-
-            Row(
-                modifier = Modifier.horizontalScroll(rememberScrollState())
-            ) {
+            Row(modifier = Modifier.horizontalScroll(rememberScrollState())) {
                 Column {
-                    // 星期头
+                    // 顶部星期标签
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        // 左侧星期标签列占位
-                        Spacer(modifier = Modifier.width(16.dp))
-                        // 月份中的周序列（显示星期几在一个占位列中）
-                        // 这里是7列，不需要单独标注星期
-                    }
-                    Spacer(modifier = Modifier.height(4.dp))
-
-                    rows.forEach { weekDays ->
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            // 不需要左侧星期标签——统一放顶部
-                            weekDays.forEach { day ->
-                                val value = if (day != null) {
-                                    if (isChapterBased) day.chaptersRead else day.pagesRead
-                                } else -1.0
-
-                                if (day != null) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(cellSize.dp)
-                                            .padding(1.dp)
-                                            .clip(RoundedCornerShape(2.dp))
-                                            .background(heatColor(value))
-                                            .clickable { selectedDay = day }
-                                    )
-                                } else {
-                                    Spacer(modifier = Modifier.size(cellSize.dp))
-                                }
-                                Spacer(modifier = Modifier.width(gap.dp))
+                        WEEK_LABELS.forEachIndexed { i, label ->
+                            Box(modifier = Modifier.size(cell), contentAlignment = Alignment.Center) {
+                                Text(label, fontSize = 9.sp,
+                                    color = if (i == 6) Color(0xFFE57373)
+                                        else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                                    textAlign = TextAlign.Center)
                             }
+                            if (i < 6) Spacer(modifier = Modifier.width(gap))
                         }
                     }
+                    Spacer(modifier = Modifier.height(2.dp))
 
-                    Spacer(modifier = Modifier.height(6.dp))
-
-                    // 星期标签行（放在网格下方）
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        weekLabels.forEachIndexed { index, label ->
-                            Box(
-                                modifier = Modifier.size(cellSize.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    label,
-                                    fontSize = 9.sp,
-                                    color = if (index == 6) Color(0xFFE57373) // 周日红色
-                                        else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                                    textAlign = TextAlign.Center
-                                )
+                    // 每周一行
+                    weeks.forEach { weekDays ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            weekDays.forEachIndexed { i, day ->
+                                if (day != null) {
+                                    val v = if (isChapterBased) day.chaptersRead else day.pagesRead
+                                    Box(modifier = Modifier.size(cell).padding(1.dp)
+                                        .clip(RoundedCornerShape(2.dp))
+                                        .background(heatColor(v))
+                                        .clickable { selectedDay = day })
+                                } else {
+                                    Spacer(modifier = Modifier.size(cell))
+                                }
+                                if (i < 6) Spacer(modifier = Modifier.width(gap))
                             }
-                            if (index < 6) Spacer(modifier = Modifier.width(gap.dp))
                         }
                     }
                 }
@@ -178,15 +149,12 @@ fun ReadingHeatmapCard(
             Spacer(modifier = Modifier.height(8.dp))
 
             // 图例
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically) {
                 Text("少", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(modifier = Modifier.width(4.dp))
-                listOf(baseColor, Color(0xFFC8E6C9), Color(0xFF81C784), Color(0xFF4CAF50), Color(0xFF2E7D32)).forEach { c ->
-                    Box(modifier = Modifier.size(10.dp).clip(RoundedCornerShape(2.dp)).background(c))
+                listOf(emptyColor, Color(0xFFC8E6C9), Color(0xFF81C784), Color(0xFF4CAF50), Color(0xFF2E7D32)).forEach {
+                    Box(modifier = Modifier.size(10.dp).clip(RoundedCornerShape(2.dp)).background(it))
                     Spacer(modifier = Modifier.width(2.dp))
                 }
                 Text("多", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -201,15 +169,8 @@ fun ReadingHeatmapCard(
         AlertDialog(
             onDismissRequest = { selectedDay = null },
             title = { Text(day.dateMs.toDateString("yyyy年M月d日"), fontWeight = FontWeight.Bold) },
-            text = {
-                Text(
-                    if (value > 0) "阅读了 $value $unit"
-                    else "当天没有阅读记录"
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = { selectedDay = null }) { Text("关闭") }
-            }
+            text = { Text(if (value > 0) "阅读了 $value $unit" else "当天没有阅读记录") },
+            confirmButton = { TextButton(onClick = { selectedDay = null }) { Text("关闭") } }
         )
     }
 }
