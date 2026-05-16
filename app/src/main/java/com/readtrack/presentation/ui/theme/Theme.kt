@@ -21,7 +21,7 @@ import androidx.core.view.WindowCompat
 import com.readtrack.data.local.ThemeMode
 
 // Material You inspired color palette
-private val LightColorScheme = lightColorScheme(
+internal val LightColorScheme = lightColorScheme(
     primary = Color(0xFF1565C0),           // Deep Blue
     onPrimary = Color.White,
     primaryContainer = Color(0xFFBBDEFB),   // Light Blue

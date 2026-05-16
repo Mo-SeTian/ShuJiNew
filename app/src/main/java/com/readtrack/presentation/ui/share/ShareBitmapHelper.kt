@@ -4,11 +4,13 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.view.View
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.ComposeView
 import androidx.core.content.FileProvider
-import com.readtrack.data.local.ThemeMode
-import com.readtrack.presentation.ui.theme.ReadTrackTheme
+import com.readtrack.presentation.ui.theme.AppShapes
+import com.readtrack.presentation.ui.theme.LightColorScheme
+import com.readtrack.presentation.ui.theme.Typography
 import java.io.File
 import java.io.FileOutputStream
 
@@ -29,9 +31,14 @@ private fun captureComposable(
 ): Bitmap {
     val composeView = ComposeView(context).apply {
         setContent {
-            ReadTrackTheme(themeMode = ThemeMode.SYSTEM, dynamicColor = false) {
-                content()
-            }
+            // 不能使用 ReadTrackTheme——其内部 SideEffect 强制转换 view.context as Activity，
+            // 独立 ComposeView 无 Activity 窗口时必然 ClassCastException 闪退。
+            MaterialTheme(
+                colorScheme = LightColorScheme,
+                typography = Typography,
+                shapes = AppShapes,
+                content = content
+            )
         }
     }
 
