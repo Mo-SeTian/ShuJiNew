@@ -80,7 +80,9 @@ internal fun buildHomeUiState(
         if (record.recordType != RecordType.NORMAL) return@forEach
         normalRecords.add(record)
 
-        val isChapterBook = record.bookId != null && chapterBookIds.contains(record.bookId)
+        // 快照优先，其次按当前书籍类型；与 StatsViewModel.isChapterBook 保持一致
+        val isChapterBook = record.bookSnapshot?.progressType == ProgressType.CHAPTER
+            || (record.bookId != null && chapterBookIds.contains(record.bookId))
         val value = if (isChapterBook) (record.chaptersRead ?: 0).toDouble() else record.pagesRead
         totalReadingTime += value
 
