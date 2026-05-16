@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.geometry.Offset
@@ -131,6 +132,17 @@ fun BookDetailScreen(
                         ProgressInfoCard(book = book)
                     }
 
+                    // 阅读时间线（仅已读书籍，放在进度下方、趋势上方）
+                    if (book.status == BookStatus.FINISHED && uiState.readingPeriods.isNotEmpty()) {
+                        item {
+                            ReadingTimelineCard(
+                                periods = uiState.readingPeriods,
+                                isChapterBased = book.progressType == ProgressType.CHAPTER,
+                                onShareClick = { showTimelineShareDialog = true }
+                            )
+                        }
+                    }
+
                     // 阅读趋势图（至少2个数据点才显示）
                     if (uiState.trendData.size >= 2) {
                         item {
@@ -162,17 +174,6 @@ fun BookDetailScreen(
                             rating = book.rating,
                             onRatingChange = { viewModel.updateRating(it) }
                         )
-                    }
-
-                    // 阅读时间线（仅已读书籍）
-                    if (book.status == BookStatus.FINISHED && uiState.readingPeriods.isNotEmpty()) {
-                        item {
-                            ReadingTimelineCard(
-                                periods = uiState.readingPeriods,
-                                isChapterBased = book.progressType == ProgressType.CHAPTER,
-                                onShareClick = { showTimelineShareDialog = true }
-                            )
-                        }
                     }
 
                     // 标签
@@ -491,30 +492,74 @@ private fun TimelineShareCard(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(16.dp)
+            .background(Color.White)
+            .padding(20.dp)
     ) {
-        Text("《${book.title}》阅读时间线", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-        if (book.author != null) {
-            Text(book.author, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        Spacer(modifier = Modifier.height(12.dp))
-        periods.forEach { period ->
-            val days = com.readtrack.util.getDaysBetween(period.startDate, period.endDate) + 1
-            val perDay = if (isChapterBased) period.chaptersPerDay else period.pagesPerDay
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    "${period.startDate.toDateString("yyyy.MM.dd")} — ${period.endDate.toDateString("yyyy.MM.dd")}",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Text("$days 天 · %.1f $unit/天".format(perDay), color = MaterialTheme.colorScheme.primary)
+        // 头部
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text("阅读时间线", fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.titleLarge,
+                color = Color(0xFF333333))
+            Spacer(modifier = Modifier.height(4.dp))
+            Text("《${book.title}》", fontWeight = FontWeight.Medium,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary)
+            if (book.author != null) {
+                Text(book.author, style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFF888888))
             }
         }
+
         Spacer(modifier = Modifier.height(16.dp))
-        Text("—— 书迹 App ——", modifier = Modifier.fillMaxWidth(), textAlign = androidx.compose.ui.text.style.TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
+        HorizontalDivider(color = Color(0xFFEEEEEE))
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // 周期列表
+        periods.forEachIndexed { index, period ->
+            val days = com.readtrack.util.getDaysBetween(period.startDate, period.endDate) + 1
+            val perDay = if (isChapterBased) period.chaptersPerDay else period.pagesPerDay
+            val totalRead = if (isChapterBased) period.totalChaptersRead.toInt() else period.totalPagesRead.toInt()
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color(0xFFF8F8F8), RoundedCornerShape(8.dp))
+                    .padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // 左侧：日期范围
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        "${period.startDate.toDateString("yyyy.MM.dd")} — ${period.endDate.toDateString("yyyy.MM.dd")}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFF333333)
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        "共 $days 天 · 阅读 $totalRead $unit · 日均 %.1f $unit".format(perDay),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color(0xFF888888)
+                    )
+                }
+            }
+
+            if (index < periods.size - 1) {
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            "—— 书迹 App ——",
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center,
+            style = MaterialTheme.typography.labelSmall,
+            color = Color(0xFFBBBBBB)
+        )
     }
 }
 
