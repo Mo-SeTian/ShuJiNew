@@ -239,8 +239,8 @@ class BookDetailViewModel @Inject constructor(
             val dayStart = calendar.timeInMillis
 
             val isChapter = record.bookSnapshot?.progressType == ProgressType.CHAPTER
-        val amount = if (isChapter) (record.chaptersRead ?: 0).toDouble() else record.pagesRead
-        val existing = dailyMap[dayStart]
+            val amount = if (isChapter) (record.chaptersRead ?: 0).toDouble() else record.pagesRead
+            val existing = dailyMap[dayStart]
         if (existing != null) {
             dailyMap[dayStart] = existing.copy(
                 chaptersRead = existing.chaptersRead + if (isChapter) amount else 0.0,
