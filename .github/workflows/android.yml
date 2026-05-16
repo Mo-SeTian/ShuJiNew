@@ -51,7 +51,7 @@ jobs:
         run: |
           APK_PATH="app/build/outputs/apk/debug/app-debug.apk"
           MD5=$(md5 -q "$APK_PATH" | cut -c1-7)
-          NEW_NAME="书迹-v${{ steps.version.outputs.version }}-CI-${MD5}.apk"
+          NEW_NAME="ShuJi-v${{ steps.version.outputs.version }}-CI-${MD5}.apk"
           cp "$APK_PATH" "app/build/outputs/apk/debug/$NEW_NAME"
           echo "md5=$MD5" >> "$GITHUB_OUTPUT"
           echo "new_name=$NEW_NAME" >> "$GITHUB_OUTPUT"
@@ -87,6 +87,6 @@ jobs:
       - name: 上传 APK
         uses: actions/upload-artifact@v4
         with:
-          name: 书迹-v${{ steps.version.outputs.version }}-CI-${{ steps.rename.outputs.md5 }}
+          name: ShuJi-v${{ steps.version.outputs.version }}-CI-${{ steps.rename.outputs.md5 }}
           path: app/build/outputs/apk/debug/${{ steps.rename.outputs.new_name }}
           retention-days: 30
