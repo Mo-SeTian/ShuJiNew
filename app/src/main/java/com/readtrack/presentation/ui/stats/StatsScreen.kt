@@ -46,8 +46,8 @@ import com.readtrack.presentation.ui.components.statusLabelOf
 import com.readtrack.presentation.ui.components.ShimmerStatCard
 import com.readtrack.presentation.ui.theme.*
 import com.readtrack.presentation.ui.share.DailyAchievementCard
+import com.readtrack.presentation.ui.share.SharePreviewDialog
 import com.readtrack.presentation.ui.share.WeeklyAchievementCard
-import com.readtrack.presentation.ui.share.shareComposable
 import com.readtrack.presentation.viewmodel.DailyReading
 import com.readtrack.domain.model.ProgressType
 import com.readtrack.presentation.viewmodel.StatsViewModel
@@ -789,8 +789,9 @@ private fun ShareSection(
     streakDays: Int,
     recentBookTitles: List<String>
 ) {
-    val context = LocalContext.current
     val unitLabel = if (statsUnit == StatsUnit.CHAPTER) "章" else "页"
+    var showDailyPreview by remember { mutableStateOf(false) }
+    var showWeeklyPreview by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -808,33 +809,14 @@ private fun ShareSection(
             Spacer(modifier = Modifier.height(12.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(
-                    onClick = {
-                        shareComposable(context, "daily_achievement") {
-                            DailyAchievementCard(
-                                todayValue = todayValue,
-                                unitLabel = unitLabel,
-                                bookTitle = null,
-                                progressPercent = 0
-                            )
-                        }
-                    },
+                    onClick = { showDailyPreview = true },
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(10.dp)
                 ) {
                     Text("今日成就", style = MaterialTheme.typography.labelMedium)
                 }
                 OutlinedButton(
-                    onClick = {
-                        shareComposable(context, "weekly_achievement") {
-                            WeeklyAchievementCard(
-                                weekValue = weekValue,
-                                unitLabel = unitLabel,
-                                activeDays = activeDays,
-                                streakDays = streakDays,
-                                recentBooks = recentBookTitles
-                            )
-                        }
-                    },
+                    onClick = { showWeeklyPreview = true },
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(10.dp)
                 ) {
@@ -842,5 +824,36 @@ private fun ShareSection(
                 }
             }
         }
+    }
+
+    if (showDailyPreview) {
+        SharePreviewDialog(
+            filename = "daily_achievement",
+            onDismiss = { showDailyPreview = false },
+            content = {
+                DailyAchievementCard(
+                    todayValue = todayValue,
+                    unitLabel = unitLabel,
+                    bookTitle = null,
+                    progressPercent = 0
+                )
+            }
+        )
+    }
+
+    if (showWeeklyPreview) {
+        SharePreviewDialog(
+            filename = "weekly_achievement",
+            onDismiss = { showWeeklyPreview = false },
+            content = {
+                WeeklyAchievementCard(
+                    weekValue = weekValue,
+                    unitLabel = unitLabel,
+                    activeDays = activeDays,
+                    streakDays = streakDays,
+                    recentBooks = recentBookTitles
+                )
+            }
+        )
     }
 }

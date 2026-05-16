@@ -20,7 +20,8 @@ import java.io.FileOutputStream
 fun shareComposable(
     context: Context,
     filename: String,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
+    onComplete: (() -> Unit)? = null
 ) {
     val activity = context as? Activity
     if (activity == null) {
@@ -28,6 +29,7 @@ fun shareComposable(
             type = "text/plain"
             putExtra(Intent.EXTRA_TEXT, "分享阅读成就 —— 书迹 App")
         }, "分享阅读成就"))
+        onComplete?.invoke()
         return
     }
 
@@ -72,6 +74,7 @@ fun shareComposable(
             val file = saveBitmap(activity, bitmap, filename)
             bitmap.recycle()
             shareBitmap(activity, file)
+            onComplete?.invoke()
         } finally {
             root.removeView(composeView)
         }
