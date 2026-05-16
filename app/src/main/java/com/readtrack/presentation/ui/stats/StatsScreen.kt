@@ -828,11 +828,12 @@ private fun ShareSection(
     var showWeeklyPreview by remember { mutableStateOf(false) }
     var showMonthlyPreview by remember { mutableStateOf(false) }
     val currentMonth = Calendar.getInstance().get(Calendar.MONTH) + 1
+    val currentYear = Calendar.getInstance().get(Calendar.YEAR)
     var selectedMonth by remember { mutableStateOf(currentMonth) }
     val monthLabels = listOf("1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月")
 
-    // 根据选中月份从月度汇总中获取实际阅读量
-    val selectedMonthValue = monthlyBreakdown[selectedMonth] ?: 0.0
+    // 根据选中月份从月度汇总中获取实际阅读量（key = year*100+month）
+    val selectedMonthValue = monthlyBreakdown[currentYear * 100 + selectedMonth] ?: 0.0
 
     Card(
         modifier = Modifier.fillMaxWidth(),

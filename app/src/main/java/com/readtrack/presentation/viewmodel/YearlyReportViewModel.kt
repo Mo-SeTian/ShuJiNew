@@ -228,21 +228,19 @@ class YearlyReportViewModel @Inject constructor(
 
         private fun calculateMaxStreak(dates: List<Long>): Int {
             if (dates.isEmpty()) return 0
-            val sorted = dates.map(::getStartOfDay).distinct()
+            val sorted = dates.map(::getStartOfDay).distinct().sortedDescending()
             if (sorted.isEmpty()) return 0
 
             var maxStreak = 1
             var currentStreak = 1
-            var currentDate = sorted[0]
 
             for (i in 1 until sorted.size) {
-                if (sorted[i] == currentDate - ONE_DAY_MILLIS) {
+                if (sorted[i] == sorted[i - 1] - ONE_DAY_MILLIS) {
                     currentStreak++
                 } else {
                     maxStreak = maxOf(maxStreak, currentStreak)
                     currentStreak = 1
                 }
-                currentDate = sorted[i]
             }
             maxStreak = maxOf(maxStreak, currentStreak)
             return maxStreak

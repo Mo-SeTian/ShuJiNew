@@ -8,6 +8,7 @@ import com.readtrack.data.local.entity.ReadingRecordEntity
 import com.readtrack.data.local.entity.RecordType
 import com.readtrack.domain.model.BookSnapshot
 import com.readtrack.domain.model.BookStatus
+import com.readtrack.domain.model.ProgressType
 import com.readtrack.domain.repository.BookRepository
 import androidx.room.withTransaction
 import kotlinx.coroutines.flow.Flow
@@ -81,14 +82,18 @@ class BookRepositoryImpl @Inject constructor(
             bookDao.updateBook(reset)
             return
         }
-        // 取最新一条记录的 toPage
-        val latest = records.maxByOrNull { it.date } ?: return
+        // 取最新一条 NORMAL 记录的 toPage（状态记录 pagesRead/toPage 为 0，直接取会重置进度）
+        val latestNormal = records.filter { it.recordType == RecordType.NORMAL }.maxByOrNull { it.date }
+        if (latestNormal == null) {
+            // 只有状态记录，无实际阅读进度，保持当前进度不变
+            return
+        }
         val updatedAt = System.currentTimeMillis()
-        if (book.progressType.name == "PAGE") {
-            val updated = book.copy(currentPage = latest.toPage, lastReadAt = latest.date, updatedAt = updatedAt)
+        if (book.progressType == ProgressType.PAGE) {
+            val updated = book.copy(currentPage = latestNormal.toPage, lastReadAt = latestNormal.date, updatedAt = updatedAt)
             bookDao.updateBook(updated)
         } else {
-            val updated = book.copy(currentChapter = latest.toPage.toInt(), lastReadAt = latest.date, updatedAt = updatedAt)
+            val updated = book.copy(currentChapter = latestNormal.toPage.toInt(), lastReadAt = latestNormal.date, updatedAt = updatedAt)
             bookDao.updateBook(updated)
         }
     }

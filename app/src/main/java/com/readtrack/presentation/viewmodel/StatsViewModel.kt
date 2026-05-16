@@ -196,10 +196,11 @@ class StatsViewModel @Inject constructor(
             RecordWithBook(record = record, bookSnapshot = snapshot)
         }
 
-        // 按月汇总阅读量
+        // 按年+月汇总阅读量（key = year * 100 + month，避免跨年合并）
         val normalRecords = records.filter { it.recordType == RecordType.NORMAL }
         val monthlyBreakdown = normalRecords.groupBy { record ->
-            Calendar.getInstance().apply { timeInMillis = record.date }.get(Calendar.MONTH) + 1
+            val cal = Calendar.getInstance().apply { timeInMillis = record.date }
+            cal.get(Calendar.YEAR) * 100 + cal.get(Calendar.MONTH) + 1
         }.mapValues { (_, recs) ->
             recs.sumOf { r ->
                 val isChapter = r.bookSnapshot?.progressType == ProgressType.CHAPTER
