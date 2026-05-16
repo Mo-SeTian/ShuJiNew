@@ -274,8 +274,8 @@ fun StatsScreen(
                     }
                     ShareSection(
                         weekValue = uiState.weekValue,
-                        monthValue = uiState.monthValue,
                         statsUnit = uiState.statsUnit,
+                        monthlyBreakdown = uiState.monthlyBreakdown,
                         activeDays = uiState.recentRecordsWithBooks
                             .map { it.record.date }
                             .distinct()
@@ -817,8 +817,8 @@ fun ReadingRecordItem(recordWithBook: RecordWithBook) {
 @Composable
 private fun ShareSection(
     weekValue: Double,
-    monthValue: Double,
     statsUnit: StatsUnit,
+    monthlyBreakdown: Map<Int, Double>,
     activeDays: Int,
     streakDays: Int,
     recentBooks: List<com.readtrack.presentation.ui.share.BookReadingItem>
@@ -830,6 +830,9 @@ private fun ShareSection(
     val currentMonth = Calendar.getInstance().get(Calendar.MONTH) + 1
     var selectedMonth by remember { mutableStateOf(currentMonth) }
     val monthLabels = listOf("1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月")
+
+    // 根据选中月份从月度汇总中获取实际阅读量
+    val selectedMonthValue = monthlyBreakdown[selectedMonth] ?: 0.0
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -905,7 +908,7 @@ private fun ShareSection(
                     Spacer(modifier = Modifier.height(16.dp))
                     MonthlyAchievementCard(
                         month = selectedMonth,
-                        monthValue = monthValue,
+                        monthValue = selectedMonthValue,
                         unitLabel = unitLabel,
                         activeDays = activeDays,
                         recentBooks = recentBooks

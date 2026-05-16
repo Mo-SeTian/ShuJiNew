@@ -36,6 +36,7 @@ data class StatsUiState(
     val weeklyReadingData: List<DailyReading> = emptyList(),
     val recentRecords: List<ReadingRecordEntity> = emptyList(),
     val recentRecordsWithBooks: List<RecordWithBook> = emptyList(),
+    val monthlyBreakdown: Map<Int, Double> = emptyMap(),
     val isLoading: Boolean = true
 )
 
@@ -195,6 +196,18 @@ class StatsViewModel @Inject constructor(
             RecordWithBook(record = record, bookSnapshot = snapshot)
         }
 
+        // 按月汇总阅读量
+        val normalRecords = records.filter { it.recordType == RecordType.NORMAL }
+        val monthlyBreakdown = normalRecords.groupBy { record ->
+            Calendar.getInstance().apply { timeInMillis = record.date }.get(Calendar.MONTH) + 1
+        }.mapValues { (_, recs) ->
+            recs.sumOf { r ->
+                val isChapter = r.bookSnapshot?.progressType == ProgressType.CHAPTER
+                    ?: (r.bookId?.let { booksMap[it]?.progressType } == ProgressType.CHAPTER)
+                if (isChapter) (r.chaptersRead ?: 0).toDouble() else r.pagesRead
+            }
+        }
+
         return StatsUiState(
             totalBooks = books.size,
             booksByStatus = booksByStatus,
@@ -204,6 +217,7 @@ class StatsViewModel @Inject constructor(
             weekValue = if (statsUnit == StatsUnit.CHAPTER) weekChapters else weekPages,
             monthValue = if (statsUnit == StatsUnit.CHAPTER) monthChapters else monthPages,
             totalValue = if (statsUnit == StatsUnit.CHAPTER) totalChapters else totalPages,
+            monthlyBreakdown = monthlyBreakdown,
             weeklyReadingData = weeklyBuckets.map { (date, _) ->
                 val dayRecords = recordsByDay[date] ?: emptyList()
                 val breakdowns = dayRecords
