@@ -125,7 +125,7 @@ class AddBookViewModel @Inject constructor(
                                 title = it.title,
                                 author = it.author ?: "",
                                 publisher = it.publisher ?: "",
-                                progressType = if ((it.totalChapters ?: 0) > 0) ProgressType.CHAPTER else ProgressType.PAGE,
+                                progressType = it.progressType,
                                 totalPages = if ((it.totalChapters ?: 0) == 0) it.totalPages.toInt().toString() else "",
                                 currentPage = if ((it.totalChapters ?: 0) == 0) it.currentPage.toInt().toString() else "",
                                 totalChapters = (it.totalChapters ?: 0).toString(),
@@ -458,6 +458,13 @@ class AddBookViewModel @Inject constructor(
                         updatedAt = now
                     )
                     bookRepository.updateBook(updatedBook)
+                    // 状态变更时写入对应记录（编辑路径之前漏掉了，导致时间线缺失）
+                    if (updatedBook.status != loadedBook!!.status) {
+                        val statusRecordType = bookStatusToRecordType(updatedBook.status)
+                        if (statusRecordType != null) {
+                            bookRepository.updateBookStatus(updatedBook.id, updatedBook.status, statusRecordType)
+                        }
+                    }
                     bookId = loadedBook!!.id
                 } else {
                     val newBook = BookEntity(
