@@ -34,7 +34,12 @@ fun ReadingHeatmapCard(
     modifier: Modifier = Modifier
 ) {
     var selectedDay by remember { mutableStateOf<HeatmapDay?>(null) }
-    var currentMonthIndex by remember(months) { mutableIntStateOf(if (months.isNotEmpty()) months.size - 1 else 0) }
+    // 默认显示最后有阅读记录的月份，而非当前月
+    val defaultMonthIndex = remember(months) {
+        if (months.isEmpty()) 0
+        else months.indexOfLast { it.totalValue > 0 }.coerceAtLeast(0)
+    }
+    var currentMonthIndex by remember(months) { mutableIntStateOf(defaultMonthIndex) }
 
     Card(
         modifier = modifier.fillMaxWidth(),

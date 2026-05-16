@@ -154,6 +154,7 @@ fun StatsScreen(
                         fontWeight = FontWeight.Bold
                     )
                 },
+                windowInsets = WindowInsets(0, 0, 0, 0),
                 colors = TopAppBarDefaults.smallTopAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
