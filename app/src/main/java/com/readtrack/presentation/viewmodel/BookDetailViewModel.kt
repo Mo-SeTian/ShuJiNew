@@ -197,8 +197,8 @@ class BookDetailViewModel @Inject constructor(
             calendar.set(Calendar.MILLISECOND, 0)
             calendar.timeInMillis
         }.mapValues { (_, dayRecords) -> dayRecords.sumOf { r ->
-                val c = r.chaptersRead ?: 0
-                if (c > 0) c.toDouble() else r.pagesRead
+                if (r.bookSnapshot?.progressType == ProgressType.CHAPTER) (r.chaptersRead ?: 0).toDouble()
+                else r.pagesRead
             } }
 
         // 生成最近 7 天数据点（从远到近）
@@ -238,23 +238,25 @@ class BookDetailViewModel @Inject constructor(
             calendar.set(Calendar.MILLISECOND, 0)
             val dayStart = calendar.timeInMillis
 
-            val existing = dailyMap[dayStart]
-            if (existing != null) {
-                dailyMap[dayStart] = existing.copy(
-                    chaptersRead = existing.chaptersRead + (record.chaptersRead ?: 0).toDouble(),
-                    pagesRead = existing.pagesRead + record.pagesRead
-                )
-            } else {
-                dailyMap[dayStart] = HeatmapDay(
-                    dateMs = dayStart,
-                    year = year,
-                    month = month,
-                    dayOfMonth = day,
-                    dayOfWeek = dow,
-                    chaptersRead = (record.chaptersRead ?: 0).toDouble(),
-                    pagesRead = record.pagesRead
-                )
-            }
+            val isChapter = record.bookSnapshot?.progressType == ProgressType.CHAPTER
+        val amount = if (isChapter) (record.chaptersRead ?: 0).toDouble() else record.pagesRead
+        val existing = dailyMap[dayStart]
+        if (existing != null) {
+            dailyMap[dayStart] = existing.copy(
+                chaptersRead = existing.chaptersRead + if (isChapter) amount else 0.0,
+                pagesRead = existing.pagesRead + if (!isChapter) amount else 0.0
+            )
+        } else {
+            dailyMap[dayStart] = HeatmapDay(
+                dateMs = dayStart,
+                year = year,
+                month = month,
+                dayOfMonth = day,
+                dayOfWeek = dow,
+                chaptersRead = if (isChapter) amount else 0.0,
+                pagesRead = if (!isChapter) amount else 0.0
+            )
+        }
         }
 
         // 填充缺失日（最早记录日到今天）
@@ -359,8 +361,9 @@ class BookDetailViewModel @Inject constructor(
         val startDate = startRecord.date
         val endDate = endRecord?.date ?: System.currentTimeMillis()
         val periodRecords = normalRecords.filter { it.date in startDate..endDate }
-        val totalPages = periodRecords.sumOf { it.pagesRead }
-        val totalChapters = periodRecords.sumOf { (it.chaptersRead ?: 0).toDouble() }
+        // 按 ProgressType 分开统计，避免章节书的 pagesRead 和 chaptersRead 重复累加
+        val totalPages = periodRecords.filter { it.bookSnapshot?.progressType != ProgressType.CHAPTER }.sumOf { it.pagesRead }
+        val totalChapters = periodRecords.filter { it.bookSnapshot?.progressType == ProgressType.CHAPTER }.sumOf { (it.chaptersRead ?: 0).toDouble() }
         // 活跃天数：区间内有实际阅读记录的不同天数
         val activeDays = periodRecords.map { getStartOfDay(it.date) }.distinct().count().coerceAtLeast(1)
         return ReadingPeriod(

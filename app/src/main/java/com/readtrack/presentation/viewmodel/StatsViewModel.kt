@@ -253,7 +253,8 @@ class StatsViewModel @Inject constructor(
                         val book = booksMap[bookId]
                         val snapshot = recs.firstOrNull()?.bookSnapshot
                         val title = book?.title ?: snapshot?.title ?: "已删除图书"
-                        val isChapterBook = (book?.progressType ?: snapshot?.progressType) == ProgressType.CHAPTER
+                        // 快照优先（历史记录以创建时的类型为准），其次取当前书籍
+                        val isChapterBook = (snapshot?.progressType ?: book?.progressType) == ProgressType.CHAPTER
                         BookReadingBreakdown(
                             bookId = bookId,
                             bookTitle = title,
