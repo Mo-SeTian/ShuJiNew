@@ -23,6 +23,11 @@ import com.readtrack.presentation.viewmodel.HeatmapDay
 import com.readtrack.presentation.viewmodel.HeatmapMonth
 import com.readtrack.util.toDateString
 
+/**
+ * dayOfWeek 从 Calendar.DAY_OF_WEEK (1=Sun..7=Sat) 转为周一=0..周日=6
+ */
+private fun HeatmapDay.mondayBasedDow(): Int = (dayOfWeek + 5) % 7
+
 @Composable
 fun ReadingHeatmapCard(
     months: List<HeatmapMonth>,
@@ -74,7 +79,7 @@ fun ReadingHeatmapCard(
             val days = month.days
             if (days.isEmpty()) return@Column
 
-            // 计算颜色等级
+            // 颜色等级
             val nonZero = days.map { it.pagesRead + it.chaptersRead }.filter { it > 0 }
             val maxVal = nonZero.maxOrNull() ?: 1.0
             val p25 = if (nonZero.size >= 4) nonZero.sorted()[(nonZero.size * 0.25).toInt()] else maxVal * 0.25
@@ -90,44 +95,83 @@ fun ReadingHeatmapCard(
                 else -> Color(0xFF2E7D32)
             }
 
-            // 星期头
-            val weekLabels = listOf("日", "一", "二", "三", "四", "五", "六")
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Spacer(modifier = Modifier.width(24.dp))
-                Row(
-                    modifier = Modifier
-                        .weight(1f)
-                        .horizontalScroll(rememberScrollState())
-                ) {
-                    days.forEach { day ->
-                        Box(modifier = Modifier.size(16.dp), contentAlignment = Alignment.Center) {
-                            Text(
-                                weekLabels.getOrElse(day.dayOfWeek - 1) { "" },
-                                fontSize = 8.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                                textAlign = TextAlign.Center
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(2.dp))
-                    }
-                }
-            }
-            Spacer(modifier = Modifier.height(2.dp))
+            // 按周一=0..周日=6 构建网格：7列 × N行
+            val cellSize = 14
+            val gap = 2
+            val weekLabels = listOf("一", "二", "三", "四", "五", "六", "日")
+            val firstDay = days.first()
+            val lastDay = days.last()
+            val startDow = firstDay.mondayBasedDow() // 本月第一天是周几（周一=0）
+            val endDow = lastDay.mondayBasedDow()
 
-            // 热力图网格
+            // 补齐第一周前面空白天
+            val paddedDays = mutableListOf<HeatmapDay?>()
+            repeat(startDow) { paddedDays.add(null) }
+            paddedDays.addAll(days)
+            // 补齐最后一周后面空白天
+            val trailing = (7 - (paddedDays.size % 7)) % 7
+            repeat(trailing) { paddedDays.add(null) }
+
+            val rows = paddedDays.chunked(7)
+
             Row(
                 modifier = Modifier.horizontalScroll(rememberScrollState())
             ) {
-                days.forEach { day ->
-                    val value = if (isChapterBased) day.chaptersRead else day.pagesRead
-                    Box(
-                        modifier = Modifier
-                            .size(14.dp)
-                            .padding(1.dp)
-                            .clip(RoundedCornerShape(2.dp))
-                            .background(heatColor(value))
-                            .clickable { selectedDay = day }
-                    )
+                Column {
+                    // 星期头
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        // 左侧星期标签列占位
+                        Spacer(modifier = Modifier.width(16.dp))
+                        // 月份中的周序列（显示星期几在一个占位列中）
+                        // 这里是7列，不需要单独标注星期
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    rows.forEach { weekDays ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            // 不需要左侧星期标签——统一放顶部
+                            weekDays.forEach { day ->
+                                val value = if (day != null) {
+                                    if (isChapterBased) day.chaptersRead else day.pagesRead
+                                } else -1.0
+
+                                if (day != null) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(cellSize.dp)
+                                            .padding(1.dp)
+                                            .clip(RoundedCornerShape(2.dp))
+                                            .background(heatColor(value))
+                                            .clickable { selectedDay = day }
+                                    )
+                                } else {
+                                    Spacer(modifier = Modifier.size(cellSize.dp))
+                                }
+                                Spacer(modifier = Modifier.width(gap.dp))
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    // 星期标签行（放在网格下方）
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        weekLabels.forEachIndexed { index, label ->
+                            Box(
+                                modifier = Modifier.size(cellSize.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    label,
+                                    fontSize = 9.sp,
+                                    color = if (index == 6) Color(0xFFE57373) // 周日红色
+                                        else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                            if (index < 6) Spacer(modifier = Modifier.width(gap.dp))
+                        }
+                    }
                 }
             }
 
