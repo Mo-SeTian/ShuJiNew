@@ -118,7 +118,7 @@ class BookRepositoryImpl @Inject constructor(
         database.withTransaction {
             val bookId = bookDao.insertBook(book)
             val snapshot = BookSnapshot.from(book, book.status)
-            // 写入添加图书记录
+            // 先记 STATUS_ADDED，再根据初始状态追加对应记录
             val now = System.currentTimeMillis()
             readingRecordDao.insertRecord(ReadingRecordEntity(
                 bookId = bookId,
@@ -127,16 +127,23 @@ class BookRepositoryImpl @Inject constructor(
                 date = now,
                 recordType = RecordType.STATUS_ADDED
             ))
-            // 初始选「在读」时追加一条 STATUS_READING，供阅读时间线使用
-            if (book.status == BookStatus.READING) {
+            val statusRecordType = bookStatusToRecordType(book.status)
+            if (statusRecordType != null) {
                 readingRecordDao.insertRecord(ReadingRecordEntity(
                     bookId = bookId,
                     bookSnapshot = snapshot,
                     pagesRead = 0.0, fromPage = 0.0, toPage = 0.0,
                     date = now,
-                    recordType = RecordType.STATUS_READING
+                    recordType = statusRecordType
                 ))
             }
         }
     }
+}
+
+private fun bookStatusToRecordType(status: BookStatus): RecordType? = when (status) {
+    BookStatus.READING -> RecordType.STATUS_READING
+    BookStatus.FINISHED -> RecordType.STATUS_FINISHED
+    BookStatus.ON_HOLD, BookStatus.ABANDONED -> RecordType.STATUS_DROPPED
+    BookStatus.WANT_TO_READ -> null
 }
