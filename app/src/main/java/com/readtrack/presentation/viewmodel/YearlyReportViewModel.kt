@@ -145,6 +145,36 @@ class YearlyReportViewModel @Inject constructor(
             merged.indices.maxByOrNull { merged[it] } ?: 0
         } else 0
 
+        // 最爱作者
+        val authorCounts = yearBooks.mapNotNull { it.author?.takeIf { a -> a.isNotBlank() } }
+            .groupBy { it }.mapValues { it.value.size }
+        val favoriteAuthor = authorCounts.maxByOrNull { it.value }?.key
+
+        // 最常阅读星期几（1=Sun..7=Sat → 转换）
+        val dowCounts = normalRecords.groupBy { record ->
+            Calendar.getInstance().apply { timeInMillis = record.date }.get(Calendar.DAY_OF_WEEK)
+        }
+        val favoriteDow = dowCounts.maxByOrNull { it.value.size }?.key ?: 1
+
+        // 读得最快的书（日均页数最多）
+        val fastestBook = yearBooks.filter { it.lastReadAt != null && it.lastReadAt > 0 && it.createdAt > 0 }
+            .maxByOrNull { book ->
+                val bookRecords = normalRecords.filter { it.bookId == book.id }
+                val days = ((book.lastReadAt ?: 0L) - book.createdAt) / ONE_DAY_MILLIS + 1
+                if (days > 0) bookRecords.sumOf {
+                    if (book.progressType == ProgressType.CHAPTER) (it.chaptersRead ?: 0).toDouble()
+                    else it.pagesRead
+                } / days else 0.0
+            }
+
+        // 状态分布
+        val statusDistribution = BookStatus.entries.associate { status ->
+            status.displayName to yearBooks.count { it.status == status }
+        }
+
+        // 新增书籍数
+        val newBooksCount = yearBooks.count { it.createdAt in yearStart until yearEnd }
+
         return YearlyReportData(
             year = year,
             totalBooksRead = totalBooksRead,
@@ -157,10 +187,16 @@ class YearlyReportViewModel @Inject constructor(
             favoriteBook = favoriteBook,
             thickestBook = thickestBook,
             longestBook = longestBook,
+            fastestBook = fastestBook,
             topGenre = topGenre,
+            favoriteAuthor = favoriteAuthor,
             maxStreakDays = maxStreakDays,
             activeDays = activeDays.size,
             favoriteMonth = favoriteMonth,
+            favoriteDayOfWeek = favoriteDow,
+            totalRecords = normalRecords.size,
+            newBooksCount = newBooksCount,
+            statusDistribution = statusDistribution,
             availableYears = years
         )
     }

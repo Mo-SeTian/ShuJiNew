@@ -14,9 +14,15 @@ data class YearlyReportData(
     val favoriteBook: BookEntity?,
     val thickestBook: BookEntity?,
     val longestBook: BookEntity?,
+    val fastestBook: BookEntity?,
     val topGenre: String,
+    val favoriteAuthor: String?,
     val maxStreakDays: Int,
     val activeDays: Int,
     val favoriteMonth: Int,
+    val favoriteDayOfWeek: Int,
+    val totalRecords: Int,
+    val newBooksCount: Int,
+    val statusDistribution: Map<String, Int>,
     val availableYears: List<Int>
 )
