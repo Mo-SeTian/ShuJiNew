@@ -56,25 +56,28 @@ fun ReadingTimelineCard(
                     val unit = if (isChapterBased) "章" else "页"
 
                     Row(modifier = Modifier.fillMaxWidth()) {
-                        // 时间线竖线
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.width(24.dp)
+                        // 时间线：圆点 + 竖线，圆点与首行文字垂直居中
+                        Box(
+                            modifier = Modifier.width(24.dp).height(IntrinsicSize.Min),
+                            contentAlignment = Alignment.TopCenter
                         ) {
+                            // 竖线：从圆点下方延伸到整行高度
+                            if (index < periods.size - 1) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxHeight()
+                                        .width(2.dp)
+                                        .background(MaterialTheme.colorScheme.outlineVariant)
+                                )
+                            }
+                            // 圆点
                             Box(
                                 modifier = Modifier
+                                    .padding(top = 5.dp)
                                     .size(10.dp)
                                     .clip(CircleShape)
                                     .background(MaterialTheme.colorScheme.primary)
                             )
-                            if (index < periods.size - 1) {
-                                Box(
-                                    modifier = Modifier
-                                        .width(2.dp)
-                                        .height(60.dp)
-                                        .background(MaterialTheme.colorScheme.outlineVariant)
-                                )
-                            }
                         }
 
                         Spacer(modifier = Modifier.width(12.dp))
