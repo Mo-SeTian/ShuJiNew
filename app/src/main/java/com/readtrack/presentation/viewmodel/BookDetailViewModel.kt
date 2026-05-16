@@ -293,7 +293,9 @@ class BookDetailViewModel @Inject constructor(
     }
 
     private fun computeReadingPeriods(records: List<ReadingRecordEntity>): List<ReadingPeriod> {
-        val startTypes = setOf(RecordType.STATUS_READING, RecordType.STATUS_ADDED)
+        // STATUS_ADDED 仅作为「添加」标记，不视为阅读起点。
+        // 真正的阅读从 STATUS_READING 开始，避免 ADDED→READING 间空窗期。
+        val startTypes = setOf(RecordType.STATUS_READING)
         val endTypes = setOf(RecordType.STATUS_FINISHED, RecordType.STATUS_DROPPED)
 
         val statusRecords = records.filter {
