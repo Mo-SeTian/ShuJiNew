@@ -133,23 +133,13 @@ fun BookDetailScreen(
                         ProgressInfoCard(book = book)
                     }
 
-                    // 阅读时间线（仅已读书籍，放在进度下方、趋势上方）
+                    // 阅读时间线（仅已读书籍，放在进度下方）
                     if (book.status == BookStatus.FINISHED && uiState.readingPeriods.isNotEmpty()) {
                         item {
                             ReadingTimelineCard(
                                 periods = uiState.readingPeriods,
                                 isChapterBased = book.progressType == ProgressType.CHAPTER,
                                 onShareClick = { showTimelineShareDialog = true }
-                            )
-                        }
-                    }
-
-                    // 阅读趋势图（至少2个数据点才显示）
-                    if (uiState.trendData.size >= 2) {
-                        item {
-                            ReadingTrendCard(
-                                trendData = uiState.trendData,
-                                isChapterBased = book.progressType == ProgressType.CHAPTER
                             )
                         }
                     }
@@ -186,7 +176,17 @@ fun BookDetailScreen(
                             onAddTag = { showAddTagDialog = true }
                         )
                     }
-                    
+
+                    // 阅读趋势图（至少2个数据点才显示）
+                    if (uiState.trendData.size >= 2) {
+                        item {
+                            ReadingTrendCard(
+                                trendData = uiState.trendData,
+                                isChapterBased = book.progressType == ProgressType.CHAPTER
+                            )
+                        }
+                    }
+
                     // 更新进度按钮
                     item {
                         Button(
@@ -1054,13 +1054,14 @@ private fun TagsCard(
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.Top
             ) {
                 Text(
                     "标签",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(top = 4.dp)
                 )
                 TextButton(onClick = onAddTag) {
                     Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))

@@ -35,6 +35,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.readtrack.data.local.StatsRange
@@ -48,6 +49,8 @@ import com.readtrack.presentation.ui.theme.*
 import com.readtrack.presentation.ui.share.DailyAchievementCard
 import com.readtrack.presentation.ui.share.SharePreviewDialog
 import com.readtrack.presentation.ui.share.WeeklyAchievementCard
+import com.readtrack.presentation.ui.share.shareComposable
+import androidx.compose.ui.graphics.Brush
 import com.readtrack.presentation.viewmodel.DailyReading
 import com.readtrack.domain.model.ProgressType
 import com.readtrack.presentation.viewmodel.StatsViewModel
@@ -309,8 +312,8 @@ fun StatsScreen(
                             .take(3)
                     }
                     ShareSection(
-                        todayValue = uiState.todayValue,
                         weekValue = uiState.weekValue,
+                        monthValue = uiState.monthValue,
                         statsUnit = uiState.statsUnit,
                         activeDays = uiState.recentRecordsWithBooks
                             .map { it.record.date }
@@ -783,16 +786,20 @@ fun ReadingRecordItem(recordWithBook: RecordWithBook) {
 
 @Composable
 private fun ShareSection(
-    todayValue: Double,
     weekValue: Double,
+    monthValue: Double,
     statsUnit: StatsUnit,
     activeDays: Int,
     streakDays: Int,
     recentBookTitles: List<String>
 ) {
+    val context = LocalContext.current
     val unitLabel = if (statsUnit == StatsUnit.CHAPTER) "章" else "页"
-    var showDailyPreview by remember { mutableStateOf(false) }
     var showWeeklyPreview by remember { mutableStateOf(false) }
+    var showMonthlyPreview by remember { mutableStateOf(false) }
+    val currentMonth = Calendar.getInstance().get(Calendar.MONTH) + 1
+    var selectedMonth by remember { mutableStateOf(currentMonth) }
+    val monthLabels = listOf("1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月")
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -810,36 +817,21 @@ private fun ShareSection(
             Spacer(modifier = Modifier.height(12.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(
-                    onClick = { showDailyPreview = true },
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(10.dp)
-                ) {
-                    Text("今日成就", style = MaterialTheme.typography.labelMedium)
-                }
-                OutlinedButton(
                     onClick = { showWeeklyPreview = true },
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(10.dp)
                 ) {
                     Text("本周概览", style = MaterialTheme.typography.labelMedium)
                 }
+                OutlinedButton(
+                    onClick = { showMonthlyPreview = true },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text("月度概览", style = MaterialTheme.typography.labelMedium)
+                }
             }
         }
-    }
-
-    if (showDailyPreview) {
-        SharePreviewDialog(
-            filename = "daily_achievement",
-            onDismiss = { showDailyPreview = false },
-            content = {
-                DailyAchievementCard(
-                    todayValue = todayValue,
-                    unitLabel = unitLabel,
-                    bookTitle = null,
-                    progressPercent = 0
-                )
-            }
-        )
     }
 
     if (showWeeklyPreview) {
@@ -856,5 +848,64 @@ private fun ShareSection(
                 )
             }
         )
+    }
+
+    if (showMonthlyPreview) {
+        SharePreviewDialog(
+            filename = "monthly_$selectedMonth",
+            onDismiss = { showMonthlyPreview = false },
+            content = {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("选择月份", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        monthLabels.forEachIndexed { i, label ->
+                            FilterChip(
+                                selected = selectedMonth == i + 1,
+                                onClick = { selectedMonth = i + 1 },
+                                label = { Text(label, style = MaterialTheme.typography.labelSmall) }
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    MonthlyAchievementCard(
+                        month = selectedMonth,
+                        monthValue = monthValue,
+                        unitLabel = unitLabel
+                    )
+                }
+            }
+        )
+    }
+}
+
+@Composable
+private fun MonthlyAchievementCard(
+    month: Int,
+    monthValue: Double,
+    unitLabel: String
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                Brush.linearGradient(listOf(Color(0xFF7C3AED), Color(0xFFA78BFA))),
+                RoundedCornerShape(16.dp)
+            )
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text("${month}月阅读概览", color = Color.White.copy(alpha = 0.9f), fontWeight = FontWeight.Medium)
+        Spacer(modifier = Modifier.height(16.dp))
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text("${monthValue.toInt()}", fontSize = 48.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(unitLabel, fontSize = 24.sp, color = Color.White.copy(alpha = 0.8f), modifier = Modifier.padding(bottom = 6.dp))
+        }
+        Spacer(modifier = Modifier.height(24.dp))
+        Text("—— 书迹 App ——", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.5f))
     }
 }
