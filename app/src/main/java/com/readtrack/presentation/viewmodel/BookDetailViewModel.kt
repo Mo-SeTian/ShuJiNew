@@ -368,12 +368,19 @@ class BookDetailViewModel @Inject constructor(
 
     fun updateStatus(status: BookStatus) {
         val currentBook = _uiState.value.book ?: return
+
+        // 不允许改回想读（会导致时间线缺少开始或未闭合）
+        if (status == BookStatus.WANT_TO_READ && currentBook.status != BookStatus.WANT_TO_READ) {
+            _uiState.update { it.copy(errorMessage = "不能将书籍状态修改回「想读」，这会导致阅读时间线错乱。如有需要，请删除书籍后重新添加。") }
+            return
+        }
+
         viewModelScope.launch {
             try {
                 val recordType = when (status) {
                     BookStatus.READING -> RecordType.STATUS_READING
                     BookStatus.FINISHED -> RecordType.STATUS_FINISHED
-                    BookStatus.ABANDONED -> RecordType.STATUS_DROPPED
+                    BookStatus.ON_HOLD, BookStatus.ABANDONED -> RecordType.STATUS_DROPPED
                     else -> return@launch
                 }
                 bookRepository.updateBookStatus(currentBook.id, status, recordType)
