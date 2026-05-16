@@ -13,6 +13,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -58,7 +59,7 @@ fun MonthlyTrendChart(
                 leftPadding - 8f,
                 y + 4f,
                 android.graphics.Paint().apply {
-                    color = labelColor.hashCode()
+                    color = labelColor.toArgb()
                     textSize = 24f
                     textAlign = android.graphics.Paint.Align.RIGHT
                     isAntiAlias = true
@@ -113,7 +114,7 @@ fun MonthlyTrendChart(
                     x,
                     size.height - 4f,
                     android.graphics.Paint().apply {
-                        color = labelColor.hashCode()
+                        color = labelColor.toArgb()
                         textSize = 22f
                         textAlign = android.graphics.Paint.Align.CENTER
                         isAntiAlias = true

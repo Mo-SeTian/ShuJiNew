@@ -301,6 +301,12 @@ fun StatsScreen(
 
                 // 分享成就
                 item {
+                    val recentTitles = remember(uiState.recentRecordsWithBooks) {
+                        uiState.recentRecordsWithBooks
+                            .mapNotNull { it.bookSnapshot?.title ?: it.record.bookSnapshot?.title }
+                            .distinct()
+                            .take(3)
+                    }
                     ShareSection(
                         todayValue = uiState.todayValue,
                         weekValue = uiState.weekValue,
@@ -309,8 +315,11 @@ fun StatsScreen(
                             .map { it.record.date }
                             .distinct()
                             .count(),
-                        streakDays = 0,
-                        recentBookTitles = emptyList()
+                        streakDays = uiState.recentRecordsWithBooks
+                            .map { it.record.date }
+                            .distinct()
+                            .count(),
+                        recentBookTitles = recentTitles
                     )
                 }
 
