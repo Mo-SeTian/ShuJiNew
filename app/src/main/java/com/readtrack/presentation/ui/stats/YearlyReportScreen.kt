@@ -226,12 +226,17 @@ private fun SummaryCard(report: YearlyReportData) {
             Spacer(modifier = Modifier.height(16.dp))
             Row(modifier = Modifier.fillMaxWidth()) {
                 StatItem("共读书籍", "${report.totalBooksRead} 本", Modifier.weight(1f))
-                StatItem("总阅读量", "${(report.totalPages + report.totalChapters).toInt()} 页/章", Modifier.weight(1f))
+                StatItem("读完书籍", "${report.finishedBooks} 本", Modifier.weight(1f))
             }
             Spacer(modifier = Modifier.height(12.dp))
             Row(modifier = Modifier.fillMaxWidth()) {
-                StatItem("读完书籍", "${report.finishedBooks} 本", Modifier.weight(1f))
+                StatItem("总阅读量", "${(report.totalPages + report.totalChapters).toInt()}", Modifier.weight(1f))
+                StatItem("新增书籍", "${report.newBooksCount} 本", Modifier.weight(1f))
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(modifier = Modifier.fillMaxWidth()) {
                 StatItem("平均评分", "%.1f 星".format(report.averageRating), Modifier.weight(1f))
+                StatItem("记录次数", "${report.totalRecords} 次", Modifier.weight(1f))
             }
         }
     }
@@ -287,18 +292,26 @@ private fun RankingCard(report: YearlyReportData) {
             Text("趣味排行榜", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(16.dp))
             report.favoriteBook?.let { book ->
-                RankItem("最爱之书", book.title, "${book.rating ?: 0f} 星")
+                RankItem("🥇 最爱之书", book.title, "${book.rating ?: 0f} 星")
                 Spacer(modifier = Modifier.height(8.dp))
             }
             report.thickestBook?.let { book ->
                 val detail = if (book.progressType == com.readtrack.domain.model.ProgressType.CHAPTER)
                     "${book.totalChapters ?: 0} 章" else "${book.totalPages.toInt()} 页"
-                RankItem("最厚之书", book.title, detail)
+                RankItem("📚 最厚之书", book.title, detail)
                 Spacer(modifier = Modifier.height(8.dp))
             }
             report.longestBook?.let { book ->
                 val dateStr = remember(book.createdAt) { YearlyReportViewModel.formatTimestamp(book.createdAt) }
-                RankItem("陪伴最久之书", book.title, "从 $dateStr 至今")
+                RankItem("⏳ 陪伴最久之书", book.title, "从 $dateStr 至今")
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+            report.fastestBook?.let { book ->
+                RankItem("⚡ 读得最快的书", book.title, "高效阅读")
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+            report.favoriteAuthor?.let { author ->
+                RankItem("✍️ 最爱作者", author, "阅读最多")
             }
         }
     }
@@ -341,11 +354,45 @@ private fun HabitsCard(report: YearlyReportData) {
             Row(modifier = Modifier.fillMaxWidth()) {
                 HabitItem("最爱类型", report.topGenre, Modifier.weight(1f))
                 HabitItem("最长连续", "${report.maxStreakDays} 天", Modifier.weight(1f))
+                HabitItem("活跃天数", "${report.activeDays} 天", Modifier.weight(1f))
             }
             Spacer(modifier = Modifier.height(12.dp))
             Row(modifier = Modifier.fillMaxWidth()) {
-                HabitItem("活跃天数", "${report.activeDays} 天", Modifier.weight(1f))
                 HabitItem("最爱月份", "${report.favoriteMonth + 1}月", Modifier.weight(1f))
+                val dowNames = listOf("", "周日", "周一", "周二", "周三", "周四", "周五", "周六")
+                HabitItem("常读星期", dowNames.getOrElse(report.favoriteDayOfWeek) { "-" }, Modifier.weight(1f))
+                HabitItem("完读率", "${if (report.totalBooksRead > 0) (report.finishedBooks * 100 / report.totalBooksRead) else 0}%", Modifier.weight(1f))
+            }
+
+            // 状态分布条
+            if (report.statusDistribution.any { it.value > 0 }) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("书籍状态分布", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(modifier = Modifier.height(8.dp))
+                report.statusDistribution.forEach { (status, count) ->
+                    if (count > 0) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(status, style = MaterialTheme.typography.bodySmall)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .width(((count.toFloat() / report.totalBooksRead.coerceAtLeast(1)) * 80).dp.coerceAtLeast(4.dp))
+                                        .height(6.dp)
+                                        .clip(RoundedCornerShape(3.dp))
+                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("$count 本", style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -419,7 +466,7 @@ fun YearlyReportCard(report: YearlyReportData, modifier: Modifier = Modifier) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Row(modifier = Modifier.fillMaxWidth()) {
                     StatItem("读完", "${report.finishedBooks} 本", Modifier.weight(1f))
-                    StatItem("平均", "%.1f 星".format(report.averageRating), Modifier.weight(1f))
+                    StatItem("记录", "${report.totalRecords} 次", Modifier.weight(1f))
                     StatItem("活跃", "${report.activeDays} 天", Modifier.weight(1f))
                 }
             }
@@ -448,6 +495,21 @@ fun YearlyReportCard(report: YearlyReportData, modifier: Modifier = Modifier) {
                             color = Color(0xFFFFB400),
                             fontWeight = FontWeight.Bold
                         )
+                    }
+                }
+            }
+        }
+
+        // 最爱作者
+        report.favoriteAuthor?.let { author ->
+            Spacer(modifier = Modifier.height(8.dp))
+            Card(shape = RoundedCornerShape(12.dp)) {
+                Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text("✍️", style = MaterialTheme.typography.titleMedium)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column {
+                        Text("最爱作者", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(author, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                     }
                 }
             }
