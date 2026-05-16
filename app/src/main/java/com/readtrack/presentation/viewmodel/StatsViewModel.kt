@@ -128,12 +128,8 @@ class StatsViewModel @Inject constructor(
         }
 
         records.filter { it.recordType == RecordType.NORMAL }.forEach { record ->
-            // 优先用 bookSnapshot 的 progressType（导入记录可能有），其次用 booksMap
-            val progressType = record.bookSnapshot?.progressType
-                ?: booksMap[record.bookId]?.progressType
-            val isChapterBook = progressType == ProgressType.CHAPTER
-            // 章节书从 chaptersRead 取值（Int 转 Double），页码书从 pagesRead 取
-            val value = if (isChapterBook) (record.chaptersRead ?: 0).toDouble() else record.pagesRead
+            val isChapterBook = record.isChapterBook(booksMap)
+            val value = record.readingAmount(booksMap)
 
             if (isChapterBook) {
                 totalChapters += value
@@ -210,9 +206,7 @@ class StatsViewModel @Inject constructor(
             var total = 0.0
             val bookAmounts = mutableMapOf<String, Double>()
             for (r in recs) {
-                val isChapter = r.bookSnapshot?.progressType == ProgressType.CHAPTER
-                    ?: (r.bookId?.let { booksMap[it]?.progressType } == ProgressType.CHAPTER)
-                val amount = if (isChapter) (r.chaptersRead ?: 0).toDouble() else r.pagesRead
+                val amount = r.readingAmount(booksMap)
                 total += amount
                 val title = r.bookSnapshot?.title
                     ?: r.bookId?.let { booksMap[it]?.title }
@@ -234,11 +228,7 @@ class StatsViewModel @Inject constructor(
             }.map { (title, recs) ->
                 com.readtrack.domain.model.BookReadingItem(
                     title = title,
-                    amount = recs.sumOf { r ->
-                        val isChapter = r.bookSnapshot?.progressType == ProgressType.CHAPTER
-                            ?: (r.bookId?.let { booksMap[it]?.progressType } == ProgressType.CHAPTER)
-                        if (isChapter) (r.chaptersRead ?: 0).toDouble() else r.pagesRead
-                    }
+                    amount = recs.sumOf { it.readingAmount(booksMap) }
                 )
             }.sortedByDescending { it.amount }
 
@@ -342,6 +332,15 @@ class StatsViewModel @Inject constructor(
         val startOfMonth: Long,
         val weeklyBuckets: LinkedHashMap<Long, Double>
     )
+
+    private fun ReadingRecordEntity.isChapterBook(booksMap: Map<Long, BookEntity>): Boolean {
+        val pt = bookSnapshot?.progressType ?: (bookId?.let { booksMap[it]?.progressType })
+        return pt == ProgressType.CHAPTER
+    }
+
+    private fun ReadingRecordEntity.readingAmount(booksMap: Map<Long, BookEntity>): Double {
+        return if (isChapterBook(booksMap)) (chaptersRead ?: 0).toDouble() else pagesRead
+    }
 
     private companion object {
         private const val ONE_DAY_MILLIS = 24L * 60L * 60L * 1000L
