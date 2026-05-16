@@ -40,14 +40,10 @@ class BookRepositoryImpl @Inject constructor(
     override suspend fun updateBook(book: BookEntity) = bookDao.updateBook(book)
 
     override suspend fun deleteBook(id: Long) {
-        // 删书前，为旧记录补充快照（避免删书后封面、书名丢失）
         database.withTransaction {
-            val book = bookDao.getBookByIdOnce(id) ?: return@withTransaction
-            val records = readingRecordDao.getRecordsByBookIdOnce(id)
-            val snapshot = BookSnapshot.from(book, book.status)
-            records.filter { it.bookSnapshot == null }.forEach { record ->
-                readingRecordDao.insertRecord(record.copy(bookSnapshot = snapshot))
-            }
+            bookDao.getBookByIdOnce(id) ?: return@withTransaction
+            // 级联删除所有阅读记录
+            readingRecordDao.deleteRecordsByBookId(id)
             bookDao.deleteBookById(id)
         }
     }

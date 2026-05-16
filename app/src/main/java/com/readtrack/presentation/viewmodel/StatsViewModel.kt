@@ -37,6 +37,7 @@ data class StatsUiState(
     val recentRecords: List<ReadingRecordEntity> = emptyList(),
     val recentRecordsWithBooks: List<RecordWithBook> = emptyList(),
     val monthlyBreakdown: Map<Int, Double> = emptyMap(),
+    val monthlyBookBreakdown: Map<Int, List<com.readtrack.presentation.ui.share.BookReadingItem>> = emptyMap(),
     val isLoading: Boolean = true
 )
 
@@ -209,6 +210,28 @@ class StatsViewModel @Inject constructor(
             }
         }
 
+        // 每月每本书的阅读量明细
+        val monthlyBookBreakdown: Map<Int, List<com.readtrack.presentation.ui.share.BookReadingItem>> =
+            normalRecords.groupBy { record ->
+                val cal = Calendar.getInstance().apply { timeInMillis = record.date }
+                cal.get(Calendar.YEAR) * 100 + cal.get(Calendar.MONTH) + 1
+            }.mapValues { (_, recs) ->
+                recs.groupBy { r ->
+                    r.bookSnapshot?.title
+                        ?: r.bookId?.let { booksMap[it]?.title }
+                        ?: "已删除图书"
+                }.map { (title, bookRecs) ->
+                    com.readtrack.presentation.ui.share.BookReadingItem(
+                        title = title,
+                        amount = bookRecs.sumOf { r ->
+                            val isChapter = r.bookSnapshot?.progressType == ProgressType.CHAPTER
+                                ?: (r.bookId?.let { booksMap[it]?.progressType } == ProgressType.CHAPTER)
+                            if (isChapter) (r.chaptersRead ?: 0).toDouble() else r.pagesRead
+                        }
+                    )
+                }.sortedByDescending { it.amount }
+            }
+
         return StatsUiState(
             totalBooks = books.size,
             booksByStatus = booksByStatus,
@@ -219,6 +242,7 @@ class StatsViewModel @Inject constructor(
             monthValue = if (statsUnit == StatsUnit.CHAPTER) monthChapters else monthPages,
             totalValue = if (statsUnit == StatsUnit.CHAPTER) totalChapters else totalPages,
             monthlyBreakdown = monthlyBreakdown,
+            monthlyBookBreakdown = monthlyBookBreakdown,
             weeklyReadingData = weeklyBuckets.map { (date, _) ->
                 val dayRecords = recordsByDay[date] ?: emptyList()
                 val breakdowns = dayRecords

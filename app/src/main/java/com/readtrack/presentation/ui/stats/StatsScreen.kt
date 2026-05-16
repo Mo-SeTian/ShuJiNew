@@ -14,6 +14,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.KeyboardArrowRight
@@ -276,6 +278,7 @@ fun StatsScreen(
                         weekValue = uiState.weekValue,
                         statsUnit = uiState.statsUnit,
                         monthlyBreakdown = uiState.monthlyBreakdown,
+                        monthlyBookBreakdown = uiState.monthlyBookBreakdown,
                         activeDays = uiState.recentRecordsWithBooks
                             .map { it.record.date }
                             .distinct()
@@ -819,6 +822,7 @@ private fun ShareSection(
     weekValue: Double,
     statsUnit: StatsUnit,
     monthlyBreakdown: Map<Int, Double>,
+    monthlyBookBreakdown: Map<Int, List<com.readtrack.presentation.ui.share.BookReadingItem>>,
     activeDays: Int,
     streakDays: Int,
     recentBooks: List<com.readtrack.presentation.ui.share.BookReadingItem>
@@ -827,13 +831,39 @@ private fun ShareSection(
     val unitLabel = if (statsUnit == StatsUnit.CHAPTER) "章" else "页"
     var showWeeklyPreview by remember { mutableStateOf(false) }
     var showMonthlyPreview by remember { mutableStateOf(false) }
-    val currentMonth = Calendar.getInstance().get(Calendar.MONTH) + 1
-    val currentYear = Calendar.getInstance().get(Calendar.YEAR)
-    var selectedMonth by remember { mutableStateOf(currentMonth) }
-    val monthLabels = listOf("1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月")
 
-    // 根据选中月份从月度汇总中获取实际阅读量（key = year*100+month）
-    val selectedMonthValue = monthlyBreakdown[currentYear * 100 + selectedMonth] ?: 0.0
+    // 从月度汇总中提取可用年份和月份（仅显示有数据的选项）
+    val availableYears = remember(monthlyBreakdown) {
+        monthlyBreakdown.keys.map { it / 100 }.distinct().sortedDescending()
+    }
+    val currentYear = Calendar.getInstance().get(Calendar.YEAR)
+    val defaultYear = if (currentYear in availableYears) currentYear else availableYears.firstOrNull() ?: currentYear
+    var selectedYear by remember { mutableStateOf(defaultYear) }
+
+    val availableMonths = remember(selectedYear, monthlyBreakdown) {
+        monthlyBreakdown.keys
+            .filter { it / 100 == selectedYear }
+            .map { it % 100 }
+            .sortedDescending()
+    }
+    val currentMonth = Calendar.getInstance().get(Calendar.MONTH) + 1
+    val defaultMonth = if (currentMonth in availableMonths && selectedYear == currentYear) currentMonth
+        else availableMonths.firstOrNull() ?: currentMonth
+    var selectedMonth by remember { mutableStateOf(defaultMonth) }
+
+    val selectedKey = selectedYear * 100 + selectedMonth
+    val selectedMonthValue = monthlyBreakdown[selectedKey] ?: 0.0
+    val selectedMonthBooks = monthlyBookBreakdown[selectedKey] ?: emptyList()
+
+    // 当切换年份时，自动调整月份到该年份有效范围内
+    LaunchedEffect(selectedYear) {
+        val months = monthlyBreakdown.keys.filter { it / 100 == selectedYear }.map { it % 100 }
+        if (selectedMonth !in months) {
+            selectedMonth = months.firstOrNull() ?: selectedMonth
+        }
+    }
+    var showYearDropdown by remember { mutableStateOf(false) }
+    var showMonthDropdown by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -886,24 +916,69 @@ private fun ShareSection(
 
     if (showMonthlyPreview) {
         SharePreviewDialog(
-            filename = "monthly_$selectedMonth",
+            filename = "monthly_${selectedYear}_$selectedMonth",
             onDismiss = { showMonthlyPreview = false },
             content = {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("选择月份", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                    Text("选择年月", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(12.dp))
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        monthLabels.forEachIndexed { i, label ->
-                            FilterChip(
-                                selected = selectedMonth == i + 1,
-                                onClick = { selectedMonth = i + 1 },
-                                label = { Text(label, style = MaterialTheme.typography.labelSmall) }
-                            )
+                        // 年份下拉框
+                        Box(modifier = Modifier.weight(1f)) {
+                            OutlinedButton(
+                                onClick = { showYearDropdown = true },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("${selectedYear}年", style = MaterialTheme.typography.labelLarge)
+                                Icon(Icons.Default.ArrowDropDown, null, modifier = Modifier.size(20.dp))
+                            }
+                            DropdownMenu(
+                                expanded = showYearDropdown,
+                                onDismissRequest = { showYearDropdown = false }
+                            ) {
+                                availableYears.forEach { year ->
+                                    DropdownMenuItem(
+                                        text = { Text("${year}年") },
+                                        onClick = {
+                                            selectedYear = year
+                                            showYearDropdown = false
+                                        },
+                                        leadingIcon = if (year == selectedYear) {
+                                            { Icon(Icons.Default.Check, null, modifier = Modifier.size(18.dp)) }
+                                        } else null
+                                    )
+                                }
+                            }
+                        }
+                        // 月份下拉框
+                        Box(modifier = Modifier.weight(1f)) {
+                            OutlinedButton(
+                                onClick = { showMonthDropdown = true },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("${selectedMonth}月", style = MaterialTheme.typography.labelLarge)
+                                Icon(Icons.Default.ArrowDropDown, null, modifier = Modifier.size(20.dp))
+                            }
+                            DropdownMenu(
+                                expanded = showMonthDropdown,
+                                onDismissRequest = { showMonthDropdown = false }
+                            ) {
+                                availableMonths.forEach { month ->
+                                    DropdownMenuItem(
+                                        text = { Text("${month}月") },
+                                        onClick = {
+                                            selectedMonth = month
+                                            showMonthDropdown = false
+                                        },
+                                        leadingIcon = if (month == selectedMonth) {
+                                            { Icon(Icons.Default.Check, null, modifier = Modifier.size(18.dp)) }
+                                        } else null
+                                    )
+                                }
+                            }
                         }
                     }
                     Spacer(modifier = Modifier.height(16.dp))
@@ -912,7 +987,7 @@ private fun ShareSection(
                         monthValue = selectedMonthValue,
                         unitLabel = unitLabel,
                         activeDays = activeDays,
-                        recentBooks = recentBooks
+                        recentBooks = selectedMonthBooks
                     )
                 }
             }
