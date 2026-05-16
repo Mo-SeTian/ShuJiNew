@@ -1,6 +1,7 @@
 package com.readtrack.presentation.ui.share
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,6 +23,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+
+data class BookReadingItem(
+    val title: String,
+    val amount: Double
+)
 
 @Composable
 fun DailyAchievementCard(
@@ -98,7 +104,7 @@ fun WeeklyAchievementCard(
     unitLabel: String,
     activeDays: Int,
     streakDays: Int,
-    recentBooks: List<String>,
+    recentBooks: List<BookReadingItem>,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -125,19 +131,26 @@ fun WeeklyAchievementCard(
 
         if (recentBooks.isNotEmpty()) {
             Spacer(modifier = Modifier.height(20.dp))
-            Text(
-                "最近在读",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold
-            )
+            Text("阅读明细", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(8.dp))
-            recentBooks.forEach { book ->
-                Text(
-                    "· $book",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(vertical = 2.dp)
-                )
+            recentBooks.forEach { item ->
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        item.title,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text(
+                        "${item.amount.toInt()} $unitLabel",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
         }
 

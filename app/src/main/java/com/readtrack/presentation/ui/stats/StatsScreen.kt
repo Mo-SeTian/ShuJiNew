@@ -35,6 +35,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -255,11 +256,21 @@ fun StatsScreen(
 
                 // 分享成就
                 item {
-                    val recentTitles = remember(uiState.recentRecordsWithBooks) {
+                    val recentBooksWithAmounts = remember(uiState.recentRecordsWithBooks) {
                         uiState.recentRecordsWithBooks
-                            .mapNotNull { it.bookSnapshot?.title ?: it.record.bookSnapshot?.title }
-                            .distinct()
-                            .take(3)
+                            .filter { it.record.recordType == com.readtrack.data.local.entity.RecordType.NORMAL }
+                            .groupBy { it.bookSnapshot?.title ?: it.record.bookSnapshot?.title ?: "已删除图书" }
+                            .map { (title, records) ->
+                                com.readtrack.presentation.ui.share.BookReadingItem(
+                                    title = title,
+                                    amount = records.sumOf { r ->
+                                        if (uiState.statsUnit == StatsUnit.CHAPTER) (r.record.chaptersRead ?: 0).toDouble()
+                                        else r.record.pagesRead
+                                    }
+                                )
+                            }
+                            .sortedByDescending { it.amount }
+                            .take(5)
                     }
                     ShareSection(
                         weekValue = uiState.weekValue,
@@ -273,7 +284,7 @@ fun StatsScreen(
                             .map { it.record.date }
                             .distinct()
                             .count(),
-                        recentBookTitles = recentTitles
+                        recentBooks = recentBooksWithAmounts
                     )
                 }
 
@@ -428,6 +439,23 @@ private fun StatsCardModern(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+        }
+    }
+}
+
+@Composable
+private fun StatPill(value: String, label: String, modifier: Modifier = Modifier) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(value, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+            Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -793,7 +821,7 @@ private fun ShareSection(
     statsUnit: StatsUnit,
     activeDays: Int,
     streakDays: Int,
-    recentBookTitles: List<String>
+    recentBooks: List<com.readtrack.presentation.ui.share.BookReadingItem>
 ) {
     val context = LocalContext.current
     val unitLabel = if (statsUnit == StatsUnit.CHAPTER) "章" else "页"
@@ -846,7 +874,7 @@ private fun ShareSection(
                     unitLabel = unitLabel,
                     activeDays = activeDays,
                     streakDays = streakDays,
-                    recentBooks = recentBookTitles
+                    recentBooks = recentBooks
                 )
             }
         )
@@ -880,7 +908,7 @@ private fun ShareSection(
                         monthValue = monthValue,
                         unitLabel = unitLabel,
                         activeDays = activeDays,
-                        recentBooks = recentBookTitles
+                        recentBooks = recentBooks
                     )
                 }
             }
@@ -894,7 +922,7 @@ private fun MonthlyAchievementCard(
     monthValue: Double,
     unitLabel: String,
     activeDays: Int = 0,
-    recentBooks: List<String> = emptyList()
+    recentBooks: List<com.readtrack.presentation.ui.share.BookReadingItem> = emptyList()
 ) {
     val daysInMonth = remember(month) {
         Calendar.getInstance().apply {
@@ -907,39 +935,57 @@ private fun MonthlyAchievementCard(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(
-                Brush.linearGradient(listOf(Color(0xFF7C3AED), Color(0xFFA78BFA))),
-                RoundedCornerShape(16.dp)
-            )
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .background(MaterialTheme.colorScheme.background, RoundedCornerShape(16.dp))
+            .padding(24.dp)
     ) {
-        Text("${month}月阅读概览", color = Color.White.copy(alpha = 0.9f), fontWeight = FontWeight.Medium)
-        Spacer(modifier = Modifier.height(16.dp))
-        Row(verticalAlignment = Alignment.Bottom) {
-            Text("${monthValue.toInt()}", fontSize = 48.sp, fontWeight = FontWeight.Bold, color = Color.White)
-            Spacer(modifier = Modifier.width(4.dp))
-            Text(unitLabel, fontSize = 24.sp, color = Color.White.copy(alpha = 0.8f), modifier = Modifier.padding(bottom = 6.dp))
+        Text(
+            "${month}月阅读概览",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold
+        )
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        Row(modifier = Modifier.fillMaxWidth()) {
+            StatPill("${monthValue.toInt()} $unitLabel", "阅读量", Modifier.weight(1f))
+            Spacer(modifier = Modifier.width(8.dp))
+            StatPill("$activeDays 天", "活跃天数", Modifier.weight(1f))
+            Spacer(modifier = Modifier.width(8.dp))
+            StatPill("%.1f $unitLabel".format(dailyAvg), "日均阅读", Modifier.weight(1f))
         }
-        Spacer(modifier = Modifier.height(12.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("$activeDays", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                Text("活跃天数", fontSize = 11.sp, color = Color.White.copy(alpha = 0.7f))
-            }
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("%.1f".format(dailyAvg), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                Text("日均$unitLabel", fontSize = 11.sp, color = Color.White.copy(alpha = 0.7f))
-            }
-        }
+
         if (recentBooks.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(16.dp))
-            Text("最近在读", color = Color.White.copy(alpha = 0.8f), fontSize = 12.sp)
-            recentBooks.take(3).forEach { book ->
-                Text("· $book", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
+            Spacer(modifier = Modifier.height(20.dp))
+            Text("阅读明细", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(8.dp))
+            recentBooks.forEach { item ->
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        item.title,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text(
+                        "${item.amount.toInt()} $unitLabel",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
         }
-        Spacer(modifier = Modifier.height(24.dp))
-        Text("—— 书迹 App ——", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.5f))
+
+        Spacer(modifier = Modifier.height(20.dp))
+        Text(
+            "—— 书迹 App ——",
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+        )
     }
 }
