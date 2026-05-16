@@ -360,15 +360,18 @@ class BookDetailViewModel @Inject constructor(
     ): ReadingPeriod {
         val startDate = startRecord.date
         val endDate = endRecord?.date ?: System.currentTimeMillis()
-        val periodRecords = normalRecords.filter { it.date in startDate..endDate }
+        // 统一用零点归一化，避免 startDate 和 endDate 的时分秒影响闰余计算
+        val startDay = getStartOfDay(startDate)
+        val endDay = getStartOfDay(endDate)
+        val periodRecords = normalRecords.filter { it.date in startDay..endDay }
         // 按 ProgressType 分开统计，避免章节书的 pagesRead 和 chaptersRead 重复累加
         val totalPages = periodRecords.filter { it.bookSnapshot?.progressType != ProgressType.CHAPTER }.sumOf { it.pagesRead }
         val totalChapters = periodRecords.filter { it.bookSnapshot?.progressType == ProgressType.CHAPTER }.sumOf { (it.chaptersRead ?: 0).toDouble() }
         // 活跃天数：区间内有实际阅读记录的不同天数
         val activeDays = periodRecords.map { getStartOfDay(it.date) }.distinct().count().coerceAtLeast(1)
         return ReadingPeriod(
-            startDate = startDate,
-            endDate = endDate,
+            startDate = startDay,
+            endDate = endDay,
             startLabel = recordTypeLabel(startRecord.recordType, startRecord.bookSnapshot?.status),
             endLabel = if (endRecord != null) recordTypeLabel(endRecord.recordType, endRecord.bookSnapshot?.status) else "至今",
             totalPagesRead = totalPages,
