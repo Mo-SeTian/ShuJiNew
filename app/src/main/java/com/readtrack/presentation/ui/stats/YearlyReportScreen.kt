@@ -24,7 +24,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -33,7 +32,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.readtrack.domain.model.YearlyReportData
 import com.readtrack.presentation.ui.components.MonthlyTrendChart
-import com.readtrack.presentation.ui.share.shareComposable
+import com.readtrack.presentation.ui.share.SharePreviewDialog
 import com.readtrack.presentation.viewmodel.YearlyReportViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -45,7 +44,6 @@ fun YearlyReportScreen(
 ) {
     val report by viewModel.uiState.collectAsStateWithLifecycle()
     var showShareDialog by remember { mutableStateOf(false) }
-    val context = LocalContext.current
 
     LaunchedEffect(initialYear) {
         viewModel.selectYear(initialYear)
@@ -124,25 +122,10 @@ fun YearlyReportScreen(
 
     // 分享弹窗
     if (showShareDialog && report != null) {
-        AlertDialog(
-            onDismissRequest = { showShareDialog = false },
-            title = { Text("分享年度报告") },
-            text = { Text("将生成一张年度报告图片，通过系统分享发送。") },
-            confirmButton = {
-                TextButton(onClick = {
-                    showShareDialog = false
-                    shareComposable(context, "yearly_report_${report!!.year}") {
-                        YearlyReportCard(report!!)
-                    }
-                }) {
-                    Text("生成并分享")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showShareDialog = false }) {
-                    Text("取消")
-                }
-            }
+        SharePreviewDialog(
+            filename = "yearly_report_${report!!.year}",
+            onDismiss = { showShareDialog = false },
+            content = { YearlyReportCard(report!!) }
         )
     }
 }
