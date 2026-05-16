@@ -413,20 +413,6 @@ fun AddBookScreen(
                     )
                 )
 
-                OutlinedTextField(
-                    value = uiState.currentPage,
-                    onValueChange = { viewModel.updateCurrentPage(it) },
-                    label = { Text("当前阅读到") },
-                    placeholder = { Text("当前页数（可选）") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        focusedLabelColor = MaterialTheme.colorScheme.primary
-                    )
-                )
             } else {
                 // Chapter-based progress
                 OutlinedTextField(
@@ -434,21 +420,6 @@ fun AddBookScreen(
                     onValueChange = { viewModel.updateTotalChapters(it) },
                     label = { Text("总章节数 *") },
                     placeholder = { Text("请输入总章节数") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        focusedLabelColor = MaterialTheme.colorScheme.primary
-                    )
-                )
-
-                OutlinedTextField(
-                    value = uiState.currentChapter,
-                    onValueChange = { viewModel.updateCurrentChapter(it) },
-                    label = { Text("当前阅读到") },
-                    placeholder = { Text("当前章节（可选）") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
