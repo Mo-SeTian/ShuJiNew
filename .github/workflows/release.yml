@@ -44,7 +44,7 @@ jobs:
         run: |
           VERSION=$(grep 'versionName' app/build.gradle.kts | head -1 | sed 's/.*"\(.*\)".*/\1/')
           APK_PATH="app/build/outputs/apk/release/app-release.apk"
-          NEW_NAME="书迹-v${VERSION}-Release.apk"
+          NEW_NAME="ShuJi-v${VERSION}-Release.apk"
           cp "$APK_PATH" "app/build/outputs/apk/release/$NEW_NAME"
           echo "版本号: $VERSION"
           echo "新文件名: $NEW_NAME"
@@ -57,7 +57,7 @@ jobs:
       - name: 创建 GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: app/build/outputs/apk/release/书迹-v*-Release.apk
+          files: app/build/outputs/apk/release/ShuJi-v*-Release.apk
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
