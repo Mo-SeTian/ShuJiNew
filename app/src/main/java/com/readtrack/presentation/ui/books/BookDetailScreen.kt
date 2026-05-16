@@ -103,6 +103,7 @@ fun BookDetailScreen(
                         Icon(Icons.Default.PlaylistAdd, contentDescription = "加入书单")
                     }
                 },
+                windowInsets = WindowInsets(0, 0, 0, 0),
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
             )
         }
