@@ -37,7 +37,7 @@ data class StatsUiState(
     val recentRecords: List<ReadingRecordEntity> = emptyList(),
     val recentRecordsWithBooks: List<RecordWithBook> = emptyList(),
     val monthlyBreakdown: Map<Int, Double> = emptyMap(),
-    val monthlyBookBreakdown: Map<Int, List<com.readtrack.presentation.ui.share.BookReadingItem>> = emptyMap(),
+    val monthlyBookBreakdown: Map<Int, List<com.readtrack.domain.model.BookReadingItem>> = emptyMap(),
     val isLoading: Boolean = true
 )
 
@@ -197,40 +197,32 @@ class StatsViewModel @Inject constructor(
             RecordWithBook(record = record, bookSnapshot = snapshot)
         }
 
-        // 按年+月汇总阅读量（key = year * 100 + month，避免跨年合并）
+        // 按年+月汇总（单次遍历，同时产出总量和书籍明细）
         val normalRecords = records.filter { it.recordType == RecordType.NORMAL }
-        val monthlyBreakdown = normalRecords.groupBy { record ->
+        val monthlyGroups = normalRecords.groupBy { record ->
             val cal = Calendar.getInstance().apply { timeInMillis = record.date }
             cal.get(Calendar.YEAR) * 100 + cal.get(Calendar.MONTH) + 1
-        }.mapValues { (_, recs) ->
-            recs.sumOf { r ->
+        }
+        val monthlyBreakdown = mutableMapOf<Int, Double>()
+        val monthlyBookBreakdown = mutableMapOf<Int, List<com.readtrack.domain.model.BookReadingItem>>()
+        for ((key, recs) in monthlyGroups) {
+            var total = 0.0
+            val bookAmounts = mutableMapOf<String, Double>()
+            for (r in recs) {
                 val isChapter = r.bookSnapshot?.progressType == ProgressType.CHAPTER
                     ?: (r.bookId?.let { booksMap[it]?.progressType } == ProgressType.CHAPTER)
-                if (isChapter) (r.chaptersRead ?: 0).toDouble() else r.pagesRead
+                val amount = if (isChapter) (r.chaptersRead ?: 0).toDouble() else r.pagesRead
+                total += amount
+                val title = r.bookSnapshot?.title
+                    ?: r.bookId?.let { booksMap[it]?.title }
+                    ?: "已删除图书"
+                bookAmounts[title] = (bookAmounts[title] ?: 0.0) + amount
             }
+            monthlyBreakdown[key] = total
+            monthlyBookBreakdown[key] = bookAmounts.map { (title, amount) ->
+                com.readtrack.domain.model.BookReadingItem(title, amount)
+            }.sortedByDescending { it.amount }
         }
-
-        // 每月每本书的阅读量明细
-        val monthlyBookBreakdown: Map<Int, List<com.readtrack.presentation.ui.share.BookReadingItem>> =
-            normalRecords.groupBy { record ->
-                val cal = Calendar.getInstance().apply { timeInMillis = record.date }
-                cal.get(Calendar.YEAR) * 100 + cal.get(Calendar.MONTH) + 1
-            }.mapValues { (_, recs) ->
-                recs.groupBy { r ->
-                    r.bookSnapshot?.title
-                        ?: r.bookId?.let { booksMap[it]?.title }
-                        ?: "已删除图书"
-                }.map { (title, bookRecs) ->
-                    com.readtrack.presentation.ui.share.BookReadingItem(
-                        title = title,
-                        amount = bookRecs.sumOf { r ->
-                            val isChapter = r.bookSnapshot?.progressType == ProgressType.CHAPTER
-                                ?: (r.bookId?.let { booksMap[it]?.progressType } == ProgressType.CHAPTER)
-                            if (isChapter) (r.chaptersRead ?: 0).toDouble() else r.pagesRead
-                        }
-                    )
-                }.sortedByDescending { it.amount }
-            }
 
         return StatsUiState(
             totalBooks = books.size,
