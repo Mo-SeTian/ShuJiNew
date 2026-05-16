@@ -271,6 +271,18 @@ fun BookDetailScreen(
         )
     }
 
+    // 错误提示
+    uiState.errorMessage?.let { msg ->
+        AlertDialog(
+            onDismissRequest = { viewModel.clearError() },
+            title = { Text("提示", fontWeight = FontWeight.Bold) },
+            text = { Text(msg) },
+            confirmButton = {
+                TextButton(onClick = { viewModel.clearError() }) { Text("知道了") }
+            }
+        )
+    }
+
     // 删除阅读记录确认
     recordToDelete?.let { record ->
         AlertDialog(
