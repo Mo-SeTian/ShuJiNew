@@ -263,7 +263,7 @@ fun StatsScreen(
                             .filter { it.record.recordType == com.readtrack.data.local.entity.RecordType.NORMAL }
                             .groupBy { it.bookSnapshot?.title ?: it.record.bookSnapshot?.title ?: "已删除图书" }
                             .map { (title, records) ->
-                                com.readtrack.presentation.ui.share.BookReadingItem(
+                                com.readtrack.domain.model.BookReadingItem(
                                     title = title,
                                     amount = records.sumOf { r ->
                                         if (uiState.statsUnit == StatsUnit.CHAPTER) (r.record.chaptersRead ?: 0).toDouble()
@@ -822,10 +822,10 @@ private fun ShareSection(
     weekValue: Double,
     statsUnit: StatsUnit,
     monthlyBreakdown: Map<Int, Double>,
-    monthlyBookBreakdown: Map<Int, List<com.readtrack.presentation.ui.share.BookReadingItem>>,
+    monthlyBookBreakdown: Map<Int, List<com.readtrack.domain.model.BookReadingItem>>,
     activeDays: Int,
     streakDays: Int,
-    recentBooks: List<com.readtrack.presentation.ui.share.BookReadingItem>
+    recentBooks: List<com.readtrack.domain.model.BookReadingItem>
 ) {
     val context = LocalContext.current
     val unitLabel = if (statsUnit == StatsUnit.CHAPTER) "章" else "页"
@@ -855,7 +855,7 @@ private fun ShareSection(
     val selectedMonthValue = monthlyBreakdown[selectedKey] ?: 0.0
     val selectedMonthBooks = monthlyBookBreakdown[selectedKey] ?: emptyList()
 
-    // 当切换年份时，自动调整月份到该年份有效范围内
+    // 切换年份时自动修正月份到有效范围
     LaunchedEffect(selectedYear) {
         val months = monthlyBreakdown.keys.filter { it / 100 == selectedYear }.map { it % 100 }
         if (selectedMonth !in months) {
@@ -930,7 +930,8 @@ private fun ShareSection(
                         Box(modifier = Modifier.weight(1f)) {
                             OutlinedButton(
                                 onClick = { showYearDropdown = true },
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier.fillMaxWidth(),
+                                enabled = availableYears.isNotEmpty()
                             ) {
                                 Text("${selectedYear}年", style = MaterialTheme.typography.labelLarge)
                                 Icon(Icons.Default.ArrowDropDown, null, modifier = Modifier.size(20.dp))
@@ -957,7 +958,8 @@ private fun ShareSection(
                         Box(modifier = Modifier.weight(1f)) {
                             OutlinedButton(
                                 onClick = { showMonthDropdown = true },
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier.fillMaxWidth(),
+                                enabled = availableMonths.isNotEmpty()
                             ) {
                                 Text("${selectedMonth}月", style = MaterialTheme.typography.labelLarge)
                                 Icon(Icons.Default.ArrowDropDown, null, modifier = Modifier.size(20.dp))
@@ -1001,7 +1003,7 @@ private fun MonthlyAchievementCard(
     monthValue: Double,
     unitLabel: String,
     activeDays: Int = 0,
-    recentBooks: List<com.readtrack.presentation.ui.share.BookReadingItem> = emptyList()
+    recentBooks: List<com.readtrack.domain.model.BookReadingItem> = emptyList()
 ) {
     val daysInMonth = remember(month) {
         Calendar.getInstance().apply {
