@@ -16,6 +16,7 @@ import com.readtrack.domain.repository.ReadingRecordRepository
 import com.readtrack.domain.repository.TagRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import com.readtrack.util.getEndOfDay
 import com.readtrack.util.getStartOfDay
 import com.readtrack.widget.WidgetUpdateHelper
 import kotlinx.coroutines.flow.*
@@ -360,9 +361,9 @@ class BookDetailViewModel @Inject constructor(
     ): ReadingPeriod {
         val startDate = startRecord.date
         val endDate = endRecord?.date ?: System.currentTimeMillis()
-        // 统一用零点归一化，避免 startDate 和 endDate 的时分秒影响闰余计算
+        // 起止归一化到零点；上界用 getEndOfDay 保证当天记录不被过滤
         val startDay = getStartOfDay(startDate)
-        val endDay = getStartOfDay(endDate)
+        val endDay = getEndOfDay(endDate)
         val periodRecords = normalRecords.filter { it.date in startDay..endDay }
         // 按 ProgressType 分开统计，避免章节书的 pagesRead 和 chaptersRead 重复累加
         val totalPages = periodRecords.filter { it.bookSnapshot?.progressType != ProgressType.CHAPTER }.sumOf { it.pagesRead }
