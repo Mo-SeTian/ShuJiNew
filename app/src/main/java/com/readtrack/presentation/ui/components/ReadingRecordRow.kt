@@ -19,6 +19,7 @@ import com.readtrack.data.local.entity.ReadingRecordEntity
 import com.readtrack.data.local.entity.RecordType
 import com.readtrack.presentation.ui.theme.AbandonedRed
 import com.readtrack.presentation.ui.theme.FinishedBlue
+import com.readtrack.presentation.ui.theme.OnHoldGray
 import com.readtrack.presentation.ui.theme.ReadingOrange
 import com.readtrack.presentation.ui.theme.WantToReadGreen
 import java.text.SimpleDateFormat
@@ -38,14 +39,20 @@ fun ReadingRecordRow(
         RecordType.STATUS_ADDED -> WantToReadGreen to Icons.Default.Add
         RecordType.STATUS_READING -> ReadingOrange to Icons.Default.PlayArrow
         RecordType.STATUS_FINISHED -> FinishedBlue to Icons.Default.CheckCircle
-        RecordType.STATUS_DROPPED -> AbandonedRed to Icons.Default.Delete
+        RecordType.STATUS_DROPPED -> when (record.bookSnapshot?.status) {
+            com.readtrack.domain.model.BookStatus.ON_HOLD -> OnHoldGray to Icons.Default.Delete
+            else -> AbandonedRed to Icons.Default.Delete
+        }
         else -> MaterialTheme.colorScheme.primary to Icons.Default.Add
     }
     val statusLabel: String = when (record.recordType) {
         RecordType.STATUS_ADDED -> "添加"
         RecordType.STATUS_READING -> "在读"
         RecordType.STATUS_FINISHED -> "已读"
-        RecordType.STATUS_DROPPED -> "放弃"
+        RecordType.STATUS_DROPPED -> when (record.bookSnapshot?.status) {
+            com.readtrack.domain.model.BookStatus.ON_HOLD -> "闲置"
+            else -> "放弃"
+        }
         else -> ""
     }
 
