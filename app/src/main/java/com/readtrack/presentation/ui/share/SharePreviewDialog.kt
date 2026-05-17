@@ -2,7 +2,9 @@ package com.readtrack.presentation.ui.share
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,11 +31,11 @@ fun SharePreviewDialog(
         Surface(
             modifier = Modifier
                 .fillMaxWidth(0.92f)
-                .wrapContentHeight(),
+                .heightIn(max = 560.dp),
             shape = RoundedCornerShape(20.dp),
             tonalElevation = 6.dp
         ) {
-            Column {
+            Column(modifier = Modifier.fillMaxWidth()) {
                 // 标题栏
                 Row(
                     modifier = Modifier
@@ -54,11 +56,12 @@ fun SharePreviewDialog(
 
                 HorizontalDivider()
 
-                // 预览 / 加载区
+                // 预览 / 加载区（可滚动）
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .wrapContentHeight()
+                        .weight(1f)
+                        .verticalScroll(rememberScrollState())
                         .padding(12.dp),
                     contentAlignment = Alignment.Center
                 ) {
