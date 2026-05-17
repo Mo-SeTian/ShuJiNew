@@ -351,7 +351,7 @@ class BookDetailViewModel @Inject constructor(
             )
         }
 
-        return periods.sortedBy { it.startDate }
+        return periods.sortedWith(compareByDescending<ReadingPeriod> { it.startDate }.thenByDescending { it.endDate })
     }
 
     private fun buildPeriod(
