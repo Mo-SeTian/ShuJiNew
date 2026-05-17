@@ -54,23 +54,22 @@ fun ReadingTimelineCard(
                     val days = getDaysBetween(period.startDate, period.endDate) + 1
                     val valuePerDay = if (isChapterBased) period.chaptersPerDay else period.pagesPerDay
                     val unit = if (isChapterBased) "章" else "页"
+                    val isLast = index == periods.size - 1
 
                     Row(modifier = Modifier.fillMaxWidth()) {
-                        // 时间线：圆点 + 竖线，圆点与首行文字垂直居中
+                        // 时间线竖线 + 圆点
                         Box(
-                            modifier = Modifier.width(24.dp).height(IntrinsicSize.Min),
+                            modifier = Modifier.width(24.dp),
                             contentAlignment = Alignment.TopCenter
                         ) {
-                            // 竖线：从圆点下方延伸到整行高度
-                            if (index < periods.size - 1) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxHeight()
-                                        .width(2.dp)
-                                        .background(MaterialTheme.colorScheme.outlineVariant)
-                                )
-                            }
-                            // 圆点
+                            // 竖线从顶部贯穿到底，上接前一个圆点
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxHeight()
+                                    .width(2.dp)
+                                    .background(MaterialTheme.colorScheme.outlineVariant)
+                            )
+                            // 圆点覆盖在竖线上
                             Box(
                                 modifier = Modifier
                                     .padding(top = 5.dp)
@@ -83,7 +82,7 @@ fun ReadingTimelineCard(
                         Spacer(modifier = Modifier.width(12.dp))
 
                         // 内容
-                        Column(modifier = Modifier.weight(1f)) {
+                        Column(modifier = Modifier.weight(1f).padding(bottom = if (isLast) 0.dp else 12.dp)) {
                             val endDateText = if (period.isOpenEnded) "至今"
                                 else period.endDate.toDateString("yyyy.MM.dd")
                             Text(
@@ -107,10 +106,6 @@ fun ReadingTimelineCard(
                                 )
                             }
                         }
-                    }
-
-                    if (index < periods.size - 1) {
-                        Spacer(modifier = Modifier.height(4.dp))
                     }
                 }
             }
