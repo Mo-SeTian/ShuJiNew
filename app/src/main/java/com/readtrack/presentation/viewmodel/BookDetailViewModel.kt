@@ -312,46 +312,40 @@ class BookDetailViewModel @Inject constructor(
         else
             RecordType.STATUS_ADDED
 
+        // 从新到旧遍历，自然按阅读记录顺序输出（新→旧，上→下）
         val statusRecords = records.filter {
             it.recordType == startType || it.recordType in endTypes
-        }.sortedBy { it.date }
+        }.sortedByDescending { it.date }
 
         val periods = mutableListOf<ReadingPeriod>()
-        val readingStack = ArrayDeque<ReadingRecordEntity>()
+        val endStack = ArrayDeque<ReadingRecordEntity>() // 等待配对的结束记录
 
         for (record in statusRecords) {
             when (record.recordType) {
                 startType -> {
-                    if (readingStack.isNotEmpty()) {
-                        val previous = readingStack.removeFirst()
-                        periods.add(buildPeriod(previous, record, normalRecords))
+                    if (endStack.isNotEmpty()) {
+                        val end = endStack.removeFirst()
+                        periods.add(buildPeriod(record, end, normalRecords))
+                    } else {
+                        // 无配对的结束记录 → 至今（在读中）
+                        periods.add(
+                            buildPeriod(record, null, normalRecords).copy(
+                                endDate = System.currentTimeMillis(),
+                                endLabel = "至今",
+                                isOpenEnded = true
+                            )
+                        )
                     }
-                    readingStack.addLast(record)
                 }
                 in endTypes -> {
-                    if (readingStack.isNotEmpty()) {
-                        val start = readingStack.removeFirst()
-                        periods.add(buildPeriod(start, record, normalRecords))
-                    }
+                    endStack.addLast(record)
                 }
                 else -> {}
             }
         }
 
-        // 剩余的未结束周期 → 至今（在读中）
-        if (readingStack.isNotEmpty()) {
-            val start = readingStack.removeFirst()
-            val now = System.currentTimeMillis()
-            periods.add(
-                buildPeriod(start, null, normalRecords).copy(
-                    endDate = now,
-                    endLabel = "至今",
-                    isOpenEnded = true
-                )
-            )
-        }
-
-        return periods.sortedWith(compareByDescending<ReadingPeriod> { it.startDate }.thenByDescending { it.endDate })
+        // 剩余的结束记录无开始配对（书籍添加时直接是结束状态），忽略
+        return periods
     }
 
     private fun buildPeriod(
