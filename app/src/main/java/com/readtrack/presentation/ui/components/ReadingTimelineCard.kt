@@ -2,10 +2,8 @@ package com.readtrack.presentation.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
@@ -52,7 +50,6 @@ fun ReadingTimelineCard(
                 Text("暂无阅读周期数据", color = MaterialTheme.colorScheme.onSurfaceVariant)
             } else {
                 Spacer(modifier = Modifier.height(12.dp))
-                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                 periods.forEachIndexed { index, period ->
                     val days = getDaysBetween(period.startDate, period.endDate) + 1
                     val valuePerDay = if (isChapterBased) period.chaptersPerDay else period.pagesPerDay
@@ -110,7 +107,6 @@ fun ReadingTimelineCard(
                             }
                         }
                     }
-                }
                 }
             }
         }
