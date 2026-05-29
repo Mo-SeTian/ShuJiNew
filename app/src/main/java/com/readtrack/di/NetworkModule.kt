@@ -34,10 +34,12 @@ object NetworkModule {
             Log.d("OkHttp", message)
         }.apply {
             level = if (BuildConfig.DEBUG) {
-                HttpLoggingInterceptor.Level.BODY
+                HttpLoggingInterceptor.Level.HEADERS
             } else {
                 HttpLoggingInterceptor.Level.NONE
             }
+            // 防止 WebDAV Basic Auth token 泄露到 Logcat
+            redactHeader("Authorization")
         }
     }
 }

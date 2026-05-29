@@ -8,7 +8,7 @@ object BookCsvExporter {
 
     fun exportToCsv(books: List<BookEntity>): String {
         val sb = StringBuilder()
-        sb.append("﻿") // BOM for Excel UTF-8 compatibility
+        sb.append("\uFEFF") // BOM for Excel UTF-8 compatibility
         sb.appendLine("标题,作者,状态,类型,评分,总页数/章节,当前进度,进度百分比")
 
         for (book in books) {
@@ -23,7 +23,7 @@ object BookCsvExporter {
                 "第 ${book.currentChapter} 章" else "${book.currentPage.toInt()} 页"
             val progressPercent = when {
                 book.progressType == ProgressType.CHAPTER && (book.totalChapters ?: 0) > 0 ->
-                    "${(book.currentChapter * 100 / (book.totalChapters ?: 1))}%"
+                    "${(book.currentChapter.toFloat() * 100 / (book.totalChapters ?: 1)).toInt()}%"
                 book.totalPages > 0 ->
                     "${(book.currentPage * 100 / book.totalPages).toInt()}%"
                 else -> "0%"

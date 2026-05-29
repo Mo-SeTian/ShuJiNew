@@ -81,7 +81,9 @@ class BookRepositoryImpl @Inject constructor(
         // 取最新一条 NORMAL 记录的 toPage（状态记录 pagesRead/toPage 为 0，直接取会重置进度）
         val latestNormal = records.filter { it.recordType == RecordType.NORMAL }.maxByOrNull { it.date }
         if (latestNormal == null) {
-            // 只有状态记录，无实际阅读进度，保持当前进度不变
+            // 只有状态记录，无实际阅读进度 → 重置为 0
+            val reset = book.copy(currentPage = 0.0, currentChapter = 0, updatedAt = System.currentTimeMillis())
+            bookDao.updateBook(reset)
             return
         }
         val updatedAt = System.currentTimeMillis()

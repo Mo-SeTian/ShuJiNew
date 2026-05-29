@@ -11,6 +11,7 @@ import com.readtrack.data.local.entity.RecordType
 import com.readtrack.domain.model.BookSnapshot
 import com.readtrack.domain.model.BookStatus
 import com.readtrack.domain.model.ProgressType
+import com.readtrack.util.TimeConstants.ONE_DAY_MILLIS
 import com.readtrack.domain.repository.BookRepository
 import com.readtrack.domain.repository.ReadingRecordRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -344,6 +345,5 @@ class StatsViewModel @Inject constructor(
     }
 
     private companion object {
-        private const val ONE_DAY_MILLIS = 24L * 60L * 60L * 1000L
     }
 }

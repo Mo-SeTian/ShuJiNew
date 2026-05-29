@@ -11,6 +11,7 @@ import com.readtrack.domain.model.ProgressType
 import com.readtrack.domain.model.YearlyReportData
 import com.readtrack.domain.repository.BookRepository
 import com.readtrack.domain.repository.ReadingRecordRepository
+import com.readtrack.util.TimeConstants.ONE_DAY_MILLIS
 import com.readtrack.util.getStartOfDay
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -219,7 +220,6 @@ class YearlyReportViewModel @Inject constructor(
     }
 
     companion object {
-        private const val ONE_DAY_MILLIS = 24L * 60L * 60L * 1000L
 
         fun formatTimestamp(timestamp: Long): String {
             val sdf = SimpleDateFormat("yyyy年M月", Locale.getDefault())

@@ -587,11 +587,12 @@ class DataBackupRepositoryImpl @Inject constructor(
 
     private fun isLocalCoverPath(path: String): Boolean {
         return !path.startsWith("http://") && !path.startsWith("https://") &&
-            !path.startsWith("emoji://") && !path.startsWith("color://") &&
-            !path.startsWith("file://")
+            !path.startsWith("emoji://") && !path.startsWith("color://")
     }
 }
 
-private fun importIdentityKey(book: BookEntity): String = "${book.title.trim()}::${book.author?.trim().orEmpty()}"
+private fun importIdentityKey(book: BookEntity): String =
+    "${book.title.trim()}::${book.author?.trim().orEmpty()}::${book.publisher?.trim().orEmpty()}"
 
-private fun importIdentityKey(bookExport: BookExport): String = "${bookExport.title.trim()}::${bookExport.author?.trim().orEmpty()}"
+private fun importIdentityKey(bookExport: BookExport): String =
+    "${bookExport.title.trim()}::${bookExport.author?.trim().orEmpty()}::${bookExport.publisher?.trim().orEmpty()}"
