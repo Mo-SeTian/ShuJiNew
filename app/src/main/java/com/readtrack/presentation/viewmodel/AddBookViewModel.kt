@@ -87,6 +87,7 @@ class AddBookViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(AddBookUiState())
     val uiState: StateFlow<AddBookUiState> = _uiState.asStateFlow()
 
+    @Volatile
     private var loadedBook: BookEntity? = null
     private var searchJob: Job? = null
     private var imageSearchJob: Job? = null
@@ -441,8 +442,9 @@ class AddBookViewModel @Inject constructor(
                 // 将 content:// 等临时 URI 持久化到内部存储
                 val persistedCoverPath = coverStorageUtil.persistCover(state.coverUri)
                 val bookId: Long
-                if (state.isEditing && loadedBook != null) {
-                    val updatedBook = loadedBook!!.copy(
+                val editingBook = loadedBook
+                if (state.isEditing && editingBook != null) {
+                    val updatedBook = editingBook.copy(
                         title = state.title,
                         author = state.author.ifBlank { null },
                         publisher = state.publisher.ifBlank { null },
@@ -459,13 +461,13 @@ class AddBookViewModel @Inject constructor(
                     )
                     bookRepository.updateBook(updatedBook)
                     // 状态变更时写入对应记录（编辑路径之前漏掉了，导致时间线缺失）
-                    if (updatedBook.status != loadedBook!!.status) {
+                    if (updatedBook.status != editingBook.status) {
                         val statusRecordType = bookStatusToRecordType(updatedBook.status)
                         if (statusRecordType != null) {
                             bookRepository.updateBookStatus(updatedBook.id, updatedBook.status, statusRecordType)
                         }
                     }
-                    bookId = loadedBook!!.id
+                    bookId = editingBook.id
                 } else {
                     val newBook = BookEntity(
                         title = state.title,

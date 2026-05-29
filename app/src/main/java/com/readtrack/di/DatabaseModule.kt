@@ -132,9 +132,10 @@ object DatabaseModule {
     @Singleton
     fun provideBookListRepository(
         bookListDao: BookListDao,
-        bookDao: BookDao
+        bookDao: BookDao,
+        database: ReadTrackDatabase
     ): BookListRepository {
-        return BookListRepositoryImpl(bookListDao, bookDao)
+        return BookListRepositoryImpl(bookListDao, bookDao, database)
     }
 
     @Provides

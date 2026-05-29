@@ -1,7 +1,9 @@
 package com.readtrack.data.repository
 
+import androidx.room.withTransaction
 import com.readtrack.data.local.dao.BookDao
 import com.readtrack.data.local.dao.BookListDao
+import com.readtrack.data.local.database.ReadTrackDatabase
 import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.data.local.entity.BookListCrossRef
 import com.readtrack.data.local.entity.BookListEntity
@@ -14,7 +16,8 @@ import javax.inject.Singleton
 @Singleton
 class BookListRepositoryImpl @Inject constructor(
     private val bookListDao: BookListDao,
-    private val bookDao: BookDao
+    private val bookDao: BookDao,
+    private val database: ReadTrackDatabase
 ) : BookListRepository {
 
     override fun getAllBookLists(): Flow<List<BookListEntity>> =
@@ -51,14 +54,18 @@ class BookListRepositoryImpl @Inject constructor(
         bookListDao.getBookListsForBook(bookId)
 
     override suspend fun addBookToList(bookListId: Long, bookId: Long) {
-        bookListDao.addBookToList(BookListCrossRef(bookListId, bookId))
-        bookListDao.updateBookCount(bookListId)
+        database.withTransaction {
+            bookListDao.addBookToList(BookListCrossRef(bookListId, bookId))
+            bookListDao.updateBookCount(bookListId)
+        }
         refreshCoverIfNeeded(bookListId)
     }
 
     override suspend fun removeBookFromList(bookListId: Long, bookId: Long) {
-        bookListDao.removeBookFromList(bookListId, bookId)
-        bookListDao.updateBookCount(bookListId)
+        database.withTransaction {
+            bookListDao.removeBookFromList(bookListId, bookId)
+            bookListDao.updateBookCount(bookListId)
+        }
         // 如果被移除的是封面来源书籍，重新自动更新封面
         val bookList = bookListDao.getBookListByIdOnce(bookListId)
         if (bookList != null && bookList.coverBookId == bookId) {
@@ -71,8 +78,10 @@ class BookListRepositoryImpl @Inject constructor(
 
     override suspend fun addBooksToList(bookListId: Long, bookIds: List<Long>) {
         val crossRefs = bookIds.map { BookListCrossRef(bookListId, it) }
-        bookListDao.addBooksToList(crossRefs)
-        bookListDao.updateBookCount(bookListId)
+        database.withTransaction {
+            bookListDao.addBooksToList(crossRefs)
+            bookListDao.updateBookCount(bookListId)
+        }
         refreshCoverIfNeeded(bookListId)
     }
 

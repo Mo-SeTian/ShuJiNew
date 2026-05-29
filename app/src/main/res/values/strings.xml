@@ -66,4 +66,11 @@
     </string-array>
     <string name="webdav_backup_skipped">自动备份已跳过：WebDAV 配置不完整</string>
     <string name="webdav_backup_failed">自动备份失败</string>
+    <string name="error_status_change_forbidden">不能将书籍状态修改回「想读」，这会导致阅读时间线错乱。如有需要，请删除书籍后重新添加。</string>
+    <string name="error_update_status_failed">更新状态失败</string>
+    <string name="error_add_record_failed">添加记录失败</string>
+    <string name="error_delete_failed">删除失败</string>
+    <string name="error_delete_record_failed">删除记录失败</string>
+    <string name="error_update_record_failed">更新记录失败</string>
+    <string name="error_update_rating_failed">更新评分失败</string>
 </resources>

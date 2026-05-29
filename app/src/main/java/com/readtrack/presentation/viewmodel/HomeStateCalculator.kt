@@ -6,7 +6,9 @@ import com.readtrack.data.local.entity.ReadingRecordEntity
 import com.readtrack.data.local.entity.RecordType
 import com.readtrack.domain.model.BookStatus
 import com.readtrack.domain.model.ProgressType
+import com.readtrack.util.TimeConstants.ONE_DAY_MILLIS
 import com.readtrack.util.getStartOfDay
+import java.util.Calendar
 
 data class HomeUiState(
     val statsUnit: StatsUnit = StatsUnit.CHAPTER,
@@ -39,8 +41,14 @@ internal fun buildHomeUiState(
     now: Long = System.currentTimeMillis()
 ): HomeUiState {
     val startOfToday = getStartOfDay(now)
-    val startOfWeek = startOfToday - 6 * ONE_DAY_MILLIS
-    val startOfMonth = startOfToday - 29 * ONE_DAY_MILLIS
+    val calendar = Calendar.getInstance().apply { timeInMillis = now }
+    // 日历周（周一~周日），与 StatsViewModel 对齐
+    calendar.set(Calendar.DAY_OF_WEEK, calendar.firstDayOfWeek)
+    val startOfWeek = getStartOfDay(calendar.timeInMillis)
+    // 日历月
+    calendar.timeInMillis = now
+    calendar.set(Calendar.DAY_OF_MONTH, 1)
+    val startOfMonth = getStartOfDay(calendar.timeInMillis)
 
     var todayPages = 0.0
     var todayChapters = 0.0
@@ -176,8 +184,6 @@ internal fun calculateReadingStreak(
 
     return streak
 }
-
-private const val ONE_DAY_MILLIS = 24L * 60L * 60L * 1000L
 
 private fun formatReadingTime(totalMinutes: Double): String {
     val hours = (totalMinutes / 60).toInt()

@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.data.local.entity.ReadingRecordEntity
 import com.readtrack.data.local.entity.TagEntity
+import com.readtrack.R
 import com.readtrack.data.local.entity.RecordType
 import com.readtrack.domain.model.BookSnapshot
 import com.readtrack.domain.model.BookStatus
@@ -16,6 +17,7 @@ import com.readtrack.domain.repository.ReadingRecordRepository
 import com.readtrack.domain.repository.TagRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import com.readtrack.util.TimeConstants
 import com.readtrack.util.getEndOfDay
 import com.readtrack.util.getStartOfDay
 import com.readtrack.widget.WidgetUpdateHelper
@@ -180,7 +182,7 @@ class BookDetailViewModel @Inject constructor(
     private fun computeTrendData(records: List<ReadingRecordEntity>): List<TrendPoint> {
         val normalRecords = records.filter { it.recordType == RecordType.NORMAL }
         val dateFormatter = SimpleDateFormat("M/d", Locale.CHINESE)
-        val dayMs = 24L * 60 * 60 * 1000
+        val dayMs = ONE_DAY_MILLIS
 
         val calendar = Calendar.getInstance()
         calendar.set(Calendar.HOUR_OF_DAY, 0)
@@ -222,7 +224,7 @@ class BookDetailViewModel @Inject constructor(
         val normalRecords = records.filter { it.recordType == RecordType.NORMAL }
         if (normalRecords.isEmpty()) return emptyList()
 
-        val dayMs = 24L * 60 * 60 * 1000
+        val dayMs = ONE_DAY_MILLIS
         val calendar = Calendar.getInstance()
 
         // 按天聚合
@@ -398,7 +400,7 @@ class BookDetailViewModel @Inject constructor(
 
         // 不允许改回想读（会导致时间线缺少开始或未闭合）
         if (status == BookStatus.WANT_TO_READ && currentBook.status != BookStatus.WANT_TO_READ) {
-            _uiState.update { it.copy(errorMessage = "不能将书籍状态修改回「想读」，这会导致阅读时间线错乱。如有需要，请删除书籍后重新添加。") }
+            _uiState.update { it.copy(errorMessage = context.getString(R.string.error_status_change_forbidden)) }
             return
         }
 
@@ -418,38 +420,71 @@ class BookDetailViewModel @Inject constructor(
     }
 
     /**
-     * 添加阅读记录（更新进度）
+     * 添加阅读进度（页数模式 / 章节模式统一入口）
      * 使用原子操作 insertRecordAndUpdateBook 保证记录和书籍同步更新
-     * @param pages 输入的页数
-     * @param isIncrement true=增量模式（当前进度+输入值），false=直接模式（直接设置到输入值）
+     * @param amount 输入的数值（页数模式为 Double，章节模式为 Int.toDouble()）
+     * @param isIncrement true=增量模式，false=直接模式
      */
-    fun addReadingRecord(pages: Double, isIncrement: Boolean = true) {
+    fun addProgress(amount: Double, isIncrement: Boolean = true) {
         val currentBook = _uiState.value.book ?: return
+        val isChapterBased = currentBook.progressType == ProgressType.CHAPTER
+
         viewModelScope.launch {
             try {
                 val currentTime = System.currentTimeMillis()
-                val fromPage = currentBook.currentPage
-                val toPage = if (isIncrement) {
-                    (fromPage + pages).coerceAtMost(currentBook.totalPages)
-                } else {
-                    pages.coerceIn(0.0, currentBook.totalPages)
-                }
-                val pagesActuallyRead = if (isIncrement) pages else (toPage - fromPage).coerceAtLeast(0.0)
 
-                val record = ReadingRecordEntity(
-                    bookId = currentBook.id,
-                    bookSnapshot = BookSnapshot.from(currentBook, currentBook.status),
-                    pagesRead = pagesActuallyRead,
-                    fromPage = fromPage,
-                    toPage = toPage,
-                    date = currentTime
-                )
-                val updatedBook = currentBook.copy(
-                    currentPage = toPage,
-                    lastReadAt = currentTime,
-                    updatedAt = currentTime
-                )
-                // 原子操作：记录插入 + 书籍更新在同一个事务中
+                val record: ReadingRecordEntity
+                val updatedBook: BookEntity
+
+                if (isChapterBased) {
+                    val chapters = amount.toInt()
+                    val fromChapter = currentBook.currentChapter
+                    val maxChapter = currentBook.totalChapters ?: 0
+                    val toChapter = if (isIncrement) {
+                        (fromChapter + chapters).coerceAtMost(maxChapter)
+                    } else {
+                        chapters.coerceIn(0, maxChapter)
+                    }
+                    val chaptersActuallyRead = if (isIncrement) chapters else (toChapter - fromChapter).coerceAtLeast(0)
+
+                    record = ReadingRecordEntity(
+                        bookId = currentBook.id,
+                        bookSnapshot = BookSnapshot.from(currentBook, currentBook.status),
+                        pagesRead = chaptersActuallyRead.toDouble(),
+                        fromPage = fromChapter.toDouble(),
+                        toPage = toChapter.toDouble(),
+                        chaptersRead = chaptersActuallyRead,
+                        date = currentTime
+                    )
+                    updatedBook = currentBook.copy(
+                        currentChapter = toChapter,
+                        lastReadAt = currentTime,
+                        updatedAt = currentTime
+                    )
+                } else {
+                    val fromPage = currentBook.currentPage
+                    val toPage = if (isIncrement) {
+                        (fromPage + amount).coerceAtMost(currentBook.totalPages)
+                    } else {
+                        amount.coerceIn(0.0, currentBook.totalPages)
+                    }
+                    val pagesActuallyRead = if (isIncrement) amount else (toPage - fromPage).coerceAtLeast(0.0)
+
+                    record = ReadingRecordEntity(
+                        bookId = currentBook.id,
+                        bookSnapshot = BookSnapshot.from(currentBook, currentBook.status),
+                        pagesRead = pagesActuallyRead,
+                        fromPage = fromPage,
+                        toPage = toPage,
+                        date = currentTime
+                    )
+                    updatedBook = currentBook.copy(
+                        currentPage = toPage,
+                        lastReadAt = currentTime,
+                        updatedAt = currentTime
+                    )
+                }
+
                 bookRepository.insertRecordAndUpdateBook(record, updatedBook)
                 WidgetUpdateHelper.triggerUpdate(context)
             } catch (e: Exception) {
@@ -458,50 +493,11 @@ class BookDetailViewModel @Inject constructor(
         }
     }
 
-    /**
-     * 添加章节进度
-     * 使用原子操作 insertRecordAndUpdateBook 保证记录和书籍同步更新
-     * @param chapters 输入的章节数
-     * @param isIncrement true=增量模式（当前章节+输入值），false=直接模式（直接设置到输入值）
-     */
-    fun addChapterProgress(chapters: Int, isIncrement: Boolean = true) {
-        val currentBook = _uiState.value.book ?: return
-        if (currentBook.progressType != ProgressType.CHAPTER) return
+    /** @deprecated 请使用 addProgress(amount, isIncrement) */
+    fun addReadingRecord(pages: Double, isIncrement: Boolean = true) = addProgress(pages, isIncrement)
 
-        viewModelScope.launch {
-            try {
-                val currentTime = System.currentTimeMillis()
-                val fromChapter = currentBook.currentChapter
-                val maxChapter = currentBook.totalChapters ?: 0
-                val toChapter = if (isIncrement) {
-                    (fromChapter + chapters).coerceAtMost(maxChapter)
-                } else {
-                    chapters.coerceIn(0, maxChapter)
-                }
-                val chaptersActuallyRead = if (isIncrement) chapters else (toChapter - fromChapter).coerceAtLeast(0)
-
-                val record = ReadingRecordEntity(
-                    bookId = currentBook.id,
-                    bookSnapshot = BookSnapshot.from(currentBook, currentBook.status),
-                    pagesRead = chaptersActuallyRead.toDouble(),
-                    fromPage = fromChapter.toDouble(),
-                    toPage = toChapter.toDouble(),
-                    chaptersRead = chaptersActuallyRead,
-                    date = currentTime
-                )
-                val updatedBook = currentBook.copy(
-                    currentChapter = toChapter,
-                    lastReadAt = currentTime,    // 修复：章节模式同样需要更新 lastReadAt
-                    updatedAt = currentTime
-                )
-                // 原子操作：记录插入 + 书籍更新在同一个事务中
-                bookRepository.insertRecordAndUpdateBook(record, updatedBook)
-                WidgetUpdateHelper.triggerUpdate(context)
-            } catch (e: Exception) {
-                _uiState.update { it.copy(errorMessage = "添加记录失败: ${e.message}") }
-            }
-        }
-    }
+    /** @deprecated 请使用 addProgress(amount.toDouble(), isIncrement) */
+    fun addChapterProgress(chapters: Int, isIncrement: Boolean = true) = addProgress(chapters.toDouble(), isIncrement)
 
     fun deleteBook() {
         val currentBook = _uiState.value.book ?: return
