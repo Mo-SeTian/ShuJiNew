@@ -44,3 +44,12 @@
 # ============ 友盟统计 ============
 -keep class com.umeng.** { *; }
 -dontwarn com.umeng.**
+
+# ============ Security-Crypto / Tink ============
+# EncryptedSharedPreferences 依赖 Google Tink，Tink 用 errorprone 注解仅编译期
+-dontwarn com.google.errorprone.annotations.**
+-dontwarn javax.annotation.**
+-dontwarn org.joda.time.**
+-dontwarn com.google.api.client.**
+-keep class com.google.crypto.tink.** { *; }
+-keep class androidx.security.crypto.** { *; }
