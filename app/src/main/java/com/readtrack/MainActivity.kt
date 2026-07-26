@@ -19,11 +19,15 @@ import androidx.compose.ui.Modifier
 import androidx.core.view.WindowCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.readtrack.data.local.PreferencesManager
+import com.readtrack.domain.model.Badge
+import com.readtrack.domain.repository.BadgeRepository
 import com.readtrack.presentation.ui.MainNavigation
+import com.readtrack.presentation.ui.badges.NewBadgeUnlockedDialog
 import com.readtrack.presentation.ui.settings.UpdateDialog
 import com.readtrack.presentation.ui.theme.ReadTrackTheme
 import com.readtrack.presentation.viewmodel.SettingsViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -31,6 +35,9 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var preferencesManager: PreferencesManager
+
+    @Inject
+    lateinit var badgeRepository: BadgeRepository
 
     companion object {
         const val ACTION_OPEN_BOOK_DETAIL = "com.readtrack.ACTION_OPEN_BOOK_DETAIL"
@@ -56,9 +63,16 @@ class MainActivity : ComponentActivity() {
             var showUpdateDialog by remember { mutableStateOf(false) }
             var pendingBookId by remember { mutableLongStateOf(initialBookId ?: -1L) }
             var pendingWidgetSettings by remember { mutableStateOf(initialWidgetSettings) }
+            var pendingBadge by remember { mutableStateOf<Badge?>(null) }
 
             LaunchedEffect(Unit) {
                 settingsViewModel.checkForUpdate()
+            }
+
+            LaunchedEffect(Unit) {
+                badgeRepository.newBadgeEvents.collect { badge ->
+                    pendingBadge = badge
+                }
             }
 
             LaunchedEffect(uiState.updateResult) {
@@ -82,6 +96,10 @@ class MainActivity : ComponentActivity() {
                         settingsViewModel.clearUpdateResult()
                     }
                 )
+            }
+
+            pendingBadge?.let { badge ->
+                NewBadgeUnlockedDialog(badge = badge, onDismiss = { pendingBadge = null })
             }
 
             ReadTrackTheme(themeMode = themeMode) {

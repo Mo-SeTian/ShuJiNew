@@ -3,10 +3,12 @@ package com.readtrack.data.local.database
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import com.readtrack.data.local.dao.BadgeDao
 import com.readtrack.data.local.dao.BookDao
 import com.readtrack.data.local.dao.BookListDao
 import com.readtrack.data.local.dao.ReadingRecordDao
 import com.readtrack.data.local.dao.TagDao
+import com.readtrack.data.local.entity.BadgeEntity
 import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.data.local.entity.BookListCrossRef
 import com.readtrack.data.local.entity.BookListEntity
@@ -21,9 +23,10 @@ import com.readtrack.data.local.entity.TagEntity
         BookListEntity::class,
         BookListCrossRef::class,
         TagEntity::class,
-        TagCrossRef::class
+        TagCrossRef::class,
+        BadgeEntity::class
     ],
-    version = 13,
+    version = 14,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -32,4 +35,5 @@ abstract class ReadTrackDatabase : RoomDatabase() {
     abstract fun readingRecordDao(): ReadingRecordDao
     abstract fun bookListDao(): BookListDao
     abstract fun tagDao(): TagDao
+    abstract fun badgeDao(): BadgeDao
 }
