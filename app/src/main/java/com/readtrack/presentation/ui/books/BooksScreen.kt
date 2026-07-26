@@ -21,6 +21,8 @@ import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.LibraryBooks
+import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -37,6 +39,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.readtrack.domain.model.BookStatus
 import com.readtrack.presentation.ui.components.BookCard
+import com.readtrack.presentation.ui.components.EmptyStateView
 import com.readtrack.presentation.ui.components.getStatusColor
 import com.readtrack.presentation.viewmodel.BookSortOrder
 import com.readtrack.presentation.viewmodel.BooksViewModel
@@ -551,31 +554,24 @@ fun BooksScreen(
                 }
 
                 uiState.filteredBooks.isEmpty() -> {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(32.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(
-                                text = if (uiState.searchQuery.isNotEmpty() || uiState.selectedStatuses.isNotEmpty() || uiState.selectedTagIds.isNotEmpty() || uiState.selectedBookListIds.isNotEmpty())
-                                    "没有找到匹配的书籍"
-                                else "还没有添加任何书籍",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            if (uiState.searchQuery.isEmpty() && uiState.selectedStatuses.isEmpty() && uiState.selectedTagIds.isEmpty() && uiState.selectedBookListIds.isEmpty()) {
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(
-                                    text = "点击右下角「添加书籍」开始",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                                )
-                            }
-                        }
+                    val hasFilter = uiState.searchQuery.isNotEmpty() ||
+                        uiState.selectedStatuses.isNotEmpty() ||
+                        uiState.selectedTagIds.isNotEmpty() ||
+                        uiState.selectedBookListIds.isNotEmpty()
+                    if (hasFilter) {
+                        EmptyStateView(
+                            icon = Icons.Default.SearchOff,
+                            title = "没有找到匹配的书籍",
+                            description = "试试调整筛选条件或换个关键词"
+                        )
+                    } else {
+                        EmptyStateView(
+                            icon = Icons.Default.LibraryBooks,
+                            title = "书架空空如也",
+                            description = "添加第一本书,开启你的阅读记录",
+                            actionLabel = "添加书籍",
+                            onAction = onAddBookClick
+                        )
                     }
                 }
 
