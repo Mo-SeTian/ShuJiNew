@@ -2,7 +2,7 @@ package com.readtrack.domain.model
 
 import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.domain.model.BookStatus
-import com.readtrack.presentation.viewmodel.ProgressType
+import com.readtrack.domain.model.ProgressType
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
