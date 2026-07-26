@@ -67,6 +67,8 @@ class MainActivity : ComponentActivity() {
 
             LaunchedEffect(Unit) {
                 settingsViewModel.checkForUpdate()
+                // 升级后首次启动，根据历史数据一次性核算徽章
+                runCatching { badgeRepository.checkAndAward() }
             }
 
             LaunchedEffect(Unit) {
