@@ -32,6 +32,7 @@ import androidx.compose.material.icons.outlined.CloudDownload
 import androidx.compose.material.icons.outlined.CloudSync
 import androidx.compose.material.icons.outlined.CloudUpload
 import androidx.compose.material.icons.outlined.DarkMode
+import androidx.compose.material.icons.outlined.EmojiEvents
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Schedule
@@ -85,6 +86,7 @@ fun SettingsScreen(
     onNavigateToBackupSettings: () -> Unit,
     onNavigateToWidgetSettings: () -> Unit = {},
     onNavigateToAbout: () -> Unit = {},
+    onNavigateToBadges: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -454,6 +456,11 @@ fun SettingsScreen(
             // 工具
             item {
                 SettingsGroup("工具") {
+                    SettingsItem(
+                        Icons.Outlined.EmojiEvents, "我的徽章",
+                        "查看已解锁的成就徽章"
+                    ) { onNavigateToBadges() }
+                    SettingsItemDivider()
                     SettingsItem(
                         Icons.Outlined.Widgets, "桌面小组件",
                         "设置每个桌面小组件对应的书籍"

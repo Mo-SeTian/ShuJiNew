@@ -22,6 +22,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.readtrack.presentation.ui.addbook.AddBookScreen
+import com.readtrack.presentation.ui.badges.BadgesScreen
 import com.readtrack.presentation.ui.booklist.BookListDetailScreen
 import com.readtrack.presentation.ui.booklist.BookListScreen
 import com.readtrack.presentation.ui.books.BookDetailScreen
@@ -63,6 +64,7 @@ sealed class Screen(
     data object ReadingHistory : Screen("reading_history", "阅读历史", Icons.Filled.DateRange, Icons.Outlined.DateRange)
     data object BackupSettings : Screen("backup_settings", "备份与恢复", Icons.Filled.CloudSync, Icons.Outlined.CloudSync)
     data object About : Screen("about", "关于", Icons.Filled.Info, Icons.Outlined.Info)
+    data object Badges : Screen("badges", "我的徽章", Icons.Filled.EmojiEvents, Icons.Outlined.EmojiEvents)
     data object WidgetSettings : Screen("widget_settings", "桌面小组件", Icons.Filled.Widgets, Icons.Outlined.Widgets)
     data object BookRecords : Screen("book_records/{bookId}", "阅读记录", Icons.Filled.Book, Icons.Outlined.Book) {
         fun createRoute(bookId: Long) = "book_records/$bookId"
@@ -200,8 +202,15 @@ fun MainNavigation(
                     },
                     onNavigateToAbout = {
                         navController.navigate(Screen.About.route)
+                    },
+                    onNavigateToBadges = {
+                        navController.navigate(Screen.Badges.route)
                     }
                 )
+            }
+
+            composable(Screen.Badges.route) {
+                BadgesScreen(onNavigateBack = { navController.popBackStack() })
             }
 
             composable(Screen.BookList.route) {

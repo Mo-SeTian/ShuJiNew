@@ -4,17 +4,20 @@ import android.content.Context
 import androidx.room.Room
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.readtrack.data.local.dao.BadgeDao
 import com.readtrack.data.local.dao.BookDao
 import com.readtrack.data.local.dao.BookListDao
 import com.readtrack.data.local.dao.ReadingRecordDao
 import com.readtrack.data.local.dao.TagDao
 import com.readtrack.data.local.database.ReadTrackDatabase
 import com.readtrack.data.local.PreferencesManager
+import com.readtrack.data.repository.BadgeRepositoryImpl
 import com.readtrack.data.repository.BookListRepositoryImpl
 import com.readtrack.data.repository.BookRepositoryImpl
 import com.readtrack.data.repository.DataBackupRepositoryImpl
 import com.readtrack.data.repository.ReadingRecordRepositoryImpl
 import com.readtrack.data.repository.TagRepositoryImpl
+import com.readtrack.domain.repository.BadgeRepository
 import com.readtrack.domain.repository.BookListRepository
 import com.readtrack.domain.repository.BookRepository
 import com.readtrack.domain.repository.DataBackupRepository
@@ -40,7 +43,7 @@ object DatabaseModule {
             ReadTrackDatabase::class.java,
             "readtrack_database"
         )
-            .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13)
+            .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14)
             .fallbackToDestructiveMigration()
             .build()
     }
@@ -94,6 +97,18 @@ object DatabaseModule {
         db.execSQL("ALTER TABLE book_lists ADD COLUMN showInBooksPage INTEGER NOT NULL DEFAULT 1")
     }
 
+    /**
+     * 从版本 13 迁移到 14：新增 badges 表存储已获得的成就徽章
+     */
+    private val MIGRATION_13_14 = Migration(13, 14) { db ->
+        db.execSQL("""
+            CREATE TABLE IF NOT EXISTS badges (
+                id TEXT PRIMARY KEY NOT NULL,
+                earnedAt INTEGER NOT NULL
+            )
+        """)
+    }
+
     @Provides
     @Singleton
     fun provideBookDao(database: ReadTrackDatabase): BookDao {
@@ -120,12 +135,19 @@ object DatabaseModule {
 
     @Provides
     @Singleton
+    fun provideBadgeDao(database: ReadTrackDatabase): BadgeDao {
+        return database.badgeDao()
+    }
+
+    @Provides
+    @Singleton
     fun provideBookRepository(
         bookDao: BookDao,
         readingRecordDao: ReadingRecordDao,
-        database: ReadTrackDatabase
+        database: ReadTrackDatabase,
+        badgeRepository: BadgeRepository
     ): BookRepository {
-        return BookRepositoryImpl(bookDao, readingRecordDao, database)
+        return BookRepositoryImpl(bookDao, readingRecordDao, database, badgeRepository)
     }
 
     @Provides
@@ -140,14 +162,27 @@ object DatabaseModule {
 
     @Provides
     @Singleton
-    fun provideReadingRecordRepository(readingRecordDao: ReadingRecordDao): ReadingRecordRepository {
-        return ReadingRecordRepositoryImpl(readingRecordDao)
+    fun provideReadingRecordRepository(
+        readingRecordDao: ReadingRecordDao,
+        badgeRepository: BadgeRepository
+    ): ReadingRecordRepository {
+        return ReadingRecordRepositoryImpl(readingRecordDao, badgeRepository)
     }
 
     @Provides
     @Singleton
     fun provideTagRepository(tagDao: TagDao): TagRepository {
         return TagRepositoryImpl(tagDao)
+    }
+
+    @Provides
+    @Singleton
+    fun provideBadgeRepository(
+        badgeDao: BadgeDao,
+        bookDao: BookDao,
+        readingRecordDao: ReadingRecordDao
+    ): BadgeRepository {
+        return BadgeRepositoryImpl(badgeDao, bookDao, readingRecordDao)
     }
 
     @Provides
