@@ -12,6 +12,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -60,9 +61,26 @@ enum class HomeComponent(val id: String, val title: String) {
 
 @Singleton
 class PreferencesManager @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val secureStorage: SecureStorage
 ) {
     private val dataStore = context.dataStore
+
+    private val webDavPasswordMigrated = java.util.concurrent.atomic.AtomicBoolean(false)
+
+    private suspend fun migrateWebDavPasswordIfNeeded() {
+        if (!webDavPasswordMigrated.compareAndSet(false, true)) return
+        runCatching {
+            val legacy = dataStore.data.first()[WEBDAV_PASSWORD]
+            if (!legacy.isNullOrEmpty()) {
+                if (secureStorage.webDavPassword.value.isEmpty()) {
+                    secureStorage.setWebDavPassword(legacy)
+                }
+                dataStore.edit { it.remove(WEBDAV_PASSWORD) }
+                android.util.Log.i("PreferencesManager", "已迁移 WebDAV 密码到加密存储")
+            }
+        }.onFailure { android.util.Log.w("PreferencesManager", "WebDAV 密码迁移失败", it) }
+    }
 
     companion object {
         val THEME_MODE = stringPreferencesKey("theme_mode")
@@ -120,9 +138,8 @@ class PreferencesManager @Inject constructor(
         preferences[WEBDAV_USERNAME] ?: ""
     }
 
-    val webDavPassword: Flow<String> = dataStore.data.map { preferences ->
-        preferences[WEBDAV_PASSWORD] ?: ""
-    }
+    val webDavPassword: Flow<String> = secureStorage.webDavPassword
+        .onStart { migrateWebDavPasswordIfNeeded() }
 
     val webDavRemotePath: Flow<String> = dataStore.data.map { preferences ->
         preferences[WEBDAV_REMOTE_PATH] ?: "ReadTrack"
@@ -201,9 +218,11 @@ class PreferencesManager @Inject constructor(
         dataStore.edit { preferences ->
             preferences[WEBDAV_SERVER_URL] = serverUrl.trim()
             preferences[WEBDAV_USERNAME] = username.trim()
-            preferences[WEBDAV_PASSWORD] = password
             preferences[WEBDAV_REMOTE_PATH] = remotePath.trim().trim('/').ifBlank { "ReadTrack" }
+            // 遗留明文一律清除，密码走加密存储
+            preferences.remove(WEBDAV_PASSWORD)
         }
+        secureStorage.setWebDavPassword(password)
     }
 
     suspend fun setAutoBackupFrequency(frequency: AutoBackupFrequency) {
@@ -258,7 +277,12 @@ class PreferencesManager @Inject constructor(
 
     private suspend fun readWidgetEntries(): List<WidgetBookEntry> {
         val raw = dataStore.data.first()[WIDGET_BOOK_MAP] ?: return emptyList()
-        return try { Json.decodeFromString<List<WidgetBookEntry>>(raw) } catch (_: Exception) { emptyList() }
+        return try {
+            Json.decodeFromString<List<WidgetBookEntry>>(raw)
+        } catch (e: Exception) {
+            android.util.Log.w("PreferencesManager", "小组件映射反序列化失败: ${e.message}")
+            emptyList()
+        }
     }
 
     private suspend fun writeWidgetEntries(entries: List<WidgetBookEntry>) {
@@ -326,7 +350,10 @@ class PreferencesManager @Inject constructor(
                     else try {
                         Json.decodeFromString<List<WidgetBookEntry>>(raw)
                             .associate { it.widgetId.toString() to it.bookId }
-                    } catch (_: Exception) { emptyMap() }
+                    } catch (e: Exception) {
+                        android.util.Log.w("PreferencesManager", "导出时小组件映射反序列化失败: ${e.message}")
+                        emptyMap()
+                    }
                 }
             )
         }
@@ -343,9 +370,7 @@ class PreferencesManager @Inject constructor(
             preferences[DOUBAN_COOKIE] = prefs.doubanCookie
             preferences[WEBDAV_SERVER_URL] = prefs.webDavServerUrl
             preferences[WEBDAV_USERNAME] = prefs.webDavUsername
-            if (prefs.webDavPassword.isNotBlank()) {
-                preferences[WEBDAV_PASSWORD] = prefs.webDavPassword
-            }
+            // WEBDAV_PASSWORD 不再写入 DataStore；导入时若有则写入加密存储
             preferences[WEBDAV_REMOTE_PATH] = prefs.webDavRemotePath.trim('/').ifBlank { "ReadTrack" }
             preferences[WEBDAV_AUTO_BACKUP_FREQUENCY] = prefs.webDavAutoBackupFrequency.takeIf { v -> runCatching { AutoBackupFrequency.valueOf(v) }.isSuccess } ?: AutoBackupFrequency.OFF.name
             preferences[UPDATE_SOURCE] = prefs.updateSource.takeIf { it == "github" || it == "gitee" } ?: "github"
@@ -360,6 +385,9 @@ class PreferencesManager @Inject constructor(
                     preferences[widgetBookIdKey(entry.widgetId)] = entry.bookId
                 }
             }
+        }
+        if (prefs.webDavPassword.isNotBlank()) {
+            secureStorage.setWebDavPassword(prefs.webDavPassword)
         }
     }
 }

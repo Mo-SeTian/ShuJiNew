@@ -69,7 +69,8 @@ class ReadTrackApp : Application(), ImageLoaderFactory, Configuration.Provider {
                 MobclickAgent.reportError(this@ReadTrackApp, throwable)
                 // 给 1 秒时间让 SDK 异步发送错误报告
                 Thread.sleep(1000)
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                android.util.Log.w("ReadTrack", "上报未捕获异常失败", e)
             } finally {
                 previous?.uncaughtException(thread, throwable)
             }
@@ -82,13 +83,17 @@ class ReadTrackApp : Application(), ImageLoaderFactory, Configuration.Provider {
         override fun onActivityResumed(activity: Activity) {
             try {
                 MobclickAgent.onResume(activity)
-            } catch (_: Exception) {}
+            } catch (e: Exception) {
+                android.util.Log.w("ReadTrack", "友盟 onResume 失败", e)
+            }
         }
 
         override fun onActivityPaused(activity: Activity) {
             try {
                 MobclickAgent.onPause(activity)
-            } catch (_: Exception) {}
+            } catch (e: Exception) {
+                android.util.Log.w("ReadTrack", "友盟 onPause 失败", e)
+            }
         }
 
         override fun onActivityStarted(activity: Activity) {

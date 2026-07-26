@@ -23,7 +23,12 @@ class Converters {
     @TypeConverter
     fun toBookSnapshot(jsonStr: String?): BookSnapshot? {
         return jsonStr?.let {
-            try { json.decodeFromString<BookSnapshot>(it) } catch (e: Exception) { null }
+            try {
+                json.decodeFromString<BookSnapshot>(it)
+            } catch (e: Exception) {
+                android.util.Log.w("Converters", "BookSnapshot 反序列化失败: ${e.message}")
+                null
+            }
         }
     }
 

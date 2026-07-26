@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    保留 cleartext 允许，兼容用户自建 HTTP WebDAV 服务器（局域网 NAS 等场景）。
+    WebDAV URL 若使用 http:// UI 会显示警告图标。未来可按 flavor 收紧策略。
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>
