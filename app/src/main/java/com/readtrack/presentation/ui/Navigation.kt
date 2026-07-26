@@ -23,6 +23,7 @@ import androidx.navigation.navArgument
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.readtrack.presentation.ui.addbook.AddBookScreen
 import com.readtrack.presentation.ui.badges.BadgesScreen
+import com.readtrack.presentation.ui.habits.HabitDashboardScreen
 import com.readtrack.presentation.ui.booklist.BookListDetailScreen
 import com.readtrack.presentation.ui.booklist.BookListScreen
 import com.readtrack.presentation.ui.books.BookDetailScreen
@@ -72,6 +73,7 @@ sealed class Screen(
     data object YearlyReport : Screen("yearly_report/{year}", "年度报告", Icons.Filled.DateRange, Icons.Outlined.DateRange) {
         fun createRoute(year: Int) = "yearly_report/$year"
     }
+    data object HabitDashboard : Screen("habit_dashboard", "阅读习惯", Icons.Filled.TrendingUp, Icons.Outlined.TrendingUp)
 }
 
 @Composable
@@ -188,8 +190,15 @@ fun MainNavigation(
                     },
                     onYearlyReportClick = { year ->
                         navController.navigate(Screen.YearlyReport.createRoute(year))
+                    },
+                    onHabitDashboardClick = {
+                        navController.navigate(Screen.HabitDashboard.route)
                     }
                 )
+            }
+
+            composable(Screen.HabitDashboard.route) {
+                HabitDashboardScreen(onNavigateBack = { navController.popBackStack() })
             }
             
             composable(Screen.Settings.route) {
