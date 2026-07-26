@@ -161,23 +161,27 @@ private fun TimeDistributionRingChart(distribution: List<TimeSlotDistribution>) 
 
             val dominant = distribution.maxByOrNull { it.recordCount }
 
-            Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+            // 环形图 + 中心文字叠加
+            Box(
+                modifier = Modifier.fillMaxWidth().height(200.dp),
+                contentAlignment = Alignment.Center
+            ) {
                 Canvas(modifier = Modifier.fillMaxSize()) {
-                    val ringThickness = 28.dp.toPx()
-                    // Stroke 居中绘制，环外缘会超出 arc 边界 ringThickness/2
-                    val margin = ringThickness / 2f + 4.dp.toPx()
+                    val ringThickness = 24.dp.toPx()
                     val canvasSize = minOf(size.width, size.height)
-                    val outerRadius = (canvasSize - margin * 2) / 2f
+                    // 环外缘留 ringThickness 边距防止裁切
+                    val safeDiameter = canvasSize - ringThickness
                     val topLeft = Offset(
-                        (size.width - outerRadius * 2) / 2f,
-                        (size.height - outerRadius * 2) / 2f
+                        (size.width - safeDiameter) / 2f,
+                        (size.height - safeDiameter) / 2f
                     )
-                    val arcSize = Size(outerRadius * 2, outerRadius * 2)
+                    val arcSize = Size(safeDiameter, safeDiameter)
                     var startAngle = -90f
 
                     distribution.forEach { item ->
                         if (item.recordCount == 0) return@forEach
                         val sweep = item.percentage * 360f
+                        if (sweep <= 0f) return@forEach
                         drawArc(
                             color = item.slot.color,
                             startAngle = startAngle,
@@ -189,44 +193,46 @@ private fun TimeDistributionRingChart(distribution: List<TimeSlotDistribution>) 
                         )
                         startAngle += sweep
                     }
-
-                    // 中心文字
-                    val paint = android.graphics.Paint().apply {
-                        textAlign = android.graphics.Paint.Align.CENTER
-                        textSize = 36.sp.toPx()
-                        isFakeBoldText = true
-                        color = 0xFF7C3AED.toInt()
-                    }
-                    drawContext.canvas.nativeCanvas.drawText(
-                        "${dominant?.recordCount ?: 0}", size.width / 2f, size.height / 2f + 12f, paint
+                }
+                // 用 Compose Text 叠在 Canvas 上方，避免 nativeCanvas 基线偏移问题
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "${dominant?.recordCount ?: 0}",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF7C3AED)
                     )
-                    paint.textSize = 13.sp.toPx()
-                    paint.isFakeBoldText = false
-                    paint.color = 0xFF6B7280.toInt()
-                    drawContext.canvas.nativeCanvas.drawText(
-                        "次阅读", size.width / 2f, size.height / 2f + 36f, paint
+                    Text(
+                        text = "次阅读",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color(0xFF6B7280)
                     )
                 }
             }
 
             Spacer(Modifier.height(12.dp))
-            // Legend
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                distribution.forEach { item ->
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            Modifier.size(8.dp).clip(CircleShape)
-                                .background(item.slot.color)
-                        )
-                        Spacer(Modifier.width(3.dp))
-                        Text(
-                            text = "${item.slot.label} ${(item.percentage * 100).toInt()}%",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+            // Legend — 两行各 3 个，避免单行溢出
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                val rows = distribution.chunked(3)
+                rows.forEach { row ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        row.forEach { item ->
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    Modifier.size(8.dp).clip(CircleShape)
+                                        .background(item.slot.color)
+                                )
+                                Spacer(Modifier.width(4.dp))
+                                Text(
+                                    text = "${item.slot.label} ${(item.percentage * 100).toInt()}%",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -247,50 +253,54 @@ private fun WeeklyActivityBarChart(weekly: List<DayOfWeekActivity>) {
             Spacer(Modifier.height(16.dp))
 
             val maxDays = weekly.maxOfOrNull { it.activeDays }?.coerceAtLeast(1) ?: 1
-            val barMaxHeightDp = 120.dp
 
+            // 固定高度确保柱状图基线一致（参照 WeeklyChartModern）
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().height(160.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.Bottom
             ) {
-                weekly.forEach { day ->
-                    val heightFraction = day.activeDays.toFloat() / maxDays
-                    val animatedFraction by animateFloatAsState(
-                        targetValue = heightFraction, animationSpec = tween(600), label = "bar"
+                weekly.forEachIndexed { index, day ->
+                    // 目标高度 0~100，直当 dp 用
+                    val targetHeight = ((day.activeDays.toFloat() / maxDays) * 100f).coerceIn(4f, 100f)
+
+                    var animated by remember { mutableFloatStateOf(0f) }
+                    LaunchedEffect(targetHeight) { animated = targetHeight }
+                    val animatedHeight by animateFloatAsState(
+                        targetValue = animated,
+                        animationSpec = tween(400, delayMillis = index * 40),
+                        label = "bar"
                     )
-                    val barHeight = barMaxHeightDp * animatedFraction.coerceAtLeast(0.02f)
 
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.weight(1f)
                     ) {
-                        // 天数标注
                         if (day.activeDays > 0) {
                             Text(
-                                "${day.activeDays}天", style = MaterialTheme.typography.labelSmall,
+                                "${day.activeDays}天",
+                                style = MaterialTheme.typography.labelSmall,
                                 color = if (day.isMostActive) Color(0xFF7C3AED)
                                 else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Spacer(Modifier.height(4.dp))
-                        } else {
-                            Spacer(Modifier.height(18.dp))
                         }
-
                         Box(
                             modifier = Modifier
-                                .fillMaxWidth(0.7f)
-                                .height(barHeight)
+                                .width(28.dp)
+                                .height(animatedHeight.dp)
                                 .clip(RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp))
                                 .background(
                                     if (day.isMostActive) Color(0xFF7C3AED)
                                     else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                                 )
                         )
-                        Spacer(Modifier.height(6.dp))
+                        Spacer(Modifier.height(8.dp))
                         Text(
-                            day.dayLabel, style = MaterialTheme.typography.labelSmall,
-                            fontWeight = if (day.isMostActive) FontWeight.Bold else FontWeight.Normal
+                            day.dayLabel,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = if (day.isMostActive) FontWeight.Bold else FontWeight.Normal,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
