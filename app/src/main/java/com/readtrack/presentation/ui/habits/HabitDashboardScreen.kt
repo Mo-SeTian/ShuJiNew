@@ -59,7 +59,8 @@ fun HabitDashboardScreen(
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface
-                )
+                ),
+                windowInsets = WindowInsets(0, 0, 0, 0)
             )
         }
     ) { padding ->
@@ -162,9 +163,11 @@ private fun TimeDistributionRingChart(distribution: List<TimeSlotDistribution>) 
 
             Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
                 Canvas(modifier = Modifier.fillMaxSize()) {
-                    val ringThickness = 32.dp.toPx()
+                    val ringThickness = 28.dp.toPx()
+                    // Stroke 居中绘制，环外缘会超出 arc 边界 ringThickness/2
+                    val margin = ringThickness / 2f + 4.dp.toPx()
                     val canvasSize = minOf(size.width, size.height)
-                    val outerRadius = (canvasSize - ringThickness) / 2f
+                    val outerRadius = (canvasSize - margin * 2) / 2f
                     val topLeft = Offset(
                         (size.width - outerRadius * 2) / 2f,
                         (size.height - outerRadius * 2) / 2f
@@ -244,17 +247,19 @@ private fun WeeklyActivityBarChart(weekly: List<DayOfWeekActivity>) {
             Spacer(Modifier.height(16.dp))
 
             val maxDays = weekly.maxOfOrNull { it.activeDays }?.coerceAtLeast(1) ?: 1
+            val barMaxHeightDp = 120.dp
 
             Row(
-                modifier = Modifier.fillMaxWidth().height(150.dp),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.Bottom
             ) {
                 weekly.forEach { day ->
                     val heightFraction = day.activeDays.toFloat() / maxDays
-                    val animatedHeight by animateFloatAsState(
+                    val animatedFraction by animateFloatAsState(
                         targetValue = heightFraction, animationSpec = tween(600), label = "bar"
                     )
+                    val barHeight = barMaxHeightDp * animatedFraction.coerceAtLeast(0.02f)
 
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -274,8 +279,8 @@ private fun WeeklyActivityBarChart(weekly: List<DayOfWeekActivity>) {
 
                         Box(
                             modifier = Modifier
-                                .fillMaxWidth(0.6f)
-                                .fillMaxHeight(animatedHeight.coerceAtLeast(0.02f))
+                                .fillMaxWidth(0.7f)
+                                .height(barHeight)
                                 .clip(RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp))
                                 .background(
                                     if (day.isMostActive) Color(0xFF7C3AED)
