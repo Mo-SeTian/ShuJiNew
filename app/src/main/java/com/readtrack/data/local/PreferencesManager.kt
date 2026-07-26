@@ -5,6 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -99,7 +100,16 @@ class PreferencesManager @Inject constructor(
         val HOME_COMPONENT_ORDER = stringPreferencesKey("home_component_order")
         val UPDATE_SOURCE = stringPreferencesKey("update_source")
         val WIDGET_BOOK_MAP = stringPreferencesKey("widget_book_map")
+        val REMINDER_ENABLED = booleanPreferencesKey("reminder_enabled")
+        val REMINDER_HOUR = intPreferencesKey("reminder_hour")
+        val REMINDER_MINUTE = intPreferencesKey("reminder_minute")
     }
+
+    data class ReminderConfig(
+        val enabled: Boolean = false,
+        val hour: Int = 21,
+        val minute: Int = 0
+    )
 
     private fun widgetBookIdKey(appWidgetId: Int) = longPreferencesKey("widget_${appWidgetId}_book_id")
 
@@ -160,6 +170,14 @@ class PreferencesManager @Inject constructor(
 
     val updateSource: Flow<String> = dataStore.data.map { preferences ->
         preferences[UPDATE_SOURCE] ?: "github"
+    }
+
+    val reminderConfigFlow: Flow<ReminderConfig> = dataStore.data.map { preferences ->
+        ReminderConfig(
+            enabled = preferences[REMINDER_ENABLED] ?: false,
+            hour = preferences[REMINDER_HOUR] ?: 21,
+            minute = preferences[REMINDER_MINUTE] ?: 0
+        )
     }
 
     val homeComponentOrder: Flow<List<String>> = dataStore.data.map { preferences ->
@@ -319,6 +337,14 @@ class PreferencesManager @Inject constructor(
         dataStore.edit { preferences ->
             stale.forEach { preferences.remove(widgetBookIdKey(it.widgetId)) }
             preferences[WIDGET_BOOK_MAP] = Json.encodeToString(keep)
+        }
+    }
+
+    suspend fun setReminderConfig(enabled: Boolean, hour: Int, minute: Int) {
+        dataStore.edit { preferences ->
+            preferences[REMINDER_ENABLED] = enabled
+            preferences[REMINDER_HOUR] = hour
+            preferences[REMINDER_MINUTE] = minute
         }
     }
 

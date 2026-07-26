@@ -79,7 +79,12 @@ data class SettingsUiState(
     val isCheckingUpdate: Boolean = false,
     val updateResult: UpdateResult? = null,
     // CSV 导出
-    val exportCsvContent: String? = null
+    val exportCsvContent: String? = null,
+    // 阅读提醒
+    val reminderEnabled: Boolean = false,
+    val reminderHour: Int = 21,
+    val reminderMinute: Int = 0,
+    val showReminderDialog: Boolean = false
 ) {
     val isWebDavConfigured: Boolean
         get() =
@@ -104,7 +109,8 @@ class SettingsViewModel @Inject constructor(
     private val okHttpClient: OkHttpClient,
     private val webDavService: WebDavService,
     private val webDavBackupScheduler: WebDavBackupScheduler,
-    private val coverStorageUtil: CoverStorageUtil
+    private val coverStorageUtil: CoverStorageUtil,
+    private val reminderScheduler: com.readtrack.util.ReminderScheduler
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingsUiState())
@@ -113,6 +119,7 @@ class SettingsViewModel @Inject constructor(
     init {
         observeBaseSettings()
         observeWebDavSettings()
+        observeReminderConfig()
     }
 
     private fun observeBaseSettings() {
@@ -133,6 +140,42 @@ class SettingsViewModel @Inject constructor(
                         updateSource = source as String
                     )
                 }
+            }
+        }
+    }
+
+    private fun observeReminderConfig() {
+        viewModelScope.launch {
+            preferencesManager.reminderConfigFlow.collect { config ->
+                _uiState.update {
+                    it.copy(
+                        reminderEnabled = config.enabled,
+                        reminderHour = config.hour,
+                        reminderMinute = config.minute
+                    )
+                }
+            }
+        }
+    }
+
+    fun openReminderDialog() {
+        _uiState.update { it.copy(showReminderDialog = true) }
+    }
+
+    fun dismissReminderDialog() {
+        _uiState.update { it.copy(showReminderDialog = false) }
+    }
+
+    fun applyReminderConfig(enabled: Boolean, hour: Int, minute: Int) {
+        viewModelScope.launch {
+            reminderScheduler.applyConfig(PreferencesManager.ReminderConfig(enabled, hour, minute))
+            _uiState.update {
+                it.copy(
+                    reminderEnabled = enabled,
+                    reminderHour = hour,
+                    reminderMinute = minute,
+                    showReminderDialog = false
+                )
             }
         }
     }
