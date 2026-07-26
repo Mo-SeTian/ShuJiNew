@@ -1,5 +1,37 @@
 # 更新日志
 
+## v2.6.0 (2026-07-26)
+
+### 新增
+- **成就徽章系统**：22 枚徽章覆盖 6 个维度（阅读数量、连续打卡、页数/章节、深度阅读、时段偏好、特殊成就），5 个等级（青铜~钻石），解锁时全屏弹窗
+- **每日阅读提醒**：可选开启，自定义时间（5:00~23:00，最小 15 分钟粒度），当日已有阅读记录则静默跳过
+- **连续打卡**：首页已有展示，徽章系统的打卡徽章与提醒联动激励
+
+### 安全
+- WebDAV 密码改用 Android `EncryptedSharedPreferences` (AES256-GCM) 加密存储，首次启动自动迁移旧明文密码
+- 网络策略从 `usesCleartextTraffic` 改为 `network_security_config.xml` 显式管理
+- WebDAV 配置页 HTTP URL 红色警告提示中间人风险
+
+### 优化
+- 空状态引导：书架空页显示添加书籍 CTA，筛选无结果显示搜索提示
+- 设置 → 工具 新增「我的徽章」入口
+- 空 catch 块补齐日志（友盟 SDK、序列化反序列化）
+- ProGuard 补齐 Tink/errorprone don'twarn 规则
+- AndroidManifest 补 `uses-feature camera required=false`（Chromebook 兼容）
+
+### 构建/测试
+- CI 新增 `lintDebug` + `testDebugUnitTest` 步骤，失败自动上传报告
+- 补齐 mockk/turbine/coroutines-test 测试依赖
+- 修复 4 个历史遗留单元测试（ProgressType 包路径、BooksFilterInput API 变更）
+- 新增 ExtensionsTest 工具测试 + BookDaoTest Room 集成测试骨架
+- 数据库迁移 v13→v14：新增 badges 表
+
+### 代码质量
+- 抽取 `buildBackupTimestamp` / `toChineseShortDate` / `toIsoDate` helper，消除 10+ 处重复 `SimpleDateFormat`
+- `!!` 强制非空替换为 `getOrElse` / `?.let`
+- `Converters` 枚举反序列化统一异常回退策略
+- `BadgeChecker` 纯函数设计，`evaluateBadges` 完全可单测
+
 ## v2.5.5 (2026-05-17)
 
 ### 修复
