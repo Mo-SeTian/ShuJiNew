@@ -25,7 +25,7 @@ class BooksFilterTest {
         val result = filterBooks(
             BooksFilterInput(
                 books = books,
-                status = BookStatus.READING,
+                statuses = setOf(BookStatus.READING),
                 query = "刘慈欣 重庆"
             )
         )
@@ -41,7 +41,7 @@ class BooksFilterTest {
             BookEntity(title = "活着")
         )
 
-        val result = filterBooks(BooksFilterInput(books = books, status = null, query = "  "))
+        val result = filterBooks(BooksFilterInput(books = books, statuses = emptySet(), query = "  "))
 
         assertEquals(books, result)
         assertTrue(result === books)

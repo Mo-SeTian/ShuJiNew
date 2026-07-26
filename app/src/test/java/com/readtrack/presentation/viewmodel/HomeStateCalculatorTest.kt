@@ -4,6 +4,7 @@ import com.readtrack.data.local.StatsUnit
 import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.data.local.entity.ReadingRecordEntity
 import com.readtrack.domain.model.BookStatus
+import com.readtrack.domain.model.ProgressType
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -53,7 +54,7 @@ class HomeStateCalculatorTest {
         )
         val records = listOf(
             ReadingRecordEntity(id = 1, bookId = 1, pagesRead = 12.0, fromPage = 1.0, toPage = 13.0, date = now),
-            ReadingRecordEntity(id = 2, bookId = 2, pagesRead = 3.0, fromPage = 1.0, toPage = 4.0, date = now)
+            ReadingRecordEntity(id = 2, bookId = 2, pagesRead = 0.0, chaptersRead = 3, fromPage = 0.0, toPage = 0.0, date = now)
         )
 
         val state = buildHomeUiState(

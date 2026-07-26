@@ -26,6 +26,32 @@ jobs:
           chmod +x gradlew
           ls -la gradlew gradle/wrapper/
 
+      - name: 单元测试
+        env:
+          UMENG_APP_KEY: ${{ secrets.UMENG_APP_KEY }}
+        run: ./gradlew testDebugUnitTest --no-daemon --stacktrace
+
+      - name: 上传单元测试报告
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-report
+          path: app/build/reports/tests/testDebugUnitTest/
+          retention-days: 7
+
+      - name: 代码检查 (lint)
+        env:
+          UMENG_APP_KEY: ${{ secrets.UMENG_APP_KEY }}
+        run: ./gradlew lintDebug --no-daemon --stacktrace
+
+      - name: 上传 lint 报告
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint-report
+          path: app/build/reports/lint-results-debug.html
+          retention-days: 7
+
       - name: 构建 Debug APK
         env:
           UMENG_APP_KEY: ${{ secrets.UMENG_APP_KEY }}
