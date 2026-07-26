@@ -2,6 +2,8 @@ package com.readtrack
 
 import android.app.Activity
 import android.app.Application
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.os.Bundle
 import androidx.work.Configuration
 import androidx.hilt.work.HiltWorkerFactory
@@ -10,6 +12,7 @@ import coil.ImageLoaderFactory
 import coil.disk.DiskCache
 import coil.memory.MemoryCache
 import coil.request.CachePolicy
+import com.readtrack.worker.ReadingReminderWorker
 import com.umeng.analytics.MobclickAgent
 import com.umeng.commonsdk.UMConfigure
 import dagger.hilt.android.HiltAndroidApp
@@ -41,7 +44,21 @@ class ReadTrackApp : Application(), ImageLoaderFactory, Configuration.Provider {
             android.util.Log.e("ReadTrack", "友盟会话追踪注册失败", e)
         }
 
+        initNotificationChannel()
+
         Thread.setDefaultUncaughtExceptionHandler(CrashHandler())
+    }
+
+    private fun initNotificationChannel() {
+        val channel = NotificationChannel(
+            ReadingReminderWorker.CHANNEL_ID,
+            "阅读提醒",
+            NotificationManager.IMPORTANCE_DEFAULT
+        ).apply {
+            description = "每日阅读打卡提醒"
+        }
+        val manager = getSystemService(NotificationManager::class.java)
+        manager.createNotificationChannel(channel)
     }
 
     private fun initUmeng() {

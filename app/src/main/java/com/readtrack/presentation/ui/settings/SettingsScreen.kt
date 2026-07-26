@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -33,6 +34,7 @@ import androidx.compose.material.icons.outlined.CloudSync
 import androidx.compose.material.icons.outlined.CloudUpload
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.EmojiEvents
+import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Schedule
@@ -43,20 +45,25 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -450,6 +457,16 @@ fun SettingsScreen(
             item {
                 SettingsGroup("搜索") {
                     DoubanCookieRow(viewModel, uiState)
+                }
+            }
+
+            // 阅读提醒
+            item {
+                SettingsGroup("提醒") {
+                    SettingsItem(
+                        Icons.Outlined.Notifications, "阅读提醒",
+                        if (uiState.reminderEnabled) "每日 ${uiState.reminderHour}:${uiState.reminderMinute.toString().padStart(2, '0')} 提醒" else "未开启"
+                    ) { viewModel.openReminderDialog() }
                 }
             }
 
@@ -1048,4 +1065,98 @@ private fun DoubanCookieRow(
         )
     }
 
+    if (uiState.showReminderDialog) {
+        ReminderDialog(
+            enabled = uiState.reminderEnabled,
+            hour = uiState.reminderHour,
+            minute = uiState.reminderMinute,
+            onDismiss = { viewModel.dismissReminderDialog() },
+            onApply = { enabled, hour, minute -> viewModel.applyReminderConfig(enabled, hour, minute) }
+        )
     }
+}
+
+@Composable
+private fun ReminderDialog(
+    enabled: Boolean,
+    hour: Int,
+    minute: Int,
+    onDismiss: () -> Unit,
+    onApply: (Boolean, Int, Int) -> Unit
+) {
+    var isEnabled by remember { mutableStateOf(enabled) }
+    var selectedHour by remember { mutableIntStateOf(hour) }
+    var selectedMinute by remember { mutableIntStateOf(minute) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("阅读提醒", fontWeight = FontWeight.Bold) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("开启每日提醒", style = MaterialTheme.typography.bodyLarge)
+                    Switch(checked = isEnabled, onCheckedChange = { isEnabled = it })
+                }
+                if (isEnabled) {
+                    Text(
+                        "每天在你设定的时间推送提醒，如果当天已有阅读记录则不会打扰",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // 简单的小时选择器
+                        val hourOptions = (5..23).toList()
+                        val minuteOptions = listOf(0, 15, 30, 45)
+
+                        // 小时
+                        var hourExpanded by remember { mutableStateOf(false) }
+                        Box {
+                            OutlinedButton(onClick = { hourExpanded = true }) {
+                                Text(selectedHour.toString().padStart(2, '0'))
+                            }
+                            DropdownMenu(expanded = hourExpanded, onDismissRequest = { hourExpanded = false }) {
+                                hourOptions.forEach { h ->
+                                    DropdownMenuItem(
+                                        text = { Text(h.toString().padStart(2, '0')) },
+                                        onClick = { selectedHour = h; hourExpanded = false }
+                                    )
+                                }
+                            }
+                        }
+                        Text(" : ", style = MaterialTheme.typography.headlineSmall)
+                        // 分钟
+                        var minuteExpanded by remember { mutableStateOf(false) }
+                        Box {
+                            OutlinedButton(onClick = { minuteExpanded = true }) {
+                                Text(selectedMinute.toString().padStart(2, '0'))
+                            }
+                            DropdownMenu(expanded = minuteExpanded, onDismissRequest = { minuteExpanded = false }) {
+                                minuteOptions.forEach { m ->
+                                    DropdownMenuItem(
+                                        text = { Text(m.toString().padStart(2, '0')) },
+                                        onClick = { selectedMinute = m; minuteExpanded = false }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onApply(isEnabled, selectedHour, selectedMinute) }) { Text("确定") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("取消") }
+        }
+    )
+}
