@@ -76,9 +76,8 @@ import com.readtrack.presentation.viewmodel.CookieTestResult
 import com.readtrack.presentation.viewmodel.SettingsUiState
 import com.readtrack.presentation.viewmodel.SettingsViewModel
 import java.io.File
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import com.readtrack.util.buildBackupTimestamp
+import com.readtrack.util.toDateTimeString
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -158,19 +157,11 @@ fun SettingsScreen(
 
     // 导出结果准备好后，自动弹出系统文件保存面板
     LaunchedEffect(uiState.exportZipPath, uiState.exportJson, uiState.exportCsvContent) {
+        val ts = buildBackupTimestamp()
         when {
-            uiState.exportZipPath != null -> {
-                val ts = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-                zipExportLauncher.launch("readtrack_backup_$ts.zip")
-            }
-            uiState.exportJson != null -> {
-                val ts = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-                jsonExportLauncher.launch("readtrack_backup_$ts.json")
-            }
-            uiState.exportCsvContent != null -> {
-                val ts = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-                csvExportLauncher.launch("readtrack_books_$ts.csv")
-            }
+            uiState.exportZipPath != null -> zipExportLauncher.launch("readtrack_backup_$ts.zip")
+            uiState.exportJson != null -> jsonExportLauncher.launch("readtrack_backup_$ts.json")
+            uiState.exportCsvContent != null -> csvExportLauncher.launch("readtrack_books_$ts.csv")
         }
     }
 
@@ -187,10 +178,7 @@ fun SettingsScreen(
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     if (importPreview != null) {
                         val backupType = if (uiState.pendingZipPath != null) "（ZIP 含封面）" else "（JSON）"
-                        Text("备份时间：${
-                            SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
-                                .format(Date(importPreview.exportTime))
-                        }，导出自 v${importPreview.appVersion} $backupType")
+                        Text("备份时间：${importPreview.exportTime.toDateTimeString()}，导出自 v${importPreview.appVersion} $backupType")
                         Spacer(modifier = Modifier.height(4.dp))
                         Text("即将导入：${importPreview.backupBookCount} 本书、${importPreview.backupRecordCount} 条记录、${importPreview.backupBookListCount} 个书单")
                         Text("追加导入预计新增：${importPreview.appendBookCount} 本书、${importPreview.appendRecordCount} 条记录、${importPreview.appendBookListCount} 个书单")
@@ -280,10 +268,7 @@ fun SettingsScreen(
                             items(uiState.webDavBackupFiles.size) { index ->
                                 val file = uiState.webDavBackupFiles[index]
                                 val isSelected = file.fileName == selectedFile
-                                val dateStr = if (file.lastModified > 0) {
-                                    SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
-                                        .format(Date(file.lastModified))
-                                } else { "未知时间" }
+                                val dateStr = if (file.lastModified > 0) file.lastModified.toDateTimeString() else "未知时间"
                                 val sizeStr = if (file.size > 0) {
                                     if (file.size > 1024 * 1024) "%.1f MB".format(file.size / 1024.0 / 1024.0)
                                     else "%.0f KB".format(file.size / 1024.0)
@@ -801,7 +786,6 @@ private fun LoadingCard(text: String) {
 
 @Composable
 private fun WebDavStatusCard(uiState: SettingsUiState) {
-    val formatter = remember { SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()) }
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
@@ -817,7 +801,7 @@ private fun WebDavStatusCard(uiState: SettingsUiState) {
                 style = MaterialTheme.typography.bodyMedium
             )
             Text(
-                text = "最近成功备份：${uiState.lastWebDavBackupAt?.let(formatter::format) ?: "暂无"}",
+                text = "最近成功备份：${uiState.lastWebDavBackupAt?.toDateTimeString() ?: "暂无"}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

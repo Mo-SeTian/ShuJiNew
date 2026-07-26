@@ -15,6 +15,21 @@ fun Long.toDateTimeString(): String {
     return SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date(this))
 }
 
+/** 备份文件时间戳，如 20260726_120000 */
+fun buildBackupTimestamp(now: Long = System.currentTimeMillis()): String {
+    return SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date(now))
+}
+
+/** 中文短日期，如 7月26日 */
+fun Long.toChineseShortDate(): String {
+    return SimpleDateFormat("M月d日", Locale.CHINESE).format(Date(this))
+}
+
+/** ISO 日期，如 2026-07-26 */
+fun Long.toIsoDate(): String {
+    return SimpleDateFormat("yyyy-MM-dd", Locale.CHINESE).format(Date(this))
+}
+
 fun Double.formatDecimal(decimals: Int = 1): String {
     return "%.${decimals}f".format(this)
 }

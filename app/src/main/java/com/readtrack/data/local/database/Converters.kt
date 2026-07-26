@@ -39,7 +39,12 @@ class Converters {
 
     @TypeConverter
     fun toBookStatus(status: String): BookStatus {
-        return BookStatus.valueOf(status)
+        return try {
+            BookStatus.valueOf(status)
+        } catch (e: Exception) {
+            android.util.Log.w("Converters", "未知 BookStatus '$status'，回退到 WANT_TO_READ")
+            BookStatus.WANT_TO_READ
+        }
     }
 
     @TypeConverter
@@ -49,7 +54,12 @@ class Converters {
 
     @TypeConverter
     fun toProgressType(value: String): ProgressType {
-        return ProgressType.valueOf(value)
+        return try {
+            ProgressType.valueOf(value)
+        } catch (e: Exception) {
+            android.util.Log.w("Converters", "未知 ProgressType '$value'，回退到 PAGE")
+            ProgressType.PAGE
+        }
     }
 
     @TypeConverter

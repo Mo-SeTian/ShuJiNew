@@ -8,6 +8,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
+import com.readtrack.util.buildBackupTimestamp
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -252,15 +253,9 @@ class WebDavService @Inject constructor(
         return "Basic $token"
     }
 
-    private fun buildHistoryFileName(): String {
-        val formatter = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
-        return "readtrack_backup_${formatter.format(Date())}.json"
-    }
+    private fun buildHistoryFileName(): String = "readtrack_backup_${buildBackupTimestamp()}.json"
 
-    private fun buildZipFileName(): String {
-        val formatter = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
-        return "readtrack_backup_${formatter.format(Date())}.zip"
-    }
+    private fun buildZipFileName(): String = "readtrack_backup_${buildBackupTimestamp()}.zip"
 
     companion object {
         private val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()

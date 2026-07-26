@@ -145,9 +145,9 @@ class DataBackupRepositoryImpl @Inject constructor(
     override suspend fun exportToZip(): Result<File> {
         return try {
             val backupResult = exportAllData()
-            if (backupResult.isFailure) return Result.failure(backupResult.exceptionOrNull()!!)
-
-            val backup = backupResult.getOrThrow()
+            val backup = backupResult.getOrElse { error ->
+                return Result.failure(error)
+            }
 
             // 收集需要打包的封面图片
             val coverPathsToInclude = mutableSetOf<String>()
