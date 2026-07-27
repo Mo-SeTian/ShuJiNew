@@ -31,8 +31,7 @@ private val WEEK_LABELS = listOf("一", "二", "三", "四", "五", "六", "日"
 fun ReadingHeatmapCard(
     months: List<HeatmapMonth>,
     isChapterBased: Boolean,
-    modifier: Modifier = Modifier,
-    useCombinedValue: Boolean = false
+    modifier: Modifier = Modifier
 ) {
     var selectedDay by remember { mutableStateOf<HeatmapDay?>(null) }
     // 默认显示最后有阅读记录的月份，而非当前月
@@ -141,11 +140,7 @@ fun ReadingHeatmapCard(
                             Row {
                                 weekDays.forEachIndexed { i, day ->
                                     if (day != null) {
-                                        val v = when {
-                                            useCombinedValue -> day.pagesRead + day.chaptersRead
-                                            isChapterBased -> day.chaptersRead
-                                            else -> day.pagesRead
-                                        }
+                                        val v = if (isChapterBased) day.chaptersRead else day.pagesRead
                                         Box(
                                             modifier = Modifier
                                                 .size(34.dp)
@@ -194,22 +189,12 @@ fun ReadingHeatmapCard(
 
     // 点击弹窗
     selectedDay?.let { day ->
-        val combined = day.pagesRead + day.chaptersRead
-        val hasPages = day.pagesRead > 0
-        val hasChapters = day.chaptersRead > 0
-        val text = when {
-            useCombinedValue && hasPages && hasChapters ->
-                "阅读了 ${day.pagesRead.toInt()} 页 + ${day.chaptersRead.toInt()} 章"
-            useCombinedValue && hasPages -> "阅读了 ${day.pagesRead.toInt()} 页"
-            useCombinedValue && hasChapters -> "阅读了 ${day.chaptersRead.toInt()} 章"
-            useCombinedValue -> "当天没有阅读记录"
-            isChapterBased -> if (day.chaptersRead > 0) "阅读了 ${day.chaptersRead.toInt()} 章" else "当天没有阅读记录"
-            else -> if (day.pagesRead > 0) "阅读了 ${day.pagesRead.toInt()} 页" else "当天没有阅读记录"
-        }
+        val unit = if (isChapterBased) "章" else "页"
+        val value = if (isChapterBased) day.chaptersRead.toInt() else day.pagesRead.toInt()
         AlertDialog(
             onDismissRequest = { selectedDay = null },
             title = { Text(day.dateMs.toDateString("yyyy年M月d日"), fontWeight = FontWeight.Bold) },
-            text = { Text(text) },
+            text = { Text(if (value > 0) "阅读了 $value $unit" else "当天没有阅读记录") },
             confirmButton = { TextButton(onClick = { selectedDay = null }) { Text("关闭") } }
         )
     }
