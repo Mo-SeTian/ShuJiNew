@@ -50,7 +50,7 @@ class BadgesViewModel @Inject constructor(
     private fun buildState(earned: List<BadgeEntity>, progress: Map<String, Int>): BadgesUiState {
         val earnedMap = earned.associateBy { it.id }
         val entries = BadgeCatalog.ALL.map { badge ->
-            val cur = progress[badge.progressKey] ?: 0
+            val cur = progress[badge.id] ?: 0
             val pct = if (badge.threshold > 0) (cur.toFloat() / badge.threshold).coerceIn(0f, 1f) else 0f
             val label = if (badge.threshold > 0) "${cur} / ${badge.threshold} ${badge.unit}" else ""
             BadgeUiEntry(
