@@ -9,7 +9,7 @@ enum class BadgeCategory(val displayName: String) {
     PAGES("页数里程碑"),
     CHAPTERS("章节里程碑"),
     DEPTH("深度阅读"),
-    HABIT("阅读习惯"),
+    HABIT("时段习惯"),
     SPECIAL("特殊成就")
 }
 

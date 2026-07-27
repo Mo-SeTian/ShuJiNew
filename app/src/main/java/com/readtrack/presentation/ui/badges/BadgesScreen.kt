@@ -1,7 +1,11 @@
 package com.readtrack.presentation.ui.badges
 
-import androidx.compose.animation.core.*
-import androidx.compose.foundation.*
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.Spring
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -10,7 +14,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,8 +22,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -28,6 +35,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.readtrack.domain.model.Badge
 import com.readtrack.domain.model.BadgeCategory
+import com.readtrack.presentation.ui.theme.BadgeGold
+import com.readtrack.presentation.ui.theme.BadgePurple
+import com.readtrack.presentation.ui.theme.BadgePurpleDark
 import com.readtrack.presentation.viewmodel.BadgeUiEntry
 import com.readtrack.presentation.viewmodel.BadgesViewModel
 import com.readtrack.util.toDateTimeString
@@ -102,7 +112,7 @@ private fun BadgeHeroCard(earned: Int, total: Int) {
                 .fillMaxWidth()
                 .background(
                     Brush.linearGradient(
-                        colors = listOf(Color(0xFF7C3AED), Color(0xFF5B21B6))
+                        colors = listOf(BadgePurple, BadgePurpleDark)
                     )
                 )
                 .padding(24.dp)
@@ -134,7 +144,7 @@ private fun BadgeHeroCard(earned: Int, total: Int) {
                         .fillMaxWidth(0.8f)
                         .height(8.dp)
                         .clip(RoundedCornerShape(4.dp)),
-                    color = Color(0xFFFFD700),
+                    color = BadgeGold,
                     trackColor = Color.White.copy(alpha = 0.2f),
                     strokeCap = StrokeCap.Round
                 )
