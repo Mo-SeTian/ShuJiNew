@@ -10,7 +10,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -39,19 +38,14 @@ class BadgesViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            // 首次打开：计算徽章 + 获取进度
-            val (_, progress) = runCatching { badgeRepository.checkAndAward() }
-                .getOrDefault(Pair(emptyList(), emptyMap()))
-
-            // 持续监听 earned badge 变更
+            // 持续监听 earned badge 变更，每次从 checkAndAward 获取最新进度
             badgeRepository.observeEarnedBadges().collect { earned ->
+                val (_, progress) = runCatching { badgeRepository.checkAndAward() }
+                    .getOrDefault(Pair(emptyList(), emptyMap()))
                 _uiState.value = buildState(earned, progress)
             }
         }
     }
-
-    private suspend fun reloadEarned(): List<BadgeEntity> =
-        badgeRepository.observeEarnedBadges().first()
 
     private fun buildState(earned: List<BadgeEntity>, progress: Map<String, Int>): BadgesUiState {
         val earnedMap = earned.associateBy { it.id }

@@ -22,3 +22,8 @@ val Pink40 = Color(0xFF7D5260)
 val PrimaryBlue = Color(0xFF1E88E5)
 val PrimaryBlueDark = Color(0xFF1565C0)
 val SecondaryTeal = Color(0xFF26A69A)
+
+// Badge / Achievement colors
+val BadgePurple = Color(0xFF7C3AED)
+val BadgePurpleDark = Color(0xFF5B21B6)
+val BadgeGold = Color(0xFFFFD700)
