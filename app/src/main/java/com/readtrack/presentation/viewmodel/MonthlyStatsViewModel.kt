@@ -4,6 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.readtrack.data.local.PreferencesManager
 import com.readtrack.data.local.StatsUnit
+import com.readtrack.data.local.entity.ReadingRecordEntity
+import com.readtrack.data.local.entity.RecordType
+import com.readtrack.domain.model.ProgressType
 import com.readtrack.domain.repository.ReadingRecordRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -35,7 +38,13 @@ class MonthlyStatsViewModel @Inject constructor(
                 recordRepository.getAllRecords().catch { emit(emptyList()) },
                 preferencesManager.statsUnit
             ) { records, unit ->
-                Pair(buildHeatmapMonths(records), unit == StatsUnit.CHAPTER)
+                val isChapter = unit == StatsUnit.CHAPTER
+                val filtered = if (isChapter) {
+                    records.filter { it.recordType == RecordType.NORMAL && it.bookSnapshot?.progressType == ProgressType.CHAPTER }
+                } else {
+                    records.filter { it.recordType == RecordType.NORMAL && it.bookSnapshot?.progressType != ProgressType.CHAPTER }
+                }
+                Pair(buildHeatmapMonths(filtered), isChapter)
             }.collect { (months, isChapter) ->
                 _uiState.value = MonthlyStatsUiState(
                     months = months,

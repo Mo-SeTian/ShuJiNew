@@ -61,8 +61,7 @@ fun MonthlyStatsScreen(
                 item {
                     ReadingHeatmapCard(
                         months = uiState.months,
-                        isChapterBased = false,
-                        useCombinedValue = true,
+                        isChapterBased = uiState.isChapterBased,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
