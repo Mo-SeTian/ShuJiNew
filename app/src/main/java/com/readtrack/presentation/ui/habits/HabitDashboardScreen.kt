@@ -183,7 +183,7 @@ private fun TimeDistributionRingChart(distribution: List<TimeSlotDistribution>) 
                         val sweep = item.percentage * 360f
                         if (sweep <= 0f) return@forEach
                         drawArc(
-                            color = item.slot.color,
+                            color = Color(item.slot.colorHex),
                             startAngle = startAngle,
                             sweepAngle = sweep,
                             useCenter = false,
@@ -211,9 +211,10 @@ private fun TimeDistributionRingChart(distribution: List<TimeSlotDistribution>) 
             }
 
             Spacer(Modifier.height(12.dp))
-            // Legend — 两行各 3 个，避免单行溢出
+            // Legend — 两行各 3 个，避免单行溢出，0% 的隐藏
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                val rows = distribution.chunked(3)
+                val visible = distribution.filter { it.recordCount > 0 }
+                val rows = visible.chunked(3)
                 rows.forEach { row ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -223,7 +224,7 @@ private fun TimeDistributionRingChart(distribution: List<TimeSlotDistribution>) 
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Box(
                                     Modifier.size(8.dp).clip(CircleShape)
-                                        .background(item.slot.color)
+                                        .background(Color(item.slot.colorHex))
                                 )
                                 Spacer(Modifier.width(4.dp))
                                 Text(
@@ -264,7 +265,7 @@ private fun WeeklyActivityBarChart(weekly: List<DayOfWeekActivity>) {
                     // 目标高度 0~100，直当 dp 用
                     val targetHeight = ((day.activeDays.toFloat() / maxDays) * 100f).coerceIn(4f, 100f)
 
-                    var animated by remember { mutableFloatStateOf(0f) }
+                    var animated by remember(day.dayIndex) { mutableFloatStateOf(0f) }
                     LaunchedEffect(targetHeight) { animated = targetHeight }
                     val animatedHeight by animateFloatAsState(
                         targetValue = animated,
