@@ -21,9 +21,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.emptyFlow
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.launch
 import java.util.Calendar
 import javax.inject.Inject
@@ -73,7 +70,7 @@ class HabitDashboardViewModel @Inject constructor(
         val typePreference = buildTypePreference(normalRecords, booksMap)
 
         // 4. 阅读速度
-        val readingSpeed = buildReadingSpeed(normalRecords, booksMap, timeDist, weeklyActivity)
+        val readingSpeed = buildReadingSpeed(normalRecords, timeDist, weeklyActivity)
 
         // 5. 摘要
         val activeDays = normalRecords.map { getStartOfDay(it.date) }.distinct().size
@@ -166,7 +163,8 @@ class HabitDashboardViewModel @Inject constructor(
                 ?: record.bookId?.let { booksMap[it]?.bookType?.name }
                 ?: BookType.NOVEL.name
             pagesByType[bookType] = (pagesByType[bookType] ?: 0.0) + record.pagesRead
-            bookIdsByType.getOrPut(bookType) { mutableSetOf() }.add(record.bookId ?: 0L)
+            // null bookId 不参与去重计数
+            record.bookId?.let { bookIdsByType.getOrPut(bookType) { mutableSetOf() }.add(it) }
         }
 
         val totalPages = pagesByType.values.sum().coerceAtLeast(1.0)
@@ -187,7 +185,6 @@ class HabitDashboardViewModel @Inject constructor(
 
     private fun buildReadingSpeed(
         records: List<ReadingRecordEntity>,
-        booksMap: Map<Long, BookEntity>,
         timeDist: List<TimeSlotDistribution>,
         weeklyActivity: List<DayOfWeekActivity>
     ): ReadingSpeed {
