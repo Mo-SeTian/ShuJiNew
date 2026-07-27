@@ -34,6 +34,7 @@ import com.readtrack.presentation.ui.settings.BackupSettingsScreen
 import com.readtrack.presentation.ui.settings.AboutScreen
 import com.readtrack.presentation.ui.settings.SettingsScreen
 import com.readtrack.presentation.ui.settings.WidgetSettingsScreen
+import com.readtrack.presentation.ui.stats.MonthlyStatsScreen
 import com.readtrack.presentation.ui.stats.StatsScreen
 import com.readtrack.presentation.ui.stats.YearlyReportScreen
 import com.readtrack.presentation.ui.readinghistory.ReadingHistoryScreen
@@ -74,6 +75,7 @@ sealed class Screen(
         fun createRoute(year: Int) = "yearly_report/$year"
     }
     data object HabitDashboard : Screen("habit_dashboard", "阅读习惯", Icons.Filled.TrendingUp, Icons.Outlined.TrendingUp)
+    data object MonthlyStats : Screen("monthly_stats", "月度统计", Icons.Filled.GridView, Icons.Outlined.GridView)
 }
 
 @Composable
@@ -193,12 +195,19 @@ fun MainNavigation(
                     },
                     onHabitDashboardClick = {
                         navController.navigate(Screen.HabitDashboard.route)
+                    },
+                    onMonthlyStatsClick = {
+                        navController.navigate(Screen.MonthlyStats.route)
                     }
                 )
             }
 
             composable(Screen.HabitDashboard.route) {
                 HabitDashboardScreen(onNavigateBack = { navController.popBackStack() })
+            }
+
+            composable(Screen.MonthlyStats.route) {
+                MonthlyStatsScreen(onNavigateBack = { navController.popBackStack() })
             }
             
             composable(Screen.Settings.route) {
