@@ -31,7 +31,8 @@ private val WEEK_LABELS = listOf("一", "二", "三", "四", "五", "六", "日"
 fun ReadingHeatmapCard(
     months: List<HeatmapMonth>,
     isChapterBased: Boolean,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    useCombinedValue: Boolean = false
 ) {
     var selectedDay by remember { mutableStateOf<HeatmapDay?>(null) }
     // 默认显示最后有阅读记录的月份，而非当前月
@@ -112,53 +113,62 @@ fun ReadingHeatmapCard(
                 weeks.add(week.toList())
             }
 
-            Row(modifier = Modifier.horizontalScroll(rememberScrollState())) {
-                Column {
-                    // 表头：星期标签
-                    Row {
-                        WEEK_LABELS.forEachIndexed { i, label ->
-                            Box(
-                                modifier = Modifier.width(28.dp).height(18.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(label, fontSize = 10.sp,
-                                    color = if (i == 6) MaterialTheme.colorScheme.error
-                                        else MaterialTheme.colorScheme.onSurfaceVariant,
-                                    textAlign = TextAlign.Center)
-                            }
-                            if (i < 6) Spacer(modifier = Modifier.width(2.dp))
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(2.dp))
-
-                    // 数据行
-                    weeks.forEach { weekDays ->
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                Row(modifier = Modifier.horizontalScroll(rememberScrollState())) {
+                    Column {
+                        // 表头：星期标签
                         Row {
-                            weekDays.forEachIndexed { i, day ->
-                                if (day != null) {
-                                    val v = if (isChapterBased) day.chaptersRead else day.pagesRead
-                                    Box(
-                                        modifier = Modifier
-                                            .size(28.dp)
-                                            .padding(1.dp)
-                                            .border(1.dp, borderColor, RoundedCornerShape(3.dp))
-                                            .clip(RoundedCornerShape(3.dp))
-                                            .background(cellColor(v))
-                                            .clickable { selectedDay = day },
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            "${day.dayOfMonth}",
-                                            fontSize = 9.sp,
-                                            color = if (v > 0 && v >= p50) Color.White
-                                                else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                                            textAlign = TextAlign.Center
-                                        )
-                                    }
-                                } else {
-                                    Spacer(modifier = Modifier.width(28.dp))
+                            WEEK_LABELS.forEachIndexed { i, label ->
+                                Box(
+                                    modifier = Modifier.width(34.dp).height(20.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(label, fontSize = 10.sp,
+                                        color = if (i == 6) MaterialTheme.colorScheme.error
+                                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        textAlign = TextAlign.Center)
                                 }
                                 if (i < 6) Spacer(modifier = Modifier.width(2.dp))
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(2.dp))
+
+                        // 数据行
+                        weeks.forEach { weekDays ->
+                            Row {
+                                weekDays.forEachIndexed { i, day ->
+                                    if (day != null) {
+                                        val v = when {
+                                            useCombinedValue -> day.pagesRead + day.chaptersRead
+                                            isChapterBased -> day.chaptersRead
+                                            else -> day.pagesRead
+                                        }
+                                        Box(
+                                            modifier = Modifier
+                                                .size(34.dp)
+                                                .padding(1.dp)
+                                                .border(1.dp, borderColor, RoundedCornerShape(3.dp))
+                                                .clip(RoundedCornerShape(3.dp))
+                                                .background(cellColor(v))
+                                                .clickable { selectedDay = day },
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                "${day.dayOfMonth}",
+                                                fontSize = 9.sp,
+                                                color = if (v > 0 && v >= p50) Color.White
+                                                    else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                                textAlign = TextAlign.Center
+                                            )
+                                        }
+                                    } else {
+                                        Spacer(modifier = Modifier.width(34.dp))
+                                    }
+                                    if (i < 6) Spacer(modifier = Modifier.width(2.dp))
+                                }
                             }
                         }
                     }
@@ -184,12 +194,22 @@ fun ReadingHeatmapCard(
 
     // 点击弹窗
     selectedDay?.let { day ->
-        val unit = if (isChapterBased) "章" else "页"
-        val value = if (isChapterBased) day.chaptersRead.toInt() else day.pagesRead.toInt()
+        val combined = day.pagesRead + day.chaptersRead
+        val hasPages = day.pagesRead > 0
+        val hasChapters = day.chaptersRead > 0
+        val text = when {
+            useCombinedValue && hasPages && hasChapters ->
+                "阅读了 ${day.pagesRead.toInt()} 页 + ${day.chaptersRead.toInt()} 章"
+            useCombinedValue && hasPages -> "阅读了 ${day.pagesRead.toInt()} 页"
+            useCombinedValue && hasChapters -> "阅读了 ${day.chaptersRead.toInt()} 章"
+            useCombinedValue -> "当天没有阅读记录"
+            isChapterBased -> if (day.chaptersRead > 0) "阅读了 ${day.chaptersRead.toInt()} 章" else "当天没有阅读记录"
+            else -> if (day.pagesRead > 0) "阅读了 ${day.pagesRead.toInt()} 页" else "当天没有阅读记录"
+        }
         AlertDialog(
             onDismissRequest = { selectedDay = null },
             title = { Text(day.dateMs.toDateString("yyyy年M月d日"), fontWeight = FontWeight.Bold) },
-            text = { Text(if (value > 0) "阅读了 $value $unit" else "当天没有阅读记录") },
+            text = { Text(text) },
             confirmButton = { TextButton(onClick = { selectedDay = null }) { Text("关闭") } }
         )
     }
