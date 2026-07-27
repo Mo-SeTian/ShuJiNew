@@ -3,6 +3,7 @@ package com.readtrack.domain.badge
 import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.data.local.entity.ReadingRecordEntity
 import com.readtrack.data.local.entity.RecordType
+import com.readtrack.domain.model.BadgeCatalog
 import com.readtrack.domain.model.BookStatus
 import com.readtrack.domain.model.BookType
 import com.readtrack.util.getStartOfDay
@@ -56,6 +57,22 @@ data class BadgeCheckSnapshot(
             .groupBy { yearWeek(it.date) }
             .values
             .maxOfOrNull { it.size } ?: 0
+    }
+
+    /** 每个徽章当前的进度值，按 Badge.progressKey 索引 */
+    val progressMap: Map<String, Int> by lazy {
+        mapOf(
+            BadgeCatalog.PROGRESS_FINISHED to finishedBookCount,
+            BadgeCatalog.PROGRESS_STREAK to currentStreak,
+            BadgeCatalog.PROGRESS_TOTAL_PAGES to totalPages.toInt(),
+            BadgeCatalog.PROGRESS_TOTAL_CHAPTERS to totalChapters,
+            BadgeCatalog.PROGRESS_DEEP_READ to longestDeepReadDays,
+            BadgeCatalog.PROGRESS_MORNING to morningReadCount,
+            BadgeCatalog.PROGRESS_NIGHT to nightReadCount,
+            BadgeCatalog.PROGRESS_FIVE_STAR to fiveStarCount,
+            BadgeCatalog.PROGRESS_DIVERSE to distinctBookTypes,
+            BadgeCatalog.PROGRESS_WEEKLY to maxFinishedInWeek
+        )
     }
 }
 

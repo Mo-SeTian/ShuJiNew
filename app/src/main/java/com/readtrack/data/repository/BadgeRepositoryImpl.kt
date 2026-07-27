@@ -36,7 +36,7 @@ class BadgeRepositoryImpl @Inject constructor(
 
     override fun observeRecentBadges(limit: Int): Flow<List<BadgeEntity>> = badgeDao.getRecentBadges(limit)
 
-    override suspend fun checkAndAward(): List<Badge> = awardMutex.withLock {
+    override suspend fun checkAndAward(): Pair<List<Badge>, Map<String, Int>> = awardMutex.withLock {
         val books = bookDao.getAllBooks().first()
         val records = recordDao.getAllRecords().first()
         val snapshot = BadgeCheckSnapshot(books = books, records = records)
@@ -44,7 +44,6 @@ class BadgeRepositoryImpl @Inject constructor(
         val eligible = evaluateBadges(snapshot)
         val already = badgeDao.getEarnedIds().toSet()
         val newIds = eligible - already
-        if (newIds.isEmpty()) return emptyList()
 
         val now = System.currentTimeMillis()
         val awarded = mutableListOf<Badge>()
@@ -54,6 +53,9 @@ class BadgeRepositoryImpl @Inject constructor(
             awarded.add(meta)
         }
         awarded.forEach { _newBadgeEvents.tryEmit(it) }
-        return awarded
+
+        // 返回新徽章 + 所有徽章进度
+        val progress = BadgeCatalog.ALL.associate { it.id to (snapshot.progressMap[it.progressKey] ?: 0) }
+        Pair(awarded, progress)
     }
 }

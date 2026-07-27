@@ -3,21 +3,23 @@ package com.readtrack.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.readtrack.data.local.entity.BadgeEntity
-import com.readtrack.domain.model.Badge
 import com.readtrack.domain.model.BadgeCatalog
 import com.readtrack.domain.model.BadgeCategory
 import com.readtrack.domain.repository.BadgeRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class BadgeUiEntry(
-    val badge: Badge,
-    val earnedAt: Long? // null = 未获得
+    val badge: com.readtrack.domain.model.Badge,
+    val earnedAt: Long?,
+    val currentProgress: Int = 0,
+    val progressPercent: Float = 0f,
+    val progressLabel: String = ""
 )
 
 data class BadgesUiState(
@@ -32,23 +34,39 @@ class BadgesViewModel @Inject constructor(
     private val badgeRepository: BadgeRepository
 ) : ViewModel() {
 
-    val uiState: StateFlow<BadgesUiState> = badgeRepository.observeEarnedBadges()
-        .map { earned -> buildState(earned) }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), BadgesUiState())
+    private val _uiState = MutableStateFlow(BadgesUiState())
+    val uiState: StateFlow<BadgesUiState> = _uiState.asStateFlow()
 
     init {
-        // 页面打开时补一次判定，确保历史数据也能解锁
         viewModelScope.launch {
-            runCatching { badgeRepository.checkAndAward() }
+            // 首次打开：计算徽章 + 获取进度
+            val (_, progress) = runCatching { badgeRepository.checkAndAward() }
+                .getOrDefault(Pair(emptyList(), emptyMap()))
+
+            // 持续监听 earned badge 变更
+            badgeRepository.observeEarnedBadges().collect { earned ->
+                _uiState.value = buildState(earned, progress)
+            }
         }
     }
 
-    private fun buildState(earned: List<BadgeEntity>): BadgesUiState {
+    private suspend fun reloadEarned(): List<BadgeEntity> =
+        badgeRepository.observeEarnedBadges().first()
+
+    private fun buildState(earned: List<BadgeEntity>, progress: Map<String, Int>): BadgesUiState {
         val earnedMap = earned.associateBy { it.id }
         val entries = BadgeCatalog.ALL.map { badge ->
-            BadgeUiEntry(badge = badge, earnedAt = earnedMap[badge.id]?.earnedAt)
+            val cur = progress[badge.progressKey] ?: 0
+            val pct = if (badge.threshold > 0) (cur.toFloat() / badge.threshold).coerceIn(0f, 1f) else 0f
+            val label = if (badge.threshold > 0) "${cur} / ${badge.threshold} ${badge.unit}" else ""
+            BadgeUiEntry(
+                badge = badge,
+                earnedAt = earnedMap[badge.id]?.earnedAt,
+                currentProgress = cur,
+                progressPercent = pct,
+                progressLabel = label
+            )
         }
-        // 类别内：已获得优先，其次按 threshold 升序
         val grouped = entries
             .groupBy { it.badge.category }
             .mapValues { (_, list) ->

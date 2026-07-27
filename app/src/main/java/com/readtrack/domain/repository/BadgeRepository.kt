@@ -14,7 +14,7 @@ interface BadgeRepository {
 
     /**
      * 重新计算所有徽章达成情况，插入本次新解锁的徽章。
-     * @return 本次新解锁的徽章元数据列表（可能为空）
+     * @return Pair(本次新解锁的徽章列表, 所有徽章的进度映射 badgeId→当前值)
      */
-    suspend fun checkAndAward(): List<Badge>
+    suspend fun checkAndAward(): Pair<List<Badge>, Map<String, Int>>
 }
