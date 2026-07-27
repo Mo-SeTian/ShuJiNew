@@ -34,6 +34,7 @@ import androidx.compose.material.icons.outlined.CloudSync
 import androidx.compose.material.icons.outlined.CloudUpload
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.EmojiEvents
+import androidx.compose.material.icons.outlined.Favorite
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Info
@@ -93,6 +94,7 @@ fun SettingsScreen(
     onNavigateToBackupSettings: () -> Unit,
     onNavigateToWidgetSettings: () -> Unit = {},
     onNavigateToAbout: () -> Unit = {},
+    onNavigateToDonate: () -> Unit = {},
     onNavigateToBadges: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
@@ -498,6 +500,11 @@ fun SettingsScreen(
                         Icons.Outlined.Download, "检查更新",
                         updateSubtitle
                     ) { viewModel.checkForUpdate() }
+                    SettingsItemDivider()
+                    SettingsItem(
+                        Icons.Outlined.Favorite, "捐赠支持",
+                        "如果你喜欢书迹，欢迎请开发者喝杯咖啡"
+                    ) { onNavigateToDonate() }
                     SettingsItemDivider()
                     SettingsItem(
                         Icons.Outlined.Info, "关于",
