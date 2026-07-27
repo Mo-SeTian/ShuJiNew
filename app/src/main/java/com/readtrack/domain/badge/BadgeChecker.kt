@@ -130,27 +130,37 @@ internal fun calculateStreak(records: List<ReadingRecordEntity>, now: Long): Int
 fun evaluateBadges(snapshot: BadgeCheckSnapshot): Set<String> {
     val awarded = mutableSetOf<String>()
 
-    // 数量
+    // 数量 (8)
     if (snapshot.finishedBookCount >= 1) awarded += "reader_first"
+    if (snapshot.finishedBookCount >= 3) awarded += "reader_3"
+    if (snapshot.finishedBookCount >= 5) awarded += "reader_5"
     if (snapshot.finishedBookCount >= 10) awarded += "reader_10"
+    if (snapshot.finishedBookCount >= 20) awarded += "reader_20"
     if (snapshot.finishedBookCount >= 50) awarded += "reader_50"
     if (snapshot.finishedBookCount >= 100) awarded += "reader_100"
     if (snapshot.finishedBookCount >= 300) awarded += "reader_300"
 
-    // 连续
+    // 连续 (7)
     if (snapshot.currentStreak >= 3) awarded += "streak_3"
     if (snapshot.currentStreak >= 7) awarded += "streak_7"
+    if (snapshot.currentStreak >= 14) awarded += "streak_14"
     if (snapshot.currentStreak >= 30) awarded += "streak_30"
+    if (snapshot.currentStreak >= 60) awarded += "streak_60"
     if (snapshot.currentStreak >= 100) awarded += "streak_100"
     if (snapshot.currentStreak >= 365) awarded += "streak_365"
 
-    // 页数
+    // 页数 (6)
+    if (snapshot.totalPages >= 500) awarded += "pages_500"
     if (snapshot.totalPages >= 1000) awarded += "pages_1k"
+    if (snapshot.totalPages >= 5000) awarded += "pages_5k"
     if (snapshot.totalPages >= 10000) awarded += "pages_10k"
+    if (snapshot.totalPages >= 50000) awarded += "pages_50k"
     if (snapshot.totalPages >= 100000) awarded += "pages_100k"
 
-    // 章节
+    // 章节 (4)
+    if (snapshot.totalChapters >= 100) awarded += "chapters_100"
     if (snapshot.totalChapters >= 500) awarded += "chapters_500"
+    if (snapshot.totalChapters >= 1000) awarded += "chapters_1000"
     if (snapshot.totalChapters >= 5000) awarded += "chapters_5000"
 
     // 深度
