@@ -32,6 +32,7 @@ import com.readtrack.presentation.ui.books.BooksScreen
 import com.readtrack.presentation.ui.home.HomeScreen
 import com.readtrack.presentation.ui.settings.BackupSettingsScreen
 import com.readtrack.presentation.ui.settings.AboutScreen
+import com.readtrack.presentation.ui.settings.DonateScreen
 import com.readtrack.presentation.ui.settings.SettingsScreen
 import com.readtrack.presentation.ui.settings.WidgetSettingsScreen
 import com.readtrack.presentation.ui.stats.MonthlyStatsScreen
@@ -76,6 +77,7 @@ sealed class Screen(
     }
     data object HabitDashboard : Screen("habit_dashboard", "阅读习惯", Icons.Filled.TrendingUp, Icons.Outlined.TrendingUp)
     data object MonthlyStats : Screen("monthly_stats", "月度统计", Icons.Filled.GridView, Icons.Outlined.GridView)
+    data object Donate : Screen("donate", "捐赠支持", Icons.Filled.Favorite, Icons.Outlined.Favorite)
 }
 
 @Composable
@@ -221,6 +223,9 @@ fun MainNavigation(
                     onNavigateToAbout = {
                         navController.navigate(Screen.About.route)
                     },
+                    onNavigateToDonate = {
+                        navController.navigate(Screen.Donate.route)
+                    },
                     onNavigateToBadges = {
                         navController.navigate(Screen.Badges.route)
                     }
@@ -316,6 +321,10 @@ fun MainNavigation(
                 AboutScreen(
                     onNavigateBack = { navController.popBackStack() }
                 )
+            }
+
+            composable(Screen.Donate.route) {
+                DonateScreen(onNavigateBack = { navController.popBackStack() })
             }
 
             composable(Screen.WidgetSettings.route) {
