@@ -293,7 +293,7 @@ private fun WeeklyActivityBarChart(weekly: List<DayOfWeekActivity>) {
                                 .clip(RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp))
                                 .background(
                                     if (day.isMostActive) Color(0xFF7C3AED)
-                                    else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                    else Color(0xFF7C3AED).copy(alpha = 0.25f)
                                 )
                         )
                         Spacer(Modifier.height(8.dp))
