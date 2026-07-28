@@ -33,6 +33,7 @@ import com.readtrack.presentation.ui.home.HomeScreen
 import com.readtrack.presentation.ui.settings.BackupSettingsScreen
 import com.readtrack.presentation.ui.settings.AboutScreen
 import com.readtrack.presentation.ui.settings.DonateScreen
+import com.readtrack.presentation.ui.settings.FeedbackScreen
 import com.readtrack.presentation.ui.settings.SettingsScreen
 import com.readtrack.presentation.ui.settings.WidgetSettingsScreen
 import com.readtrack.presentation.ui.stats.MonthlyStatsScreen
@@ -78,6 +79,7 @@ sealed class Screen(
     data object HabitDashboard : Screen("habit_dashboard", "阅读习惯", Icons.Filled.TrendingUp, Icons.Outlined.TrendingUp)
     data object MonthlyStats : Screen("monthly_stats", "月度统计", Icons.Filled.GridView, Icons.Outlined.GridView)
     data object Donate : Screen("donate", "捐赠支持", Icons.Filled.Favorite, Icons.Outlined.Favorite)
+    data object Feedback : Screen("feedback", "问题反馈", Icons.Filled.Feedback, Icons.Outlined.Feedback)
 }
 
 @Composable
@@ -223,6 +225,9 @@ fun MainNavigation(
                     onNavigateToAbout = {
                         navController.navigate(Screen.About.route)
                     },
+                    onNavigateToFeedback = {
+                        navController.navigate(Screen.Feedback.route)
+                    },
                     onNavigateToDonate = {
                         navController.navigate(Screen.Donate.route)
                     },
@@ -325,6 +330,10 @@ fun MainNavigation(
 
             composable(Screen.Donate.route) {
                 DonateScreen(onNavigateBack = { navController.popBackStack() })
+            }
+
+            composable(Screen.Feedback.route) {
+                FeedbackScreen(onNavigateBack = { navController.popBackStack() })
             }
 
             composable(Screen.WidgetSettings.route) {

@@ -35,6 +35,7 @@ import androidx.compose.material.icons.outlined.CloudUpload
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.EmojiEvents
 import androidx.compose.material.icons.outlined.Favorite
+import androidx.compose.material.icons.outlined.Feedback
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Info
@@ -95,6 +96,7 @@ fun SettingsScreen(
     onNavigateToWidgetSettings: () -> Unit = {},
     onNavigateToAbout: () -> Unit = {},
     onNavigateToDonate: () -> Unit = {},
+    onNavigateToFeedback: () -> Unit = {},
     onNavigateToBadges: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
@@ -505,6 +507,11 @@ fun SettingsScreen(
                         Icons.Outlined.Favorite, "捐赠支持",
                         "如果你喜欢书迹，欢迎请开发者喝杯咖啡"
                     ) { onNavigateToDonate() }
+                    SettingsItemDivider()
+                    SettingsItem(
+                        Icons.Outlined.Feedback, "问题建议 / 反馈",
+                        "遇到问题或想提建议？随时告诉我"
+                    ) { onNavigateToFeedback() }
                     SettingsItemDivider()
                     SettingsItem(
                         Icons.Outlined.Info, "关于",
