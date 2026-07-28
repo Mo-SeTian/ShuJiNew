@@ -6,7 +6,7 @@
 [![Kotlin](https://img.shields.io/badge/Kotlin-1.9.x-blue)](https://kotlinlang.org/)
 [![Compose](https://img.shields.io/badge/Compose-Material%203-orange)](https://developer.android.com/compose)
 [![License](https://img.shields.io/badge/License-MIT-lightgrey)](LICENSE)
-[![Version](https://img.shields.io/badge/Version-2.6.0-blue)](https://github.com/Mo-SeTian/ShuJiNew/releases)
+[![Version](https://img.shields.io/badge/Version-2.7.0-blue)](https://github.com/Mo-SeTian/ShuJiNew/releases)
 
 ## 下载
 
