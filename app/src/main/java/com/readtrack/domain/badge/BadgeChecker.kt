@@ -6,6 +6,7 @@ import com.readtrack.data.local.entity.RecordType
 import com.readtrack.domain.model.BadgeCatalog
 import com.readtrack.domain.model.BookStatus
 import com.readtrack.domain.model.BookType
+import com.readtrack.domain.model.ProgressType
 import com.readtrack.util.getStartOfDay
 import java.util.Calendar
 
@@ -23,7 +24,7 @@ data class BadgeCheckSnapshot(
     val currentStreak: Int by lazy { calculateStreak(records, now) }
 
     val totalPages: Double = records
-        .filter { it.recordType == RecordType.NORMAL }
+        .filter { it.recordType == RecordType.NORMAL && it.bookSnapshot?.progressType != ProgressType.CHAPTER }
         .sumOf { it.pagesRead }
 
     val totalChapters: Int = records

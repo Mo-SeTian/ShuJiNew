@@ -7,6 +7,7 @@ import com.readtrack.data.local.entity.ReadingRecordEntity
 import com.readtrack.data.local.entity.RecordType
 import com.readtrack.domain.model.BookType
 import com.readtrack.domain.model.DayOfWeekActivity
+import com.readtrack.domain.model.ProgressType
 import com.readtrack.domain.model.HabitDashboardData
 import com.readtrack.domain.model.ReadingSpeed
 import com.readtrack.domain.model.TimeSlot
@@ -162,7 +163,9 @@ class HabitDashboardViewModel @Inject constructor(
             val bookType = record.bookSnapshot?.bookType
                 ?: record.bookId?.let { booksMap[it]?.bookType?.name }
                 ?: BookType.NOVEL.name
-            pagesByType[bookType] = (pagesByType[bookType] ?: 0.0) + record.pagesRead
+            val isChapter = record.bookSnapshot?.progressType == ProgressType.CHAPTER
+            val amount = if (isChapter) (record.chaptersRead ?: 0).toDouble() else record.pagesRead
+            pagesByType[bookType] = (pagesByType[bookType] ?: 0.0) + amount
             // null bookId 不参与去重计数
             record.bookId?.let { bookIdsByType.getOrPut(bookType) { mutableSetOf() }.add(it) }
         }
@@ -188,8 +191,8 @@ class HabitDashboardViewModel @Inject constructor(
         timeDist: List<TimeSlotDistribution>,
         weeklyActivity: List<DayOfWeekActivity>
     ): ReadingSpeed {
-        val pageRecords = records.filter { it.pagesRead > 0 }
-        val chapterRecords = records.filter { (it.chaptersRead ?: 0) > 0 }
+        val pageRecords = records.filter { it.bookSnapshot?.progressType != ProgressType.CHAPTER && it.pagesRead > 0 }
+        val chapterRecords = records.filter { it.bookSnapshot?.progressType == ProgressType.CHAPTER && (it.chaptersRead ?: 0) > 0 }
 
         val avgPages = if (pageRecords.isNotEmpty())
             pageRecords.sumOf { it.pagesRead } / pageRecords.size else 0.0
