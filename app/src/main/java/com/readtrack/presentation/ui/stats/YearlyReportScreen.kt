@@ -180,19 +180,15 @@ private fun HeroStat(value: String, label: String) {
 @Composable
 private fun StatGrid(report: YearlyReportData) {
     val total = (report.totalPages + report.totalChapters).toInt()
-    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.Center) {
+    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         StatCard(Icons.Default.MenuBook, "总阅读量", "${if (total >= 10000) "${total / 10000}万" else "$total"}", Color(0xFF6366F1), Modifier.weight(1f))
-        Spacer(Modifier.width(10.dp))
         StatCard(Icons.Default.AutoStories, "新增书籍", "${report.newBooksCount} 本", Color(0xFF8B5CF6), Modifier.weight(1f))
-        Spacer(Modifier.width(10.dp))
         StatCard(Icons.Default.Star, "平均评分", "%.1f".format(report.averageRating), Gold, Modifier.weight(1f))
     }
     Spacer(Modifier.height(10.dp))
-    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.Center) {
+    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         StatCard(Icons.Default.EditNote, "记录次数", "${report.totalRecords} 次", Color(0xFFEC4899), Modifier.weight(1f))
-        Spacer(Modifier.width(10.dp))
         StatCard(Icons.Default.LocalFireDepartment, "最长连续", "${report.maxStreakDays} 天", Color(0xFFF97316), Modifier.weight(1f))
-        Spacer(Modifier.width(10.dp))
         StatCard(Icons.Default.TrendingUp, "完读率", "${if (report.totalBooksRead > 0) report.finishedBooks * 100 / report.totalBooksRead else 0}%", Color(0xFF22C55E), Modifier.weight(1f))
     }
 }
@@ -292,13 +288,11 @@ private fun HabitsSection(report: YearlyReportData) {
             Text("阅读习惯", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(14.dp))
 
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 HabitPill(Icons.Default.Category, "最爱类型", report.topGenre, Color(0xFF6366F1), Modifier.weight(1f))
-                Spacer(Modifier.width(10.dp))
                 val dowNames = listOf("", "周日", "周一", "周二", "周三", "周四", "周五", "周六")
                 HabitPill(Icons.Default.CalendarToday, "常读星期",
                     dowNames.getOrElse(report.favoriteDayOfWeek) { "-" }, Color(0xFF8B5CF6), Modifier.weight(1f))
-                Spacer(Modifier.width(10.dp))
                 HabitPill(Icons.Default.Schedule, "最爱月份", "${report.favoriteMonth + 1}月", Color(0xFFF97316), Modifier.weight(1f))
             }
 
@@ -369,11 +363,9 @@ fun YearlyReportCard(report: YearlyReportData, modifier: Modifier = Modifier) {
         Spacer(Modifier.height(12.dp))
 
         // 3 stats in a row
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             ShareStat("读完", "${report.finishedBooks} 本", Modifier.weight(1f))
-            Spacer(Modifier.width(8.dp))
             ShareStat("记录", "${report.totalRecords} 次", Modifier.weight(1f))
-            Spacer(Modifier.width(8.dp))
             ShareStat("活跃", "${report.activeDays} 天", Modifier.weight(1f))
         }
 
