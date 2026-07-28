@@ -283,17 +283,12 @@ class BooksViewModel @Inject constructor(
             try {
                 val book = _uiState.value.books.find { it.id == bookId } ?: return@launch
                 val isChapterBased = book.progressType == ProgressType.CHAPTER
-                val (fromPage, fromChapter) = if (isChapterBased) {
-                    book.currentChapter.toDouble() to book.currentChapter
-                } else {
-                    book.currentPage to 0
-                }
                 val record = ReadingRecordEntity(
                     bookId = bookId,
                     bookSnapshot = BookSnapshot.from(book, book.status),
                     pagesRead = if (isChapterBased) 0.0 else (newPage - book.currentPage).coerceAtLeast(0.0),
-                    fromPage = book.currentPage,
-                    toPage = if (isChapterBased) 0.0 else newPage.coerceAtMost(book.totalPages),
+                    fromPage = if (isChapterBased) book.currentChapter.toDouble() else book.currentPage,
+                    toPage = if (isChapterBased) newChapter.toDouble() else newPage.coerceAtMost(book.totalPages),
                     chaptersRead = if (isChapterBased) (newChapter - book.currentChapter).coerceAtLeast(0) else null,
                     recordType = RecordType.NORMAL,
                     date = System.currentTimeMillis()
