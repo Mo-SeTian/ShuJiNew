@@ -242,7 +242,7 @@ fun BackupSettingsScreen(
                             modifier = Modifier.height(240.dp),
                             verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
-                            items(uiState.webDavBackupFiles.size) { index ->
+                            items(uiState.webDavBackupFiles.size, key = { index -> uiState.webDavBackupFiles.getOrNull(index)?.fileName ?: index }) { index ->
                                 val file = uiState.webDavBackupFiles[index]
                                 val isSelected = file.fileName == selectedFile
                                 val dateStr = if (file.lastModified > 0) {

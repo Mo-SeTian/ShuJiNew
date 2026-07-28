@@ -72,6 +72,7 @@ class Converters {
         return try {
             RecordType.valueOf(value)
         } catch (e: Exception) {
+            android.util.Log.w("Converters", "未知 RecordType '$value'，回退到 NORMAL")
             RecordType.NORMAL
         }
     }
@@ -86,6 +87,7 @@ class Converters {
         return try {
             BookType.valueOf(value)
         } catch (e: Exception) {
+            android.util.Log.w("Converters", "未知 BookType '$value'，回退到 NOVEL")
             BookType.NOVEL
         }
     }

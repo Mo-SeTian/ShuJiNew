@@ -91,6 +91,7 @@ class AddBookViewModel @Inject constructor(
     private var loadedBook: BookEntity? = null
     private var searchJob: Job? = null
     private var imageSearchJob: Job? = null
+    private var loadJob: Job? = null
     private var lastSearchQuery: String = ""
 
     init {
@@ -113,7 +114,8 @@ class AddBookViewModel @Inject constructor(
     }
 
     fun loadBook(bookId: Long) {
-        viewModelScope.launch {
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
             try {
                 bookRepository.getBookById(bookId).collect { book ->
                     book?.let {

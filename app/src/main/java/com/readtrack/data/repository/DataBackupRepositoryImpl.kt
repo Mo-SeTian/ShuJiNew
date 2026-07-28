@@ -389,9 +389,7 @@ class DataBackupRepositoryImpl @Inject constructor(
 
             // 导入完成后重新核算徽章
             if (booksImported > 0 || recordsImported > 0) {
-                kotlinx.coroutines.runBlocking {
-                    runCatching { badgeRepository.checkAndAward() }
-                }
+                runCatching { badgeRepository.checkAndAward() }
             }
 
             Result.success(ImportResult(booksImported, recordsImported, bookListsImported, errors))
