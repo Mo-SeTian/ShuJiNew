@@ -70,9 +70,9 @@ fun buildHeatmapMonths(records: List<ReadingRecordEntity>): List<HeatmapMonth> {
 
     // 将单书明细写入对应 HeatmapDay
     dailyBookMap.forEach { (dayStart, bookMap) ->
-        dailyMap[dayStart] = dailyMap[dayStart]?.copy(
-            bookBreakdowns = bookMap.values.toList()
-        ) ?: dailyMap[dayStart]!!
+        dailyMap[dayStart]?.let { entry ->
+            dailyMap[dayStart] = entry.copy(bookBreakdowns = bookMap.values.toList())
+        }
     }
 
     // 填充缺失日（最早记录日到今天）
