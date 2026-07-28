@@ -12,6 +12,7 @@ import com.readtrack.domain.model.BookSnapshot
 import com.readtrack.domain.model.BookStatus
 import com.readtrack.domain.model.ProgressType
 import com.readtrack.util.TimeConstants.ONE_DAY_MILLIS
+import com.readtrack.util.getStartOfDay
 import com.readtrack.domain.repository.BookRepository
 import com.readtrack.domain.repository.ReadingRecordRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -40,6 +41,8 @@ data class StatsUiState(
     val monthlyBreakdown: Map<Int, Double> = emptyMap(),
     val monthlyBookBreakdown: Map<Int, List<com.readtrack.domain.model.BookReadingItem>> = emptyMap(),
     val weeklyBookBreakdown: List<com.readtrack.domain.model.BookReadingItem> = emptyList(),
+    val activeDaysThisWeek: Int = 0,
+    val streakDays: Int = 0,
     val isLoading: Boolean = true
 )
 
@@ -274,6 +277,12 @@ class StatsViewModel @Inject constructor(
             },
             recentRecords = filteredRecords,
             recentRecordsWithBooks = recordsWithBooks,
+            activeDaysThisWeek = normalRecords
+                .filter { it.date >= boundaries.startOfWeek }
+                .map { getStartOfDay(it.date) }.distinct().size,
+            streakDays = calculateReadingStreak(
+                normalRecords.map { it.date }, now
+            ),
             isLoading = false
         )
     }
