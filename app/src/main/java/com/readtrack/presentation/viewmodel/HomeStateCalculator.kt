@@ -58,7 +58,7 @@ internal fun buildHomeUiState(
     var monthlyChapters = 0.0
     var totalReadingTime = 0.0
 
-    val chapterBookIds = HashSet<Long>(books.size)
+    val booksMap = books.associateBy { it.id }
     val statusCounts = LinkedHashMap<BookStatus, Int>(BookStatus.entries.size)
     var readingBooks = 0
     var finishedBooks = 0
@@ -70,9 +70,6 @@ internal fun buildHomeUiState(
         .toList()
 
     books.forEach { book ->
-        if (book.progressType == ProgressType.CHAPTER) {
-            chapterBookIds.add(book.id)
-        }
         statusCounts[book.status] = (statusCounts[book.status] ?: 0) + 1
         when (book.status) {
             BookStatus.READING -> readingBooks++
@@ -89,8 +86,9 @@ internal fun buildHomeUiState(
         normalRecords.add(record)
 
         // 快照优先，其次按当前书籍类型；与 StatsViewModel.isChapterBook 保持一致
-        val isChapterBook = record.bookSnapshot?.progressType == ProgressType.CHAPTER
-            || (record.bookId != null && chapterBookIds.contains(record.bookId))
+        val progressType = record.bookSnapshot?.progressType
+            ?: (record.bookId?.let { booksMap[it]?.progressType })
+        val isChapterBook = progressType == ProgressType.CHAPTER
         val value = if (isChapterBook) (record.chaptersRead ?: 0).toDouble() else record.pagesRead
         totalReadingTime += value
 
