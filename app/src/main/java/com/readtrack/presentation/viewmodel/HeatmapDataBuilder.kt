@@ -51,7 +51,7 @@ fun buildHeatmapMonths(records: List<ReadingRecordEntity>): List<HeatmapMonth> {
         }
 
         // 单书明细
-        val title = record.bookSnapshot?.title ?: "未知书籍"
+        val title = record.bookSnapshot?.title ?: "未知书籍" // snapshot 为历史快照，书名变更时不回溯更新
         val bookMap = dailyBookMap.getOrPut(dayStart) { mutableMapOf() }
         val existingBook = bookMap[title]
         if (existingBook != null) {
