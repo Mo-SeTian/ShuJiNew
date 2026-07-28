@@ -155,7 +155,7 @@ private fun HeroBanner(report: YearlyReportData) {
             Spacer(Modifier.height(12.dp))
             Row(
                 Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center
+                horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 HeroStat("${report.totalBooksRead}", "本书")
                 HeroStat("${report.finishedBooks}", "本读完")
@@ -197,7 +197,7 @@ private fun StatGrid(report: YearlyReportData) {
 private fun StatCard(icon: ImageVector, label: String, value: String, color: Color, modifier: Modifier) {
     Card(modifier = modifier, shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.08f))) {
-        Column(Modifier.padding(14.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(Modifier.fillMaxWidth().padding(14.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Box(Modifier.size(34.dp).clip(CircleShape).background(color.copy(alpha = 0.15f)),
                 contentAlignment = Alignment.Center) {
                 Icon(icon, null, tint = color, modifier = Modifier.size(18.dp))
@@ -327,7 +327,7 @@ private fun HabitsSection(report: YearlyReportData) {
 private fun HabitPill(icon: ImageVector, label: String, value: String, color: Color, modifier: Modifier) {
     Card(modifier = modifier, shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.08f))) {
-        Column(Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(Modifier.fillMaxWidth().padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(icon, null, tint = color, modifier = Modifier.size(22.dp))
             Spacer(Modifier.height(6.dp))
             Text(value, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = color)
@@ -426,7 +426,7 @@ fun YearlyReportCard(report: YearlyReportData, modifier: Modifier = Modifier) {
 @Composable
 private fun ShareStat(label: String, value: String, modifier: Modifier) {
     Card(modifier = modifier, shape = RoundedCornerShape(10.dp)) {
-        Column(Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(Modifier.fillMaxWidth().padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Text(value, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary)
             Text(label, style = MaterialTheme.typography.labelSmall,
