@@ -268,14 +268,8 @@ fun StatsScreen(
                         weeklyBookBreakdown = uiState.weeklyBookBreakdown,
                         monthlyBreakdown = uiState.monthlyBreakdown,
                         monthlyBookBreakdown = uiState.monthlyBookBreakdown,
-                        activeDays = uiState.recentRecordsWithBooks
-                            .map { it.record.date }
-                            .distinct()
-                            .count(),
-                        streakDays = uiState.recentRecordsWithBooks
-                            .map { it.record.date }
-                            .distinct()
-                            .count()
+                        activeDays = uiState.activeDaysThisWeek,
+                        streakDays = uiState.streakDays
                     )
                 }
 

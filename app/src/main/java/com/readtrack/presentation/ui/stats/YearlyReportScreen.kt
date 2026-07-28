@@ -1,7 +1,5 @@
 package com.readtrack.presentation.ui.stats
 
-import android.graphics.Bitmap
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -10,30 +8,31 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ChevronLeft
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.readtrack.domain.model.ProgressType
 import com.readtrack.domain.model.YearlyReportData
 import com.readtrack.presentation.ui.components.MonthlyTrendChart
 import com.readtrack.presentation.ui.share.SharePreviewDialog
 import com.readtrack.presentation.viewmodel.YearlyReportViewModel
+
+private val HeroStart = Color(0xFF6366F1)
+private val HeroMid = Color(0xFF8B5CF6)
+private val HeroEnd = Color(0xFFEC4899)
+private val Gold = Color(0xFFFFB400)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,14 +44,12 @@ fun YearlyReportScreen(
     val report by viewModel.uiState.collectAsStateWithLifecycle()
     var showShareDialog by remember { mutableStateOf(false) }
 
-    LaunchedEffect(initialYear) {
-        viewModel.selectYear(initialYear)
-    }
+    LaunchedEffect(initialYear) { viewModel.selectYear(initialYear) }
 
     Scaffold(
         topBar = {
             SmallTopAppBar(
-                title = { Text("年度阅读报告", fontWeight = FontWeight.Bold) },
+                title = { Text("年度报告", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
@@ -64,20 +61,13 @@ fun YearlyReportScreen(
                     }
                 },
                 windowInsets = WindowInsets(0, 0, 0, 0),
-                colors = TopAppBarDefaults.smallTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
+                colors = TopAppBarDefaults.smallTopAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
             )
         }
     ) { padding ->
-        val reportData = report
-        if (reportData == null) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentAlignment = Alignment.Center
-            ) {
+        val data = report
+        if (data == null) {
+            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
         } else {
@@ -86,42 +76,23 @@ fun YearlyReportScreen(
                     .fillMaxSize()
                     .padding(padding)
                     .verticalScroll(rememberScrollState())
+                    .padding(bottom = 40.dp)
             ) {
-                // 年份切换
-                YearSelector(
-                    currentYear = reportData.year,
-                    availableYears = reportData.availableYears,
-                    onYearSelected = { viewModel.selectYear(it) }
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Hero 区域
-                HeroSection(reportData)
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                // 卡片1: 年度数据总结
-                SummaryCard(reportData)
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // 卡片2: 月度趋势图
-                TrendCard(reportData)
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // 卡片3: 趣味排行榜
-                RankingCard(reportData)
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // 卡片4: 阅读习惯画像
-                HabitsCard(reportData)
-
-                Spacer(modifier = Modifier.height(32.dp))
+                YearSelector(data.year, data.availableYears) { viewModel.selectYear(it) }
+                Spacer(Modifier.height(16.dp))
+                HeroBanner(data)
+                Spacer(Modifier.height(20.dp))
+                StatGrid(data)
+                Spacer(Modifier.height(16.dp))
+                TrendCard(data)
+                Spacer(Modifier.height(16.dp))
+                RankingSection(data)
+                Spacer(Modifier.height(16.dp))
+                HabitsSection(data)
             }
         }
     }
 
-    // 分享弹窗
     if (showShareDialog && report != null) {
         SharePreviewDialog(
             filename = "yearly_report_${report!!.year}",
@@ -131,266 +102,219 @@ fun YearlyReportScreen(
     }
 }
 
-@Composable
-private fun YearSelector(
-    currentYear: Int,
-    availableYears: List<Int>,
-    onYearSelected: (Int) -> Unit
-) {
-    val currentIndex = availableYears.indexOf(currentYear).coerceAtLeast(0)
+// ─── Year Selector ─────────────────────────────────────────────────
 
+@Composable
+private fun YearSelector(currentYear: Int, availableYears: List<Int>, onYearSelected: (Int) -> Unit) {
+    val idx = availableYears.indexOf(currentYear).coerceAtLeast(0)
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
+        Modifier.fillMaxWidth().padding(horizontal = 16.dp),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(
-            onClick = {
-                if (currentIndex < availableYears.size - 1) {
-                    onYearSelected(availableYears[currentIndex + 1])
-                }
-            },
-            enabled = currentIndex < availableYears.size - 1
-        ) {
-            Icon(Icons.Default.ChevronLeft, contentDescription = "上一年")
-        }
-
-        Text(
-            text = "${currentYear}年",
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(horizontal = 16.dp)
-        )
-
+            onClick = { if (idx < availableYears.size - 1) onYearSelected(availableYears[idx + 1]) },
+            enabled = idx < availableYears.size - 1
+        ) { Icon(Icons.Default.ChevronLeft, "上一年") }
+        Text("${currentYear}年", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(horizontal = 20.dp))
         IconButton(
-            onClick = {
-                if (currentIndex > 0) {
-                    onYearSelected(availableYears[currentIndex - 1])
-                }
-            },
-            enabled = currentIndex > 0
-        ) {
-            Icon(Icons.Default.ChevronRight, contentDescription = "下一年")
-        }
+            onClick = { if (idx > 0) onYearSelected(availableYears[idx - 1]) },
+            enabled = idx > 0
+        ) { Icon(Icons.Default.ChevronRight, "下一年") }
     }
 }
 
+// ─── Hero ───────────────────────────────────────────────────────────
+
 @Composable
-private fun HeroSection(report: YearlyReportData) {
+private fun HeroBanner(report: YearlyReportData) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
-            .height(160.dp)
-            .clip(RoundedCornerShape(20.dp))
-            .background(
-                Brush.linearGradient(
-                    colors = listOf(
-                        Color(0xFF6366F1),
-                        Color(0xFF8B5CF6),
-                        Color(0xFFA78BFA)
-                    )
-                )
-            ),
-        contentAlignment = Alignment.Center
+            .height(200.dp)
+            .clip(RoundedCornerShape(24.dp))
+            .background(Brush.linearGradient(listOf(HeroStart, HeroMid, HeroEnd)))
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                "${report.year} 年度阅读报告",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                color = Color.White
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                "你的阅读，有迹可循",
-                style = MaterialTheme.typography.bodyLarge,
-                color = Color.White.copy(alpha = 0.85f)
-            )
-        }
-    }
-}
+        // 装饰圆
+        Box(Modifier.size(120.dp).offset(x = (-30).dp, y = (-30).dp)
+            .clip(CircleShape).background(Color.White.copy(alpha = 0.08f)))
+        Box(Modifier.size(80.dp).offset(x = 300.dp, y = 160.dp)
+            .clip(CircleShape).background(Color.White.copy(alpha = 0.06f)))
 
-@Composable
-private fun SummaryCard(report: YearlyReportData) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-        shape = RoundedCornerShape(16.dp)
-    ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Text("年度数据总结", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(16.dp))
-            Row(modifier = Modifier.fillMaxWidth()) {
-                StatItem("共读书籍", "${report.totalBooksRead} 本", Modifier.weight(1f))
-                StatItem("读完书籍", "${report.finishedBooks} 本", Modifier.weight(1f))
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-            Row(modifier = Modifier.fillMaxWidth()) {
-                StatItem("总阅读量", "${(report.totalPages + report.totalChapters).toInt()}", Modifier.weight(1f))
-                StatItem("新增书籍", "${report.newBooksCount} 本", Modifier.weight(1f))
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-            Row(modifier = Modifier.fillMaxWidth()) {
-                StatItem("平均评分", "%.1f 星".format(report.averageRating), Modifier.weight(1f))
-                StatItem("记录次数", "${report.totalRecords} 次", Modifier.weight(1f))
+        Column(
+            Modifier.fillMaxSize().padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text("${report.year}", style = MaterialTheme.typography.displaySmall,
+                fontWeight = FontWeight.Bold, color = Color.White.copy(alpha = 0.3f))
+            Text("年度阅读报告", style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold, color = Color.White)
+            Spacer(Modifier.height(12.dp))
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(24.dp)
+            ) {
+                HeroStat("${report.totalBooksRead}", "本书")
+                HeroStat("${report.finishedBooks}", "本读完")
+                HeroStat("${report.activeDays}", "天活跃")
             }
         }
     }
 }
 
 @Composable
-private fun StatItem(label: String, value: String, modifier: Modifier = Modifier) {
-    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(
-            value,
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            label,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+private fun HeroStat(value: String, label: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(value, style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold, color = Color.White)
+        Text(label, style = MaterialTheme.typography.labelSmall,
+            color = Color.White.copy(alpha = 0.7f))
     }
 }
+
+// ─── Stat Grid ──────────────────────────────────────────────────────
+
+@Composable
+private fun StatGrid(report: YearlyReportData) {
+    val total = (report.totalPages + report.totalChapters).toInt()
+    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        StatCard(Icons.Default.MenuBook, "总阅读量", "${if (total >= 10000) "${total / 10000}万" else "$total"}", Color(0xFF6366F1), Modifier.weight(1f))
+        StatCard(Icons.Default.AutoStories, "新增书籍", "${report.newBooksCount} 本", Color(0xFF8B5CF6), Modifier.weight(1f))
+        StatCard(Icons.Default.Star, "平均评分", "%.1f".format(report.averageRating), Gold, Modifier.weight(1f))
+    }
+    Spacer(Modifier.height(10.dp))
+    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        StatCard(Icons.Default.EditNote, "记录次数", "${report.totalRecords} 次", Color(0xFFEC4899), Modifier.weight(1f))
+        StatCard(Icons.Default.LocalFireDepartment, "最长连续", "${report.maxStreakDays} 天", Color(0xFFF97316), Modifier.weight(1f))
+        StatCard(Icons.Default.TrendingUp, "完读率", "${if (report.totalBooksRead > 0) report.finishedBooks * 100 / report.totalBooksRead else 0}%", Color(0xFF22C55E), Modifier.weight(1f))
+    }
+}
+
+@Composable
+private fun StatCard(icon: ImageVector, label: String, value: String, color: Color, modifier: Modifier) {
+    Card(modifier = modifier, shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.08f))) {
+        Column(Modifier.padding(14.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Box(Modifier.size(34.dp).clip(CircleShape).background(color.copy(alpha = 0.15f)),
+                contentAlignment = Alignment.Center) {
+                Icon(icon, null, tint = color, modifier = Modifier.size(18.dp))
+            }
+            Spacer(Modifier.height(8.dp))
+            Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = color)
+            Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+// ─── Trend ──────────────────────────────────────────────────────────
 
 @Composable
 private fun TrendCard(report: YearlyReportData) {
-    val merged = remember(report) {
-        report.monthlyPages.zip(report.monthlyChapters) { p, c -> p + c }
-    }
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-        shape = RoundedCornerShape(16.dp)
-    ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Text("月度阅读趋势", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(16.dp))
+    val merged = remember(report) { report.monthlyPages.zip(report.monthlyChapters) { p, c -> p + c } }
+    Card(Modifier.fillMaxWidth().padding(horizontal = 16.dp), shape = RoundedCornerShape(16.dp)) {
+        Column(Modifier.padding(20.dp)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically) {
+                Text("月度趋势", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text("页/章", style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Spacer(Modifier.height(12.dp))
             MonthlyTrendChart(values = merged)
         }
     }
 }
 
+// ─── Rankings ───────────────────────────────────────────────────────
+
 @Composable
-private fun RankingCard(report: YearlyReportData) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-        shape = RoundedCornerShape(16.dp)
-    ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Text("趣味排行榜", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(16.dp))
+private fun RankingSection(report: YearlyReportData) {
+    Card(Modifier.fillMaxWidth().padding(horizontal = 16.dp), shape = RoundedCornerShape(16.dp)) {
+        Column(Modifier.padding(20.dp)) {
+            Text("年度之最", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(14.dp))
+
             report.favoriteBook?.let { book ->
-                RankItem("🥇 最爱之书", book.title, "${book.rating ?: 0f} 星")
-                Spacer(modifier = Modifier.height(8.dp))
+                RankRow("🥇", "年度最爱", book.title,
+                    "${book.rating ?: 0f} ★", Gold)
             }
             report.thickestBook?.let { book ->
-                val detail = if (book.progressType == com.readtrack.domain.model.ProgressType.CHAPTER)
+                val detail = if (book.progressType == ProgressType.CHAPTER)
                     "${book.totalChapters ?: 0} 章" else "${book.totalPages.toInt()} 页"
-                RankItem("📚 最厚之书", book.title, detail)
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-            report.longestBook?.let { book ->
-                val dateStr = remember(book.createdAt) { YearlyReportViewModel.formatTimestamp(book.createdAt) }
-                RankItem("⏳ 陪伴最久之书", book.title, "从 $dateStr 至今")
-                Spacer(modifier = Modifier.height(8.dp))
+                RankRow("📚", "最厚之书", book.title, detail, Color(0xFF6366F1))
             }
             report.fastestBook?.let { book ->
-                RankItem("⚡ 读得最快的书", book.title, "高效阅读")
-                Spacer(modifier = Modifier.height(8.dp))
+                RankRow("⚡", "读得最快", book.title, "高效阅读", Color(0xFF22C55E))
+            }
+            report.longestBook?.let { book ->
+                val dateStr = YearlyReportViewModel.formatTimestamp(book.createdAt)
+                RankRow("⏳", "陪伴最久", book.title, "从 $dateStr 至今", Color(0xFF8B5CF6))
             }
             report.favoriteAuthor?.let { author ->
-                RankItem("✍️ 最爱作者", author, "阅读最多")
+                RankRow("✍️", "最爱作者", author, "阅读最多", Color(0xFFEC4899))
             }
         }
     }
 }
 
 @Composable
-private fun RankItem(label: String, title: String, detail: String) {
+private fun RankRow(emoji: String, label: String, title: String, detail: String, color: Color) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
+        Modifier.fillMaxWidth().padding(vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(emoji, fontSize = 20.sp)
+        Spacer(Modifier.width(10.dp))
+        Column(Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium, maxLines = 1)
+            Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        Spacer(modifier = Modifier.width(12.dp))
-        Surface(shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.primaryContainer) {
-            Text(
-                detail,
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
-            )
+        Surface(shape = RoundedCornerShape(8.dp), color = color.copy(alpha = 0.12f)) {
+            Text(detail, Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                style = MaterialTheme.typography.labelMedium, color = color, fontWeight = FontWeight.SemiBold)
         }
     }
 }
 
+// ─── Habits ─────────────────────────────────────────────────────────
+
 @Composable
-private fun HabitsCard(report: YearlyReportData) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-        shape = RoundedCornerShape(16.dp)
-    ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Text("阅读习惯画像", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(16.dp))
-            Row(modifier = Modifier.fillMaxWidth()) {
-                HabitItem("最爱类型", report.topGenre, Modifier.weight(1f))
-                HabitItem("最长连续", "${report.maxStreakDays} 天", Modifier.weight(1f))
-                HabitItem("活跃天数", "${report.activeDays} 天", Modifier.weight(1f))
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-            Row(modifier = Modifier.fillMaxWidth()) {
-                HabitItem("最爱月份", "${report.favoriteMonth + 1}月", Modifier.weight(1f))
+private fun HabitsSection(report: YearlyReportData) {
+    Card(Modifier.fillMaxWidth().padding(horizontal = 16.dp), shape = RoundedCornerShape(16.dp)) {
+        Column(Modifier.padding(20.dp)) {
+            Text("阅读习惯", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(14.dp))
+
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                HabitPill(Icons.Default.Category, "最爱类型", report.topGenre, Color(0xFF6366F1), Modifier.weight(1f))
                 val dowNames = listOf("", "周日", "周一", "周二", "周三", "周四", "周五", "周六")
-                HabitItem("常读星期", dowNames.getOrElse(report.favoriteDayOfWeek) { "-" }, Modifier.weight(1f))
-                HabitItem("完读率", "${if (report.totalBooksRead > 0) (report.finishedBooks * 100 / report.totalBooksRead) else 0}%", Modifier.weight(1f))
+                HabitPill(Icons.Default.CalendarToday, "常读星期",
+                    dowNames.getOrElse(report.favoriteDayOfWeek) { "-" }, Color(0xFF8B5CF6), Modifier.weight(1f))
+                HabitPill(Icons.Default.Schedule, "最爱月份", "${report.favoriteMonth + 1}月", Color(0xFFF97316), Modifier.weight(1f))
             }
 
-            // 状态分布条
+            // 状态分布
             if (report.statusDistribution.any { it.value > 0 }) {
-                Spacer(modifier = Modifier.height(16.dp))
-                Text("书籍状态分布", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Medium,
+                Spacer(Modifier.height(18.dp))
+                Text("书籍状态", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(Modifier.height(10.dp))
                 report.statusDistribution.forEach { (status, count) ->
-                    if (count > 0) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(status, style = MaterialTheme.typography.bodySmall)
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(
-                                    modifier = Modifier
-                                        .width(((count.toFloat() / report.totalBooksRead.coerceAtLeast(1)) * 80).dp.coerceAtLeast(4.dp))
-                                        .height(6.dp)
-                                        .clip(RoundedCornerShape(3.dp))
-                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("$count 本", style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
+                    if (count == 0) return@forEach
+                    val pct = count.toFloat() / report.totalBooksRead.coerceAtLeast(1)
+                    Row(Modifier.fillMaxWidth().padding(vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text(status, Modifier.width(48.dp), style = MaterialTheme.typography.bodySmall)
+                        Box(Modifier.weight(1f).height(8.dp).clip(RoundedCornerShape(4.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant)) {
+                            Box(Modifier.fillMaxWidth(pct).fillMaxHeight()
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)))
                         }
+                        Spacer(Modifier.width(8.dp))
+                        Text("$count 本", style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
@@ -399,143 +323,113 @@ private fun HabitsCard(report: YearlyReportData) {
 }
 
 @Composable
-private fun HabitItem(label: String, value: String, modifier: Modifier = Modifier) {
-    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        Box(
-            modifier = Modifier
-                .size(56.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primaryContainer),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                value,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                textAlign = TextAlign.Center
-            )
+private fun HabitPill(icon: ImageVector, label: String, value: String, color: Color, modifier: Modifier) {
+    Card(modifier = modifier, shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.08f))) {
+        Column(Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(icon, null, tint = color, modifier = Modifier.size(22.dp))
+            Spacer(Modifier.height(6.dp))
+            Text(value, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = color)
+            Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
-// ==================== 分享用卡片（纯Composable，不依赖ViewModel） ====================
+// ─── Share Card ─────────────────────────────────────────────────────
 
 @Composable
 fun YearlyReportCard(report: YearlyReportData, modifier: Modifier = Modifier) {
     Column(
-        modifier = modifier
-            .fillMaxWidth()
+        modifier = modifier.fillMaxWidth()
             .background(MaterialTheme.colorScheme.background)
             .padding(16.dp)
     ) {
         // Hero
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(120.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(
-                    Brush.linearGradient(
-                        colors = listOf(Color(0xFF6366F1), Color(0xFF8B5CF6))
-                    )
-                ),
+            Modifier.fillMaxWidth().height(140.dp).clip(RoundedCornerShape(20.dp))
+                .background(Brush.linearGradient(listOf(HeroStart, HeroMid, HeroEnd))),
             contentAlignment = Alignment.Center
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    "${report.year} 年度阅读报告",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-                Text(
-                    "共读 ${report.totalBooksRead} 本 · ${(report.totalPages + report.totalChapters).toInt()} 页/章",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White.copy(alpha = 0.85f)
-                )
+                Text("${report.year} 年度阅读报告", style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold, color = Color.White)
+                Spacer(Modifier.height(4.dp))
+                Text("共读 ${report.totalBooksRead} 本 · ${(report.totalPages + report.totalChapters).toInt()} 页/章",
+                    style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.8f))
             }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(Modifier.height(12.dp))
 
-        // 摘要
-        Card(shape = RoundedCornerShape(12.dp)) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    StatItem("读完", "${report.finishedBooks} 本", Modifier.weight(1f))
-                    StatItem("记录", "${report.totalRecords} 次", Modifier.weight(1f))
-                    StatItem("活跃", "${report.activeDays} 天", Modifier.weight(1f))
-                }
-            }
+        // 3 stats in a row
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            ShareStat("读完", "${report.finishedBooks} 本", Modifier.weight(1f))
+            ShareStat("记录", "${report.totalRecords} 次", Modifier.weight(1f))
+            ShareStat("活跃", "${report.activeDays} 天", Modifier.weight(1f))
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(Modifier.height(12.dp))
 
         // 最爱之书
         report.favoriteBook?.let { book ->
             Card(shape = RoundedCornerShape(12.dp)) {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("年度最爱", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text("年度最爱", style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text(book.title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                        if (book.author != null) {
-                            Text(book.author, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
+                        if (book.author != null) Text(book.author, style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFFFB400).copy(alpha = 0.2f)) {
-                        Text(
-                            "${book.rating ?: 0f} ★",
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                            color = Color(0xFFFFB400),
-                            fontWeight = FontWeight.Bold
-                        )
+                    Surface(shape = RoundedCornerShape(8.dp), color = Gold.copy(alpha = 0.15f)) {
+                        Text("${book.rating ?: 0f} ★", Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                            color = Gold, fontWeight = FontWeight.Bold)
                     }
                 }
             }
         }
 
-        // 最爱作者
         report.favoriteAuthor?.let { author ->
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(Modifier.height(8.dp))
             Card(shape = RoundedCornerShape(12.dp)) {
-                Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("✍️", style = MaterialTheme.typography.titleMedium)
-                    Spacer(modifier = Modifier.width(8.dp))
+                Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text("✍️", fontSize = 20.sp)
+                    Spacer(Modifier.width(8.dp))
                     Column {
-                        Text("最爱作者", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("最爱作者", style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text(author, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                     }
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(Modifier.height(12.dp))
 
-        // 月度趋势图
         Card(shape = RoundedCornerShape(12.dp)) {
-            Column(modifier = Modifier.padding(16.dp)) {
+            Column(Modifier.padding(14.dp)) {
                 Text("月度趋势", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(Modifier.height(6.dp))
                 val merged = report.monthlyPages.zip(report.monthlyChapters) { p, c -> p + c }
-                MonthlyTrendChart(values = merged, modifier = Modifier.height(150.dp))
+                MonthlyTrendChart(values = merged, modifier = Modifier.height(130.dp))
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // 水印
-        Text(
-            "—— 书迹 App ——",
-            modifier = Modifier.fillMaxWidth(),
-            textAlign = TextAlign.Center,
+        Spacer(Modifier.height(16.dp))
+        Text("—— 书迹 App ——", Modifier.fillMaxWidth(), textAlign = TextAlign.Center,
             style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-        )
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
+    }
+}
+
+@Composable
+private fun ShareStat(label: String, value: String, modifier: Modifier) {
+    Card(modifier = modifier, shape = RoundedCornerShape(10.dp)) {
+        Column(Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(value, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary)
+            Text(label, style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
     }
 }
