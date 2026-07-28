@@ -24,8 +24,8 @@ android {
         applicationId = "com.readtrack"
         minSdk = 34
         targetSdk = 36
-        versionCode = 32
-        versionName = "2.6.0"
+        versionCode = 33
+        versionName = "2.7.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
