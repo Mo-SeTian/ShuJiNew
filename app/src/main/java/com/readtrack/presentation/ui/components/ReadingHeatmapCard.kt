@@ -204,6 +204,31 @@ fun ReadingHeatmapCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 } else {
+                    // 合计行
+                    val totalParts = mutableListOf<String>()
+                    if (day.pagesRead > 0) totalParts += "${day.pagesRead.toInt()} 页"
+                    if (day.chaptersRead > 0) totalParts += "${day.chaptersRead.toInt()} 章"
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "合计",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            totalParts.joinToString(" + "),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 4.dp),
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+                    )
                     day.bookBreakdowns.forEach { book ->
                         Row(
                             modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
