@@ -55,6 +55,13 @@ data class TrendPoint(
     val cumulative: Double
 )
 
+/** 热力图单日单书数据 */
+data class DayBookBreakdown(
+    val bookTitle: String,
+    val chaptersRead: Double = 0.0,
+    val pagesRead: Double = 0.0
+)
+
 /** 热力图单日数据 */
 data class HeatmapDay(
     val dateMs: Long,
@@ -63,7 +70,8 @@ data class HeatmapDay(
     val dayOfMonth: Int,
     val dayOfWeek: Int,
     val chaptersRead: Double,
-    val pagesRead: Double
+    val pagesRead: Double,
+    val bookBreakdowns: List<DayBookBreakdown> = emptyList()
 )
 
 /** 热力图单月数据 */
