@@ -977,7 +977,7 @@ private fun ImageSearchBottomSheet(
                     ) {
                         // 将结果按 3 列排列
                         val chunkedResults = imageResults.chunked(3)
-                        items(chunkedResults.size) { rowIndex ->
+                        items(chunkedResults.size, key = { it }) { rowIndex ->
                             val row = chunkedResults[rowIndex]
                             Row(
                                 modifier = Modifier.fillMaxWidth(),

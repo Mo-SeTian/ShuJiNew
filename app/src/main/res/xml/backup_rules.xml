@@ -2,4 +2,6 @@
 <full-backup-content>
     <include domain="sharedpref" path="."/>
     <exclude domain="sharedpref" path="device.xml"/>
+    <exclude domain="sharedpref" path="readtrack_secure_prefs.xml"/>
+    <exclude domain="sharedpref" path="readtrack_secure_prefs_fallback.xml"/>
 </full-backup-content>
