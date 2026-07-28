@@ -70,8 +70,8 @@ class HomeViewModel @Inject constructor(
                     bookId = bookId,
                     bookSnapshot = BookSnapshot.from(book, book.status),
                     pagesRead = if (isChapterBased) 0.0 else (newPage - book.currentPage).coerceAtLeast(0.0),
-                    fromPage = book.currentPage,
-                    toPage = if (isChapterBased) 0.0 else newPage.coerceAtMost(book.totalPages),
+                    fromPage = if (isChapterBased) book.currentChapter.toDouble() else book.currentPage,
+                    toPage = if (isChapterBased) newChapter.toDouble() else newPage.coerceAtMost(book.totalPages),
                     chaptersRead = if (isChapterBased) (newChapter - book.currentChapter).coerceAtLeast(0) else null,
                     recordType = RecordType.NORMAL,
                     date = System.currentTimeMillis()
