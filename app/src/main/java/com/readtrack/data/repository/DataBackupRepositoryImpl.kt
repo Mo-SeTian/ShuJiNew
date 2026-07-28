@@ -2,6 +2,7 @@ package com.readtrack.data.repository
 
 import android.content.Context
 import com.readtrack.data.local.PreferencesManager
+import com.readtrack.data.local.dao.BadgeDao
 import com.readtrack.data.local.dao.BookDao
 import com.readtrack.data.local.dao.BookListDao
 import com.readtrack.data.local.dao.ReadingRecordDao
@@ -22,6 +23,7 @@ import com.readtrack.domain.model.ImportResult
 import com.readtrack.domain.model.ReadingRecordExport
 import com.readtrack.domain.model.TagExport
 import com.readtrack.domain.model.buildImportPreview
+import com.readtrack.domain.repository.BadgeRepository
 import com.readtrack.domain.repository.DataBackupRepository
 import com.readtrack.domain.repository.TagRepository
 import com.readtrack.util.CoverStorageUtil
@@ -53,7 +55,9 @@ class DataBackupRepositoryImpl @Inject constructor(
     private val tagDao: TagDao,
     private val preferencesManager: PreferencesManager,
     private val coverStorageUtil: CoverStorageUtil,
-    private val tagRepository: TagRepository
+    private val tagRepository: TagRepository,
+    private val badgeDao: BadgeDao,
+    private val badgeRepository: BadgeRepository
 ) : DataBackupRepository {
 
     private val json = Json {
@@ -234,6 +238,7 @@ class DataBackupRepositoryImpl @Inject constructor(
                 recordDao.deleteAllRecords()
                 bookDao.deleteAllBooks()
                 bookListDao.deleteAllBookLists()
+                badgeDao.deleteAll()
             }
 
             // 阶段 1：读取现有数据用于去重
@@ -379,6 +384,13 @@ class DataBackupRepositoryImpl @Inject constructor(
                     preferencesManager.importPreferences(migrated.preferences)
                 } catch (e: Exception) {
                     errors.add("恢复用户设置失败: ${e.message}")
+                }
+            }
+
+            // 导入完成后重新核算徽章
+            if (booksImported > 0 || recordsImported > 0) {
+                kotlinx.coroutines.runBlocking {
+                    runCatching { badgeRepository.checkAndAward() }
                 }
             }
 

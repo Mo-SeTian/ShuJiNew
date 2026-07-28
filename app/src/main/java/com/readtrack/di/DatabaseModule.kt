@@ -196,7 +196,9 @@ object DatabaseModule {
         tagDao: TagDao,
         preferencesManager: PreferencesManager,
         coverStorageUtil: CoverStorageUtil,
-        tagRepository: TagRepository
+        tagRepository: TagRepository,
+        badgeDao: BadgeDao,
+        badgeRepository: BadgeRepository
     ): DataBackupRepository {
         return DataBackupRepositoryImpl(
             context = context,
@@ -207,7 +209,9 @@ object DatabaseModule {
             tagDao = tagDao,
             preferencesManager = preferencesManager,
             coverStorageUtil = coverStorageUtil,
-            tagRepository = tagRepository
+            tagRepository = tagRepository,
+            badgeDao = badgeDao,
+            badgeRepository = badgeRepository
         )
     }
 }
