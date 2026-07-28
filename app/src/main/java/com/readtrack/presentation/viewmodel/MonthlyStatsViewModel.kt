@@ -4,9 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.readtrack.data.local.PreferencesManager
 import com.readtrack.data.local.StatsUnit
-import com.readtrack.data.local.entity.ReadingRecordEntity
 import com.readtrack.data.local.entity.RecordType
 import com.readtrack.domain.model.ProgressType
+import com.readtrack.domain.repository.BookRepository
 import com.readtrack.domain.repository.ReadingRecordRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,6 +26,7 @@ data class MonthlyStatsUiState(
 @HiltViewModel
 class MonthlyStatsViewModel @Inject constructor(
     private val recordRepository: ReadingRecordRepository,
+    private val bookRepository: BookRepository,
     private val preferencesManager: PreferencesManager
 ) : ViewModel() {
 
@@ -36,15 +37,17 @@ class MonthlyStatsViewModel @Inject constructor(
         viewModelScope.launch {
             combine(
                 recordRepository.getAllRecords().catch { emit(emptyList()) },
+                bookRepository.getAllBooks().catch { emit(emptyList()) },
                 preferencesManager.statsUnit
-            ) { records, unit ->
+            ) { records, books, unit ->
                 val isChapter = unit == StatsUnit.CHAPTER
                 val filtered = if (isChapter) {
                     records.filter { it.recordType == RecordType.NORMAL && it.bookSnapshot?.progressType == ProgressType.CHAPTER }
                 } else {
                     records.filter { it.recordType == RecordType.NORMAL && it.bookSnapshot?.progressType != ProgressType.CHAPTER }
                 }
-                Pair(buildHeatmapMonths(filtered), isChapter)
+                val titleLookup = books.associate { it.id to it.title }
+                Pair(buildHeatmapMonths(filtered, titleLookup), isChapter)
             }.collect { (months, isChapter) ->
                 _uiState.value = MonthlyStatsUiState(
                     months = months,
