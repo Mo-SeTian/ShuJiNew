@@ -11,7 +11,10 @@ private const val ONE_DAY_MILLIS = 24L * 60L * 60L * 1000L
  * 将阅读记录按天聚合为热力图数据，按月分组。
  * BookDetailViewModel 和 MonthlyStatsViewModel 共用。
  */
-fun buildHeatmapMonths(records: List<ReadingRecordEntity>): List<HeatmapMonth> {
+fun buildHeatmapMonths(
+    records: List<ReadingRecordEntity>,
+    bookTitleLookup: Map<Long, String> = emptyMap()
+): List<HeatmapMonth> {
     val normalRecords = records.filter { it.recordType == RecordType.NORMAL }
     if (normalRecords.isEmpty()) return emptyList()
 
@@ -50,8 +53,10 @@ fun buildHeatmapMonths(records: List<ReadingRecordEntity>): List<HeatmapMonth> {
             )
         }
 
-        // 单书明细
-        val title = record.bookSnapshot?.title ?: "未知书籍" // snapshot 为历史快照，书名变更时不回溯更新
+        // 单书明细 — 优先当前书名，回退快照
+        val title = record.bookId?.let { bookTitleLookup[it] }
+            ?: record.bookSnapshot?.title
+            ?: "未知书籍"
         val bookMap = dailyBookMap.getOrPut(dayStart) { mutableMapOf() }
         val existingBook = bookMap[title]
         if (existingBook != null) {
