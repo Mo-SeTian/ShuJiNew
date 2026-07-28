@@ -184,18 +184,51 @@ fun ReadingHeatmapCard(
                 }
                 Text("多", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-        }
-    }
 
-    // 点击弹窗
-    selectedDay?.let { day ->
-        val unit = if (isChapterBased) "章" else "页"
-        val value = if (isChapterBased) day.chaptersRead.toInt() else day.pagesRead.toInt()
-        AlertDialog(
-            onDismissRequest = { selectedDay = null },
-            title = { Text(day.dateMs.toDateString("yyyy年M月d日"), fontWeight = FontWeight.Bold) },
-            text = { Text(if (value > 0) "阅读了 $value $unit" else "当天没有阅读记录") },
-            confirmButton = { TextButton(onClick = { selectedDay = null }) { Text("关闭") } }
-        )
+            // 点击日期后在下方展示当日书籍明细
+            selectedDay?.let { day ->
+                Spacer(Modifier.height(12.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    text = day.dateMs.toDateString("yyyy年M月d日") + " 阅读明细",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Spacer(Modifier.height(8.dp))
+
+                if (day.bookBreakdowns.isEmpty()) {
+                    Text(
+                        "当天没有阅读记录",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    day.bookBreakdowns.forEach { book ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = book.bookTitle,
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.weight(1f),
+                                maxLines = 1
+                            )
+                            val parts = mutableListOf<String>()
+                            if (book.pagesRead > 0) parts += "${book.pagesRead.toInt()} 页"
+                            if (book.chaptersRead > 0) parts += "${book.chaptersRead.toInt()} 章"
+                            Text(
+                                text = parts.joinToString(" + "),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                }
+            }
+        }
     }
 }

@@ -17,8 +17,10 @@ fun buildHeatmapMonths(records: List<ReadingRecordEntity>): List<HeatmapMonth> {
 
     val calendar = Calendar.getInstance()
 
-    // 按天聚合
+    // 按天聚合（总额 + 单书明细）
     val dailyMap = linkedMapOf<Long, HeatmapDay>()
+    val dailyBookMap = mutableMapOf<Long, MutableMap<String, DayBookBreakdown>>()
+
     normalRecords.forEach { record ->
         calendar.timeInMillis = record.date
         val year = calendar.get(Calendar.YEAR)
@@ -47,6 +49,30 @@ fun buildHeatmapMonths(records: List<ReadingRecordEntity>): List<HeatmapMonth> {
                 pagesRead = if (!isChapter) amount else 0.0
             )
         }
+
+        // 单书明细
+        val title = record.bookSnapshot?.title ?: "未知书籍"
+        val bookMap = dailyBookMap.getOrPut(dayStart) { mutableMapOf() }
+        val existingBook = bookMap[title]
+        if (existingBook != null) {
+            bookMap[title] = existingBook.copy(
+                chaptersRead = existingBook.chaptersRead + if (isChapter) amount else 0.0,
+                pagesRead = existingBook.pagesRead + if (!isChapter) amount else 0.0
+            )
+        } else {
+            bookMap[title] = DayBookBreakdown(
+                bookTitle = title,
+                chaptersRead = if (isChapter) amount else 0.0,
+                pagesRead = if (!isChapter) amount else 0.0
+            )
+        }
+    }
+
+    // 将单书明细写入对应 HeatmapDay
+    dailyBookMap.forEach { (dayStart, bookMap) ->
+        dailyMap[dayStart] = dailyMap[dayStart]?.copy(
+            bookBreakdowns = bookMap.values.toList()
+        ) ?: dailyMap[dayStart]!!
     }
 
     // 填充缺失日（最早记录日到今天）
