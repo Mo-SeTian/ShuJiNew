@@ -1,7 +1,9 @@
 package com.readtrack.presentation.ui.settings
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -73,8 +75,12 @@ fun FeedbackScreen(onNavigateBack: () -> Unit) {
             // 问卷按钮
             Button(
                 onClick = {
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(FEEDBACK_URL))
-                    context.startActivity(intent)
+                    try {
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(FEEDBACK_URL))
+                        context.startActivity(intent)
+                    } catch (_: ActivityNotFoundException) {
+                        Toast.makeText(context, "未找到可用的浏览器", Toast.LENGTH_SHORT).show()
+                    }
                 },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp)
