@@ -28,6 +28,7 @@ import javax.inject.Inject
 data class TimelineItem(
     val record: ReadingRecordEntity,
     val bookSnapshot: BookSnapshot?,  // 快照：删除图书后仍可显示书名封面
+    val currentTitle: String = bookSnapshot?.title ?: "已删除图书",
     val dateLabel: String,   // 如 "今天"、"昨天"、"3月15日"
     val timeLabel: String    // 如 "14:30"
 )
@@ -130,9 +131,13 @@ class TimelineViewModel @Inject constructor(
                             else -> SimpleDateFormat("M月d日", Locale.CHINESE).format(Date(record.date))
                         }
                         val timeLabel = SimpleDateFormat("HH:mm", Locale.CHINESE).format(Date(record.date))
+                        val currentTitle = record.bookId?.let { liveBookMap[it]?.title }
+                            ?: snapshot?.title
+                            ?: "已删除图书"
                         TimelineItem(
                             record = record,
                             bookSnapshot = snapshot,
+                            currentTitle = currentTitle,
                             dateLabel = dateLabel,
                             timeLabel = timeLabel
                         )

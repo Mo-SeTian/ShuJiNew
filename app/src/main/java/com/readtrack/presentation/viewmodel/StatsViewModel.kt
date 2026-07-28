@@ -63,7 +63,8 @@ data class BookReadingBreakdown(
 
 data class RecordWithBook(
     val record: ReadingRecordEntity,
-    val bookSnapshot: BookSnapshot?
+    val bookSnapshot: BookSnapshot?,
+    val currentTitle: String = bookSnapshot?.title ?: "已删除图书"
 )
 
 @HiltViewModel
@@ -195,7 +196,10 @@ class StatsViewModel @Inject constructor(
                 ?: record.bookId?.let { booksMap[it] }?.let { book ->
                     BookSnapshot.from(book, book.status)
                 }
-            RecordWithBook(record = record, bookSnapshot = snapshot)
+            val currentTitle = record.bookId?.let { booksMap[it]?.title }
+                ?: snapshot?.title
+                ?: "已删除图书"
+            RecordWithBook(record = record, bookSnapshot = snapshot, currentTitle = currentTitle)
         }
 
         // 按年+月汇总（单次遍历，同时产出总量和书籍明细）
@@ -212,8 +216,8 @@ class StatsViewModel @Inject constructor(
             for (r in recs) {
                 val amount = r.readingAmount(booksMap)
                 total += amount
-                val title = r.bookSnapshot?.title
-                    ?: r.bookId?.let { booksMap[it]?.title }
+                val title = r.bookId?.let { booksMap[it]?.title }
+                    ?: r.bookSnapshot?.title
                     ?: "已删除图书"
                 bookAmounts[title] = (bookAmounts[title] ?: 0.0) + amount
             }
@@ -226,8 +230,8 @@ class StatsViewModel @Inject constructor(
         // 本周（周一~周日）书籍阅读明细
         val weeklyBookBreakdown = normalRecords.filter { it.date >= boundaries.startOfWeek }
             .groupBy { r ->
-                r.bookSnapshot?.title
-                    ?: r.bookId?.let { booksMap[it]?.title }
+                r.bookId?.let { booksMap[it]?.title }
+                    ?: r.bookSnapshot?.title
                     ?: "已删除图书"
             }.map { (title, recs) ->
                 com.readtrack.domain.model.BookReadingItem(

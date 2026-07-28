@@ -406,6 +406,7 @@ private fun HistoryRecordItem(
 ) {
     val record = item.record
     val snapshot = item.bookSnapshot
+    val title = item.currentTitle
     val isBookMissing = snapshot == null
     val isChapterBased = snapshot?.progressType == ProgressType.CHAPTER
     val isStatusRecord = record.recordType != RecordType.NORMAL
@@ -475,7 +476,7 @@ private fun HistoryRecordItem(
 
             BookCover(
                 coverPath = snapshot?.coverPath,
-                contentDescription = snapshot?.title ?: "[已删除图书]",
+                contentDescription = title,
                 modifier = Modifier
                     .width(44.dp)
                     .height(66.dp)
@@ -488,7 +489,7 @@ private fun HistoryRecordItem(
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = snapshot?.title ?: "[已删除图书]",
+                    text = title,
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1,

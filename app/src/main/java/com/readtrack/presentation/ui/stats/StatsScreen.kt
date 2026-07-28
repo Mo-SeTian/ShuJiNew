@@ -823,7 +823,7 @@ fun ReadingRecordItem(recordWithBook: RecordWithBook) {
             Column(modifier = Modifier.weight(1f)) {
                 // Book title
                 Text(
-                    text = snapshot?.title ?: "[已删除图书]",
+                    text = recordWithBook.currentTitle,
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1,

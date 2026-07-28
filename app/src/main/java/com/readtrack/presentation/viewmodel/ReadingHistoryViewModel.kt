@@ -24,6 +24,7 @@ import javax.inject.Inject
 data class ReadingHistoryItem(
     val record: ReadingRecordEntity,
     val bookSnapshot: BookSnapshot?,
+    val currentTitle: String = bookSnapshot?.title ?: "已删除图书",
     val dateLabel: String,
     val timeLabel: String
 )
@@ -114,9 +115,13 @@ class ReadingHistoryViewModel @Inject constructor(
                             else -> SimpleDateFormat("M月d日", Locale.CHINESE).format(Date(record.date))
                         }
                         val timeLabel = SimpleDateFormat("HH:mm", Locale.CHINESE).format(Date(record.date))
+                        val currentTitle = record.bookId?.let { liveBookMap[it]?.title }
+                            ?: snapshot?.title
+                            ?: "已删除图书"
                         ReadingHistoryItem(
                             record = record,
                             bookSnapshot = snapshot,
+                            currentTitle = currentTitle,
                             dateLabel = dateLabel,
                             timeLabel = timeLabel
                         )
