@@ -3,6 +3,7 @@ package com.readtrack.data.repository
 import android.content.Context
 import com.readtrack.data.local.PreferencesManager
 import com.readtrack.data.local.dao.BadgeDao
+import com.readtrack.data.local.entity.BadgeEntity
 import com.readtrack.data.local.dao.BookDao
 import com.readtrack.data.local.dao.BookListDao
 import com.readtrack.data.local.dao.ReadingRecordDao
@@ -13,6 +14,7 @@ import com.readtrack.data.local.entity.BookListCrossRef
 import com.readtrack.data.local.entity.BookListEntity
 import com.readtrack.data.local.entity.ReadingRecordEntity
 import com.readtrack.data.local.entity.RecordType
+import com.readtrack.domain.model.BadgeExport
 import com.readtrack.domain.model.BookExport
 import com.readtrack.domain.model.BookListExport
 import com.readtrack.domain.model.BookSnapshot
@@ -126,6 +128,7 @@ class DataBackupRepositoryImpl @Inject constructor(
 
             // 导出用户设置
             val preferences = preferencesManager.exportPreferences()
+            val badgeExports = badgeDao.getAllBadges().first().map { BadgeExport(it.id, it.earnedAt) }
 
             val backup = DataBackup(
                 books = bookExports,
@@ -133,7 +136,8 @@ class DataBackupRepositoryImpl @Inject constructor(
                 bookLists = bookListExports,
                 preferences = preferences,
                 tags = tagExports,
-                bookTags = bookTagExports
+                bookTags = bookTagExports,
+                badges = badgeExports
             )
 
             Result.success(backup)
@@ -387,8 +391,15 @@ class DataBackupRepositoryImpl @Inject constructor(
                 }
             }
 
-            // 导入完成后重新核算徽章
-            if (booksImported > 0 || recordsImported > 0) {
+            // 阶段 7：导入徽章
+            if (migrated.badges.isNotEmpty()) {
+                migrated.badges.forEach { badgeExport ->
+                    try {
+                        badgeDao.insert(BadgeEntity(id = badgeExport.id, earnedAt = badgeExport.earnedAt))
+                    } catch (_: Exception) { /* 忽略重复 */ }
+                }
+            } else if (booksImported > 0 || recordsImported > 0) {
+                // 旧备份无 badges 字段，重新核算
                 runCatching { badgeRepository.checkAndAward() }
             }
 

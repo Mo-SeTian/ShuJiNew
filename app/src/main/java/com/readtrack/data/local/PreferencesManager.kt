@@ -370,6 +370,10 @@ class PreferencesManager @Inject constructor(
                 webDavAutoBackupFrequency = preferences[WEBDAV_AUTO_BACKUP_FREQUENCY] ?: AutoBackupFrequency.OFF.name,
                 updateSource = preferences[UPDATE_SOURCE] ?: "github",
                 homeComponentOrder = (preferences[HOME_COMPONENT_ORDER] ?: "").split(",").filter { it.isNotBlank() },
+                lastReadBookId = preferences[LAST_READ_BOOK_ID],
+                reminderEnabled = preferences[REMINDER_ENABLED] ?: false,
+                reminderHour = preferences[REMINDER_HOUR] ?: 21,
+                reminderMinute = preferences[REMINDER_MINUTE] ?: 0,
                 widgetBookMap = run {
                     val raw = preferences[WIDGET_BOOK_MAP] ?: ""
                     if (raw.isBlank()) emptyMap()
@@ -401,6 +405,10 @@ class PreferencesManager @Inject constructor(
             preferences[WEBDAV_AUTO_BACKUP_FREQUENCY] = prefs.webDavAutoBackupFrequency.takeIf { v -> runCatching { AutoBackupFrequency.valueOf(v) }.isSuccess } ?: AutoBackupFrequency.OFF.name
             preferences[UPDATE_SOURCE] = prefs.updateSource.takeIf { it == "github" || it == "gitee" } ?: "github"
             preferences[HOME_COMPONENT_ORDER] = prefs.homeComponentOrder.filter { id -> HomeComponent.entries.any { it.id == id } }.joinToString(",")
+            prefs.lastReadBookId?.let { preferences[LAST_READ_BOOK_ID] = it }
+            preferences[REMINDER_ENABLED] = prefs.reminderEnabled
+            preferences[REMINDER_HOUR] = prefs.reminderHour
+            preferences[REMINDER_MINUTE] = prefs.reminderMinute
             if (prefs.widgetBookMap.isNotEmpty()) {
                 val entries = prefs.widgetBookMap.mapNotNull { (keyStr, bookId) ->
                     keyStr.toIntOrNull()?.let { WidgetBookEntry(it, bookId) }

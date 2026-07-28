@@ -40,7 +40,11 @@ data class PreferencesExport(
     val webDavAutoBackupFrequency: String = "OFF",
     val updateSource: String = "github",
     val homeComponentOrder: List<String> = emptyList(),
-    val widgetBookMap: Map<String, Long> = emptyMap()
+    val widgetBookMap: Map<String, Long> = emptyMap(),
+    val lastReadBookId: Long? = null,
+    val reminderEnabled: Boolean = false,
+    val reminderHour: Int = 21,
+    val reminderMinute: Int = 0
 )
 
 /**
@@ -58,7 +62,18 @@ data class DataBackup(
     /** 标签列表（v5+）*/
     val tags: List<TagExport> = emptyList(),
     /** 书籍-标签关联（v5+），tagId 为标签名，bookId 为书籍导入标识键 */
-    val bookTags: List<BookTagExport> = emptyList()
+    val bookTags: List<BookTagExport> = emptyList(),
+    /** 已获得的徽章（v6+），清空导入时保留用户成就 */
+    val badges: List<BadgeExport> = emptyList()
+)
+
+/**
+ * 徽章导出模型（v6+）
+ */
+@Serializable
+data class BadgeExport(
+    val id: String,
+    val earnedAt: Long
 )
 
 /**
