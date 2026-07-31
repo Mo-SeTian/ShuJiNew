@@ -28,25 +28,26 @@ object UpdateChecker {
             .header("Accept", "application/vnd.github.v3+json")
             .build()
 
-        val response = client.newCall(request).execute()
-        val body = response.body?.string().orEmpty()
-        if (!response.isSuccessful) throw RuntimeException("GitHub API 请求失败: ${response.code}")
+        client.newCall(request).execute().use { response ->
+            val body = response.body?.string().orEmpty()
+            if (!response.isSuccessful) throw RuntimeException("GitHub API 请求失败: ${response.code}")
 
-        val release = json.decodeFromString(GitHubRelease.serializer(), body)
-        val tagVersion = release.tagName.removePrefix("v")
-        val hasUpdate = compareVersions(tagVersion, BuildConfig.VERSION_NAME) > 0
+            val release = json.decodeFromString(GitHubRelease.serializer(), body)
+            val tagVersion = release.tagName.removePrefix("v")
+            val hasUpdate = compareVersions(tagVersion, BuildConfig.VERSION_NAME) > 0
 
-        val downloadUrl = release.assets.firstOrNull { it.name.endsWith(".apk") }?.downloadUrl
-            ?: release.htmlUrl
+            val downloadUrl = release.assets.firstOrNull { it.name.endsWith(".apk") }?.downloadUrl
+                ?: release.htmlUrl
 
-        return UpdateResult(
-            hasUpdate = hasUpdate,
-            latestVersion = tagVersion,
-            currentVersion = BuildConfig.VERSION_NAME,
-            releaseNotes = release.body ?: "",
-            downloadUrl = downloadUrl,
-            releasePageUrl = release.htmlUrl
-        )
+            return UpdateResult(
+                hasUpdate = hasUpdate,
+                latestVersion = tagVersion,
+                currentVersion = BuildConfig.VERSION_NAME,
+                releaseNotes = release.body ?: "",
+                downloadUrl = downloadUrl,
+                releasePageUrl = release.htmlUrl
+            )
+        }
     }
 
     private fun checkGitee(client: OkHttpClient): UpdateResult {
@@ -55,27 +56,28 @@ object UpdateChecker {
             .header("Accept", "application/json")
             .build()
 
-        val response = client.newCall(request).execute()
-        val body = response.body?.string().orEmpty()
-        if (!response.isSuccessful) throw RuntimeException("Gitee API 请求失败: ${response.code}")
+        client.newCall(request).execute().use { response ->
+            val body = response.body?.string().orEmpty()
+            if (!response.isSuccessful) throw RuntimeException("Gitee API 请求失败: ${response.code}")
 
-        val release = json.decodeFromString(GiteeRelease.serializer(), body)
-        val tagVersion = release.tagName.removePrefix("v")
-        val hasUpdate = compareVersions(tagVersion, BuildConfig.VERSION_NAME) > 0
+            val release = json.decodeFromString(GiteeRelease.serializer(), body)
+            val tagVersion = release.tagName.removePrefix("v")
+            val hasUpdate = compareVersions(tagVersion, BuildConfig.VERSION_NAME) > 0
 
-        val downloadUrl = release.attachFiles.firstOrNull { it.name.endsWith(".apk") }?.downloadUrl
-            ?: release.assets.firstOrNull { it.name.endsWith(".apk") }?.downloadUrl
-            ?: release.htmlUrl
-            ?: "https://gitee.com/mosetian/ShuJiNew/releases"
+            val downloadUrl = release.attachFiles.firstOrNull { it.name.endsWith(".apk") }?.downloadUrl
+                ?: release.assets.firstOrNull { it.name.endsWith(".apk") }?.downloadUrl
+                ?: release.htmlUrl
+                ?: "https://gitee.com/mosetian/ShuJiNew/releases"
 
-        return UpdateResult(
-            hasUpdate = hasUpdate,
-            latestVersion = tagVersion,
-            currentVersion = BuildConfig.VERSION_NAME,
-            releaseNotes = release.body ?: "",
-            downloadUrl = downloadUrl,
-            releasePageUrl = release.htmlUrl ?: "https://gitee.com/mosetian/ShuJiNew/releases"
-        )
+            return UpdateResult(
+                hasUpdate = hasUpdate,
+                latestVersion = tagVersion,
+                currentVersion = BuildConfig.VERSION_NAME,
+                releaseNotes = release.body ?: "",
+                downloadUrl = downloadUrl,
+                releasePageUrl = release.htmlUrl ?: "https://gitee.com/mosetian/ShuJiNew/releases"
+            )
+        }
     }
 
     private fun compareVersions(v1: String, v2: String): Int {

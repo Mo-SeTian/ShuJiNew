@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.readtrack.data.local.PreferencesManager
 import dagger.hilt.android.qualifiers.ApplicationContext
+import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.data.local.entity.ReadingRecordEntity
 import com.readtrack.data.local.entity.RecordType
 import com.readtrack.domain.model.BookSnapshot
@@ -66,22 +67,53 @@ class HomeViewModel @Inject constructor(
             try {
                 val book = _uiState.value.recentBooks.find { it.id == bookId } ?: return@launch
                 val isChapterBased = book.progressType == ProgressType.CHAPTER
-                val record = ReadingRecordEntity(
-                    bookId = bookId,
-                    bookSnapshot = BookSnapshot.from(book, book.status),
-                    pagesRead = if (isChapterBased) 0.0 else (newPage - book.currentPage).coerceAtLeast(0.0),
-                    fromPage = if (isChapterBased) book.currentChapter.toDouble() else book.currentPage,
-                    toPage = if (isChapterBased) newChapter.toDouble() else newPage.coerceAtMost(book.totalPages),
-                    chaptersRead = if (isChapterBased) (newChapter - book.currentChapter).coerceAtLeast(0) else null,
-                    recordType = RecordType.NORMAL,
-                    date = System.currentTimeMillis()
-                )
-                val updatedBook = book.copy(
-                    currentPage = if (isChapterBased) book.currentPage else newPage,
-                    currentChapter = if (isChapterBased) newChapter else book.currentChapter,
-                    lastReadAt = System.currentTimeMillis(),
-                    updatedAt = System.currentTimeMillis()
-                )
+                val now = System.currentTimeMillis()
+                val record: ReadingRecordEntity
+                val updatedBook: BookEntity
+                if (isChapterBased) {
+                    val maxChapter = book.totalChapters ?: 0
+                    val fromChapter = book.currentChapter
+                    // 防止进度回退，同时限制在总章数内（未设置总章数则不设上限）
+                    val toChapter = if (maxChapter > 0) {
+                        newChapter.coerceIn(fromChapter, maxChapter)
+                    } else {
+                        newChapter.coerceAtLeast(fromChapter)
+                    }
+                    val chaptersRead = toChapter - fromChapter
+                    record = ReadingRecordEntity(
+                        bookId = bookId,
+                        bookSnapshot = BookSnapshot.from(book, book.status),
+                        pagesRead = chaptersRead.toDouble(),
+                        fromPage = fromChapter.toDouble(),
+                        toPage = toChapter.toDouble(),
+                        chaptersRead = chaptersRead,
+                        recordType = RecordType.NORMAL,
+                        date = now
+                    )
+                    updatedBook = book.copy(
+                        currentChapter = toChapter,
+                        lastReadAt = now,
+                        updatedAt = now
+                    )
+                } else {
+                    val fromPage = book.currentPage
+                    // 防止进度回退，同时限制在总页数内
+                    val toPage = newPage.coerceIn(fromPage, book.totalPages)
+                    record = ReadingRecordEntity(
+                        bookId = bookId,
+                        bookSnapshot = BookSnapshot.from(book, book.status),
+                        pagesRead = toPage - fromPage,
+                        fromPage = fromPage,
+                        toPage = toPage,
+                        recordType = RecordType.NORMAL,
+                        date = now
+                    )
+                    updatedBook = book.copy(
+                        currentPage = toPage,
+                        lastReadAt = now,
+                        updatedAt = now
+                    )
+                }
                 bookRepository.insertRecordAndUpdateBook(record, updatedBook)
                 WidgetUpdateHelper.triggerUpdate(context)
             } catch (e: Exception) {

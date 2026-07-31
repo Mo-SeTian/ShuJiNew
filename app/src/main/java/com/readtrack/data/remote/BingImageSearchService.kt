@@ -58,15 +58,15 @@ class BingImageSearchService @Inject constructor(
     private fun searchViaScraping(query: String, page: Int): Result<List<BingImageResult>> {
         return runCatching {
             val request = buildRequest(query, page)
-            val response = okHttpClient.newCall(request).execute()
+            okHttpClient.newCall(request).execute().use { response ->
+                val responseCode = response.code
+                if (responseCode !in 200..299) {
+                    throw IllegalStateException("Bing 图片搜索请求失败: HTTP $responseCode")
+                }
 
-            val responseCode = response.code
-            if (responseCode !in 200..299) {
-                throw IllegalStateException("Bing 图片搜索请求失败: HTTP $responseCode")
+                val html = response.body?.string().orEmpty()
+                parseMimgTags(html)
             }
-
-            val html = response.body?.string().orEmpty()
-            parseMimgTags(html)
         }
     }
 

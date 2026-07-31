@@ -21,7 +21,7 @@ import android.text.TextUtils
 import android.widget.RemoteViews
 import androidx.core.graphics.drawable.toBitmap
 import androidx.palette.graphics.Palette
-import coil.ImageLoaderFactory
+import coil.imageLoader
 import coil.request.ImageRequest
 import coil.request.SuccessResult
 import com.readtrack.MainActivity
@@ -63,8 +63,9 @@ class WidgetUpdateHelper @Inject constructor(
                 bookId?.let { bookDao.getBookByIdOnce(it) }
             }
             val compositeBitmap = withContext(Dispatchers.IO) {
-                val color = extractCoverColor(context, book?.coverPath) ?: Color.rgb(80, 100, 180)
                 val cover = loadCoverBitmap(context, book?.coverPath)
+                // 封面只加载一次，调色板直接从该位图提取，避免重复解码
+                val color = cover?.let { extractCoverColor(it) } ?: Color.rgb(80, 100, 180)
                 createWidgetComposite(color, cover, book).also {
                     cover?.recycle()
                 }
@@ -81,23 +82,15 @@ class WidgetUpdateHelper @Inject constructor(
         }
     }
 
-    private suspend fun extractCoverColor(context: Context, coverPath: String?): Int? {
-        if (coverPath.isNullOrBlank()) return null
-        // 跳过特殊协议封面
-        if (coverPath.startsWith("emoji://") || coverPath.startsWith("color://")) return null
-
-        var source: Bitmap? = null
+    private fun extractCoverColor(cover: Bitmap): Int? {
         return try {
-            source = loadImageAsBitmap(context, coverPath, 64) ?: return null
-            val palette = Palette.from(source).generate()
+            val palette = Palette.from(cover).generate()
             val swatch = palette.vibrantSwatch
                 ?: palette.dominantSwatch
                 ?: palette.mutedSwatch
             swatch?.rgb
         } catch (e: Exception) {
             null
-        } finally {
-            source?.let { if (!it.isRecycled) it.recycle() }
         }
     }
 
@@ -148,7 +141,8 @@ class WidgetUpdateHelper @Inject constructor(
             .size(size)
             .allowHardware(false)
             .build()
-        val imageLoader = (context.applicationContext as ImageLoaderFactory).newImageLoader()
+        // 复用应用级单例 ImageLoader（含共享缓存），避免每次刷新新建加载器和缓存池
+        val imageLoader = context.imageLoader
         return when (val result = imageLoader.execute(request)) {
             is SuccessResult -> result.drawable.toBitmap()
             else -> null

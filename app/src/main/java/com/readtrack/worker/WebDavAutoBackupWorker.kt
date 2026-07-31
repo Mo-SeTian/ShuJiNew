@@ -48,8 +48,13 @@ class WebDavAutoBackupWorker @AssistedInject constructor(
             val impl = dataBackupRepository as? DataBackupRepositoryImpl
             if (impl != null) {
                 val zipFile = impl.exportToZip().getOrThrow()
-                val zipData = zipFile.readBytes()
-                webDavService.uploadBackupZip(config, zipData).getOrThrow()
+                try {
+                    val zipData = zipFile.readBytes()
+                    webDavService.uploadBackupZip(config, zipData).getOrThrow()
+                } finally {
+                    // 清理临时 ZIP，避免缓存目录持续累积（含封面，体积较大）
+                    zipFile.delete()
+                }
             } else {
                 // 回退到 JSON
                 val backup = dataBackupRepository.exportAllData().getOrThrow()
@@ -97,7 +102,8 @@ class WebDavBackupScheduler @Inject constructor(
 
         workManager.enqueueUniquePeriodicWork(
             UNIQUE_WORK_NAME,
-            ExistingPeriodicWorkPolicy.KEEP,
+            // 用 UPDATE 而非 KEEP：用户修改备份频率（每日↔每周）后必须重新调度才生效
+            ExistingPeriodicWorkPolicy.UPDATE,
             request
         )
     }

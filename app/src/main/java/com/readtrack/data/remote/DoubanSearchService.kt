@@ -48,23 +48,23 @@ class DoubanSearchService @Inject constructor(
                 }
 
                 val request = requestBuilder.build()
-                val response = okHttpClient.newCall(request).execute()
+                okHttpClient.newCall(request).execute().use { response ->
+                    val responseCode = response.code
+                    if (responseCode !in 200..299) {
+                        return@withContext Result.failure(
+                            IllegalStateException("豆瓣搜索页请求失败: HTTP $responseCode")
+                        )
+                    }
 
-                val responseCode = response.code
-                if (responseCode !in 200..299) {
-                    return@withContext Result.failure(
-                        IllegalStateException("豆瓣搜索页请求失败: HTTP $responseCode")
-                    )
+                    val responseBody = response.body?.string().orEmpty()
+                    val results = parseSearchResponse(responseBody, limit)
+                    if (results.isFailure) {
+                        return@withContext Result.failure(
+                            IllegalStateException("解析豆瓣响应失败: ${results.exceptionOrNull()?.message}")
+                        )
+                    }
+                    Result.success(results.getOrDefault(emptyList()))
                 }
-
-                val responseBody = response.body?.string().orEmpty()
-                val results = parseSearchResponse(responseBody, limit)
-                if (results.isFailure) {
-                    return@withContext Result.failure(
-                        IllegalStateException("解析豆瓣响应失败: ${results.exceptionOrNull()?.message}")
-                    )
-                }
-                Result.success(results.getOrDefault(emptyList()))
             } catch (e: Exception) {
                 Result.failure(e)
             }

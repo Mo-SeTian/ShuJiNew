@@ -553,7 +553,8 @@ class DataBackupRepositoryImpl @Inject constructor(
             bookLists = fixedBookLists,
             preferences = backup.preferences,
             tags = backup.tags,
-            bookTags = backup.bookTags
+            bookTags = backup.bookTags,
+            badges = backup.badges
         )
     }
 
