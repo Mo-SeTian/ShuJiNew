@@ -18,8 +18,9 @@ interface ReadingRecordDao {
     @Query("SELECT * FROM reading_records WHERE date >= :start AND date < :end ORDER BY date DESC")
     fun getRecordsByDateRange(start: Long, end: Long): Flow<List<ReadingRecordEntity>>
 
-    @Query("SELECT SUM(pagesRead) FROM reading_records WHERE date >= :startTime")
-    fun getTotalPagesReadSince(startTime: Long): Flow<Double?>
+    /** 指定时间之后是否存在普通阅读记录（用于每日提醒"已读跳过"判断） */
+    @Query("SELECT EXISTS(SELECT 1 FROM reading_records WHERE date >= :start AND recordType = 'NORMAL' LIMIT 1)")
+    suspend fun hasNormalRecordSince(start: Long): Boolean
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertRecord(record: ReadingRecordEntity): Long

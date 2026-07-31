@@ -17,6 +17,7 @@ import com.readtrack.data.repository.BookRepositoryImpl
 import com.readtrack.data.repository.DataBackupRepositoryImpl
 import com.readtrack.data.repository.ReadingRecordRepositoryImpl
 import com.readtrack.data.repository.TagRepositoryImpl
+import com.readtrack.domain.badge.BadgeCheckScheduler
 import com.readtrack.domain.repository.BadgeRepository
 import com.readtrack.domain.repository.BookListRepository
 import com.readtrack.domain.repository.BookRepository
@@ -145,9 +146,9 @@ object DatabaseModule {
         bookDao: BookDao,
         readingRecordDao: ReadingRecordDao,
         database: ReadTrackDatabase,
-        badgeRepository: BadgeRepository
+        badgeCheckScheduler: BadgeCheckScheduler
     ): BookRepository {
-        return BookRepositoryImpl(bookDao, readingRecordDao, database, badgeRepository)
+        return BookRepositoryImpl(bookDao, readingRecordDao, database, badgeCheckScheduler)
     }
 
     @Provides
@@ -164,9 +165,9 @@ object DatabaseModule {
     @Singleton
     fun provideReadingRecordRepository(
         readingRecordDao: ReadingRecordDao,
-        badgeRepository: BadgeRepository
+        badgeCheckScheduler: BadgeCheckScheduler
     ): ReadingRecordRepository {
-        return ReadingRecordRepositoryImpl(readingRecordDao, badgeRepository)
+        return ReadingRecordRepositoryImpl(readingRecordDao, badgeCheckScheduler)
     }
 
     @Provides

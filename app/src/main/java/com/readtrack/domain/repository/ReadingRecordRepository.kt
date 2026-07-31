@@ -8,7 +8,7 @@ interface ReadingRecordRepository {
     fun getAllRecords(): Flow<List<ReadingRecordEntity>>
     fun getRecordsByYearRange(yearStart: Long, yearEnd: Long): Flow<List<ReadingRecordEntity>>
     fun getRecordsByDateRange(start: Long, end: Long): Flow<List<ReadingRecordEntity>>
-    fun getTotalPagesReadSince(startTime: Long): Flow<Double?>
+    suspend fun hasNormalRecordSince(startTime: Long): Boolean
     suspend fun insertRecord(record: ReadingRecordEntity): Long
     suspend fun deleteRecord(record: ReadingRecordEntity)
 }

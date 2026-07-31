@@ -240,7 +240,8 @@ class BooksViewModel @Inject constructor(
         viewModelScope.launch {
             taggedBookIdsFlow.value = if (newSet.isNotEmpty()) {
                 val bookIdsPerTag = newSet.map { tagRepository.getBookIdsWithTag(it).first().toSet() }
-                bookIdsPerTag.reduce { acc, ids -> acc.intersect(ids) }
+                // OR 语义：展示包含任一选中标签的书籍（取并集，与注释/UI 意图一致）
+                bookIdsPerTag.reduce { acc, ids -> acc + ids }
             } else {
                 emptySet()
             }

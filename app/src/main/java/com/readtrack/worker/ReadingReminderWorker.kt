@@ -35,8 +35,8 @@ class ReadingReminderWorker @AssistedInject constructor(
 
         // 检查今天是否已经读过，读过则不提醒
         val todayStart = getStartOfDay()
-        val records = readingRecordRepository.getAllRecords().first()
-        val readToday = records.any { it.date >= todayStart }
+        // 只统计普通阅读记录（状态变更/添加书籍不视为"已读"），且走 SQL 单条 EXISTS 查询
+        val readToday = readingRecordRepository.hasNormalRecordSince(todayStart)
         if (readToday) return Result.success()
 
         showNotification()

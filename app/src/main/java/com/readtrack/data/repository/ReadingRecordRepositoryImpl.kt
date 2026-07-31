@@ -2,24 +2,17 @@ package com.readtrack.data.repository
 
 import com.readtrack.data.local.dao.ReadingRecordDao
 import com.readtrack.data.local.entity.ReadingRecordEntity
-import com.readtrack.domain.repository.BadgeRepository
+import com.readtrack.domain.badge.BadgeCheckScheduler
 import com.readtrack.domain.repository.ReadingRecordRepository
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class ReadingRecordRepositoryImpl @Inject constructor(
     private val readingRecordDao: ReadingRecordDao,
-    private val badgeRepository: BadgeRepository
+    private val badgeCheckScheduler: BadgeCheckScheduler
 ) : ReadingRecordRepository {
-
-    // 独立后台作用域，避免调用方 scope 取消影响徽章计算
-    private val bgScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override fun getRecordsByBookId(bookId: Long): Flow<List<ReadingRecordEntity>> =
         readingRecordDao.getRecordsByBookId(bookId)
@@ -33,24 +26,17 @@ class ReadingRecordRepositoryImpl @Inject constructor(
     override fun getRecordsByDateRange(start: Long, end: Long): Flow<List<ReadingRecordEntity>> =
         readingRecordDao.getRecordsByDateRange(start, end)
 
-    override fun getTotalPagesReadSince(startTime: Long): Flow<Double?> =
-        readingRecordDao.getTotalPagesReadSince(startTime)
+    override suspend fun hasNormalRecordSince(startTime: Long): Boolean =
+        readingRecordDao.hasNormalRecordSince(startTime)
 
     override suspend fun insertRecord(record: ReadingRecordEntity): Long {
         val id = readingRecordDao.insertRecord(record)
-        triggerBadgeCheck()
+        badgeCheckScheduler.schedule()
         return id
     }
 
     override suspend fun deleteRecord(record: ReadingRecordEntity) {
         readingRecordDao.deleteRecord(record)
-        triggerBadgeCheck()
-    }
-
-    private fun triggerBadgeCheck() {
-        bgScope.launch {
-            runCatching { badgeRepository.checkAndAward() }
-                .onFailure { android.util.Log.w("ReadingRecordRepository", "徽章检查失败", it) }
-        }
+        badgeCheckScheduler.schedule()
     }
 }

@@ -99,10 +99,16 @@ class TimelineViewModel @Inject constructor(
                 else -> null
             }
 
+            // 按时间范围直接查库，避免每次全量加载所有记录
+            val recordsFlow = if (startMs != null) {
+                recordRepository.getRecordsByDateRange(startMs, endMs ?: Long.MAX_VALUE)
+            } else {
+                recordRepository.getAllRecords()
+            }
             combine(
                 // 关联 live books 用于补充 bookSnapshot 为 null 的旧数据
                 bookRepository.getAllBooks().catch { emit(emptyList()) },
-                recordRepository.getAllRecords().catch { emit(emptyList()) }
+                recordsFlow.catch { emit(emptyList()) }
             ) { books, records ->
                 val liveBookMap = books.associateBy { it.id }
                 val calendar = Calendar.getInstance()
