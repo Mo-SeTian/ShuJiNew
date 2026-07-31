@@ -55,6 +55,7 @@ class WebDavService @Inject constructor(
 
             val historyUrl = buildUrl(config, buildZipFileName())
             putBinary(config, historyUrl, zipData)
+            enforceRetention(config, ".zip")
             latestUrl
         }
     }
@@ -90,7 +91,47 @@ class WebDavService @Inject constructor(
 
             val historyUrl = buildUrl(config, buildHistoryFileName())
             putJson(config, historyUrl, json)
+            enforceRetention(config, ".json")
             latestUrl
+        }
+    }
+
+    /**
+     * 删除远端备份文件（用于历史快照清理）。
+     */
+    suspend fun deleteBackup(config: WebDavConfig, fileName: String): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
+            validateConfig(config)
+            val url = buildUrl(config, fileName)
+            val request = requestBuilder(config, url).delete().build()
+            okHttpClient.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) {
+                    throw IllegalStateException("删除备份失败（HTTP ${response.code}）")
+                }
+            }
+        }
+    }
+
+    /**
+     * 历史快照保留策略：同一类型（.zip / .json）只保留最近 [MAX_BACKUP_SNAPSHOTS] 份，
+     * 超出部分按最后修改时间从旧到新删除。latest 文件不参与清理。
+     */
+    private suspend fun enforceRetention(config: WebDavConfig, extension: String) {
+        runCatching {
+            val files = listBackups(config).getOrNull() ?: return
+            val snapshots = files.filter {
+                it.fileName != LATEST_ZIP_FILE &&
+                    it.fileName != LATEST_BACKUP_FILE &&
+                    it.fileName.endsWith(extension)
+            }
+            if (snapshots.size <= MAX_BACKUP_SNAPSHOTS) return
+
+            snapshots
+                .sortedByDescending { it.lastModified }
+                .drop(MAX_BACKUP_SNAPSHOTS)
+                .forEach { deleteBackup(config, it.fileName) }
+        }.onFailure {
+            android.util.Log.w("WebDavService", "历史备份清理失败: ${it.message}")
         }
     }
 
@@ -273,5 +314,6 @@ class WebDavService @Inject constructor(
         """.trimIndent().toRequestBody("application/xml".toMediaType())
         const val LATEST_BACKUP_FILE = "readtrack_backup_latest.json"
         const val LATEST_ZIP_FILE = "readtrack_backup_latest.zip"
+        private const val MAX_BACKUP_SNAPSHOTS = 10
     }
 }

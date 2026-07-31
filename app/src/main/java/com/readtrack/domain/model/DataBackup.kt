@@ -44,7 +44,11 @@ data class PreferencesExport(
     val lastReadBookId: Long? = null,
     val reminderEnabled: Boolean = false,
     val reminderHour: Int = 21,
-    val reminderMinute: Int = 0
+    val reminderMinute: Int = 0,
+    /** 每周阅读报告推送（v6+） */
+    val weeklyReportEnabled: Boolean = false,
+    /** 每月阅读报告推送（v6+） */
+    val monthlyReportEnabled: Boolean = false
 )
 
 /**

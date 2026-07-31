@@ -38,7 +38,9 @@ import androidx.compose.material.icons.outlined.Favorite
 import androidx.compose.material.icons.outlined.Feedback
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Download
+import androidx.compose.material.icons.outlined.DateRange
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.SettingsEthernet
 import androidx.compose.material.icons.outlined.Upload
@@ -139,9 +141,17 @@ fun SettingsScreen(
         // 先读取路径，再清状态（顺序不能反）
         val zipPath = uiState.exportZipPath
         viewModel.clearExportSuccess()
-        if (uri != null && zipPath != null) {
-            File(zipPath).inputStream().use { input ->
-                context.contentResolver.openOutputStream(uri)?.use { output -> input.copyTo(output) }
+        if (zipPath != null) {
+            val tempFile = File(zipPath)
+            try {
+                if (uri != null) {
+                    tempFile.inputStream().use { input ->
+                        context.contentResolver.openOutputStream(uri)?.use { output -> input.copyTo(output) }
+                    }
+                }
+            } finally {
+                // 无论用户是否选择保存位置，都清理临时 ZIP（取消选择时同样需要）
+                tempFile.delete()
             }
         }
     }
@@ -471,6 +481,33 @@ fun SettingsScreen(
                         Icons.Outlined.Notifications, "阅读提醒",
                         if (uiState.reminderEnabled) "每日 ${uiState.reminderHour}:${uiState.reminderMinute.toString().padStart(2, '0')} 提醒" else "未开启"
                     ) { viewModel.openReminderDialog() }
+                }
+            }
+
+            // 阅读报告
+            item {
+                SettingsGroup("阅读报告") {
+                    SettingsItem(
+                        Icons.Outlined.DateRange, "每周阅读报告",
+                        if (uiState.weeklyReportEnabled) "每周日推送近 7 天阅读小结" else "未开启",
+                        trailing = {
+                            Switch(
+                                checked = uiState.weeklyReportEnabled,
+                                onCheckedChange = { viewModel.setWeeklyReportEnabled(it) }
+                            )
+                        }
+                    ) {}
+                    SettingsItemDivider()
+                    SettingsItem(
+                        Icons.Outlined.CalendarMonth, "每月阅读报告",
+                        if (uiState.monthlyReportEnabled) "每月最后一天推送月度小结" else "未开启",
+                        trailing = {
+                            Switch(
+                                checked = uiState.monthlyReportEnabled,
+                                onCheckedChange = { viewModel.setMonthlyReportEnabled(it) }
+                            )
+                        }
+                    ) {}
                 }
             }
 
