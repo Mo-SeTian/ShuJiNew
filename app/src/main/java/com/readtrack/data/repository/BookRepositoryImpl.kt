@@ -6,17 +6,13 @@ import com.readtrack.data.local.database.ReadTrackDatabase
 import com.readtrack.data.local.entity.BookEntity
 import com.readtrack.data.local.entity.ReadingRecordEntity
 import com.readtrack.data.local.entity.RecordType
+import com.readtrack.domain.badge.BadgeCheckScheduler
 import com.readtrack.domain.model.BookSnapshot
 import com.readtrack.domain.model.BookStatus
 import com.readtrack.domain.model.ProgressType
-import com.readtrack.domain.repository.BadgeRepository
 import com.readtrack.domain.repository.BookRepository
 import androidx.room.withTransaction
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -25,16 +21,11 @@ class BookRepositoryImpl @Inject constructor(
     private val bookDao: BookDao,
     private val readingRecordDao: ReadingRecordDao,
     private val database: ReadTrackDatabase,
-    private val badgeRepository: BadgeRepository
+    private val badgeCheckScheduler: BadgeCheckScheduler
 ) : BookRepository {
 
-    private val bgScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-
     private fun triggerBadgeCheck() {
-        bgScope.launch {
-            runCatching { badgeRepository.checkAndAward() }
-                .onFailure { android.util.Log.w("BookRepository", "徽章检查失败", it) }
-        }
+        badgeCheckScheduler.schedule()
     }
 
     override fun getAllBooks(): Flow<List<BookEntity>> = bookDao.getAllBooks()

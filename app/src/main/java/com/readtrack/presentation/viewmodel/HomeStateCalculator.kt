@@ -158,8 +158,8 @@ internal fun calculateReadingStreak(
     val sortedDates = dates
         .map(::getStartOfDay)
         .distinct()
-        // DB 查询已按时间排序（reading_records.date DESC），直接倒序遍历即可
-        // 不再额外 sort，节省 O(n log n)
+        // 显式降序排序，避免依赖 DAO 查询顺序（与 BadgeChecker.calculateStreak 语义一致）
+        .sortedDescending()
 
     if (sortedDates.isEmpty()) return 0
 
