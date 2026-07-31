@@ -103,6 +103,8 @@ class PreferencesManager @Inject constructor(
         val REMINDER_ENABLED = booleanPreferencesKey("reminder_enabled")
         val REMINDER_HOUR = intPreferencesKey("reminder_hour")
         val REMINDER_MINUTE = intPreferencesKey("reminder_minute")
+        val WEEKLY_REPORT_ENABLED = booleanPreferencesKey("weekly_report_enabled")
+        val MONTHLY_REPORT_ENABLED = booleanPreferencesKey("monthly_report_enabled")
     }
 
     data class ReminderConfig(
@@ -178,6 +180,14 @@ class PreferencesManager @Inject constructor(
             hour = preferences[REMINDER_HOUR] ?: 21,
             minute = preferences[REMINDER_MINUTE] ?: 0
         )
+    }
+
+    val weeklyReportEnabled: Flow<Boolean> = dataStore.data.map { preferences ->
+        preferences[WEEKLY_REPORT_ENABLED] ?: false
+    }
+
+    val monthlyReportEnabled: Flow<Boolean> = dataStore.data.map { preferences ->
+        preferences[MONTHLY_REPORT_ENABLED] ?: false
     }
 
     val homeComponentOrder: Flow<List<String>> = dataStore.data.map { preferences ->
@@ -348,6 +358,18 @@ class PreferencesManager @Inject constructor(
         }
     }
 
+    suspend fun setWeeklyReportEnabled(enabled: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[WEEKLY_REPORT_ENABLED] = enabled
+        }
+    }
+
+    suspend fun setMonthlyReportEnabled(enabled: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[MONTHLY_REPORT_ENABLED] = enabled
+        }
+    }
+
     suspend fun clearAll() {
         dataStore.edit { preferences -> preferences.clear() }
     }
@@ -374,6 +396,8 @@ class PreferencesManager @Inject constructor(
                 reminderEnabled = preferences[REMINDER_ENABLED] ?: false,
                 reminderHour = preferences[REMINDER_HOUR] ?: 21,
                 reminderMinute = preferences[REMINDER_MINUTE] ?: 0,
+                weeklyReportEnabled = preferences[WEEKLY_REPORT_ENABLED] ?: false,
+                monthlyReportEnabled = preferences[MONTHLY_REPORT_ENABLED] ?: false,
                 widgetBookMap = run {
                     val raw = preferences[WIDGET_BOOK_MAP] ?: ""
                     if (raw.isBlank()) emptyMap()
@@ -409,6 +433,8 @@ class PreferencesManager @Inject constructor(
             preferences[REMINDER_ENABLED] = prefs.reminderEnabled
             preferences[REMINDER_HOUR] = prefs.reminderHour
             preferences[REMINDER_MINUTE] = prefs.reminderMinute
+            preferences[WEEKLY_REPORT_ENABLED] = prefs.weeklyReportEnabled
+            preferences[MONTHLY_REPORT_ENABLED] = prefs.monthlyReportEnabled
             if (prefs.widgetBookMap.isNotEmpty()) {
                 val entries = prefs.widgetBookMap.mapNotNull { (keyStr, bookId) ->
                     keyStr.toIntOrNull()?.let { WidgetBookEntry(it, bookId) }

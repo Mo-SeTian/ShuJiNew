@@ -107,12 +107,18 @@ fun BackupSettingsScreen(
     ) { uri ->
         val zipPath = uiState.exportZipPath
         viewModel.clearExportSuccess()
-        if (uri != null && zipPath != null) {
+        if (zipPath != null) {
             val tempFile = File(zipPath)
-            tempFile.inputStream().use { input ->
-                context.contentResolver.openOutputStream(uri)?.use { output -> input.copyTo(output) }
+            try {
+                if (uri != null) {
+                    tempFile.inputStream().use { input ->
+                        context.contentResolver.openOutputStream(uri)?.use { output -> input.copyTo(output) }
+                    }
+                }
+            } finally {
+                // 无论用户是否选择保存位置，都清理临时 ZIP（取消选择时同样需要）
+                tempFile.delete()
             }
-            tempFile.delete()
         }
     }
 

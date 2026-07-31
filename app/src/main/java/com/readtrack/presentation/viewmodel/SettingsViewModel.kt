@@ -1,6 +1,8 @@
 package com.readtrack.presentation.viewmodel
 
 import android.content.Context
+import android.appwidget.AppWidgetManager
+import android.content.ComponentName
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.readtrack.BuildConfig
@@ -20,6 +22,9 @@ import com.readtrack.util.BookCsvExporter
 import com.readtrack.remote.UpdateResult
 import com.readtrack.util.CoverStorageUtil
 import com.readtrack.worker.WebDavBackupScheduler
+import com.readtrack.util.ReportScheduler
+import com.readtrack.widget.ReadingWidgetProvider
+import com.readtrack.widget.WidgetUpdateHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -84,7 +89,10 @@ data class SettingsUiState(
     val reminderEnabled: Boolean = false,
     val reminderHour: Int = 21,
     val reminderMinute: Int = 0,
-    val showReminderDialog: Boolean = false
+    val showReminderDialog: Boolean = false,
+    // 阅读报告
+    val weeklyReportEnabled: Boolean = false,
+    val monthlyReportEnabled: Boolean = false
 ) {
     val isWebDavConfigured: Boolean
         get() =
@@ -110,7 +118,8 @@ class SettingsViewModel @Inject constructor(
     private val webDavService: WebDavService,
     private val webDavBackupScheduler: WebDavBackupScheduler,
     private val coverStorageUtil: CoverStorageUtil,
-    private val reminderScheduler: com.readtrack.util.ReminderScheduler
+    private val reminderScheduler: com.readtrack.util.ReminderScheduler,
+    private val reportScheduler: ReportScheduler
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingsUiState())
@@ -120,6 +129,7 @@ class SettingsViewModel @Inject constructor(
         observeBaseSettings()
         observeWebDavSettings()
         observeReminderConfig()
+        observeReportConfig()
     }
 
     private fun observeBaseSettings() {
@@ -158,6 +168,23 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    private fun observeReportConfig() {
+        viewModelScope.launch {
+            combine(
+                preferencesManager.weeklyReportEnabled,
+                preferencesManager.monthlyReportEnabled
+            ) { weekly, monthly -> weekly to monthly }
+                .collect { (weekly, monthly) ->
+                    _uiState.update {
+                        it.copy(
+                            weeklyReportEnabled = weekly,
+                            monthlyReportEnabled = monthly
+                        )
+                    }
+                }
+        }
+    }
+
     fun openReminderDialog() {
         _uiState.update { it.copy(showReminderDialog = true) }
     }
@@ -177,6 +204,20 @@ class SettingsViewModel @Inject constructor(
                     showReminderDialog = false
                 )
             }
+        }
+    }
+
+    fun setWeeklyReportEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            preferencesManager.setWeeklyReportEnabled(enabled)
+            reportScheduler.updateSchedule(enabled, _uiState.value.monthlyReportEnabled)
+        }
+    }
+
+    fun setMonthlyReportEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            preferencesManager.setMonthlyReportEnabled(enabled)
+            reportScheduler.updateSchedule(_uiState.value.weeklyReportEnabled, enabled)
         }
     }
 
@@ -428,6 +469,7 @@ class SettingsViewModel @Inject constructor(
                     dataBackupRepository.importFromZip(zipFile, clearExisting)
                         .onSuccess { result ->
                             cleanupTempZip(resolvedZipPath)
+                            rebindWidgetsAfterRestore()
                             _uiState.update {
                                 it.copy(
                                     isImporting = false,
@@ -486,6 +528,7 @@ class SettingsViewModel @Inject constructor(
             }
             dataBackupRepository.importData(backup, clearExisting)
                 .onSuccess { result ->
+                    rebindWidgetsAfterRestore()
                     _uiState.update {
                         it.copy(
                             isImporting = false,
@@ -859,6 +902,33 @@ class SettingsViewModel @Inject constructor(
         val zipPath = _uiState.value.pendingZipPath
         if (zipPath != null) cleanupTempZip(zipPath)
         _uiState.update { it.copy(importSuccess = false, lastImportResult = null) }
+    }
+
+    /**
+     * 恢复完成后重建小组件绑定并立即刷新：
+     * - 备份中带 widgetId 的绑定由 importPreferences 恢复（同设备/重装场景）
+     * - 本机已存在但未绑定书籍的小组件，自动绑定恢复数据中最近阅读的书
+     */
+    private suspend fun rebindWidgetsAfterRestore() {
+        try {
+            val appWidgetManager = AppWidgetManager.getInstance(applicationContext)
+            val componentName = ComponentName(applicationContext, ReadingWidgetProvider::class.java)
+            val widgetIds = appWidgetManager.getAppWidgetIds(componentName)
+            if (widgetIds.isEmpty()) return
+
+            val restored = preferencesManager.widgetBookIds(widgetIds).first()
+            val fallbackBookId = bookRepository.getAllBooks().first()
+                .maxByOrNull { it.lastReadAt ?: 0L }?.id
+
+            widgetIds.forEach { widgetId ->
+                if (restored[widgetId] == null && fallbackBookId != null) {
+                    preferencesManager.setWidgetBookId(widgetId, fallbackBookId)
+                }
+            }
+            WidgetUpdateHelper.triggerUpdate(applicationContext)
+        } catch (e: Exception) {
+            android.util.Log.w("SettingsViewModel", "恢复后重建小组件绑定失败", e)
+        }
     }
 
     fun clearError() {

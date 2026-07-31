@@ -15,6 +15,9 @@ interface ReadingRecordDao {
     @Query("SELECT * FROM reading_records WHERE date >= :yearStart AND date < :yearEnd ORDER BY date DESC")
     fun getRecordsByYearRange(yearStart: Long, yearEnd: Long): Flow<List<ReadingRecordEntity>>
 
+    @Query("SELECT * FROM reading_records WHERE date >= :start AND date < :end ORDER BY date DESC")
+    fun getRecordsByDateRange(start: Long, end: Long): Flow<List<ReadingRecordEntity>>
+
     @Query("SELECT SUM(pagesRead) FROM reading_records WHERE date >= :startTime")
     fun getTotalPagesReadSince(startTime: Long): Flow<Double?>
 

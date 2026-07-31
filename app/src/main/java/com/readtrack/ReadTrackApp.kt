@@ -13,6 +13,7 @@ import coil.disk.DiskCache
 import coil.memory.MemoryCache
 import coil.request.CachePolicy
 import com.readtrack.worker.ReadingReminderWorker
+import com.readtrack.worker.ReadingReportWorker
 import com.umeng.analytics.MobclickAgent
 import com.umeng.commonsdk.UMConfigure
 import dagger.hilt.android.HiltAndroidApp
@@ -59,6 +60,15 @@ class ReadTrackApp : Application(), ImageLoaderFactory, Configuration.Provider {
         }
         val manager = getSystemService(NotificationManager::class.java)
         manager.createNotificationChannel(channel)
+
+        val reportChannel = NotificationChannel(
+            ReadingReportWorker.CHANNEL_ID,
+            "阅读报告",
+            NotificationManager.IMPORTANCE_DEFAULT
+        ).apply {
+            description = "每周/每月阅读报告"
+        }
+        manager.createNotificationChannel(reportChannel)
     }
 
     private fun initUmeng() {
