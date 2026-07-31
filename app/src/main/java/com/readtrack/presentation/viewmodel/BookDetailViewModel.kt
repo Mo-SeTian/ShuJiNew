@@ -371,12 +371,18 @@ class BookDetailViewModel @Inject constructor(
                     val chapters = amount.toInt()
                     val fromChapter = currentBook.currentChapter
                     val maxChapter = currentBook.totalChapters ?: 0
-                    val toChapter = if (isIncrement) {
-                        (fromChapter + chapters).coerceAtMost(maxChapter)
+                    val toChapter = if (maxChapter > 0) {
+                        if (isIncrement) {
+                            (fromChapter + chapters).coerceAtMost(maxChapter)
+                        } else {
+                            chapters.coerceIn(0, maxChapter)
+                        }
                     } else {
-                        chapters.coerceIn(0, maxChapter)
+                        // 未设置总章数时不设上限，避免 coerceIn(0,0) 抛异常
+                        (fromChapter + chapters).coerceAtLeast(0)
                     }
-                    val chaptersActuallyRead = if (isIncrement) chapters else (toChapter - fromChapter).coerceAtLeast(0)
+                    // 实际阅读量 = 终点 - 起点（clamp 后），避免超量记录虚增统计
+                    val chaptersActuallyRead = (toChapter - fromChapter).coerceAtLeast(0)
 
                     record = ReadingRecordEntity(
                         bookId = currentBook.id,
@@ -399,7 +405,7 @@ class BookDetailViewModel @Inject constructor(
                     } else {
                         amount.coerceIn(0.0, currentBook.totalPages)
                     }
-                    val pagesActuallyRead = if (isIncrement) amount else (toPage - fromPage).coerceAtLeast(0.0)
+                    val pagesActuallyRead = (toPage - fromPage).coerceAtLeast(0.0)
 
                     record = ReadingRecordEntity(
                         bookId = currentBook.id,

@@ -36,13 +36,6 @@ class ReadingWidgetProvider : AppWidgetProvider() {
         }
     }
 
-    override fun onReceive(context: Context, intent: Intent) {
-        super.onReceive(context, intent)
-        if (intent.action == AppWidgetManager.ACTION_APPWIDGET_UPDATE) {
-            updateAllWidgets(context)
-        }
-    }
-
     private fun updateAllWidgets(context: Context) {
         val helper = getWidgetUpdateHelper(context)
         widgetScope.launch {

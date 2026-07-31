@@ -898,27 +898,28 @@ class SettingsViewModel @Inject constructor(
                     .header("Referer", "https://book.douban.com/")
                     .header("Cookie", cookie)
                     .build()
-                val response = okHttpClient.newCall(request).execute()
-                val responseCode = response.code
-                val responseBody = response.body?.string().orEmpty()
+                okHttpClient.newCall(request).execute().use { response ->
+                    val responseCode = response.code
+                    val responseBody = response.body?.string().orEmpty()
 
-                if (responseBody.contains("window.__DATA__")) {
-                    _uiState.update { it.copy(isTestingCookie = false, cookieTestResult = CookieTestResult.SUCCESS) }
-                } else if (responseCode == 401 || responseCode == 403) {
-                    _uiState.update {
-                        it.copy(
-                            isTestingCookie = false,
-                            cookieTestResult = CookieTestResult.INVALID,
-                            errorMessage = "Cookie无效或已过期 (HTTP $responseCode)"
-                        )
-                    }
-                } else {
-                    _uiState.update {
-                        it.copy(
-                            isTestingCookie = false,
-                            cookieTestResult = CookieTestResult.INVALID,
-                            errorMessage = "未能验证 Cookie，请检查格式或稍后重试"
-                        )
+                    if (responseBody.contains("window.__DATA__")) {
+                        _uiState.update { it.copy(isTestingCookie = false, cookieTestResult = CookieTestResult.SUCCESS) }
+                    } else if (responseCode == 401 || responseCode == 403) {
+                        _uiState.update {
+                            it.copy(
+                                isTestingCookie = false,
+                                cookieTestResult = CookieTestResult.INVALID,
+                                errorMessage = "Cookie无效或已过期 (HTTP $responseCode)"
+                            )
+                        }
+                    } else {
+                        _uiState.update {
+                            it.copy(
+                                isTestingCookie = false,
+                                cookieTestResult = CookieTestResult.INVALID,
+                                errorMessage = "未能验证 Cookie，请检查格式或稍后重试"
+                            )
+                        }
                     }
                 }
             } catch (e: java.net.SocketTimeoutException) {
