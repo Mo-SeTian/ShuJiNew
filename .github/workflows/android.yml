@@ -8,18 +8,31 @@ on:
 
 jobs:
   build:
-    name: 构建 Debug APK
+    name: 验证并构建 APK
     runs-on: macos-latest
 
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: 设置 JDK
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
+
+      - name: 解码签名密钥
+        if: github.event_name == 'push'
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          if [[ -z "$KEYSTORE_BASE64" ]]; then
+            echo "::error::未配置 KEYSTORE_BASE64"
+            exit 1
+          fi
+          printf '%s' "$KEYSTORE_BASE64" | base64 -d > app/readtrack.keystore
 
       - name: 授权 Gradle
         run: |
@@ -31,88 +44,97 @@ jobs:
           UMENG_APP_KEY: ${{ secrets.UMENG_APP_KEY }}
         run: ./gradlew testDebugUnitTest --no-daemon --stacktrace
 
-      - name: 上传单元测试报告
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: unit-test-report
-          path: app/build/reports/tests/testDebugUnitTest/
-          retention-days: 7
-
       - name: 代码检查 (lint)
         env:
           UMENG_APP_KEY: ${{ secrets.UMENG_APP_KEY }}
         run: ./gradlew lintDebug --no-daemon --stacktrace
 
-      - name: 上传 lint 报告
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: lint-report
-          path: app/build/reports/lint-results-debug.html
-          retention-days: 7
-
-      - name: 构建 Debug APK
+      - name: 构建 APK
         env:
           UMENG_APP_KEY: ${{ secrets.UMENG_APP_KEY }}
+          RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
         run: |
-          echo "开始构建 Debug APK..."
-          ./gradlew assembleDebug --no-daemon --stacktrace 2>&1 | tee build.log || {
-            echo "=== Gradle 构建失败 ==="
-            tail -200 build.log
-            exit 1
-          }
-          echo "=== 构建完成 ==="
-          ls -la app/build/outputs/apk/debug/ 2>/dev/null || echo "APK目录不存在"
-
-      - name: 获取版本号
-        id: version
-        run: |
-          VERSION=$(grep 'versionName' app/build.gradle.kts | head -1 | sed 's/.*"\(.*\)".*/\1/')
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "版本号: $VERSION"
-
-      - name: 计算 APK MD5 并重命名
-        id: rename
-        run: |
-          APK_PATH="app/build/outputs/apk/debug/app-debug.apk"
-          MD5=$(md5 -q "$APK_PATH" | cut -c1-7)
-          NEW_NAME="ShuJi-v${{ steps.version.outputs.version }}-CI-${MD5}.apk"
-          cp "$APK_PATH" "app/build/outputs/apk/debug/$NEW_NAME"
-          echo "md5=$MD5" >> "$GITHUB_OUTPUT"
-          echo "new_name=$NEW_NAME" >> "$GITHUB_OUTPUT"
-          echo "MD5 前缀: $MD5"
-          echo "新文件名: $NEW_NAME"
-          ls -lh "app/build/outputs/apk/debug/$NEW_NAME"
-
-      - name: 上传构建日志
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-log
-          path: build.log
-          retention-days: 7
-
-      - name: 检查 APK 文件
-        run: |
-          echo "=== 检查 APK ==="
-          echo "当前目录: $(pwd)"
-          APK_PATH="app/build/outputs/apk/debug/${{ steps.rename.outputs.new_name }}"
-          if [ -f "$APK_PATH" ]; then
-            echo "✅ APK 文件存在!"
-            ls -lh "$APK_PATH"
+          if [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
+            ./gradlew assembleDebug assembleRelease --no-daemon --stacktrace
           else
-            echo "❌ APK 文件不存在"
-            echo "=== app/build 目录结构 ==="
-            ls -laR app/build/ 2>/dev/null | head -100
-            echo "=== build.log 最后 200 行 ==="
-            tail -200 build.log 2>/dev/null || echo "build.log 不存在"
-            exit 1
+            ./gradlew assembleDebug --no-daemon --stacktrace
           fi
 
-      - name: 上传 APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: ShuJi-v${{ steps.version.outputs.version }}-CI-${{ steps.rename.outputs.md5 }}
-          path: app/build/outputs/apk/debug/${{ steps.rename.outputs.new_name }}
-          retention-days: 30
+      - name: 重命名 APK
+        if: github.event_name == 'push'
+        id: apk
+        run: |
+          VERSION=$(grep 'versionName' app/build.gradle.kts | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          SHORT_SHA=${GITHUB_SHA:0:7}
+          DEBUG_SOURCE="app/build/outputs/apk/debug/app-debug.apk"
+          RELEASE_SOURCE="app/build/outputs/apk/release/app-release.apk"
+          DEBUG_APK="app/build/outputs/apk/debug/ShuJi-v${VERSION}-Debug-${SHORT_SHA}.apk"
+          RELEASE_APK="app/build/outputs/apk/release/ShuJi-v${VERSION}-Release-${SHORT_SHA}.apk"
+
+          test -f "$DEBUG_SOURCE"
+          test -f "$RELEASE_SOURCE"
+          cp "$DEBUG_SOURCE" "$DEBUG_APK"
+          cp "$RELEASE_SOURCE" "$RELEASE_APK"
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "debug_apk=$DEBUG_APK" >> "$GITHUB_OUTPUT"
+          echo "release_apk=$RELEASE_APK" >> "$GITHUB_OUTPUT"
+          ls -lh "$DEBUG_APK" "$RELEASE_APK"
+
+      - name: 上传 APK 到 MessagePush
+        if: github.event_name == 'push'
+        env:
+          MESSAGE_PUSH_URL: ${{ secrets.MESSAGE_PUSH_URL }}
+          MESSAGE_PUSH_API_TOKEN: ${{ secrets.MESSAGE_PUSH_API_TOKEN }}
+          MESSAGE_PUSH_CHANNEL_ID: ${{ secrets.MESSAGE_PUSH_CHANNEL_ID }}
+          VERSION: ${{ steps.apk.outputs.version }}
+          DEBUG_APK: ${{ steps.apk.outputs.debug_apk }}
+          RELEASE_APK: ${{ steps.apk.outputs.release_apk }}
+          BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          for variable_name in MESSAGE_PUSH_URL MESSAGE_PUSH_API_TOKEN MESSAGE_PUSH_CHANNEL_ID; do
+            if [[ -z "${!variable_name:-}" ]]; then
+              echo "::error::未配置 ${variable_name}"
+              exit 1
+            fi
+          done
+
+          case "$MESSAGE_PUSH_URL" in
+            http://*|https://*) ;;
+            *)
+              echo "::error::MESSAGE_PUSH_URL 必须以 http:// 或 https:// 开头"
+              exit 1
+              ;;
+          esac
+
+          if [[ "$BEFORE_SHA" != "0000000000000000000000000000000000000000" ]] \
+            && git cat-file -e "${BEFORE_SHA}^{commit}" 2>/dev/null; then
+            COMMIT_RANGE="${BEFORE_SHA}..${GITHUB_SHA}"
+          else
+            COMMIT_RANGE="$GITHUB_SHA"
+          fi
+
+          COMMIT_LOG=$(git log --no-merges \
+            --pretty=format:'- [`%h`]('"${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}"'/commit/%H) %s' \
+            "$COMMIT_RANGE")
+          if [[ -z "$COMMIT_LOG" ]]; then
+            COMMIT_LOG="- 本次推送没有新的非合并提交"
+          fi
+
+          CAPTION=$(printf '# 书迹 CI 构建\n\n- 版本：`%s`\n- 分支：`%s`\n- 提交：[`%s`](%s/%s/commit/%s)\n- 工作流：[#%s](%s/%s/actions/runs/%s)\n\n## 提交日志\n\n%s' \
+            "$VERSION" "$GITHUB_REF_NAME" "${GITHUB_SHA:0:7}" \
+            "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_SHA" \
+            "$GITHUB_RUN_NUMBER" "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" \
+            "$COMMIT_LOG")
+
+          curl --fail-with-body --silent --show-error \
+            --connect-timeout 15 \
+            --max-time 600 \
+            -H "X-API-Token: ${MESSAGE_PUSH_API_TOKEN}" \
+            -F "channelId=${MESSAGE_PUSH_CHANNEL_ID}" \
+            -F 'title=书迹构建' \
+            -F "caption=${CAPTION}" \
+            -F "files=@${DEBUG_APK}" \
+            -F "files=@${RELEASE_APK}" \
+            "${MESSAGE_PUSH_URL%/}/api/upload"
